@@ -93,7 +93,7 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
 
 ### 1. Trigger
 
-The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` (typecheck, lint, format, tests, build) as a reusable workflow; nothing is built or deployed unless it passes. Pull requests to `main` or `develop` run `ci.yml` on their own.
+The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` (typecheck, lint, format, tests, build) as a reusable workflow; nothing is built or deployed unless it passes. Pull requests to `main` or `develop` run `ci.yml` on their own. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
 
 **File:** `.github/workflows/deploy.yml`
 
@@ -101,6 +101,7 @@ The workflow triggers on every push to `main` (production) and `develop` (stagin
 on:
   push:
     branches: ['main', 'develop']
+  workflow_dispatch:
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false # a newer push waits, a running deploy is never cut short
