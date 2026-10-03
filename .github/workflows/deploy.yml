@@ -3,6 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches: ['main', 'develop']
+  workflow_dispatch:
 
 # One deploy per branch at a time; a newer push waits instead of cancelling
 # a deploy halfway.
