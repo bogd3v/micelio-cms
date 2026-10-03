@@ -2,7 +2,7 @@
   "name": "fediverse",
   "version": "0.1.0",
   "private": true,
-  "description": "Fediverse (ActivityPub) federation for the DevBog blog, built with Fedify",
+  "description": "Fediverse (ActivityPub) federation for Micelio CMS, built with Fedify",
   "exports": {
     "./strapi-server": "./dist/strapi-server.js",
     "./package.json": "./package.json"
@@ -11,6 +11,6 @@
     "kind": "plugin",
     "name": "fediverse",
     "displayName": "Fediverse",
-    "description": "ActivityPub federation for the DevBog blog"
+    "description": "ActivityPub federation for Micelio CMS"
   }
 }

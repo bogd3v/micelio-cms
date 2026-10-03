@@ -8,7 +8,7 @@ Only `main`, which is what production runs, receives security fixes. Staging (`d
 
 ## Reporting a vulnerability
 
-Report it privately through **GitHub → Security → [Report a vulnerability](https://github.com/ale9420/devbog-blog-backend/security/advisories/new)**. Don't open a public issue, pull request or discussion.
+Report it privately through **GitHub → Security → [Report a vulnerability](https://github.com/bogd3v/micelio-cms/security/advisories/new)**. Don't open a public issue, pull request or discussion.
 
 Please include the affected endpoint or file, steps to reproduce, the impact you expect, and whether you need an account or token (public, reader, editor, admin).
 

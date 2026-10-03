@@ -2,7 +2,7 @@
 
 This document is the source of truth for connecting the BogDev blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
-> **Status: Phases 0–4 complete and verified live on staging. Phase 5 is done and federation is live in production (`@devbog@api.bogdev.com.co`); only cross-server verification against a non-Mastodon implementation is still open.** `develop` deploys to staging, `main` to production. Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
+> **Status: Phases 0–4 complete and verified live on staging. Phase 5 is done and federation is live in production (`@devbog@api.bogdev.com.co`); only cross-server verification against a non-Mastodon implementation is still open.** `develop` deploys to staging, `main` to production. Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/bogd3v/micelio-cms/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
 ## Table of Contents
 

@@ -1,6 +1,6 @@
 # Accounts
 
-Reader accounts for the BogDev frontend (issue #52, frontend ale9420/devbog-blog-front#186). They are plain `users-permissions` users: registration, sign-in, email confirmation and password reset are the plugin's own endpoints. This backend adds the configuration, the Spanish emails and one route, `DELETE /api/users/me`.
+Reader accounts for the Micelio frontend (issue #52, frontend bogd3v/micelio#186). They are plain `users-permissions` users: registration, sign-in, email confirmation and password reset are the plugin's own endpoints. This backend adds the configuration, the Spanish emails and one route, `DELETE /api/users/me`.
 
 ## Endpoints the frontend uses
 

@@ -130,7 +130,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       [
         'PropertyValue',
         'Código',
-        '<a href="https://github.com/ale9420/devbog-blog-backend" rel="me nofollow noopener" target="_blank">github.com/ale9420/devbog-blog-backend</a>',
+        '<a href="https://github.com/bogd3v/micelio-cms" rel="me nofollow noopener" target="_blank">github.com/bogd3v/micelio-cms</a>',
       ],
     ]);
   });

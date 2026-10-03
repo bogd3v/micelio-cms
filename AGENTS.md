@@ -1,4 +1,4 @@
-# Agent Guidelines for devbog-blog-backend
+# Agent Guidelines for micelio-cms
 
 This is a **Strapi 5** CMS backend project. Below are conventions and commands for working with this codebase.
 
