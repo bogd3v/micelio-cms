@@ -5,7 +5,7 @@ import type { ActorProfile } from '../types/actor-profile';
 
 const DEFAULT_NAME = 'BogDev';
 const DEFAULT_SUMMARY = 'The BogDev blog, federated on the fediverse.';
-const DEFAULT_SOURCE_URL = 'https://github.com/ale9420/devbog-blog-backend';
+const DEFAULT_SOURCE_URL = 'https://github.com/bogd3v/micelio-cms';
 
 interface GlobalSettings {
   siteName?: string | null;

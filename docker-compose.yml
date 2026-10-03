@@ -1,6 +1,6 @@
 services:
   strapi:
-    image: ghcr.io/${GITHUB_REPOSITORY:-devbog-blog-backend}:latest
+    image: ghcr.io/${GITHUB_REPOSITORY:-bogd3v/micelio-cms}:latest
     build:
       context: .
       target: production

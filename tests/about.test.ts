@@ -72,7 +72,7 @@ const BLOCKS: AboutBlocks = [
         links: [
           {
             label: 'Ver repositorio',
-            url: 'https://github.com/ale9420/devbog-blog-backend',
+            url: 'https://github.com/bogd3v/micelio-cms',
             variant: 'primary',
           },
         ],
@@ -87,7 +87,7 @@ const BLOCKS: AboutBlocks = [
   {
     __component: 'about.open-source',
     text: 'Este blog está construido con herramientas libres.',
-    code: '$ git clone https://github.com/ale9420/devbog-blog-front',
+    code: '$ git clone https://github.com/bogd3v/micelio',
     guideTitle: 'Cómo moverte por aquí',
     guide: [{ text: 'Usa la [búsqueda](#search).' }],
   },

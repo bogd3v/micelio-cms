@@ -50,7 +50,7 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
          ▼
 ┌─────────────────────────────────────────┐
 │   GitHub Container Registry (GHCR)      │
-│   ghcr.io/<org>/devbog-blog-backend     │
+│   ghcr.io/<org>/micelio-cms             │
 │                                         │
 │   - Tagged with commit SHA              │
 │   - Tagged with "latest" (on main)      │
@@ -120,8 +120,8 @@ The `build-and-push` job runs on GitHub's Ubuntu runners:
 
 **Image tags created:**
 
-- `ghcr.io/<org>/devbog-blog-backend:<commit-sha>` (e.g., `abc1234`)
-- `ghcr.io/<org>/devbog-blog-backend:latest` (only on main branch)
+- `ghcr.io/<org>/micelio-cms:<commit-sha>` (e.g., `abc1234`)
+- `ghcr.io/<org>/micelio-cms:latest` (only on main branch)
 
 ### 3. Deploy Job
 
@@ -231,7 +231,7 @@ Project: devbog
 **General:**
 
 - Source Type: Docker Registry
-- Docker Image: `ghcr.io/<org>/devbog-blog-backend:latest`
+- Docker Image: `ghcr.io/<org>/micelio-cms:latest`
 - Registry: GHCR (credentials configured in Dokploy → Registry)
 
 **Domain:**
@@ -551,10 +551,10 @@ docker build -t test-build .
 
 ```bash
 # Build locally
-docker build -t devbog-backend:test .
+docker build -t micelio-cms:test .
 
 # Run locally
-docker run -p 1337:1337 --env-file .env devbog-backend:test
+docker run -p 1337:1337 --env-file .env micelio-cms:test
 
 # Test health endpoint
 curl http://localhost:1337/_health
@@ -601,7 +601,7 @@ instead of silently deploying to production.
 
 | Setting              | Value                                                                |
 | -------------------- | -------------------------------------------------------------------- |
-| Docker Image         | `ghcr.io/<org>/devbog-blog-backend:staging` (not `:latest`)          |
+| Docker Image         | `ghcr.io/<org>/micelio-cms:staging` (not `:latest`)                  |
 | Domain               | `staging-api.bogdev.com.co` (needs its own DNS A/CNAME → VPS IP)     |
 | Container Port       | `1337`                                                               |
 | Database             | `DATABASE_CLIENT=sqlite` — no separate Postgres instance for staging |
@@ -657,8 +657,8 @@ If you need to deploy manually (bypass GitHub Actions):
 1. Build and push image locally:
 
    ```bash
-   docker build -t ghcr.io/<org>/devbog-blog-backend:manual .
-   docker push ghcr.io/<org>/devbog-blog-backend:manual
+   docker build -t ghcr.io/<org>/micelio-cms:manual .
+   docker push ghcr.io/<org>/micelio-cms:manual
    ```
 
 2. Trigger Dokploy via API:

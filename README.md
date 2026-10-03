@@ -1,6 +1,6 @@
-# devbog-blog-backend
+# Micelio CMS
 
-Strapi 5 (TypeScript) headless CMS for the [BogDev](https://bogdev.com.co) blog: articles, categories, tags, comments, reader accounts, newsletter subscribers, visitor stats from Umami and optional ActivityPub federation. Production runs at `api.bogdev.com.co` (PostgreSQL), staging at `staging-api.bogdev.com.co` (SQLite).
+Strapi 5 (TypeScript) headless CMS of [Micelio](https://github.com/bogd3v/micelio), a blog engine. [BogDev](https://bogdev.com.co) is the reference site running it. The CMS provides articles, categories, tags, comments, reader accounts, newsletter subscribers, visitor stats from Umami and optional ActivityPub federation. Production runs at `api.bogdev.com.co` (PostgreSQL), staging at `staging-api.bogdev.com.co` (SQLite).
 
 ## Getting started
 

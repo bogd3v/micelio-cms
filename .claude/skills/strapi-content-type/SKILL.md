@@ -1,6 +1,6 @@
 ---
 name: strapi-content-type
-description: Use when adding or modifying Strapi content types, schemas, components, dynamic zones, slugs, i18n, or relations for the devbog headless CMS.
+description: Use when adding or modifying Strapi content types, schemas, components, dynamic zones, slugs, i18n, or relations for the Micelio headless CMS.
 ---
 
 # Strapi Content Type Skill

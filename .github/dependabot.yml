@@ -1,4 +1,4 @@
-# Same schedule and layout as devbog-blog-front. Major versions are never
+# Same schedule and layout as micelio (the frontend). Major versions are never
 # proposed (ignore "*" semver-major in every ecosystem): they are upgraded by
 # hand, e.g. Strapi with `npm run upgrade`.
 version: 2

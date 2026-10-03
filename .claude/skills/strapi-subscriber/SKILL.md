@@ -5,7 +5,7 @@ description: Use when the user asks about newsletter subscriptions, email signup
 
 # Strapi Subscriber Skill
 
-The `subscriber` content type stores newsletter subscriptions. The whole flow (sign-up, double opt-in, unsubscribe, emails) lives in the frontend server (`devbog-blog-front`, `server/api/newsletter/`), which reads and writes subscribers through the REST API with its full-access API token. Strapi only stores them.
+The `subscriber` content type stores newsletter subscriptions. The whole flow (sign-up, double opt-in, unsubscribe, emails) lives in the frontend server (`micelio`, `server/api/newsletter/`), which reads and writes subscribers through the REST API with its full-access API token. Strapi only stores them.
 
 ## When to use this skill
 
