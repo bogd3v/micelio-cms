@@ -93,6 +93,7 @@ Use the shared components in `src/components/shared/`:
 - `shared.image-credit` — author, source and license of an image (`shared.media.credit`, `shared.slide.credit`, article `coverCredit`)
 - `shared.rich-text` — rich text block
 - `shared.quote` — quote block
+- `shared.playground` — runnable code block (article `blocks`): `runtime`, `code`, optional `expectedOutput`, `setup` and `caption`
 - `shared.reference` — bibliographic source (article `references`, cited as `[@key]`)
 - `shared.seo` — SEO metadata
 
@@ -104,6 +105,7 @@ Example dynamic zone on a new content type:
   "pluginOptions": { "i18n": { "localized": true } },
   "components": [
     "shared.media",
+    "shared.playground",
     "shared.quote",
     "shared.rich-text",
     "shared.slider"

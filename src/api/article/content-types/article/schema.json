@@ -83,7 +83,13 @@
           "localized": true
         }
       },
-      "components": ["shared.media", "shared.quote", "shared.rich-text", "shared.slider"]
+      "components": [
+        "shared.media",
+        "shared.playground",
+        "shared.quote",
+        "shared.rich-text",
+        "shared.slider"
+      ]
     },
     "references": {
       "type": "component",

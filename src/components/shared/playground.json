@@ -1,0 +1,54 @@
+{
+  "collectionName": "components_shared_playgrounds",
+  "info": {
+    "displayName": "Playground",
+    "icon": "code",
+    "description": "Code the reader can run in the browser, with the output shown before running it"
+  },
+  "options": {},
+  "attributes": {
+    "runtime": {
+      "type": "enumeration",
+      "enum": ["python", "sql", "javascript"],
+      "required": true
+    },
+    "code": {
+      "type": "text",
+      "required": true,
+      "maxLength": 5000
+    },
+    "expectedOutput": {
+      "type": "text",
+      "maxLength": 5000
+    },
+    "setup": {
+      "type": "text",
+      "maxLength": 20000
+    },
+    "caption": {
+      "type": "text"
+    }
+  },
+  "config": {
+    "metadatas": {
+      "code": {
+        "edit": {
+          "label": "code",
+          "description": "Código que el lector ve y puede editar y ejecutar."
+        }
+      },
+      "expectedOutput": {
+        "edit": {
+          "label": "expectedOutput",
+          "description": "Salida que se muestra sin ejecutar nada, y también si el navegador no puede ejecutar el código."
+        }
+      },
+      "setup": {
+        "edit": {
+          "label": "setup",
+          "description": "Código oculto que se ejecuta antes de «code», por ejemplo para crear las tablas de un ejemplo SQL. El lector no lo ve."
+        }
+      }
+    }
+  }
+}

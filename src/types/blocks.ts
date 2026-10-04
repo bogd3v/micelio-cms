@@ -18,6 +18,8 @@ export interface BodyBlock {
   body?: string | null;
   /** `shared.quote`. */
   title?: string | null;
+  /** `shared.media` and `shared.playground`. */
+  caption?: string | null;
   /** `shared.media`. */
   credit?: ImageCredit | null;
   /** `shared.slider`. */
