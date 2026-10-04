@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_section_galleries",
+  "info": {
+    "displayName": "Gallery",
+    "icon": "images",
+    "description": "Images with their captions (each file's caption)"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["grid", "masonry"],
+      "default": "grid",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images"],
+      "required": true
+    }
+  }
+}

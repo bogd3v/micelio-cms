@@ -1,0 +1,39 @@
+{
+  "collectionName": "components_section_heroes",
+  "info": {
+    "displayName": "Hero",
+    "icon": "landscape",
+    "description": "Opening section: title, text, calls to action and media"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["centered", "split", "full-bleed"],
+      "default": "centered",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "text": {
+      "type": "text"
+    },
+    "primaryLink": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.link"
+    },
+    "secondaryLink": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.link"
+    },
+    "media": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "videos"]
+    }
+  }
+}

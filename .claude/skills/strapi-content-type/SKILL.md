@@ -120,6 +120,10 @@ Example dynamic zone on a new content type:
 5. **Media**: use `allowedTypes: ["images"]` when only images are expected; use `multiple: false` for a single cover/avatar.
 6. **Expose to the public**: after creating a content type, grant `find`/`findOne` permissions to the public role. Prefer doing this in `scripts/seed.js` (see `strapi-seeding` skill) so the front-end can read it immediately.
 
+## Pages and the section catalog
+
+`page` builds landing pages from `section.*` components (`src/components/section/`); the catalog is a contract with every theme (micelio ADR 0005 §11). To add a section or a variant: add the component (semantic fields only; `variant` as an `enumeration` with a `default` and `required`), add it to `page.sections`, and the frontend component, `/_theme` and every installed theme must follow in micelio. Give repeatable item components their own `collectionName` when it would collide with a section's (`components_section_testimonial_items`). Drafts may be incomplete: Strapi applies `required`, `min`/`max` and `regex` on publish.
+
 ## Verification
 
 - Start the dev server: `npm run dev`

@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_section_testimonial_items",
+  "info": {
+    "displayName": "Testimonial",
+    "icon": "quote",
+    "description": "A quote and who said it"
+  },
+  "options": {},
+  "attributes": {
+    "quote": {
+      "type": "text",
+      "required": true
+    },
+    "author": {
+      "type": "string",
+      "required": true
+    },
+    "role": {
+      "type": "string"
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

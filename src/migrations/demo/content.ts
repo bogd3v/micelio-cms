@@ -253,3 +253,253 @@ export function coverSvg([background, hill, sun]: [string, string, string]): str
 </svg>
 `;
 }
+
+/** A small square icon for the feature grid and the logo cloud. */
+export function iconSvg(color: string, shape: 'circle' | 'square' | 'triangle'): string {
+  const mark = {
+    circle: `<circle cx="32" cy="32" r="18" fill="${color}"/>`,
+    square: `<rect x="15" y="15" width="34" height="34" rx="6" fill="${color}"/>`,
+    triangle: `<path d="M32 12 L54 50 H10 Z" fill="${color}"/>`,
+  }[shape];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">${mark}</svg>\n`;
+}
+
+/**
+ * The smallest useful glTF for the `scene` section: one triangle, its buffer
+ * embedded as a data URI, so the demo needs no binary file.
+ */
+export function triangleGltf(): string {
+  const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
+  return JSON.stringify({
+    asset: { version: '2.0', generator: 'micelio-cms demo seed' },
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+    nodes: [{ mesh: 0 }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+    buffers: [
+      {
+        byteLength: positions.length,
+        uri: `data:application/octet-stream;base64,${positions.toString('base64')}`,
+      },
+    ],
+    bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length, target: 34962 }],
+    accessors: [
+      {
+        bufferView: 0,
+        componentType: 5126,
+        count: 3,
+        type: 'VEC3',
+        min: [0, 0, 0],
+        max: [1, 1, 0],
+      },
+    ],
+  });
+}
+
+export const DEMO_SHOWCASE_SLUG: Localized<string> = { en: 'showcase', es: 'muestra' };
+
+/** Media the showcase page uses, uploaded by the seed. */
+export interface ShowcaseMedia {
+  hero: number;
+  icons: [number, number, number];
+  logos: [number, number, number];
+  gallery: number[];
+  poster: number;
+  model: number;
+  /** documentId of the category the post list shows. */
+  category: string;
+}
+
+/**
+ * A page that uses every section of the catalog once, to see how the theme
+ * styles each of them (#75, #84).
+ */
+export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia) {
+  const es = locale === 'es';
+  const t = (en: string, spanish: string) => (es ? spanish : en);
+  const blog = es ? '/es/blog' : '/blog';
+  return [
+    {
+      __component: 'section.hero',
+      variant: 'split',
+      title: t('Grow food where you live', 'Cultiva comida donde vives'),
+      text: t(
+        'Field Notes is a demo of every section a Micelio page can use.',
+        'Notas de campo es una muestra de todas las secciones que puede usar una página de Micelio.'
+      ),
+      primaryLink: { label: t('Read the notes', 'Leer las notas'), url: blog },
+      secondaryLink: { label: 'Micelio', url: 'https://github.com/bogd3v/micelio' },
+      media: media.hero,
+    },
+    {
+      __component: 'section.feature-grid',
+      variant: 'grid',
+      title: t('What you need', 'Lo que necesitas'),
+      items: [
+        {
+          icon: media.icons[0],
+          title: t('Light', 'Luz'),
+          text: t('Four hours of sun.', 'Cuatro horas de sol.'),
+        },
+        {
+          icon: media.icons[1],
+          title: t('Pots', 'Macetas'),
+          text: t('Any container with holes.', 'Cualquier recipiente con agujeros.'),
+        },
+        {
+          icon: media.icons[2],
+          title: t('Patience', 'Paciencia'),
+          text: t('A season or two.', 'Una o dos temporadas.'),
+        },
+      ],
+    },
+    {
+      __component: 'section.media-showcase',
+      variant: 'left',
+      title: t('A balcony in spring', 'Un balcón en primavera'),
+      text: t('Lettuce, basil and **cherry tomatoes**.', 'Lechuga, albahaca y **tomates cherry**.'),
+      media: media.gallery[0],
+      link: {
+        label: t('How to start', 'Cómo empezar'),
+        url: `${blog}/${t('starting-a-balcony-garden', 'empezar-una-huerta-en-el-balcon')}`,
+      },
+    },
+    {
+      __component: 'section.stats',
+      variant: 'cards',
+      title: t('One small garden', 'Una huerta pequeña'),
+      items: [
+        { value: '4 h', label: t('of sun a day', 'de sol al día') },
+        { value: '12', label: t('pots', 'macetas') },
+        { value: '3', label: t('months to compost', 'meses para el compost') },
+      ],
+    },
+    {
+      __component: 'section.logo-cloud',
+      variant: 'row',
+      title: t('Friends of the garden', 'Amigos de la huerta'),
+      logos: [
+        { image: media.logos[0], name: 'Circle Seeds' },
+        { image: media.logos[1], name: 'Square Soil' },
+        { image: media.logos[2], name: 'Triangle Tools' },
+      ],
+    },
+    {
+      __component: 'section.testimonials',
+      variant: 'grid',
+      title: t('What neighbors say', 'Lo que dicen los vecinos'),
+      items: [
+        {
+          quote: t(
+            'The basil smells all the way to the street.',
+            'La albahaca se huele hasta la calle.'
+          ),
+          author: 'Sam',
+          role: t('Neighbor', 'Vecino'),
+        },
+        {
+          quote: t(
+            'I started my own pots after reading this.',
+            'Empecé mis macetas después de leer esto.'
+          ),
+          author: 'Robin',
+        },
+      ],
+    },
+    {
+      __component: 'section.pricing',
+      variant: 'cards',
+      title: t('Seed boxes', 'Cajas de semillas'),
+      text: t('Fictional plans, to see the section.', 'Planes ficticios, para ver la sección.'),
+      plans: [
+        {
+          name: t('Starter', 'Inicial'),
+          price: '$5',
+          period: t('per season', 'por temporada'),
+          features: t(
+            '3 seed packs\nA planting guide',
+            '3 sobres de semillas\nUna guía de siembra'
+          ),
+        },
+        {
+          name: t('Gardener', 'Huertera'),
+          price: '$12',
+          period: t('per season', 'por temporada'),
+          features: t(
+            '8 seed packs\nA planting guide\nCompost starter',
+            '8 sobres de semillas\nUna guía de siembra\nIniciador de compost'
+          ),
+          recommended: true,
+          link: { label: t('Choose', 'Elegir'), url: '/' },
+        },
+      ],
+    },
+    {
+      __component: 'section.faq',
+      variant: 'list',
+      title: t('Questions', 'Preguntas'),
+      items: [
+        {
+          question: t('Do I need a garden?', '¿Necesito un jardín?'),
+          answer: t(
+            'No: a balcony or a window sill is enough.',
+            'No: basta un balcón o una ventana.'
+          ),
+        },
+        {
+          question: t('Is this site real?', '¿Este sitio es real?'),
+          answer: t(
+            'It is a demo of [Micelio](https://github.com/bogd3v/micelio).',
+            'Es una demostración de [Micelio](https://github.com/bogd3v/micelio).'
+          ),
+        },
+      ],
+    },
+    {
+      __component: 'section.cta',
+      variant: 'banner',
+      title: t('Start this weekend', 'Empieza este fin de semana'),
+      text: t('One pot, one plant.', 'Una maceta, una planta.'),
+      primaryLink: { label: t('Read the guide', 'Leer la guía'), url: blog },
+    },
+    {
+      __component: 'section.post-list',
+      variant: 'cards',
+      title: t('From the garden', 'Desde la huerta'),
+      category: media.category,
+      count: 3,
+    },
+    {
+      __component: 'section.newsletter',
+      variant: 'card',
+      title: t('Notes by email', 'Notas por correo'),
+      text: t('One email per season.', 'Un correo por temporada.'),
+      buttonLabel: t('Subscribe', 'Suscribirme'),
+    },
+    {
+      __component: 'section.rich-text',
+      body: t(
+        '## About this page\n\nEvery section of the catalog appears once, with one of its variants. Change the variants in the admin panel to see the others.',
+        '## Sobre esta página\n\nCada sección del catálogo aparece una vez, con una de sus variantes. Cambia las variantes en el panel de administración para ver las demás.'
+      ),
+    },
+    {
+      __component: 'section.gallery',
+      variant: 'grid',
+      title: t('Through the year', 'A lo largo del año'),
+      images: media.gallery,
+    },
+    {
+      __component: 'section.scene',
+      variant: 'inline',
+      model: media.model,
+      poster: media.poster,
+      alt: t(
+        'A green triangle, the simplest 3D model',
+        'Un triángulo verde, el modelo 3D más simple'
+      ),
+      title: t('A scene', 'Una escena'),
+      text: t('3D loads only when you reach it.', 'El 3D solo carga cuando llegas a él.'),
+    },
+  ];
+}

@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_section_stat_items",
+  "info": {
+    "displayName": "Stat",
+    "icon": "chartPie",
+    "description": "A figure with its label"
+  },
+  "options": {},
+  "attributes": {
+    "value": {
+      "type": "string",
+      "required": true
+    },
+    "label": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

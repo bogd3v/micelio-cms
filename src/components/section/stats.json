@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_section_stats",
+  "info": {
+    "displayName": "Stats",
+    "icon": "chartBubble",
+    "description": "Two to four figures with their labels"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["row", "cards"],
+      "default": "row",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "section.stat",
+      "min": 2,
+      "max": 4
+    }
+  }
+}

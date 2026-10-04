@@ -416,6 +416,19 @@ FRONTEND_URL=https://bogdev.com.co          # staging: the staging frontend
 
 After deploying, send a test email from the admin panel (Settings → Email).
 
+### Static Sites Variables (rebuild hook)
+
+Static and landing sites (micelio ADR 0006) are rebuilt when content changes: on publish, unpublish or delete of an article or a page, and on every save of the site settings, the CMS calls `REBUILD_HOOK_URL` once per debounce window, with retries, without ever blocking the publish (`src/utils/rebuild-hook.ts`). The body is `{"event_type": "micelio-content", "client_payload": {...}}`, what GitHub's `repository_dispatch` requires; plain deploy hooks (Cloudflare Pages) ignore it.
+
+```env
+REBUILD_HOOK_URL=https://api.github.com/repos/<owner>/<site-repo>/dispatches
+REBUILD_HOOK_TOKEN=<fine-grained token with Contents: read and write on that repo>
+REBUILD_HOOK_DEBOUNCE_MS=60000   # changes within the window produce one call
+BUILD_API_TOKEN=<32+ random characters>  # read-only Strapi token for the build, created on boot
+```
+
+BogDev runs in dynamic mode and sets none of them.
+
 ### Generating Security Keys
 
 Run locally:
