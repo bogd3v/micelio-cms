@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_section_newsletters",
+  "info": {
+    "displayName": "Newsletter",
+    "icon": "message",
+    "description": "Subscription form; where it posts is set in the frontend"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["inline", "card"],
+      "default": "inline",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "text"
+    },
+    "buttonLabel": {
+      "type": "string"
+    }
+  }
+}

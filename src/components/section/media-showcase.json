@@ -1,0 +1,34 @@
+{
+  "collectionName": "components_section_media_showcases",
+  "info": {
+    "displayName": "Media showcase",
+    "icon": "picture",
+    "description": "An image or video with text"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["left", "right", "stacked"],
+      "default": "left",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "richtext"
+    },
+    "media": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "videos"],
+      "required": true
+    },
+    "link": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.link"
+    }
+  }
+}

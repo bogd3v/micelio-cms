@@ -210,6 +210,387 @@ export interface AboutTopics extends Struct.ComponentSchema {
   };
 }
 
+export interface SectionCta extends Struct.ComponentSchema {
+  collectionName: 'components_section_ctas';
+  info: {
+    description: 'A call to action';
+    displayName: 'Call to action';
+    icon: 'rocket';
+  };
+  attributes: {
+    primaryLink: Schema.Attribute.Component<'section.link', false>;
+    secondaryLink: Schema.Attribute.Component<'section.link', false>;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    variant: Schema.Attribute.Enumeration<['banner', 'card']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'banner'>;
+  };
+}
+
+export interface SectionFaq extends Struct.ComponentSchema {
+  collectionName: 'components_section_faqs';
+  info: {
+    description: 'Questions and answers, rendered with native <details>';
+    displayName: 'FAQ';
+    icon: 'question';
+  };
+  attributes: {
+    items: Schema.Attribute.Component<'section.faq-item', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['list', 'two-columns']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'list'>;
+  };
+}
+
+export interface SectionFaqItem extends Struct.ComponentSchema {
+  collectionName: 'components_section_faq_items';
+  info: {
+    description: 'A question and its answer';
+    displayName: 'Question';
+    icon: 'question';
+  };
+  attributes: {
+    answer: Schema.Attribute.RichText & Schema.Attribute.Required;
+    question: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SectionFeatureGrid extends Struct.ComponentSchema {
+  collectionName: 'components_section_feature_grids';
+  info: {
+    description: 'Three to six features with icon, title and text';
+    displayName: 'Feature grid';
+    icon: 'grid';
+  };
+  attributes: {
+    items: Schema.Attribute.Component<'section.feature-item', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 6;
+          min: 3;
+        },
+        number
+      >;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['grid', 'list', 'bento']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'grid'>;
+  };
+}
+
+export interface SectionFeatureItem extends Struct.ComponentSchema {
+  collectionName: 'components_section_feature_items';
+  info: {
+    description: 'One feature of a feature grid';
+    displayName: 'Feature';
+    icon: 'star';
+  };
+  attributes: {
+    icon: Schema.Attribute.Media<'images'>;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SectionGallery extends Struct.ComponentSchema {
+  collectionName: 'components_section_galleries';
+  info: {
+    description: "Images with their captions (each file's caption)";
+    displayName: 'Gallery';
+    icon: 'images';
+  };
+  attributes: {
+    images: Schema.Attribute.Media<'images', true> & Schema.Attribute.Required;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['grid', 'masonry']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'grid'>;
+  };
+}
+
+export interface SectionHero extends Struct.ComponentSchema {
+  collectionName: 'components_section_heroes';
+  info: {
+    description: 'Opening section: title, text, calls to action and media';
+    displayName: 'Hero';
+    icon: 'landscape';
+  };
+  attributes: {
+    media: Schema.Attribute.Media<'images' | 'videos'>;
+    primaryLink: Schema.Attribute.Component<'section.link', false>;
+    secondaryLink: Schema.Attribute.Component<'section.link', false>;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    variant: Schema.Attribute.Enumeration<['centered', 'split', 'full-bleed']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'centered'>;
+  };
+}
+
+export interface SectionLink extends Struct.ComponentSchema {
+  collectionName: 'components_section_links';
+  info: {
+    description: 'A labeled link: http(s), mailto: or a path on the site';
+    displayName: 'Link';
+    icon: 'link';
+  };
+  attributes: {
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SectionLogo extends Struct.ComponentSchema {
+  collectionName: 'components_section_logos';
+  info: {
+    description: 'A logo with its name and an optional link';
+    displayName: 'Logo';
+    icon: 'picture';
+  };
+  attributes: {
+    image: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String;
+  };
+}
+
+export interface SectionLogoCloud extends Struct.ComponentSchema {
+  collectionName: 'components_section_logo_clouds';
+  info: {
+    description: 'Logos with links';
+    displayName: 'Logo cloud';
+    icon: 'apps';
+  };
+  attributes: {
+    logos: Schema.Attribute.Component<'section.logo', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['row', 'marquee']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'row'>;
+  };
+}
+
+export interface SectionMediaShowcase extends Struct.ComponentSchema {
+  collectionName: 'components_section_media_showcases';
+  info: {
+    description: 'An image or video with text';
+    displayName: 'Media showcase';
+    icon: 'picture';
+  };
+  attributes: {
+    link: Schema.Attribute.Component<'section.link', false>;
+    media: Schema.Attribute.Media<'images' | 'videos'> & Schema.Attribute.Required;
+    text: Schema.Attribute.RichText;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['left', 'right', 'stacked']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'left'>;
+  };
+}
+
+export interface SectionNewsletter extends Struct.ComponentSchema {
+  collectionName: 'components_section_newsletters';
+  info: {
+    description: 'Subscription form; where it posts is set in the frontend';
+    displayName: 'Newsletter';
+    icon: 'message';
+  };
+  attributes: {
+    buttonLabel: Schema.Attribute.String;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['inline', 'card']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'inline'>;
+  };
+}
+
+export interface SectionPlan extends Struct.ComponentSchema {
+  collectionName: 'components_section_plans';
+  info: {
+    description: 'A pricing plan';
+    displayName: 'Plan';
+    icon: 'priceTag';
+  };
+  attributes: {
+    features: Schema.Attribute.Text;
+    link: Schema.Attribute.Component<'section.link', false>;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    period: Schema.Attribute.String;
+    price: Schema.Attribute.String & Schema.Attribute.Required;
+    recommended: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+  };
+}
+
+export interface SectionPostList extends Struct.ComponentSchema {
+  collectionName: 'components_section_post_lists';
+  info: {
+    description: 'Latest articles, of a category or a tag';
+    displayName: 'Post list';
+    icon: 'bulletList';
+  };
+  attributes: {
+    category: Schema.Attribute.Relation<'oneToOne', 'api::category.category'>;
+    count: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 12;
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<3>;
+    tag: Schema.Attribute.Relation<'oneToOne', 'api::tag.tag'>;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['cards', 'list']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'cards'>;
+  };
+}
+
+export interface SectionPricing extends Struct.ComponentSchema {
+  collectionName: 'components_section_pricings';
+  info: {
+    description: 'Plans with price and features';
+    displayName: 'Pricing';
+    icon: 'priceTag';
+  };
+  attributes: {
+    plans: Schema.Attribute.Component<'section.plan', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['cards', 'table']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'cards'>;
+  };
+}
+
+export interface SectionRichText extends Struct.ComponentSchema {
+  collectionName: 'components_section_rich_texts';
+  info: {
+    description: 'Long text in Markdown';
+    displayName: 'Rich text';
+    icon: 'feather';
+  };
+  attributes: {
+    body: Schema.Attribute.RichText & Schema.Attribute.Required;
+  };
+}
+
+export interface SectionScene extends Struct.ComponentSchema {
+  collectionName: 'components_section_scenes';
+  info: {
+    description: '3D scene (heavy island): a glTF model with a required poster and alt text';
+    displayName: 'Scene';
+    icon: 'globe';
+  };
+  attributes: {
+    alt: Schema.Attribute.String & Schema.Attribute.Required;
+    model: Schema.Attribute.Media<'files'> & Schema.Attribute.Required;
+    poster: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    text: Schema.Attribute.Text;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['background', 'inline']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'background'>;
+  };
+}
+
+export interface SectionStat extends Struct.ComponentSchema {
+  collectionName: 'components_section_stat_items';
+  info: {
+    description: 'A figure with its label';
+    displayName: 'Stat';
+    icon: 'chartPie';
+  };
+  attributes: {
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+    value: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SectionStats extends Struct.ComponentSchema {
+  collectionName: 'components_section_stats';
+  info: {
+    description: 'Two to four figures with their labels';
+    displayName: 'Stats';
+    icon: 'chartBubble';
+  };
+  attributes: {
+    items: Schema.Attribute.Component<'section.stat', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 4;
+          min: 2;
+        },
+        number
+      >;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['row', 'cards']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'row'>;
+  };
+}
+
+export interface SectionTestimonial extends Struct.ComponentSchema {
+  collectionName: 'components_section_testimonial_items';
+  info: {
+    description: 'A quote and who said it';
+    displayName: 'Testimonial';
+    icon: 'quote';
+  };
+  attributes: {
+    author: Schema.Attribute.String & Schema.Attribute.Required;
+    avatar: Schema.Attribute.Media<'images'>;
+    quote: Schema.Attribute.Text & Schema.Attribute.Required;
+    role: Schema.Attribute.String;
+  };
+}
+
+export interface SectionTestimonials extends Struct.ComponentSchema {
+  collectionName: 'components_section_testimonials';
+  info: {
+    description: 'Quotes with their authors';
+    displayName: 'Testimonials';
+    icon: 'discuss';
+  };
+  attributes: {
+    items: Schema.Attribute.Component<'section.testimonial', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
+    title: Schema.Attribute.String;
+    variant: Schema.Attribute.Enumeration<['single', 'grid']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'single'>;
+  };
+}
+
 export interface SharedImageCredit extends Struct.ComponentSchema {
   collectionName: 'components_shared_image_credits';
   info: {
@@ -524,6 +905,27 @@ declare module '@strapi/strapi' {
       'about.statement': AboutStatement;
       'about.topic': AboutTopic;
       'about.topics': AboutTopics;
+      'section.cta': SectionCta;
+      'section.faq': SectionFaq;
+      'section.faq-item': SectionFaqItem;
+      'section.feature-grid': SectionFeatureGrid;
+      'section.feature-item': SectionFeatureItem;
+      'section.gallery': SectionGallery;
+      'section.hero': SectionHero;
+      'section.link': SectionLink;
+      'section.logo': SectionLogo;
+      'section.logo-cloud': SectionLogoCloud;
+      'section.media-showcase': SectionMediaShowcase;
+      'section.newsletter': SectionNewsletter;
+      'section.plan': SectionPlan;
+      'section.post-list': SectionPostList;
+      'section.pricing': SectionPricing;
+      'section.rich-text': SectionRichText;
+      'section.scene': SectionScene;
+      'section.stat': SectionStat;
+      'section.stats': SectionStats;
+      'section.testimonial': SectionTestimonial;
+      'section.testimonials': SectionTestimonials;
       'shared.image-credit': SharedImageCredit;
       'shared.media': SharedMedia;
       'shared.meta-social': SharedMetaSocial;

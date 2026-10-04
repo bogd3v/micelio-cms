@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_section_faqs",
+  "info": {
+    "displayName": "FAQ",
+    "icon": "question",
+    "description": "Questions and answers, rendered with native <details>"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["list", "two-columns"],
+      "default": "list",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "section.faq-item",
+      "min": 1
+    }
+  }
+}

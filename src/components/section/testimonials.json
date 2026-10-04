@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_section_testimonials",
+  "info": {
+    "displayName": "Testimonials",
+    "icon": "discuss",
+    "description": "Quotes with their authors"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["single", "grid"],
+      "default": "single",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "section.testimonial",
+      "min": 1
+    }
+  }
+}

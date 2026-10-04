@@ -1,0 +1,35 @@
+{
+  "collectionName": "components_section_plans",
+  "info": {
+    "displayName": "Plan",
+    "icon": "priceTag",
+    "description": "A pricing plan"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "price": {
+      "type": "string",
+      "required": true
+    },
+    "period": {
+      "type": "string"
+    },
+    "features": {
+      "type": "text",
+      "description": "One feature per line"
+    },
+    "link": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.link"
+    },
+    "recommended": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

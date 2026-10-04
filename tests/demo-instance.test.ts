@@ -6,7 +6,7 @@ import {
   ensureFrontendToken,
   FRONTEND_TOKEN_NAME,
   FRONTEND_TOKEN_PERMISSIONS,
-} from '../src/migrations/frontend-token';
+} from '../src/migrations/api-tokens';
 
 // The demo instance (#74): MICELIO_DEMO seeds a neutral bilingual site on
 // boot, and FRONTEND_API_TOKEN becomes the frontend's API token, so
@@ -100,10 +100,39 @@ describe('Demo instance', () => {
       );
     });
 
+    it('publishes a page that uses every section of the catalog, in both languages', async () => {
+      const catalog = (
+        strapi.contentType('api::page.page' as never) as unknown as {
+          attributes: { sections: { components: string[] } };
+        }
+      ).attributes.sections.components;
+      for (const [locale, slug] of [
+        ['en', 'showcase'],
+        ['es', 'muestra'],
+      ]) {
+        const page = (await strapi.documents('api::page.page').findFirst({
+          locale,
+          status: 'published',
+          filters: { slug },
+          populate: { sections: { populate: '*' } },
+        } as never)) as { sections: { __component: string }[] } | null;
+        expect(page?.sections.map((section) => section.__component).sort()).toEqual(
+          [...catalog].sort()
+        );
+      }
+    });
+
     it('never mentions BogDev or a real person', async () => {
       const everything = JSON.stringify(
         await Promise.all(
-          [ARTICLE_UID, CATEGORY_UID, TAG_UID, ABOUT_UID, SITE_SETTING_UID].flatMap((uid) =>
+          [
+            ARTICLE_UID,
+            CATEGORY_UID,
+            TAG_UID,
+            ABOUT_UID,
+            SITE_SETTING_UID,
+            'api::page.page',
+          ].flatMap((uid) =>
             ['en', 'es'].map((locale) =>
               strapi.documents(uid as typeof ARTICLE_UID).findMany({ locale, populate: '*' })
             )

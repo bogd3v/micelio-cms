@@ -11,14 +11,26 @@ import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
 import { seedDemoContent } from './migrations/demo-seed';
-import { ensureFrontendToken } from './migrations/frontend-token';
-import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID, SITE_SETTING_UID } from './constants/uids';
+import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens';
+import { revokePagePermissions } from './migrations/page-permissions';
+import {
+  ABOUT_UID,
+  ARTICLE_STAT_UID,
+  ARTICLE_UID,
+  PAGE_UID,
+  SITE_SETTING_UID,
+} from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
 import { assertAccentOverridesValid } from './utils/site-theme';
+import { assertPageSectionsValid } from './utils/page-sections';
+import { registerRebuildHook } from './utils/rebuild-hook';
 import { restrictDraftsToEditors } from './utils/drafts-access';
 import { assertFrontendUrlConfigured } from './utils/frontend-url';
+
+/** Unsubscribes the rebuild hook; set while it is registered. */
+let stopRebuildHook: (() => void) | null = null;
 
 export default {
   /** Before init: Document Service middlewares and extra admin routes. */
@@ -59,6 +71,19 @@ export default {
       ) {
         const data = (context.params as { data?: Record<string, unknown> }).data;
         if (data) assertImageCreditsValid(data);
+      }
+      return next();
+    });
+
+    // Rejects a post list with both a category and a tag, and a scene whose
+    // model is not a glTF file.
+    strapi.documents.use(async (context, next) => {
+      if (
+        context.uid === PAGE_UID &&
+        (context.action === 'create' || context.action === 'update')
+      ) {
+        const data = (context.params as { data?: Record<string, unknown> }).data;
+        if (data) await assertPageSectionsValid(strapi, data);
       }
       return next();
     });
@@ -138,9 +163,19 @@ export default {
       strapi.log.info(`[demo] ${demo}`);
     }
 
-    const frontendToken = await ensureFrontendToken(strapi);
-    if (frontendToken === 'created' || frontendToken === 'updated') {
-      strapi.log.info(`[frontend-token] ${frontendToken} the frontend's API token`);
+    for (const [name, ensure] of [
+      ['frontend', ensureFrontendToken],
+      ['build', ensureBuildToken],
+    ] as const) {
+      const report = await ensure(strapi);
+      if (report === 'created' || report === 'updated') {
+        strapi.log.info(`[api-tokens] ${report} the ${name} API token`);
+      }
+    }
+
+    const pagePermissions = await revokePagePermissions(strapi);
+    if (pagePermissions > 0) {
+      strapi.log.info(`[pages] revoked ${pagePermissions} role permissions`);
     }
 
     const siteSettingPermissions = await revokeSiteSettingPermissions(strapi);
@@ -160,6 +195,14 @@ export default {
     }
 
     scheduleUmamiSync(strapi);
+
+    // Static and landing sites rebuild when published content changes.
+    stopRebuildHook = registerRebuildHook(strapi);
+  },
+
+  destroy() {
+    stopRebuildHook?.();
+    stopRebuildHook = null;
   },
 };
 
