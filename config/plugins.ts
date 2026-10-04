@@ -38,7 +38,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
   // deliver from a container: account confirmation and reset emails need SMTP.
   const smtpHost = env('SMTP_HOST');
   const smtpPort = env.int('SMTP_PORT', 587);
-  const emailFrom = env('EMAIL_FROM', 'BogDev <no-reply@bogdev.com.co>');
+  // EMAIL_FROM has no site-specific default: without it, emails go out from
+  // no-reply@ the frontend's host, and register() warns when SMTP is on.
+  const emailFrom = env('EMAIL_FROM') || `no-reply@${frontendHost(env('FRONTEND_URL'))}`;
   const emailConfig = smtpHost
     ? {
         provider: 'nodemailer',
@@ -121,5 +123,14 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     },
   };
 };
+
+/** Host of the frontend for the fallback sender, `localhost` when unknown. */
+function frontendHost(frontendUrl: string | undefined): string {
+  try {
+    return new URL(frontendUrl ?? '').hostname || 'localhost';
+  } catch {
+    return 'localhost';
+  }
+}
 
 export default config;

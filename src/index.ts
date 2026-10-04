@@ -16,10 +16,20 @@ import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
 import { assertAccentOverridesValid } from './utils/site-theme';
 import { restrictDraftsToEditors } from './utils/drafts-access';
+import { assertFrontendUrlConfigured } from './utils/frontend-url';
 
 export default {
   /** Before init: Document Service middlewares and extra admin routes. */
   register({ strapi }: { strapi: Core.Strapi }) {
+    // Links in emails, analytics paths and the site settings' URL point to the
+    // frontend; in production there is no default to fall back on.
+    assertFrontendUrlConfigured();
+    if (process.env.SMTP_HOST && !process.env.EMAIL_FROM) {
+      strapi.log.warn(
+        "[email] EMAIL_FROM is not set: emails go out from no-reply@ the frontend's host"
+      );
+    }
+
     // Rejects citations without a reference, and keeps the article's
     // searchable plain text in step with its body.
     strapi.documents.use(async (context, next) => {
@@ -118,7 +128,7 @@ export default {
 
     const siteLocales = await seedSiteSettings(strapi);
     if (siteLocales.length > 0) {
-      strapi.log.info(`[site-settings] created BogDev's settings in ${siteLocales.join(', ')}`);
+      strapi.log.info(`[site-settings] created neutral settings in ${siteLocales.join(', ')}`);
     }
     const siteSettingPermissions = await revokeSiteSettingPermissions(strapi);
     if (siteSettingPermissions > 0) {

@@ -2,12 +2,14 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole, getRole } from './helpers/permissions';
-import { applyAccountSettings } from '../src/migrations/account-settings';
+import { accountEmailTemplates, applyAccountSettings } from '../src/migrations/account-settings';
 
 const USER_UID = 'plugin::users-permissions.user';
 const PERMISSION_UID = 'plugin::users-permissions.permission';
 const ARTICLE_UID = 'api::article.article';
 const COMMENT_UID = 'plugin::comments.comment';
+const SITE_SETTING_UID = 'api::site-setting.site-setting';
+const MARKER = { type: 'core', name: 'migrations', key: 'account-settings' };
 const PASSWORD = 'Sup3r-secret';
 
 /** What the email service receives; tests read the link out of the body. */
@@ -88,10 +90,11 @@ describe('Accounts (users-permissions)', () => {
       });
     });
 
-    it('writes the email templates in Spanish', async () => {
+    it("writes the email templates with the site's name, in its language", async () => {
+      // The neutral site settings seeded on a fresh instance: Micelio, in English.
       const email = (await pluginStore().get({ key: 'email' })) as EmailTemplates;
-      expect(email.email_confirmation.options.object).toBe('Confirma tu correo en BogDev');
-      expect(email.reset_password.options.object).toBe('Restablece tu contraseña de BogDev');
+      expect(email.email_confirmation.options.object).toBe('Confirm your email for Micelio');
+      expect(email.reset_password.options.object).toBe('Reset your Micelio password');
     });
 
     it('applies the settings once and keeps what an admin changes', async () => {
@@ -128,7 +131,7 @@ describe('Accounts (users-permissions)', () => {
       expect(sent).toHaveLength(1);
       expect(sent[0]).toMatchObject({
         to: 'ana@example.com',
-        subject: 'Confirma tu correo en BogDev',
+        subject: 'Confirm your email for Micelio',
       });
       const link = new URL(linkIn(sent[0]));
       expect(link.pathname).toBe('/api/auth/email-confirmation');
@@ -167,7 +170,7 @@ describe('Accounts (users-permissions)', () => {
         .expect(200);
 
       expect(sent).toHaveLength(1);
-      expect(sent[0].subject).toBe('Restablece tu contraseña de BogDev');
+      expect(sent[0].subject).toBe('Reset your Micelio password');
       const link = new URL(linkIn(sent[0]));
       expect(`${link.origin}${link.pathname}`).toBe('https://bogdev.test/account/reset-password');
 
@@ -277,6 +280,34 @@ describe('Accounts (users-permissions)', () => {
           .expect(403);
       }
       expect(await strapi.query(USER_UID).count({ where: { id: victim.id } })).toBe(1);
+    });
+  });
+
+  // Last: it rewrites the templates the sign-up and reset tests read.
+  describe('email templates of a Spanish site', () => {
+    it("are written in Spanish with the site's name when the settings are applied", async () => {
+      const settings = await strapi.documents(SITE_SETTING_UID).findFirst();
+      await strapi.documents(SITE_SETTING_UID).update({
+        documentId: settings!.documentId,
+        locale: 'en',
+        data: { name: 'La Huerta', defaultLocale: 'es' },
+      });
+      await strapi.store.delete(MARKER);
+
+      expect((await applyAccountSettings(strapi)).settingsApplied).toBe(true);
+
+      const email = (await pluginStore().get({ key: 'email' })) as EmailTemplates;
+      // No Spanish site settings exist, so the name comes from the default locale.
+      expect(email.email_confirmation.options.object).toBe('Confirma tu correo en La Huerta');
+      expect(email.reset_password.options.object).toBe('Restablece tu contraseña de La Huerta');
+    });
+
+    it('escapes the site name, so it cannot inject HTML or template code', () => {
+      const templates = accountEmailTemplates('<b>Ana</b> <%= process.env %> & Co', 'en');
+      const html = templates.email_confirmation.message;
+      expect(html).toContain('&lt;b&gt;Ana&lt;/b&gt; &lt;%= process.env %&gt; &amp; Co');
+      expect(html).not.toContain('<%= process.env');
+      expect(templates.reset_password.object).toContain('&lt;b&gt;Ana');
     });
   });
 });

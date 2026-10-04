@@ -67,6 +67,7 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
     // Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
     process.env.FEDIVERSE_ENABLED = 'true';
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog';
+    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev';
     process.env.FRONTEND_URL = 'https://blog.example.test';
     process.env.FRONTEND_ARTICLE_PATH = '/blog/{slug}';
     await setupStrapi();
@@ -225,10 +226,12 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
   });
 
   describe('Actor profile', () => {
-    it('falls back to the BogDev name when no site settings exist', async () => {
+    it('takes the name and summary from the site settings when Global is empty', async () => {
       const { body } = await getJson('/fediverse/user/devbog');
 
-      expect(body.name).toBe('BogDev');
+      // The neutral site settings seeded on a fresh instance.
+      expect(body.name).toBe('Micelio');
+      expect(body.summary).toContain('A site built with Micelio');
     });
   });
 
