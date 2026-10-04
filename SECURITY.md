@@ -26,7 +26,7 @@ You will be credited in the advisory unless you prefer otherwise.
 In scope: code and configuration in this repository, including:
 
 - Custom API routes, controllers and services (`src/api`), such as search, popular articles and the drafts list
-- Access control: drafts restricted to editors, `DELETE /api/users/me`, the Editor role, comment visibility middlewares
+- Access control: drafts restricted to editors, site settings and subscribers readable only with the frontend's API token, `DELETE /api/users/me`, the Editor role, comment visibility middlewares
 - The `fediverse` plugin (ActivityPub inbox, HTTP signatures, federated replies)
 - Configuration (`config/`), the Docker image and the CI/CD workflows
 
@@ -46,6 +46,17 @@ Out of scope: volumetric denial of service, social engineering, reports from aut
 - Don't access, change or delete data that isn't yours. If you reach real user data, stop and report.
 
 Good-faith research that follows these rules won't be pursued.
+
+## The frontend's API token
+
+The frontend server reads some content with a **custom** API token (Settings → API Tokens) instead of a role, so that content stays off the public API. No role has permissions on it: a migration removes them on every boot, and a request without the token gets 403.
+
+| Content type   | Token permissions                                          | Roles cleared by                           |
+| -------------- | ---------------------------------------------------------- | ------------------------------------------ |
+| `site-setting` | `find`                                                     | `src/migrations/site-settings.ts`          |
+| `subscriber`   | what the newsletter flow needs (`strapi-subscriber` skill) | `src/migrations/subscriber-permissions.ts` |
+
+Give that token only the permissions it needs, and rotate it if it leaks.
 
 ## How dependencies are handled
 

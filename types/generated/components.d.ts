@@ -421,6 +421,63 @@ export interface SharedTechItem extends Struct.ComponentSchema {
   };
 }
 
+export interface SiteAuthor extends Struct.ComponentSchema {
+  collectionName: 'components_site_authors';
+  info: {
+    description: 'Who writes the site';
+    displayName: 'Author';
+    icon: 'user';
+  };
+  attributes: {
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String;
+  };
+}
+
+export interface SiteModules extends Struct.ComponentSchema {
+  collectionName: 'components_site_modules';
+  info: {
+    description: 'Features the frontend turns on. All of them are on unless turned off here';
+    displayName: 'Modules';
+    icon: 'puzzle';
+  };
+  attributes: {
+    accounts: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    comments: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    drafts: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>;
+    fediverse: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    newsletter: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    search: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>;
+    support: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+  };
+}
+
+export interface SiteSocialLink extends Struct.ComponentSchema {
+  collectionName: 'components_site_social_links';
+  info: {
+    description: 'A profile of the site on another network';
+    displayName: 'Social link';
+    icon: 'link';
+  };
+  attributes: {
+    network: Schema.Attribute.Enumeration<
+      ['github', 'gitlab', 'codeberg', 'linkedin', 'mastodon', 'bluesky', 'x', 'website']
+    > &
+      Schema.Attribute.Required;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 declare module '@strapi/strapi' {
   export namespace Public {
     export interface ComponentSchemas {
@@ -447,6 +504,9 @@ declare module '@strapi/strapi' {
       'shared.slide': SharedSlide;
       'shared.slider': SharedSlider;
       'shared.tech-item': SharedTechItem;
+      'site.author': SiteAuthor;
+      'site.modules': SiteModules;
+      'site.social-link': SiteSocialLink;
     }
   }
 }

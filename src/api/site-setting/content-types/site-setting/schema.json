@@ -1,0 +1,95 @@
+{
+  "kind": "singleType",
+  "collectionName": "site_settings",
+  "info": {
+    "singularName": "site-setting",
+    "pluralName": "site-settings",
+    "displayName": "Site settings",
+    "description": "Identity of the site and the modules the frontend turns on"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "pluginOptions": { "i18n": { "localized": true } }
+    },
+    "description": {
+      "type": "text",
+      "pluginOptions": { "i18n": { "localized": true } }
+    },
+    "url": {
+      "type": "string",
+      "regex": "^https?://\\S+$",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "defaultLocale": {
+      "type": "enumeration",
+      "enum": ["en", "es"],
+      "default": "en",
+      "required": true,
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "author": {
+      "type": "component",
+      "repeatable": false,
+      "component": "site.author",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "favicon": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "defaultOgImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "socialLinks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "site.social-link",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "contactEmail": {
+      "type": "email",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "privacyContactEmail": {
+      "type": "email",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "privacyUpdatedAt": {
+      "type": "datetime",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "supportHandle": {
+      "type": "string",
+      "regex": "^[A-Za-z0-9_-]+$",
+      "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "modules": {
+      "type": "component",
+      "repeatable": false,
+      "component": "site.modules",
+      "required": true,
+      "pluginOptions": { "i18n": { "localized": false } }
+    }
+  }
+}
