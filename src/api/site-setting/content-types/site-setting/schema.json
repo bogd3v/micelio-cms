@@ -90,6 +90,12 @@
       "component": "site.modules",
       "required": true,
       "pluginOptions": { "i18n": { "localized": false } }
+    },
+    "theme": {
+      "type": "component",
+      "repeatable": false,
+      "component": "site.theme",
+      "pluginOptions": { "i18n": { "localized": false } }
     }
   }
 }

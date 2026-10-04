@@ -67,4 +67,13 @@ export interface ApiSiteSetting {
   privacyUpdatedAt: string | null;
   supportHandle: string | null;
   modules: Record<string, boolean>;
+  theme: ApiSiteTheme | null;
+}
+
+export interface ApiSiteTheme {
+  themeId: string | null;
+  defaultMode: string | null;
+  /** Only returned when populated explicitly (`populate[theme][populate]=*`). */
+  accentOverrides?: { mode: string; color: string }[];
+  displayFont: string | null;
 }

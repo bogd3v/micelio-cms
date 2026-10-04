@@ -421,6 +421,19 @@ export interface SharedTechItem extends Struct.ComponentSchema {
   };
 }
 
+export interface SiteAccentOverride extends Struct.ComponentSchema {
+  collectionName: 'components_site_accent_overrides';
+  info: {
+    description: "Accent color for one of the theme's modes. The frontend adjusts it if it fails contrast";
+    displayName: 'Accent override';
+    icon: 'paint';
+  };
+  attributes: {
+    color: Schema.Attribute.String & Schema.Attribute.Required;
+    mode: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface SiteAuthor extends Struct.ComponentSchema {
   collectionName: 'components_site_authors';
   info: {
@@ -478,6 +491,23 @@ export interface SiteSocialLink extends Struct.ComponentSchema {
   };
 }
 
+export interface SiteTheme extends Struct.ComponentSchema {
+  collectionName: 'components_site_themes';
+  info: {
+    description: 'Installed theme and its bounded overrides (micelio ADR 0005). Empty fields use the theme as it is';
+    displayName: 'Theme';
+    icon: 'brush';
+  };
+  attributes: {
+    accentOverrides: Schema.Attribute.Component<'site.accent-override', true>;
+    defaultMode: Schema.Attribute.String;
+    displayFont: Schema.Attribute.Enumeration<
+      ['archivo', 'fraunces', 'bricolage-grotesque', 'newsreader', 'space-grotesk']
+    >;
+    themeId: Schema.Attribute.String;
+  };
+}
+
 declare module '@strapi/strapi' {
   export namespace Public {
     export interface ComponentSchemas {
@@ -504,9 +534,11 @@ declare module '@strapi/strapi' {
       'shared.slide': SharedSlide;
       'shared.slider': SharedSlider;
       'shared.tech-item': SharedTechItem;
+      'site.accent-override': SiteAccentOverride;
       'site.author': SiteAuthor;
       'site.modules': SiteModules;
       'site.social-link': SiteSocialLink;
+      'site.theme': SiteTheme;
     }
   }
 }
