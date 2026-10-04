@@ -53,8 +53,10 @@ The frontend server reads some content with a **custom** API token (Settings →
 
 | Content type   | Token permissions                                          | Roles cleared by                           |
 | -------------- | ---------------------------------------------------------- | ------------------------------------------ |
-| `site-setting` | `find`                                                     | `src/migrations/site-settings.ts`          |
+| `site-setting` | `find` (identity, modules and theme)                       | `src/migrations/site-settings.ts`          |
 | `subscriber`   | what the newsletter flow needs (`strapi-subscriber` skill) | `src/migrations/subscriber-permissions.ts` |
+
+The site's theme (`theme` in `site-setting`) is covered by the same `find`; it needs no permission of its own. Its values only pick an installed theme and bounded overrides, and the frontend re-serializes them instead of injecting the stored strings (micelio ADR 0005).
 
 Give that token only the permissions it needs, and rotate it if it leaks.
 

@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_site_themes",
+  "info": {
+    "displayName": "Theme",
+    "icon": "brush",
+    "description": "Installed theme and its bounded overrides (micelio ADR 0005). Empty fields use the theme as it is"
+  },
+  "options": {},
+  "attributes": {
+    "themeId": {
+      "type": "string",
+      "regex": "^[a-z][a-z0-9-]*$"
+    },
+    "defaultMode": {
+      "type": "string",
+      "regex": "^[a-z][a-z0-9-]*$"
+    },
+    "accentOverrides": {
+      "type": "component",
+      "repeatable": true,
+      "component": "site.accent-override"
+    },
+    "displayFont": {
+      "type": "enumeration",
+      "enum": ["archivo", "fraunces", "bricolage-grotesque", "newsreader", "space-grotesk"]
+    }
+  }
+}

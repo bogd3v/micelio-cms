@@ -10,10 +10,11 @@ import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
-import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID } from './constants/uids';
+import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID, SITE_SETTING_UID } from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
+import { assertAccentOverridesValid } from './utils/site-theme';
 import { restrictDraftsToEditors } from './utils/drafts-access';
 
 export default {
@@ -46,6 +47,18 @@ export default {
       ) {
         const data = (context.params as { data?: Record<string, unknown> }).data;
         if (data) assertImageCreditsValid(data);
+      }
+      return next();
+    });
+
+    // Rejects incomplete accent overrides and two overrides for one mode.
+    strapi.documents.use(async (context, next) => {
+      if (
+        context.uid === SITE_SETTING_UID &&
+        (context.action === 'create' || context.action === 'update')
+      ) {
+        const data = (context.params as { data?: Record<string, unknown> }).data;
+        if (data) assertAccentOverridesValid(data);
       }
       return next();
     });

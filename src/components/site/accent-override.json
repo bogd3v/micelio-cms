@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_site_accent_overrides",
+  "info": {
+    "displayName": "Accent override",
+    "icon": "paint",
+    "description": "Accent color for one of the theme's modes. The frontend adjusts it if it fails contrast"
+  },
+  "options": {},
+  "attributes": {
+    "mode": {
+      "type": "string",
+      "regex": "^[a-z][a-z0-9-]*$",
+      "required": true
+    },
+    "color": {
+      "type": "string",
+      "regex": "^#[0-9a-fA-F]{6}$",
+      "required": true
+    }
+  }
+}

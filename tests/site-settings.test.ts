@@ -20,10 +20,10 @@ describe('Site settings', () => {
 
   const http = () => request(strapi.server.httpServer);
 
-  async function read(locale?: string): Promise<ApiSiteSetting> {
+  async function read(locale?: string, populate: unknown = '*'): Promise<ApiSiteSetting> {
     const res = await http()
       .get('/api/site-setting')
-      .query({ populate: '*', ...(locale ? { locale } : {}) })
+      .query({ populate, ...(locale ? { locale } : {}) })
       .set(auth);
     expect(res.status).toBe(200);
     return res.body.data;
@@ -66,6 +66,8 @@ describe('Site settings', () => {
       logo: null,
       favicon: null,
       defaultOgImage: null,
+      // No theme: the frontend keeps its default theme as it is.
+      theme: null,
     });
     expect(settings.socialLinks.map(({ network, url }) => ({ network, url }))).toEqual(
       BOGDEV_SITE_SETTINGS.socialLinks
@@ -103,6 +105,84 @@ describe('Site settings', () => {
     for (const name of MODULES.filter((module) => module !== 'newsletter')) {
       expect(modules[name]).toBe(true);
     }
+  });
+
+  describe('theme', () => {
+    const VALID_THEME = {
+      themeId: 'bogota',
+      defaultMode: 'dia',
+      accentOverrides: [
+        { mode: 'noche', color: '#FF7A1A' },
+        { mode: 'dia', color: '#a3410f' },
+      ],
+      displayFont: 'fraunces',
+    };
+
+    async function saveTheme(theme: unknown) {
+      return strapi.documents(SITE_SETTING).update({
+        documentId: await documentId(),
+        locale: 'en',
+        // @ts-expect-error the cases below include invalid values on purpose
+        data: { theme },
+      });
+    }
+
+    it('saves a theme for every locale and returns its overrides when populated', async () => {
+      await saveTheme(VALID_THEME);
+
+      const populated = await read('en', { theme: { populate: '*' } });
+      expect(populated.theme).toMatchObject({
+        themeId: 'bogota',
+        defaultMode: 'dia',
+        displayFont: 'fraunces',
+      });
+      expect(populated.theme!.accentOverrides!.map(({ mode, color }) => ({ mode, color }))).toEqual(
+        VALID_THEME.accentOverrides
+      );
+
+      // populate=* reaches the theme but not the component nested in it.
+      const shallow = await read();
+      expect(shallow.theme).toMatchObject({ themeId: 'bogota', displayFont: 'fraunces' });
+      expect(shallow.theme!.accentOverrides).toBeUndefined();
+
+      // Not localized: the Spanish settings share it.
+      expect((await read('es')).theme).toMatchObject({ themeId: 'bogota' });
+    });
+
+    it('accepts an empty theme, which keeps the default', async () => {
+      await saveTheme({});
+      expect((await read('en', { theme: { populate: '*' } })).theme).toMatchObject({
+        themeId: null,
+        defaultMode: null,
+        displayFont: null,
+        accentOverrides: [],
+      });
+    });
+
+    it.each([
+      ['a three-digit hex', { accentOverrides: [{ mode: 'noche', color: '#fff' }] }],
+      ['a color name', { accentOverrides: [{ mode: 'noche', color: 'red' }] }],
+      ['a hex with a non-hex digit', { accentOverrides: [{ mode: 'noche', color: '#12345g' }] }],
+      ['a hex with alpha', { accentOverrides: [{ mode: 'noche', color: '#ff7a1a80' }] }],
+      ['a hex without #', { accentOverrides: [{ mode: 'noche', color: 'ff7a1a' }] }],
+      ['an override without a color', { accentOverrides: [{ mode: 'noche' }] }],
+      ['an override without a mode', { accentOverrides: [{ color: '#ff7a1a' }] }],
+      ['a mode that is not a slug', { accentOverrides: [{ mode: 'Noche', color: '#ff7a1a' }] }],
+      ['a theme id that is not a slug', { themeId: '../bogota' }],
+      ['a default mode that is not a slug', { defaultMode: 'día' }],
+      ['a display font outside the curated list', { displayFont: 'comic-sans' }],
+      [
+        'two overrides for the same mode',
+        {
+          accentOverrides: [
+            { mode: 'noche', color: '#ff7a1a' },
+            { mode: 'noche', color: '#2ee6b6' },
+          ],
+        },
+      ],
+    ])('rejects %s', async (_case, theme) => {
+      await expect(saveTheme(theme)).rejects.toMatchObject({ name: 'ValidationError' });
+    });
   });
 
   it('rejects readers without the frontend token', async () => {
