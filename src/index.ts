@@ -10,6 +10,8 @@ import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
+import { seedDemoContent } from './migrations/demo-seed';
+import { ensureFrontendToken } from './migrations/frontend-token';
 import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID, SITE_SETTING_UID } from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
@@ -130,6 +132,17 @@ export default {
     if (siteLocales.length > 0) {
       strapi.log.info(`[site-settings] created neutral settings in ${siteLocales.join(', ')}`);
     }
+    // After the site settings exist: the demo replaces their neutral values.
+    const demo = await seedDemoContent(strapi);
+    if (demo !== 'disabled' && demo !== 'already-applied') {
+      strapi.log.info(`[demo] ${demo}`);
+    }
+
+    const frontendToken = await ensureFrontendToken(strapi);
+    if (frontendToken === 'created' || frontendToken === 'updated') {
+      strapi.log.info(`[frontend-token] ${frontendToken} the frontend's API token`);
+    }
+
     const siteSettingPermissions = await revokeSiteSettingPermissions(strapi);
     if (siteSettingPermissions > 0) {
       strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`);

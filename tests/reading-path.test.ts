@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { setPublicPermissions } from './helpers/permissions';
+import { createBogdevCategories } from './helpers/bogdev-categories';
 import type { ApiDocument } from './helpers/api-types';
 
 const ARTICLE_UID = 'api::article.article';
@@ -37,7 +38,8 @@ describe('Reading path (article.pathOrder)', () => {
     // Filtering through a relation needs read access to its target.
     await setPublicPermissions('category', ['find']);
 
-    // The redesign categories (with their `key`) are created at boot.
+    // BogDev's redesign categories, with their `key`.
+    await createBogdevCategories();
     const [privacidad, ia] = await Promise.all(
       (['privacidad', 'ia'] as const).map((key) =>
         strapi.documents(CATEGORY_UID).findFirst({ filters: { key } })
