@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_site_modules",
+  "info": {
+    "displayName": "Modules",
+    "icon": "puzzle",
+    "description": "Features the frontend turns on. All of them are on unless turned off here"
+  },
+  "options": {},
+  "attributes": {
+    "newsletter": { "type": "boolean", "default": true, "required": true },
+    "comments": { "type": "boolean", "default": true, "required": true },
+    "accounts": { "type": "boolean", "default": true, "required": true },
+    "drafts": { "type": "boolean", "default": true, "required": true },
+    "fediverse": { "type": "boolean", "default": true, "required": true },
+    "search": { "type": "boolean", "default": true, "required": true },
+    "support": { "type": "boolean", "default": true, "required": true }
+  }
+}

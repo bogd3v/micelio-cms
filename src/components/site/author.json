@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_site_authors",
+  "info": {
+    "displayName": "Author",
+    "icon": "user",
+    "description": "Who writes the site"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "regex": "^https?://\\S+$"
+    }
+  }
+}

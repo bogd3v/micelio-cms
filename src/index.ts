@@ -9,6 +9,7 @@ import { revokeSubscriberPermissions } from './migrations/subscriber-permissions
 import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
+import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
 import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID } from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
@@ -100,6 +101,15 @@ export default {
     const subscriberPermissions = await revokeSubscriberPermissions(strapi);
     if (subscriberPermissions > 0) {
       strapi.log.info(`[subscribers] revoked ${subscriberPermissions} role permissions`);
+    }
+
+    const siteLocales = await seedSiteSettings(strapi);
+    if (siteLocales.length > 0) {
+      strapi.log.info(`[site-settings] created BogDev's settings in ${siteLocales.join(', ')}`);
+    }
+    const siteSettingPermissions = await revokeSiteSettingPermissions(strapi);
+    if (siteSettingPermissions > 0) {
+      strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`);
     }
 
     const editor = await ensureEditorRole(strapi);
