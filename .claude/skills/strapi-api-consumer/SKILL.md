@@ -56,12 +56,17 @@ populate: {
     on: {
       'shared.media': { populate: { file: true, credit: true } },
       'shared.slider': { populate: { items: { populate: { file: true, credit: true } } } },
+      'shared.playground': true,
     },
   },
 }
 ```
 
+With fragments (`on`), a component that is not named is **dropped** from the response, so every block type the page renders must be listed.
+
 Each figure has a `caption` and a `credit` (`shared.image-credit`, see the `strapi-media` skill); the frontend maps `kind` and `license` to labels and license URLs and numbers figures (`FIG. nn`). Read slider images from `items` (one caption and credit per image), not the legacy `files`.
+
+Playgrounds (`shared.playground`, micelio's heavy island of ADR 0006) are code the reader can run: `runtime` (`python` | `sql` | `javascript`), `code` (≤ 5,000 characters), and optionally `expectedOutput` (≤ 5,000, shown without running and as the no-JS fallback), `setup` (≤ 20,000, hidden code run before `code`, e.g. SQL tables) and `caption`. They have no nested fields, so `'shared.playground': true` returns them whole. Drafts may lack `runtime` or `code`; publishing requires both. Only the caption goes into `plainText` and search.
 
 ## Filtering, sorting, and pagination
 

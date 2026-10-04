@@ -52,7 +52,11 @@ export function markdownToPlainText(markdown: string): string {
   );
 }
 
-/** Plain text of the `blocks` dynamic zone: rich-text bodies and quotes, in order. */
+/**
+ * Plain text of the `blocks` dynamic zone, in order: rich-text bodies, quotes
+ * and playground captions. A playground's code stays out, so it does not
+ * flood search results and their snippets.
+ */
 export function blocksToPlainText(blocks: unknown): string {
   if (!Array.isArray(blocks)) return '';
 
@@ -64,6 +68,8 @@ export function blocksToPlainText(blocks: unknown): string {
     } else if (block.__component === 'shared.quote') {
       if (block.title) parts.push(block.title.trim());
       if (block.body) parts.push(markdownToPlainText(block.body));
+    } else if (block.__component === 'shared.playground' && block.caption) {
+      parts.push(block.caption.trim());
     }
   }
   return parts

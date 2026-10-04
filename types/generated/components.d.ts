@@ -662,6 +662,33 @@ export interface SharedMetaSocial extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedPlayground extends Struct.ComponentSchema {
+  collectionName: 'components_shared_playgrounds';
+  info: {
+    description: 'Code the reader can run in the browser, with the output shown before running it';
+    displayName: 'Playground';
+    icon: 'code';
+  };
+  attributes: {
+    caption: Schema.Attribute.Text;
+    code: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 5000;
+      }>;
+    expectedOutput: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 5000;
+      }>;
+    runtime: Schema.Attribute.Enumeration<['python', 'sql', 'javascript']> &
+      Schema.Attribute.Required;
+    setup: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20000;
+      }>;
+  };
+}
+
 export interface SharedQuote extends Struct.ComponentSchema {
   collectionName: 'components_shared_quotes';
   info: {
@@ -929,6 +956,7 @@ declare module '@strapi/strapi' {
       'shared.image-credit': SharedImageCredit;
       'shared.media': SharedMedia;
       'shared.meta-social': SharedMetaSocial;
+      'shared.playground': SharedPlayground;
       'shared.quote': SharedQuote;
       'shared.reference': SharedReference;
       'shared.rich-text': SharedRichText;
