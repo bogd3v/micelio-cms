@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
+import { createBogdevCategories } from './helpers/bogdev-categories';
 import type { RankedArticle } from '../src/plugins/fediverse/server/src/types/stats';
 import type { InteractionType } from '../src/plugins/fediverse/server/src/types/interactions';
 
@@ -111,7 +112,8 @@ describe('Fediverse batch stats and ranking', () => {
       await locales.create({ code: 'es', name: 'Spanish (es)' });
     }
 
-    // The category migration creates the five categories on bootstrap.
+    // BogDev's five categories, after the Spanish locale so they get both translations.
+    await createBogdevCategories();
     const category = async (slug: string) => {
       const found = await strapi.documents(CATEGORY_UID).findFirst({ filters: { slug } });
       if (!found) throw new Error(`Category ${slug} not found`);

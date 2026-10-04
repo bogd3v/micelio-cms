@@ -58,6 +58,8 @@ The frontend server reads some content with a **custom** API token (Settings →
 
 The site's theme (`theme` in `site-setting`) is covered by the same `find`; it needs no permission of its own. Its values only pick an installed theme and bounded overrides, and the frontend re-serializes them instead of injecting the stored strings (micelio ADR 0005).
 
+Instead of creating it by hand, an instance can set `FRONTEND_API_TOKEN` (32+ random characters, the same value as the frontend's `NUXT_STRAPI_API_TOKEN`): on every boot `src/migrations/frontend-token.ts` creates or updates a Custom token named `frontend` with that key and exactly the permissions the frontend documents (`docs/security.md` in micelio), and resets them if someone widened them. Rotating it means changing the variable on both sides. Production does not set it and keeps its token created by hand.
+
 Give that token only the permissions it needs, and rotate it if it leaks.
 
 ## How dependencies are handled

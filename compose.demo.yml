@@ -1,0 +1,111 @@
+# Micelio demo: Postgres + micelio-cms + the micelio frontend, with a neutral
+# bilingual blog seeded on the first boot (#74).
+#
+#   docker compose -f compose.demo.yml up
+#
+# Blog: http://localhost:3000 · Admin: http://localhost:1337/admin (create the
+# first admin on the first visit). Only for trying Micelio on your machine:
+# ports are bound to 127.0.0.1, and the secrets are generated on the first run
+# into the `demo-secrets` volume. `down -v` deletes everything.
+#
+# MICELIO_CMS_IMAGE and MICELIO_IMAGE pick other images, e.g. a local build.
+
+name: micelio-demo
+
+services:
+  # Generates Strapi's keys, the database password and the frontend's API
+  # token once (scripts/demo-secrets.js); later runs keep them.
+  init:
+    image: ${MICELIO_CMS_IMAGE:-ghcr.io/bogd3v/micelio-cms:latest}
+    user: '0'
+    entrypoint: ['node', 'scripts/demo-secrets.js', '/secrets']
+    volumes:
+      - demo-secrets:/secrets
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD_FILE: /secrets/db_password
+    volumes:
+      - demo-secrets:/secrets:ro
+      - demo-db:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U strapi -d strapi']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  cms:
+    image: ${MICELIO_CMS_IMAGE:-ghcr.io/bogd3v/micelio-cms:latest}
+    # Loads the generated secrets, then starts as the image does.
+    entrypoint:
+      - /sbin/tini
+      - --
+      - sh
+      - -c
+      - set -a && . /secrets/cms.env && set +a && exec docker-entrypoint.sh node server.js
+    environment:
+      URL: http://localhost:1337
+      FRONTEND_URL: http://localhost:3000
+      MICELIO_DEMO: 'true'
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_SSL: 'false'
+    ports:
+      - '127.0.0.1:1337:1337'
+      # The frontend shares this service's network (see below).
+      - '127.0.0.1:3000:8080'
+    volumes:
+      - demo-secrets:/secrets:ro
+      - demo-uploads:/app/public/uploads
+    # Declared here too: images built as OCI (e.g. by Podman) drop the
+    # Dockerfile's HEALTHCHECK, and the frontend waits for this one.
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:1337/_health']
+      interval: 10s
+      timeout: 5s
+      start_period: 120s
+      retries: 30
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: ${MICELIO_IMAGE:-ghcr.io/bogd3v/micelio:latest}
+    # Same network namespace as the CMS: the frontend's server and the
+    # visitor's browser both reach Strapi at http://localhost:1337, the one URL
+    # the frontend uses for API calls and for image links.
+    network_mode: service:cms
+    # The image is distroless (no shell): a few lines of Node load the token,
+    # then start the Nuxt server as the image does.
+    entrypoint:
+      - /nodejs/bin/node
+      - -e
+      - >-
+        const fs = require('fs');
+        for (const line of fs.readFileSync('/secrets/frontend.env', 'utf8').split('\n')) {
+          const match = /^([A-Z_][A-Z0-9_]*)='(.*)'$$/.exec(line);
+          if (match) process.env[match[1]] = match[2];
+        }
+        import('/app/.output/server/index.mjs');
+    environment:
+      NUXT_PUBLIC_STRAPI_URL: http://localhost:1337
+      NUXT_PUBLIC_SITE_URL: http://localhost:3000
+    volumes:
+      - demo-secrets:/secrets:ro
+    depends_on:
+      cms:
+        condition: service_healthy
+
+volumes:
+  demo-secrets:
+  demo-db:
+  demo-uploads:
