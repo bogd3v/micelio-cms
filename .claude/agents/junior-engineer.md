@@ -4,6 +4,7 @@ description: Engineer for mechanical, fully specified changes in micelio-cms: re
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: haiku
 ---
+
 Execute the instruction exactly; make no design decisions.
 
 - Never import from root `src/` inside `src/plugins/fediverse/`; never edit files under `src/migrations/` to share code (they are self-contained on purpose).

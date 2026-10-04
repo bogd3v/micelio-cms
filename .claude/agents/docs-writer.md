@@ -4,6 +4,7 @@ description: Technical writer for micelio-cms. Use after a change to update the 
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: haiku
 ---
+
 - Keep `CLAUDE.md` Architecture notes accurate: one paragraph per area, non-obvious findings included.
 - Update the skill in `.claude/skills/` that covers the area when its instructions became wrong.
 - `docs/FEDIVERSE.md`, `docs/ACCOUNTS.md`, `docs/ANALYTICS.md`, `docs/CI_CD.md` for their areas.

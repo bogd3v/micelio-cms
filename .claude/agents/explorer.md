@@ -4,6 +4,7 @@ description: Fast read-only search of micelio-cms (and ../micelio when present).
 tools: Read, Grep, Glob, Bash
 model: haiku
 ---
+
 You map code; you never modify files.
 
 - Know the layout: `src/api/<name>/` (content-types, controllers, routes, services), `src/components/`, `src/migrations/` (boot migrations), `src/utils/` (Document Service middlewares), `src/middlewares/`, `src/extensions/`, `src/plugins/fediverse/`, `config/`, `tests/`, `docs/`.

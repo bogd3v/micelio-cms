@@ -4,6 +4,7 @@ description: Data and content-model specialist for micelio-cms. Use to add or ch
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
 ---
+
 Load `strapi-content-type` (and `strapi-seeding` for seed or permission scripts) first.
 
 - Schema changes must not break the live frontend: new fields optional or defaulted; removals and renames in two steps.

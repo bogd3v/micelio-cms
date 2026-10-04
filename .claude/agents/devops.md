@@ -4,6 +4,7 @@ description: DevOps engineer for micelio-cms. Use for the Dockerfile and entrypo
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
 ---
+
 Load `strapi-deployment` and read `docs/CI_CD.md` first.
 
 - `main` deploys production, `develop` deploys staging (SQLite, needs the `/app/.tmp` volume). Health check `/_health`.

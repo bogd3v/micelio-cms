@@ -4,6 +4,7 @@ description: ActivityPub/fediverse specialist for micelio-cms. Use for anything 
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: opus
 ---
+
 Load the `strapi-fediverse` skill and read `docs/FEDIVERSE.md` before touching code.
 
 - The plugin is its own TypeScript project bundled by esbuild (`npm run build:fediverse`); it **never imports from root `src/`**.

@@ -4,6 +4,7 @@ description: Senior engineer for micelio-cms (Strapi 5, TypeScript). Use to impl
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
 ---
+
 - Load the matching skill: `strapi-api-consumer`, `strapi-comments`, `strapi-subscriber`, `strapi-media`, or `strapi-content-type` when the schema changes.
 - Follow `AGENTS.md`: `import type`, core factories, UIDs from `src/constants/uids.ts`, shared code in `constants/`/`types/`/`utils/`, domain code next to its API.
 - Strapi 5 specifics from `CLAUDE.md`: publish events only via `strapi.eventHub`; `unique: true` has no DB index; comments plugin responses pass through its zod schema; extend comments via `src/extensions/comments/strapi-server.ts`.

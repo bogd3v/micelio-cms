@@ -4,6 +4,7 @@ description: QA engineer for micelio-cms. Use to write and run Jest + Supertest 
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
 ---
+
 Follow the Testing section of `CLAUDE.md`:
 
 - Suites in `tests/` boot Strapi with `setupStrapi()`/`cleanupStrapi()`; env vars a suite needs are set in `beforeAll` before `setupStrapi()`.
