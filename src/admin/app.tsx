@@ -10,7 +10,7 @@ export default {
     app.widgets.register({
       id: 'visitors',
       icon: ChartPie,
-      title: { id: 'bogdev.widgets.visitors.title', defaultMessage: 'Visitors' },
+      title: { id: 'micelio.widgets.visitors.title', defaultMessage: 'Visitors' },
       component: async () => {
         const { VisitorsWidget } = await import('./components/VisitorsWidget');
         return VisitorsWidget;

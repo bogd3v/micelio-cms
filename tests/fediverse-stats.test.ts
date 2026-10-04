@@ -104,6 +104,7 @@ describe('Fediverse batch stats and ranking', () => {
     // Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
     process.env.FEDIVERSE_ENABLED = 'true';
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog';
+    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev';
     await setupStrapi();
     const locales = strapi.plugin('i18n').service('locales');
     if (!(await locales.findByCode('es'))) {

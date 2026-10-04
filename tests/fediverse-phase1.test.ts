@@ -62,6 +62,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
     // Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
     process.env.FEDIVERSE_ENABLED = 'true';
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog';
+    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev';
     process.env.FRONTEND_URL = 'https://blog.example.test';
     await setupStrapi();
 
@@ -92,7 +93,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
   });
 
   it('never names the actor after the About page title', async () => {
-    // No global settings yet, but an About page whose heading isn't a name.
+    // No global or site settings, but an About page whose heading isn't a name.
     const documents = (uid: string) => ({
       findFirst: async () => (uid === 'api::about.about' ? { title: 'Acerca de este blog' } : null),
     });
@@ -101,7 +102,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       .service('actor-profile')
       .getActorProfile({ ...strapi, documents }, actorUrl);
 
-    expect(profile.name).toBe('BogDev');
+    expect(profile.name).toBe('Micelio');
   });
 
   it('serves the avatar, header, frontend link and profile fields', async () => {
@@ -292,7 +293,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
         usage: { localPosts: number };
       };
 
-      expect(body.software.name).toBe('devbog-strapi');
+      expect(body.software.name).toBe('micelio-cms');
       expect(body.protocols).toContain('activitypub');
       expect(typeof body.usage.localPosts).toBe('number');
     });

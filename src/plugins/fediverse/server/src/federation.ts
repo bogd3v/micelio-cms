@@ -307,7 +307,7 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
 
     return {
       software: {
-        name: 'devbog-strapi',
+        name: 'micelio-cms',
         version: pkg.version,
       },
       protocols: ['activitypub'],

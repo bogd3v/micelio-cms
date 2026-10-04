@@ -17,6 +17,7 @@ import { CREDIT_KINDS, LICENSES } from '../constants/licenses';
 import { ARTICLE_UID } from '../constants/uids';
 import type { ArticleRecord, MediaRecord } from '../types/articles';
 import { escapeHtml } from '../utils/html';
+import { frontendBaseUrl } from '../utils/frontend-url';
 
 const FEDERATED_STORE_KEY = 'federatedArticles';
 
@@ -66,7 +67,7 @@ const ARTICLE_POPULATE = {
  * gets that prefix — otherwise the link would open the wrong language.
  */
 export function getFrontendArticleUrl(slug: string, locale?: string | null): URL {
-  const base = (process.env.FRONTEND_URL ?? 'https://bogdev.com.co').replace(/\/+$/, '');
+  const base = frontendBaseUrl().replace(/\/+$/, '');
   const path = process.env.FRONTEND_ARTICLE_PATH ?? '/blog/{slug}';
   const frontendDefault = process.env.FRONTEND_DEFAULT_LOCALE ?? 'en';
   const prefix = locale && locale !== frontendDefault ? `/${locale}` : '';
@@ -89,7 +90,7 @@ export function parseFrontendArticleUrl(value: string): { slug: string; locale: 
   } catch {
     return null;
   }
-  const base = new URL(process.env.FRONTEND_URL ?? 'https://bogdev.com.co');
+  const base = new URL(frontendBaseUrl());
   if (url.origin !== base.origin) return null;
 
   const template = process.env.FRONTEND_ARTICLE_PATH ?? '/blog/{slug}';

@@ -4,7 +4,7 @@ import { setupStrapi, cleanupStrapi } from './strapi';
 import { setPublicPermissions, setRolePermissions } from './helpers/permissions';
 import type { ApiSiteSetting } from './helpers/api-types';
 import {
-  BOGDEV_SITE_SETTINGS,
+  neutralSiteSettings,
   revokeSiteSettingPermissions,
   seedSiteSettings,
 } from '../src/migrations/site-settings';
@@ -49,29 +49,28 @@ describe('Site settings', () => {
     await cleanupStrapi();
   });
 
-  it("returns BogDev's settings, seeded on boot, to the frontend token", async () => {
+  it('returns neutral settings, seeded on boot, to the frontend token', async () => {
     const settings = await read();
 
     expect(settings).toMatchObject({
       locale: 'en',
-      name: 'BogDev',
-      description: 'Personal blog about AI, Software, Linux and more',
-      url: 'https://bogdev.com.co',
+      name: 'Micelio',
+      description: 'A site built with Micelio',
+      // FRONTEND_URL is unset in tests: the development default.
+      url: 'http://localhost:3000',
       defaultLocale: 'en',
-      author: { name: 'Alejandro Ramirez', url: 'https://bogdev.com.co/about' },
-      contactEmail: 'gx_alejandro@hotmail.com',
-      privacyContactEmail: 'gx_alejandro@hotmail.com',
-      privacyUpdatedAt: '2026-10-01T17:00:00.000Z',
-      supportHandle: 'ale9420',
+      author: null,
+      contactEmail: null,
+      privacyContactEmail: null,
+      privacyUpdatedAt: null,
+      supportHandle: null,
       logo: null,
       favicon: null,
       defaultOgImage: null,
       // No theme: the frontend keeps its default theme as it is.
       theme: null,
     });
-    expect(settings.socialLinks.map(({ network, url }) => ({ network, url }))).toEqual(
-      BOGDEV_SITE_SETTINGS.socialLinks
-    );
+    expect(settings.socialLinks).toEqual([]);
     expect(Object.fromEntries(MODULES.map((name) => [name, settings.modules[name]]))).toEqual(
       Object.fromEntries(MODULES.map((name) => [name, true]))
     );
@@ -83,13 +82,30 @@ describe('Site settings', () => {
     await strapi.plugin('i18n').service('locales').create({ code: 'es', name: 'Spanish (es)' });
     await strapi.documents(SITE_SETTING).delete({ documentId: await documentId(), locale: '*' });
 
-    expect(await seedSiteSettings(strapi)).toEqual(['en', 'es']);
+    process.env.FRONTEND_URL = 'https://example.test';
+    try {
+      expect(await seedSiteSettings(strapi)).toEqual(['en', 'es']);
+    } finally {
+      delete process.env.FRONTEND_URL;
+    }
     expect(await seedSiteSettings(strapi)).toEqual([]);
 
     const spanish = await read('es');
-    expect(spanish).toMatchObject({ locale: 'es', name: 'BogDev', supportHandle: 'ale9420' });
-    expect(spanish.description).toBe(BOGDEV_SITE_SETTINGS.description);
-    expect(spanish.socialLinks).toHaveLength(4);
+    expect(spanish).toMatchObject({
+      locale: 'es',
+      name: 'Micelio',
+      description: 'Un sitio hecho con Micelio',
+      url: 'https://example.test',
+    });
+    expect(spanish.socialLinks).toEqual([]);
+  });
+
+  it('never seeds anything that identifies BogDev', () => {
+    const seeded = JSON.stringify([
+      neutralSiteSettings('en', 'en'),
+      neutralSiteSettings('es', 'es'),
+    ]);
+    expect(seeded).not.toMatch(/bogdev|bogd3v|ale9420|alejandro|hotmail/i);
   });
 
   it('keeps the other modules on when one is turned off', async () => {
