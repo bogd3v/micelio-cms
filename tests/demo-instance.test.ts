@@ -6,6 +6,8 @@ import {
   ensureFrontendToken,
   FRONTEND_TOKEN_NAME,
   FRONTEND_TOKEN_PERMISSIONS,
+  BUILD_TOKEN_NAME,
+  BUILD_TOKEN_PERMISSIONS,
 } from '../src/migrations/api-tokens';
 
 // The demo instance (#74): MICELIO_DEMO seeds a neutral bilingual site on
@@ -20,6 +22,7 @@ const SITE_SETTING_UID = 'api::site-setting.site-setting';
 const TOKEN_UID = 'admin::api-token';
 const MARKER = { type: 'core', name: 'migrations', key: 'demo-seed' };
 const ACCESS_KEY = 'demo-frontend-token-0123456789abcdef0123456789';
+const BUILD_KEY = 'demo-build-token-0123456789abcdef0123456789abc';
 
 type Named = { name?: string; title?: string; slug?: string; locale?: string };
 
@@ -31,6 +34,7 @@ describe('Demo instance', () => {
   beforeAll(async () => {
     process.env.MICELIO_DEMO = 'true';
     process.env.FRONTEND_API_TOKEN = ACCESS_KEY;
+    process.env.BUILD_API_TOKEN = BUILD_KEY;
     await setupStrapi();
   });
 
@@ -122,6 +126,14 @@ describe('Demo instance', () => {
       }
     });
 
+    it('leaves the home page empty with MICELIO_DEMO=true', async () => {
+      for (const locale of ['en', 'es']) {
+        expect(
+          await strapi.documents(SITE_SETTING_UID).findFirst({ locale, populate: ['homePage'] })
+        ).toMatchObject({ homePage: null });
+      }
+    });
+
     it('never mentions BogDev or a real person', async () => {
       const everything = JSON.stringify(
         await Promise.all(
@@ -152,6 +164,25 @@ describe('Demo instance', () => {
       process.env.MICELIO_DEMO = 'false';
       expect(await seedDemoContent(strapi)).toBe('disabled');
       process.env.MICELIO_DEMO = 'true';
+    });
+  });
+
+  describe('build token', () => {
+    it('is created read-only from BUILD_API_TOKEN and reads pages', async () => {
+      const token = await strapi.db.query(TOKEN_UID).findOne({
+        where: { name: BUILD_TOKEN_NAME },
+        populate: ['permissions'],
+      });
+      expect(token.type).toBe('custom');
+      expect(token.permissions.map(({ action }: { action: string }) => action).sort()).toEqual(
+        [...BUILD_TOKEN_PERMISSIONS].sort()
+      );
+      const res = await http().get('/api/pages').set(bearer(BUILD_KEY));
+      expect(res.status).toBe(200);
+      expect(res.body.data.map((page: { slug: string }) => page.slug)).toContain('showcase');
+      expect(
+        (await http().post('/api/pages').set(bearer(BUILD_KEY)).send({ data: {} })).status
+      ).toBe(403);
     });
   });
 

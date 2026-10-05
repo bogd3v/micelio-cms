@@ -29,6 +29,8 @@ const TAG_UID = 'api::tag.tag';
 // Marks that the demo content was written once; afterwards it is the user's.
 const MARKER = { type: 'core', name: 'migrations', key: 'demo-seed' };
 const VERSION = 1;
+// `true` and `static` write the same site; `landing` also makes the showcase page the home page.
+const DEMO_PROFILES = ['true', 'static', 'landing'];
 
 export type DemoSeedReport =
   'disabled' | 'applied' | 'skipped-existing-content' | 'already-applied';
@@ -82,15 +84,19 @@ async function ensureLocales(strapi: Core.Strapi): Promise<void> {
 }
 
 /**
- * When `MICELIO_DEMO=true`, writes the demo content once (#74): site settings
- * for a fictional site, an author, two categories, three tags, three
- * published articles with generated covers, an About page and a page that
- * uses every section of the catalog (#75), in English and Spanish. It never touches an instance that already has articles, and a
- * store marker keeps it from running again, so whatever the user changes or
- * deletes afterwards stays that way. Runs after `seedSiteSettings`.
+ * When `MICELIO_DEMO` is `true`, `static` or `landing`, writes the demo content
+ * once (#74): site settings for a fictional site, an author, two categories,
+ * three tags, three published articles with generated covers, an About page
+ * and a page that uses every section of the catalog (#75), in English and
+ * Spanish. `landing` also sets that page as the site settings' `homePage` in
+ * each language (#84). Any other value leaves the demo disabled. It never
+ * touches an instance that already has articles, and a store marker keeps it
+ * from running again, so whatever the user changes or deletes afterwards stays
+ * that way. Runs after `seedSiteSettings`.
  */
 export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedReport> {
-  if (process.env.MICELIO_DEMO !== 'true') return 'disabled';
+  const profile = process.env.MICELIO_DEMO ?? '';
+  if (!DEMO_PROFILES.includes(profile)) return 'disabled';
   if (await strapi.store.get(MARKER)) return 'already-applied';
   if ((await strapi.db.query(ARTICLE_UID).count()) > 0) return 'skipped-existing-content';
 
@@ -196,14 +202,24 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
     }
   });
 
-  await seedShowcasePage(strapi, categoryIds.garden);
+  const showcaseId = await seedShowcasePage(strapi, categoryIds.garden);
+  if (profile === 'landing' && settings) {
+    // `homePage` is localized: each language points at its own version of the page.
+    await forEachLocale((locale) =>
+      documents(strapi, SITE_SETTING_UID).update({
+        documentId: settings.documentId,
+        locale,
+        data: { homePage: showcaseId },
+      })
+    );
+  }
 
   await strapi.store.set({ ...MARKER, value: { version: VERSION } });
   return 'applied';
 }
 
 /** A published page with every section of the catalog, in both languages (#75). */
-async function seedShowcasePage(strapi: Core.Strapi, category: string): Promise<void> {
+async function seedShowcasePage(strapi: Core.Strapi, category: string): Promise<string> {
   const [main, ...others] = DEMO_LOCALES;
   const palettes = DEMO_ARTICLES.map((article) => article.palette);
   const gallery: number[] = [];
@@ -247,4 +263,5 @@ async function seedShowcasePage(strapi: Core.Strapi, category: string): Promise<
       data: dataFor(locale),
     });
   }
+  return created.documentId;
 }
