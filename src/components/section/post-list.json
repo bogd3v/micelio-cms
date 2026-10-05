@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_section_post_lists",
+  "info": {
+    "displayName": "Post list",
+    "icon": "bulletList",
+    "description": "Latest articles, of a category or a tag"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["cards", "list"],
+      "default": "cards",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::category.category"
+    },
+    "tag": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::tag.tag"
+    },
+    "count": {
+      "type": "integer",
+      "min": 1,
+      "max": 12,
+      "default": 3,
+      "required": true
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "collectionName": "components_section_links",
+  "info": {
+    "displayName": "Link",
+    "icon": "link",
+    "description": "A labeled link: http(s), mailto: or a path on the site"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true,
+      "regex": "^(https?://\\S+|mailto:\\S+|/\\S*)$"
+    }
+  }
+}

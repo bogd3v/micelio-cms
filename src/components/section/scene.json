@@ -1,0 +1,39 @@
+{
+  "collectionName": "components_section_scenes",
+  "info": {
+    "displayName": "Scene",
+    "icon": "globe",
+    "description": "3D scene (heavy island): a glTF model with a required poster and alt text"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["background", "inline"],
+      "default": "background",
+      "required": true
+    },
+    "model": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["files"],
+      "required": true
+    },
+    "poster": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "required": true
+    },
+    "alt": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "text"
+    }
+  }
+}

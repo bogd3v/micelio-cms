@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_section_logos",
+  "info": {
+    "displayName": "Logo",
+    "icon": "picture",
+    "description": "A logo with its name and an optional link"
+  },
+  "options": {},
+  "attributes": {
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "required": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "regex": "^https?://\\S+$"
+    }
+  }
+}

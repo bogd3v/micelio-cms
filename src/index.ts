@@ -9,15 +9,41 @@ import { revokeSubscriberPermissions } from './migrations/subscriber-permissions
 import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
-import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID } from './constants/uids';
+import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
+import { seedDemoContent } from './migrations/demo-seed';
+import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens';
+import { revokePagePermissions } from './migrations/page-permissions';
+import {
+  ABOUT_UID,
+  ARTICLE_STAT_UID,
+  ARTICLE_UID,
+  PAGE_UID,
+  SITE_SETTING_UID,
+} from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
+import { assertAccentOverridesValid } from './utils/site-theme';
+import { assertPageSectionsValid } from './utils/page-sections';
+import { registerRebuildHook } from './utils/rebuild-hook';
 import { restrictDraftsToEditors } from './utils/drafts-access';
+import { assertFrontendUrlConfigured } from './utils/frontend-url';
+
+/** Unsubscribes the rebuild hook; set while it is registered. */
+let stopRebuildHook: (() => void) | null = null;
 
 export default {
   /** Before init: Document Service middlewares and extra admin routes. */
   register({ strapi }: { strapi: Core.Strapi }) {
+    // Links in emails, analytics paths and the site settings' URL point to the
+    // frontend; in production there is no default to fall back on.
+    assertFrontendUrlConfigured();
+    if (process.env.SMTP_HOST && !process.env.EMAIL_FROM) {
+      strapi.log.warn(
+        "[email] EMAIL_FROM is not set: emails go out from no-reply@ the frontend's host"
+      );
+    }
+
     // Rejects citations without a reference, and keeps the article's
     // searchable plain text in step with its body.
     strapi.documents.use(async (context, next) => {
@@ -45,6 +71,31 @@ export default {
       ) {
         const data = (context.params as { data?: Record<string, unknown> }).data;
         if (data) assertImageCreditsValid(data);
+      }
+      return next();
+    });
+
+    // Rejects a post list with both a category and a tag, and a scene whose
+    // model is not a glTF file.
+    strapi.documents.use(async (context, next) => {
+      if (
+        context.uid === PAGE_UID &&
+        (context.action === 'create' || context.action === 'update')
+      ) {
+        const data = (context.params as { data?: Record<string, unknown> }).data;
+        if (data) await assertPageSectionsValid(strapi, data);
+      }
+      return next();
+    });
+
+    // Rejects incomplete accent overrides and two overrides for one mode.
+    strapi.documents.use(async (context, next) => {
+      if (
+        context.uid === SITE_SETTING_UID &&
+        (context.action === 'create' || context.action === 'update')
+      ) {
+        const data = (context.params as { data?: Record<string, unknown> }).data;
+        if (data) assertAccentOverridesValid(data);
       }
       return next();
     });
@@ -102,6 +153,36 @@ export default {
       strapi.log.info(`[subscribers] revoked ${subscriberPermissions} role permissions`);
     }
 
+    const siteLocales = await seedSiteSettings(strapi);
+    if (siteLocales.length > 0) {
+      strapi.log.info(`[site-settings] created neutral settings in ${siteLocales.join(', ')}`);
+    }
+    // After the site settings exist: the demo replaces their neutral values.
+    const demo = await seedDemoContent(strapi);
+    if (demo !== 'disabled' && demo !== 'already-applied') {
+      strapi.log.info(`[demo] ${demo}`);
+    }
+
+    for (const [name, ensure] of [
+      ['frontend', ensureFrontendToken],
+      ['build', ensureBuildToken],
+    ] as const) {
+      const report = await ensure(strapi);
+      if (report === 'created' || report === 'updated') {
+        strapi.log.info(`[api-tokens] ${report} the ${name} API token`);
+      }
+    }
+
+    const pagePermissions = await revokePagePermissions(strapi);
+    if (pagePermissions > 0) {
+      strapi.log.info(`[pages] revoked ${pagePermissions} role permissions`);
+    }
+
+    const siteSettingPermissions = await revokeSiteSettingPermissions(strapi);
+    if (siteSettingPermissions > 0) {
+      strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`);
+    }
+
     const editor = await ensureEditorRole(strapi);
     if (editor.roleCreated || editor.permissionsGranted > 0) {
       strapi.log.info(`[roles] editor: ${JSON.stringify(editor)}`);
@@ -114,6 +195,14 @@ export default {
     }
 
     scheduleUmamiSync(strapi);
+
+    // Static and landing sites rebuild when published content changes.
+    stopRebuildHook = registerRebuildHook(strapi);
+  },
+
+  destroy() {
+    stopRebuildHook?.();
+    stopRebuildHook = null;
   },
 };
 

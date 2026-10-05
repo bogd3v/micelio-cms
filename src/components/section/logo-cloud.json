@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_section_logo_clouds",
+  "info": {
+    "displayName": "Logo cloud",
+    "icon": "apps",
+    "description": "Logos with links"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["row", "marquee"],
+      "default": "row",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "logos": {
+      "type": "component",
+      "repeatable": true,
+      "component": "section.logo",
+      "min": 1
+    }
+  }
+}

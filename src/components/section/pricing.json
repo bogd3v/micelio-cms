@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_section_pricings",
+  "info": {
+    "displayName": "Pricing",
+    "icon": "priceTag",
+    "description": "Plans with price and features"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["cards", "table"],
+      "default": "cards",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "text"
+    },
+    "plans": {
+      "type": "component",
+      "repeatable": true,
+      "component": "section.plan",
+      "min": 1
+    }
+  }
+}

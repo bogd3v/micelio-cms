@@ -34,17 +34,17 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 
 ## Environment variables
 
-| Variable                                           | Default                 | Notes                                                                                    |
-| -------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
-| `FEDIVERSE_ENABLED`                                | `false`                 | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types    |
-| `URL`                                              | `http://localhost:1337` | Strapi's public origin. Activity ids built outside a request come from it: keep it right |
-| `FEDIVERSE_ACTOR_USERNAME`                         | `bogdev`                | The handle's `@user` (`preferredUsername`); safe to change, WebFinger maps it            |
-| `FEDIVERSE_ACTOR_IDENTIFIER`                       | `devbog`                | Path of the actor URI. Never change it: remote follows are keyed by the URI              |
-| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                   | Fallbacks when `global` has no name/description                                          |
-| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo     | "Código" profile field link                                                              |
-| `FRONTEND_URL`                                     | `https://bogdev.com.co` | Origin of the human-facing article links                                                 |
-| `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`          | Article path template                                                                    |
-| `FRONTEND_DEFAULT_LOCALE`                          | `en`                    | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links      |
+| Variable                                           | Default                                                   | Notes                                                                                    |
+| -------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `FEDIVERSE_ENABLED`                                | `false`                                                   | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types    |
+| `URL`                                              | `http://localhost:1337`                                   | Strapi's public origin. Activity ids built outside a request come from it: keep it right |
+| `FEDIVERSE_ACTOR_USERNAME`                         | required                                                  | The handle's `@user` (`preferredUsername`); safe to change, WebFinger maps it            |
+| `FEDIVERSE_ACTOR_IDENTIFIER`                       | required                                                  | Path of the actor URI. Never change it: remote follows are keyed by the URI              |
+| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                                                     | Fallbacks when `global` and the site settings have no name/description                   |
+| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo                                       | "Código" profile field link                                                              |
+| `FRONTEND_URL`                                     | required in production; `http://localhost:3000` otherwise | Origin of the human-facing article links                                                 |
+| `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`                                            | Article path template                                                                    |
+| `FRONTEND_DEFAULT_LOCALE`                          | `en`                                                      | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links      |
 
 ## Endpoints
 

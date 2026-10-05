@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_section_rich_texts",
+  "info": {
+    "displayName": "Rich text",
+    "icon": "feather",
+    "description": "Long text in Markdown"
+  },
+  "options": {},
+  "attributes": {
+    "body": {
+      "type": "richtext",
+      "required": true
+    }
+  }
+}

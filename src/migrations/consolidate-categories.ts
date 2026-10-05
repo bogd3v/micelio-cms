@@ -187,6 +187,11 @@ function keyOf(category: CategoryRow): string {
   return (category.slug || category.name || '').trim().toLowerCase();
 }
 
+/** Whether a category key is one of the redesign's or a legacy name one of them absorbs. */
+function isTargetOrSource(key: string): boolean {
+  return CATEGORY_TARGETS.some((target) => target.slug === key || target.sources.includes(key));
+}
+
 function labelOf(category: CategoryRow): string {
   return category.name || category.slug || String(category.id);
 }
@@ -290,7 +295,8 @@ async function relinkByLocale(strapi: Core.Strapi, joinTable: JoinTable): Promis
 }
 
 /**
- * Brings the categories to the five of the redesign, with their key, bird,
+ * On BogDev's instance (one that has any of its categories), brings the
+ * categories to the five of the redesign, with their key, bird,
  * pillar flag and order, translated into every configured locale among
  * `CATEGORY_LOCALES`. Idempotent: once the targets exist in sync and no legacy
  * rows remain, it changes nothing.
@@ -322,6 +328,10 @@ export async function consolidateCategories(strapi: Core.Strapi): Promise<Consol
     .filter((code): code is CategoryLocale => isCategoryLocale(code) && code !== defaultLocale);
 
   const existing = await loadDocuments(strapi, defaultLocale);
+  // BogDev's redesign, not Micelio's: only an instance that already has one of
+  // these categories (or a legacy name they absorb) is consolidated. A new
+  // instance keeps its own categories and never gets BogDev's (#74).
+  if (!existing.some(({ main }) => isTargetOrSource(keyOf(main)))) return report;
   const claimed = new Set<string>();
 
   for (const target of CATEGORY_TARGETS) {

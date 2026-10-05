@@ -48,3 +48,32 @@ export interface ActivityJson {
   orderedItems?: ActivityJson | ActivityJson[];
   [field: string]: unknown;
 }
+
+/** The site settings single type (`GET /api/site-setting?populate=*`). */
+export interface ApiSiteSetting {
+  documentId: string;
+  locale: string;
+  name: string;
+  description: string | null;
+  url: string | null;
+  defaultLocale: string;
+  author: { name: string; url: string | null } | null;
+  logo: unknown;
+  favicon: unknown;
+  defaultOgImage: unknown;
+  socialLinks: { network: string; url: string }[];
+  contactEmail: string | null;
+  privacyContactEmail: string | null;
+  privacyUpdatedAt: string | null;
+  supportHandle: string | null;
+  modules: Record<string, boolean>;
+  theme: ApiSiteTheme | null;
+}
+
+export interface ApiSiteTheme {
+  themeId: string | null;
+  defaultMode: string | null;
+  /** Only returned when populated explicitly (`populate[theme][populate]=*`). */
+  accentOverrides?: { mode: string; color: string }[];
+  displayFont: string | null;
+}

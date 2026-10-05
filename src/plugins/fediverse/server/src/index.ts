@@ -4,6 +4,7 @@ import followerSchema from './content-types/follower/schema.json';
 import interactionSchema from './content-types/interaction/schema.json';
 import stats from './controllers/stats';
 import routes from './routes';
+import { assertActorConfigured } from './constants/actor';
 import { mountFediverseMiddleware } from './federation';
 import actorProfile from './services/actor-profile';
 import followers from './services/followers';
@@ -15,9 +16,15 @@ import {
   subscribe as subscribePublisher,
   unsubscribe as unsubscribePublisher,
 } from './services/publisher';
+import { frontendBaseUrl } from './utils/frontend-url';
 
 const plugin = {
   register({ strapi }: { strapi: Core.Strapi }) {
+    // Without an actor identity or a frontend URL the plugin would federate
+    // under a made-up account or link to another site: refuse to start.
+    assertActorConfigured();
+    frontendBaseUrl();
+
     // Mounted in register() on purpose: plugin register() runs before
     // server.initMiddlewares() (which mounts `strapi::body`), and the router
     // is only mounted at listen() time. This guarantees the Fedify middleware
@@ -46,9 +53,7 @@ const plugin = {
   },
 
   config: {
-    default: {
-      actorIdentifier: 'devbog',
-    },
+    default: {},
     validator() {},
   },
 

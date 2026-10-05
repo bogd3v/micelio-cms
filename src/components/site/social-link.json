@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_site_social_links",
+  "info": {
+    "displayName": "Social link",
+    "icon": "link",
+    "description": "A profile of the site on another network"
+  },
+  "options": {},
+  "attributes": {
+    "network": {
+      "type": "enumeration",
+      "enum": ["github", "gitlab", "codeberg", "linkedin", "mastodon", "bluesky", "x", "website"],
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "regex": "^https?://\\S+$",
+      "required": true
+    }
+  }
+}

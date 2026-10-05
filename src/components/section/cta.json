@@ -1,0 +1,34 @@
+{
+  "collectionName": "components_section_ctas",
+  "info": {
+    "displayName": "Call to action",
+    "icon": "rocket",
+    "description": "A call to action"
+  },
+  "options": {},
+  "attributes": {
+    "variant": {
+      "type": "enumeration",
+      "enum": ["banner", "card"],
+      "default": "banner",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "text": {
+      "type": "text"
+    },
+    "primaryLink": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.link"
+    },
+    "secondaryLink": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.link"
+    }
+  }
+}

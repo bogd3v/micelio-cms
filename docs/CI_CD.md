@@ -325,7 +325,13 @@ DATABASE_PASSWORD=<password>
 
 # File uploads
 UPLOAD_PATH=/app/public/uploads
+
+# The frontend: links in emails, analytics paths, federated links and the
+# site settings' URL. Without it a production boot stops with an error.
+FRONTEND_URL=https://bogdev.com.co
 ```
+
+The code has no BogDev defaults (#83): what identifies the site comes from these variables and from the site settings in the admin panel. A new database starts with neutral site settings ("Micelio") and English account emails with that name; production keeps the ones it already has.
 
 ### Security Variables
 
@@ -348,13 +354,14 @@ FEDIVERSE_ENABLED=true
 # activities sent in the background build their ids from it.
 URL=https://api.bogdev.com.co
 
-# Optional (defaults shown)
+# Required while enabled, no defaults: without them the plugin refuses to start
 FEDIVERSE_ACTOR_USERNAME=bogdev          # the @user part of the handle; safe to change (WebFinger maps it)
 FEDIVERSE_ACTOR_IDENTIFIER=devbog        # path of the actor URI; never change it, remote follows are keyed by it
-FRONTEND_URL=https://bogdev.com.co       # origin of the article links inside federated posts
+
+# Optional (defaults shown)
 FRONTEND_ARTICLE_PATH=/blog/{slug}       # article path template
 FRONTEND_DEFAULT_LOCALE=en               # locale the frontend serves without a URL prefix
-FEDIVERSE_ACTOR_NAME=                    # fallbacks when the Global/About settings are empty
+FEDIVERSE_ACTOR_NAME=                    # fallbacks when Global and the site settings are empty
 FEDIVERSE_ACTOR_SUMMARY=
 ```
 
@@ -403,11 +410,24 @@ SMTP_HOST=smtp.example.com
 SMTP_PORT=587                               # 465 = implicit TLS
 SMTP_USER=
 SMTP_PASS=
-EMAIL_FROM="BogDev <no-reply@bogdev.com.co>"
+EMAIL_FROM="BogDev <no-reply@bogdev.com.co>"  # a sender the SMTP provider accepts; unset: no-reply@<FRONTEND_URL host>
 FRONTEND_URL=https://bogdev.com.co          # staging: the staging frontend
 ```
 
 After deploying, send a test email from the admin panel (Settings → Email).
+
+### Static Sites Variables (rebuild hook)
+
+Static and landing sites (micelio ADR 0006) are rebuilt when content changes: on publish, unpublish or delete of an article or a page, and on every save of the site settings, the CMS calls `REBUILD_HOOK_URL` once per debounce window, with retries, without ever blocking the publish (`src/utils/rebuild-hook.ts`). The body is `{"event_type": "micelio-content", "client_payload": {...}}`, what GitHub's `repository_dispatch` requires; plain deploy hooks (Cloudflare Pages) ignore it.
+
+```env
+REBUILD_HOOK_URL=https://api.github.com/repos/<owner>/<site-repo>/dispatches
+REBUILD_HOOK_TOKEN=<fine-grained token with Contents: read and write on that repo>
+REBUILD_HOOK_DEBOUNCE_MS=60000   # changes within the window produce one call
+BUILD_API_TOKEN=<32+ random characters>  # read-only Strapi token for the build, created on boot
+```
+
+BogDev runs in dynamic mode and sets none of them.
 
 ### Generating Security Keys
 
