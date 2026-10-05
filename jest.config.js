@@ -1,5 +1,6 @@
 const ESM_PACKAGES = [
   'structured-field-values',
+  'devalue',
   'htmlparser2',
   'domhandler',
   'domutils',
@@ -27,8 +28,9 @@ module.exports = {
   },
   // Transform node_modules only for ESM-only packages that CJS code requires
   // (Node can `require()` ESM since v22, Jest cannot): structured-field-values
-  // from Fedify, and htmlparser2 and its dom* deps from sanitize-html (comments
-  // plugin). Nested node_modules count: the last segment decides.
+  // and devalue from Fedify, and htmlparser2 and its dom* deps from
+  // sanitize-html (comments plugin). Nested node_modules count: the last
+  // segment decides.
   transformIgnorePatterns: [
     `node_modules/(?!(?:[^/]+/node_modules/)*(?:${ESM_PACKAGES.join('|')})/)`,
   ],
