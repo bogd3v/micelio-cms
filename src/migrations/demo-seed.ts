@@ -2,7 +2,7 @@ import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Core } from '@strapi/strapi';
-import { ABOUT_UID, ARTICLE_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
+import { ABOUT_UID, ARTICLE_UID, AUTHOR_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
 import { frontendBaseUrl } from '../utils/frontend-url';
 import {
   coverSvg,
@@ -23,7 +23,6 @@ import {
   type ShowcaseMedia,
 } from './demo/content';
 
-const AUTHOR_UID = 'api::author.author';
 const CATEGORY_UID = 'api::category.category';
 const TAG_UID = 'api::tag.tag';
 // Marks that the demo content was written once; afterwards it is the user's.

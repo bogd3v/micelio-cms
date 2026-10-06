@@ -116,11 +116,12 @@ Example dynamic zone on a new content type:
 ## Guidelines
 
 1. **Draft & publish**: enable only for content that needs an approval workflow (`article`, `subscriber`). Disable for global configuration (`global`, `about`).
-2. **i18n**: enable localization only when the front-end needs translated content. Existing examples: `article` is localized; `subscriber` is not.
+2. **i18n**: enable localization only when the front-end needs translated content. Existing examples: `article` is localized; `subscriber` is not. `author` is localized for `bio` only; `name`, `avatar` and `email` are shared. When localizing a type that is referenced by another localized type (e.g., articles reference authors), every author must exist in every configured locale so articles can link to the author in their own locale; use `src/utils/author-locales.ts` to create missing localizations and relink articles after a new locale is added.
 3. **Slugs**: add a `uid` field with `targetField` pointing to a unique title/name field.
 4. **Relations**: prefer `manyToOne` from child to parent (e.g., `article` → `category`).
 5. **Media**: use `allowedTypes: ["images"]` when only images are expected; use `multiple: false` for a single cover/avatar.
-6. **Expose to the public**: after creating a content type, grant `find`/`findOne` permissions to the public role. Prefer doing this in `scripts/seed.js` (see `strapi-seeding` skill) so the front-end can read it immediately.
+6. **Private fields**: mark fields with `"private": true` if they should never reach the content API (e.g., `author.email`); Strapi 5 strips them from responses, and filtering/sorting on them returns 400.
+7. **Expose to the public**: after creating a content type, grant `find`/`findOne` permissions to the public role. Prefer doing this in `scripts/seed.js` (see `strapi-seeding` skill) so the front-end can read it immediately.
 
 ## Pages and the section catalog
 

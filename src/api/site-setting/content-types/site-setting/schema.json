@@ -33,6 +33,14 @@
         }
       }
     },
+    "tagline": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
     "url": {
       "type": "string",
       "regex": "^https?://\\S+$",
@@ -133,6 +141,23 @@
       "pluginOptions": {
         "i18n": {
           "localized": false
+        }
+      }
+    },
+    "timezone": {
+      "type": "string",
+      "regex": "^[A-Za-z][A-Za-z0-9]*(?:[/_+-][A-Za-z0-9]+)*$",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "addressLocality": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
         }
       }
     },
