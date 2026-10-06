@@ -157,6 +157,8 @@ await setPublicPermissions({
 });
 ```
 
+Authors (`api::author.author`) are readable by the public role via their UID on `find` and `findOne`, but `email` is `private: true` and never returned. For custom API tokens (e.g., the frontend and build tokens), add the `api::author.author.find` permission; production's hand-made frontend token must be updated in the admin panel after deploying if it lacks this permission.
+
 If a public request returns 403, add the missing action here and re-run `npm run seed:example`.
 
 ## Authenticated endpoints

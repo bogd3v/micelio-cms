@@ -6,3 +6,4 @@ export const COMMENT_UID = 'plugin::comments.comment';
 export const ARTICLE_STAT_UID = 'api::article-stat.article-stat';
 export const SITE_SETTING_UID = 'api::site-setting.site-setting';
 export const PAGE_UID = 'api::page.page';
+export const AUTHOR_UID = 'api::author.author';

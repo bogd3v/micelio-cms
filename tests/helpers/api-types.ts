@@ -55,6 +55,9 @@ export interface ApiSiteSetting {
   locale: string;
   name: string;
   description: string | null;
+  tagline?: string | null;
+  timezone?: string | null;
+  addressLocality?: string | null;
   url: string | null;
   defaultLocale: string;
   author: { name: string; url: string | null } | null;

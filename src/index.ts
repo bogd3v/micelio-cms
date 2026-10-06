@@ -10,6 +10,7 @@ import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
+import { ensureAuthorLocales } from './migrations/author-locales';
 import { seedDemoContent } from './migrations/demo-seed';
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens';
 import { revokePagePermissions } from './migrations/page-permissions';
@@ -24,6 +25,8 @@ import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
 import { assertAccentOverridesValid } from './utils/site-theme';
+import { assertTimezoneValid } from './utils/site-timezone';
+import { createAuthorsForLocale, registerAuthorLocalesMiddleware } from './utils/author-locales';
 import { assertPageSectionsValid } from './utils/page-sections';
 import { registerRebuildHook } from './utils/rebuild-hook';
 import { restrictDraftsToEditors } from './utils/drafts-access';
@@ -31,6 +34,8 @@ import { assertFrontendUrlConfigured } from './utils/frontend-url';
 
 /** Unsubscribes the rebuild hook; set while it is registered. */
 let stopRebuildHook: (() => void) | null = null;
+/** Unsubscribes the author-locale lifecycle; set while it is registered. */
+let stopAuthorLocales: (() => void) | null = null;
 
 export default {
   /** Before init: Document Service middlewares and extra admin routes. */
@@ -88,17 +93,23 @@ export default {
       return next();
     });
 
-    // Rejects incomplete accent overrides and two overrides for one mode.
+    // Rejects incomplete accent overrides, two overrides for one mode and an unknown timezone.
     strapi.documents.use(async (context, next) => {
       if (
         context.uid === SITE_SETTING_UID &&
         (context.action === 'create' || context.action === 'update')
       ) {
         const data = (context.params as { data?: Record<string, unknown> }).data;
-        if (data) assertAccentOverridesValid(data);
+        if (data) {
+          assertAccentOverridesValid(data);
+          assertTimezoneValid(data);
+        }
       }
       return next();
     });
+
+    // Every author exists in every locale, so articles can link to it in theirs.
+    registerAuthorLocalesMiddleware(strapi);
 
     // Only editors may read drafts through the content API (?status=draft).
     restrictDraftsToEditors(strapi);
@@ -126,6 +137,24 @@ export default {
    * (src/migrations), then the Umami cron. Order matters where noted.
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    // First: nothing below may touch an author or an article before they match.
+    const authorLocales = await ensureAuthorLocales(strapi);
+    if (authorLocales.created > 0 || authorLocales.relinked > 0) {
+      strapi.log.info(`[authors] ${JSON.stringify(authorLocales)}`);
+    }
+
+    // A locale added later gets a localization of every author.
+    stopAuthorLocales?.();
+    stopAuthorLocales = strapi.db.lifecycles.subscribe({
+      models: ['plugin::i18n.locale'],
+      async afterCreate(event) {
+        const code = (event.result as { code?: string } | undefined)?.code;
+        if (!code) return;
+        const created = await createAuthorsForLocale(strapi, code);
+        if (created > 0) strapi.log.info(`[authors] created ${created} localizations in ${code}`);
+      },
+    });
+
     const report = await consolidateCategories(strapi);
     if (hasChanges(report)) {
       strapi.log.info(`[categories] consolidated: ${JSON.stringify(report)}`);
@@ -202,6 +231,8 @@ export default {
 
   destroy() {
     stopRebuildHook?.();
+    stopAuthorLocales?.();
+    stopAuthorLocales = null;
     stopRebuildHook = null;
   },
 };

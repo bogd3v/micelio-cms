@@ -202,7 +202,15 @@ describe('Demo instance', () => {
     });
 
     it('grants nothing beyond the documented permissions', async () => {
-      expect((await http().get('/api/authors').set(bearer(ACCESS_KEY))).status).toBe(403);
+      // Authors are readable (find only) so articles keep their author, without emails.
+      const authors = await http().get('/api/authors').set(bearer(ACCESS_KEY));
+      expect(authors.status).toBe(200);
+      expect(authors.body.data.length).toBeGreaterThan(0);
+      for (const author of authors.body.data) expect(author).not.toHaveProperty('email');
+      expect((await http().get('/api/authors/some-id').set(bearer(ACCESS_KEY))).status).toBe(403);
+      expect(
+        (await http().post('/api/authors').set(bearer(ACCESS_KEY)).send({ data: {} })).status
+      ).toBe(403);
       const token = await strapi.db.query(TOKEN_UID).findOne({
         where: { name: FRONTEND_TOKEN_NAME },
         populate: ['permissions'],

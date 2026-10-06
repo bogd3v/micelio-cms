@@ -24,6 +24,7 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'api::about.about.find',
   'api::site-setting.site-setting.find',
   'api::page.page.find',
+  'api::author.author.find',
   'plugin::comments.client.findAllInHierarchy',
   'plugin::comments.client.findAllFlat',
   'plugin::comments.client.post',
@@ -47,6 +48,7 @@ export const BUILD_TOKEN_PERMISSIONS = [
   'api::about.about.find',
   'api::site-setting.site-setting.find',
   'api::page.page.find',
+  'api::author.author.find',
 ];
 
 export const FRONTEND_TOKEN: EnvToken = {
