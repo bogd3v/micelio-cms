@@ -1,0 +1,101 @@
+{
+  "@strapi/admin": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/cloud-cli": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/content-manager": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/content-releases": {
+    "reason": "Strapi Enterprise License (whole package); installed by @strapi/strapi, inactive without a Strapi license key, never enabled (THIRD-PARTY.md, scripts/check-no-ee.mjs)"
+  },
+  "@strapi/content-type-builder": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/core": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/data-transfer": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/database": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/email": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/generators": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/i18n": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/logger": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/openapi": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/pack-up": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/permissions": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/plugin-users-permissions": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/provider-email-nodemailer": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/provider-email-sendmail": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/provider-upload-aws-s3": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/provider-upload-local": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/review-workflows": {
+    "reason": "Strapi Enterprise License (whole package); installed by @strapi/strapi, inactive without a Strapi license key, never enabled (THIRD-PARTY.md, scripts/check-no-ee.mjs)"
+  },
+  "@strapi/sdk-plugin": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/strapi": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/types": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/typescript-utils": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/upload": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "@strapi/utils": {
+    "reason": "MIT, except code under ee/ (Strapi Enterprise License, inactive without a license key; THIRD-PARTY.md)"
+  },
+  "limiter": {
+    "reason": "MIT (LICENSE.txt, no license field)"
+  },
+  "only": {
+    "reason": "MIT (README, no license field)"
+  },
+  "passport-local": {
+    "reason": "MIT (LICENSE, no license field)"
+  },
+  "passport-strategy": {
+    "reason": "MIT (LICENSE, no license field)"
+  },
+  "pause": {
+    "reason": "MIT (README, no license field)"
+  },
+  "spawn-command": {
+    "reason": "MIT (LICENSE, no license field)"
+  }
+}

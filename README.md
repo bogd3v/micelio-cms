@@ -16,6 +16,8 @@ docker compose -f compose.demo.yml up
 
 The first run generates Strapi's keys, the database password and the frontend's API token into a volume (`scripts/demo-secrets.js`), and the CMS seeds the demo content once (`MICELIO_DEMO=true`). Ports are bound to `127.0.0.1`: it is a demo, not a deployment.
 
+The demo runs Micelio under the [AGPL-3.0](LICENSE): if you host a modified copy for others, you must publish your changes (the frontend's footer links to your source with `NUXT_PUBLIC_SOURCE_URL`).
+
 **Make it yours** in the admin panel, _Content Manager → Site settings_:
 
 | What                                                                         | Where                                                                                                                                                        |
@@ -75,3 +77,12 @@ CI runs the same checks plus `npm run build` on every pull request to `main`.
 ## Deployment
 
 Pushing to `main` builds a Docker image, pushes it to GHCR and deploys it to production through Dokploy; `develop` deploys staging. See `docs/CI_CD.md`.
+
+## License
+
+Micelio CMS is free software under the [GNU AGPL-3.0-only](LICENSE), like the [frontend](https://github.com/bogd3v/micelio). If you run a modified Micelio as a service, you must offer its source to your users.
+
+- **Third-party material** (dependencies, Strapi's Enterprise code, the example data) and the content your site stores are not covered by Micelio's license and keep their own: see [THIRD-PARTY.md](THIRD-PARTY.md). Strapi's Enterprise code stays disabled.
+- **Contributing**: under the same license, with a DCO sign-off on every commit; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The reasons are in [ADR 0007](https://github.com/bogd3v/micelio/blob/main/docs/adr/0007-license.md) of the frontend.
