@@ -55,10 +55,23 @@ Clone both repos side by side (`../micelio`) so agents can read the other side o
 
 ## Hard limits (every agent)
 
-- Never push, merge, tag, release, deploy, or run anything against production or staging. The orchestrator prepares; the user approves.
-- Never call the `strapi` MCP server (it points at production, `api.bogdev.com.co/mcp`) or the `dokploy` MCP server. Subagents do not list MCP tools on purpose; if a task seems to need them, stop and report.
+- Never push, merge, tag, release, deploy, or run anything against production or staging. The orchestrator prepares; the user approves. The one exception is content through the `strapi` MCP server (below).
+- Subagents never call MCP servers; they do not list MCP tools on purpose. If a task seems to need them, stop and report to the orchestrator.
+- Never call the `dokploy` MCP server.
 - Never read or print `~/.claude/secrets/`, `.env` or tokens. Use `.env.example` to learn variable names.
 - Code, identifiers, commits, PR titles and descriptions in English (see `AGENTS.md`).
+
+## Content through the Strapi MCP (orchestrator only)
+
+The `strapi` MCP server points at **production** (`api.bogdev.com.co/mcp`). It is the preferred way to load or fix content (site settings, pages, authors, categories, articles, media metadata), because it is faster than the admin panel.
+
+- Only the main session calls it. Reads (`get_*`, `list_*`, `media_get_*`, `media_list_*`) need no approval.
+- Before writing, read the current value, then show the user what changes (field, locale, old → new) and get their approval for that batch. Never overwrite a non-empty value the task did not ask to replace; report the difference instead.
+- Never delete, unpublish or discard drafts through it unless the user asks for that specific document.
+- After writing, read the values back (MCP and, where it applies, the public API) and report them.
+- Schema, permissions and code changes still go through a PR: the MCP is for content only.
+- It shows only what the Admin API token's admin role may do: content types, fields and locales the role lacks have no tool, field or locale enum. A missing tool usually means the role needs that permission in the admin panel (Settings → Administration Panel → Roles), not a code change. It has no file upload: media is uploaded in the admin panel, then linked by its numeric id.
+- After a role change, reconnect with `/mcp`. The tool schemas the session already loaded can stay stale (a missing field or locale) while the server accepts them; a single read in that locale tells which. Update responses list relations as empty (`"articles": []`) even when they are kept: check relations with a `get_*`.
 
 ## Cost guide
 

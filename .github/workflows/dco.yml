@@ -1,0 +1,39 @@
+name: DCO
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: Signed-off-by
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check that every commit is signed off by its author
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          failed=0
+          for sha in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            email=$(git log -1 --format=%ae "$sha")
+            author=$(git log -1 --format=%an "$sha")
+            if [ "$email" = "49699333+dependabot[bot]@users.noreply.github.com" ]; then
+              continue
+            fi
+            if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$sha" | grep -qixF "$author <$email>"; then
+              echo "::error::Commit $sha lacks 'Signed-off-by: $author <$email>' (use git commit -s)"
+              failed=1
+            fi
+          done
+          exit $failed

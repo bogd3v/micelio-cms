@@ -15,6 +15,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
   return [
     'strapi::logger',
     'strapi::errors',
+    // Sets the client address for everything below (TRUST_PROXY).
+    'global::client-ip',
     {
       name: 'strapi::security',
       config: {
@@ -48,12 +50,16 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
       config: { origin: env.array('CORS_ORIGINS', ['*']) },
     },
     'strapi::poweredBy',
+    // Before the body is read, so a flood is refused without parsing it.
+    'global::rate-limit',
     'strapi::query',
     {
       name: 'strapi::body',
       // DELETE too: DELETE /api/users/me takes the current password in its body.
       config: { parsedMethods: ['POST', 'PUT', 'PATCH', 'DELETE'] },
     },
+    // Needs the parsed body (the email of the account routes).
+    'global::rate-limit-identifier',
     'strapi::session',
     'strapi::favicon',
     'strapi::public',

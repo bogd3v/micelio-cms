@@ -16,18 +16,21 @@ docker compose -f compose.demo.yml up
 
 The first run generates Strapi's keys, the database password and the frontend's API token into a volume (`scripts/demo-secrets.js`), and the CMS seeds the demo content once (`MICELIO_DEMO=true`). Ports are bound to `127.0.0.1`: it is a demo, not a deployment.
 
-### Dynamic or static
+The demo runs Micelio under the [AGPL-3.0](LICENSE): if you host a modified copy for others, you must publish your changes (the frontend's footer links to your source with `NUXT_PUBLIC_SOURCE_URL`).
 
-| Profile | Command                                   | Choose it when                                                                         |
-| ------- | ----------------------------------------- | -------------------------------------------------------------------------------------- |
-| Dynamic | `docker compose -f compose.demo.yml up`   | You want accounts, comments, newsletter, drafts and search served live by the frontend |
-| Static  | `docker compose -f compose.static.yml up` | You want plain files a CDN can serve; the CMS is only needed at build time             |
+### Dynamic, static or landing
 
-The static profile has its own project name (`micelio-demo-static`), so it never shares volumes, secrets or the seed with the dynamic demo. Only run one stack at a time: both publish the site on port 3000. The `build` service (the `micelio-builder` image) runs `nuxt generate` against the CMS with the read-only build token and writes the site to the `demo-site` volume; `site` then serves it on <http://localhost:3000> with the generated `_headers` (the CSP of a static host). It only mounts `build.env`, not the secrets volume that holds the CMS's keys.
+| Profile | Command                                    | Choose it when                                                                         |
+| ------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Dynamic | `docker compose -f compose.demo.yml up`    | You want accounts, comments, newsletter, drafts and search served live by the frontend |
+| Static  | `docker compose -f compose.static.yml up`  | You want plain files a CDN can serve; the CMS is only needed at build time             |
+| Landing | `docker compose -f compose.landing.yml up` | Like static, with a showcase page as the home instead of the blog list                 |
 
-- After editing content in the admin panel, rebuild: `docker compose -f compose.static.yml run --rm build`. `site` picks the new files up without a restart.
+The static and landing profiles have their own project names (`micelio-demo-static`, `micelio-demo-landing`), so they never shares volumes, secrets or the seed with the dynamic demo or each other. Only run one stack at a time: all publish the site on port 3000. The `build` service (the `micelio-builder` image) runs `nuxt generate` against the CMS with the read-only build token and writes the site to the `demo-site` volume; `site` then serves it on <http://localhost:3000> with the generated `_headers` (the CSP of a static host). It only mounts `build.env`, not the secrets volume that holds the CMS's keys.
+
+- After editing content in the admin panel, rebuild: `docker compose -f compose.<mode>.yml run --rm build` (`static` or `landing`). `site` picks the new files up without a restart.
 - `nuxt generate` needs about 2 GB of free RAM and a few minutes the first time.
-- Images and the newsletter form endpoint (`NUXT_PUBLIC_NEWSLETTER_FORM_ACTION`) go in an env file: `docker compose --env-file demo/static.env.example -f compose.static.yml up`. Tokens never go there.
+- Images and the newsletter form endpoint (`NUXT_PUBLIC_NEWSLETTER_FORM_ACTION`) go in an env file: `docker compose --env-file demo/<mode>.env.example -f compose.<mode>.yml up`. Tokens never go there.
 - Rebuilding on publish is not wired locally (`REBUILD_HOOK_URL` stays unset).
 
 **Make it yours** in the admin panel, _Content Manager → Site settings_:
@@ -89,3 +92,12 @@ CI runs the same checks plus `npm run build` on every pull request to `main`.
 ## Deployment
 
 Pushing to `main` builds a Docker image, pushes it to GHCR and deploys it to production through Dokploy; `develop` deploys staging. See `docs/CI_CD.md`.
+
+## License
+
+Micelio CMS is free software under the [GNU AGPL-3.0-only](LICENSE), like the [frontend](https://github.com/bogd3v/micelio). If you run a modified Micelio as a service, you must offer its source to your users.
+
+- **Third-party material** (dependencies, Strapi's Enterprise code, the example data) and the content your site stores are not covered by Micelio's license and keep their own: see [THIRD-PARTY.md](THIRD-PARTY.md). Strapi's Enterprise code stays disabled.
+- **Contributing**: under the same license, with a DCO sign-off on every commit; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The reasons are in [ADR 0007](https://github.com/bogd3v/micelio/blob/main/docs/adr/0007-license.md) of the frontend.
