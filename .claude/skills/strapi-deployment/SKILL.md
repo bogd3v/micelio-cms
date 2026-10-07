@@ -63,6 +63,12 @@ DATABASE_USERNAME=strapi
 DATABASE_PASSWORD=<password>
 
 UPLOAD_PATH=/app/public/uploads
+
+# Rate limiting (on by default; production keeps it off until the frontend
+# forwards client IPs, see the rollout in docs/RATE_LIMITING.md)
+RATE_LIMIT_ENABLED=false
+TRUST_PROXY=1                      # one reverse proxy in front (Traefik today)
+RATE_LIMIT_FORWARDER_SECRET=<32+ random characters>  # same value as the frontend's
 ```
 
 Generate secret values with:
@@ -70,6 +76,8 @@ Generate secret values with:
 ```bash
 node scripts/generate-keys.js
 ```
+
+For rate limiting details (groups, stores, client IP resolution, proxy setups, rollout) see `docs/RATE_LIMITING.md`.
 
 ## Health check
 

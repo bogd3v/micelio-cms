@@ -32,7 +32,7 @@ The response always carries the user's own role, `{ id, documentId, name, type }
 - No JWT → 401. Invalid or expired JWT → 401.
 - Success → 204, no body. The frontend should drop its stored JWT.
 - The user's comments stay published with author «Anónimo» (`authorId: "anonymous"`, `authorName: "Anónimo"`); their link to the user, email and avatar are removed. The user row is deleted for good and their refresh sessions revoked. Both happen in one transaction.
-- Rate limited like `/api/auth/*` (the plugin's `rateLimit` middleware). The body is reduced to `{ password }` first, so an extra `email` field can't split the limit into fresh buckets.
+- When `RATE_LIMIT_ENABLED=true` (default), rate limited by the app as part of the `auth` group (10/60s per client IP). When disabled, it falls back to the users-permissions plugin's built-in limit. The body is reduced to `{ password }` first, so an extra `email` field can't split the limit into fresh buckets. See `docs/RATE_LIMITING.md` for the full behaviour.
 - Accounts created through a third-party provider have no password, so they can't use this route.
 
 Permissions: the action `plugin::users-permissions.user.destroyMe` is granted to **Public**, **Authenticated** and **Editor**. Public has it only so a request without a JWT reaches the controller and gets a 401 instead of Strapi's 403; the controller rejects it. `user.destroy` (`DELETE /api/users/:id`) stays off for every role.

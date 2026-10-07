@@ -31,7 +31,12 @@ describe('demo-secrets script', () => {
     );
   const expectConsistent = () => {
     const cms = env('cms.env');
-    expect(env('frontend.env')).toEqual({ NUXT_STRAPI_API_TOKEN: cms.FRONTEND_API_TOKEN });
+    expect(env('frontend.env')).toEqual({
+      NUXT_STRAPI_API_TOKEN: cms.FRONTEND_API_TOKEN,
+      NUXT_STRAPI_FORWARDER_SECRET: cms.RATE_LIMIT_FORWARDER_SECRET,
+    });
+    // The CMS refuses to boot with a forwarder secret under 32 characters.
+    expect(cms.RATE_LIMIT_FORWARDER_SECRET.length).toBeGreaterThanOrEqual(32);
     expect(env('build.env')).toEqual({ NUXT_STRAPI_API_TOKEN: cms.BUILD_API_TOKEN });
     expect(read('db_password')).toBe(cms.DATABASE_PASSWORD);
     expect(cms.BUILD_API_TOKEN).not.toBe(cms.FRONTEND_API_TOKEN);
@@ -52,7 +57,12 @@ describe('demo-secrets script', () => {
     }
     const cms = env('cms.env');
     expect(Object.keys(cms)).toEqual(
-      expect.arrayContaining(['APP_KEYS', 'FRONTEND_API_TOKEN', 'BUILD_API_TOKEN'])
+      expect.arrayContaining([
+        'APP_KEYS',
+        'FRONTEND_API_TOKEN',
+        'BUILD_API_TOKEN',
+        'RATE_LIMIT_FORWARDER_SECRET',
+      ])
     );
     expect(cms.BUILD_API_TOKEN.length).toBeGreaterThanOrEqual(32);
     expectConsistent();
@@ -117,5 +127,44 @@ describe('demo-secrets script', () => {
     expect(read('db_password')).not.toBe(before['db_password']);
     expect(read('frontend.env')).not.toBe(before['frontend.env']);
     expect(read('build.env')).not.toBe(before['build.env']);
+  });
+
+  describe('forwarder secret (#100)', () => {
+    const withoutKey = (name: string, key: string) =>
+      fs.writeFileSync(
+        path.join(dir, name),
+        `${read(name)
+          .split('\n')
+          .filter((line) => line && !line.startsWith(key))
+          .join('\n')}\n`
+      );
+
+    it('adds it to both sides of a volume from before it, keeping the other keys', () => {
+      run();
+      const before = snapshot();
+      withoutKey('cms.env', 'RATE_LIMIT_FORWARDER_SECRET');
+      withoutKey('frontend.env', 'NUXT_STRAPI_FORWARDER_SECRET');
+
+      run();
+      const after = snapshot();
+      expect(after['cms.env']).toMatch(/RATE_LIMIT_FORWARDER_SECRET='[0-9a-f]{64}'\n$/);
+      for (const name of ['build.env', 'db_password']) expect(after[name]).toBe(before[name]);
+      expect(env('cms.env').FRONTEND_API_TOKEN).toBe(env('frontend.env').NUXT_STRAPI_API_TOKEN);
+      expectConsistent();
+    });
+
+    it('copies the secret to the side that lacks it', () => {
+      run();
+      const secret = env('cms.env').RATE_LIMIT_FORWARDER_SECRET;
+      withoutKey('frontend.env', 'NUXT_STRAPI_FORWARDER_SECRET');
+      run();
+      expect(env('frontend.env').NUXT_STRAPI_FORWARDER_SECRET).toBe(secret);
+      expect(env('cms.env').RATE_LIMIT_FORWARDER_SECRET).toBe(secret);
+
+      withoutKey('cms.env', 'RATE_LIMIT_FORWARDER_SECRET');
+      run();
+      expect(env('cms.env').RATE_LIMIT_FORWARDER_SECRET).toBe(secret);
+      expectConsistent();
+    });
   });
 });

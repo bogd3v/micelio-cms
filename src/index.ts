@@ -14,6 +14,7 @@ import { ensureAuthorLocales } from './migrations/author-locales';
 import { seedDemoContent } from './migrations/demo-seed';
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens';
 import { revokePagePermissions } from './migrations/page-permissions';
+import { ensureRateLimitTable } from './migrations/rate-limit-table';
 import {
   ABOUT_UID,
   ARTICLE_STAT_UID,
@@ -31,6 +32,7 @@ import { assertPageSectionsValid } from './utils/page-sections';
 import { registerRebuildHook } from './utils/rebuild-hook';
 import { restrictDraftsToEditors } from './utils/drafts-access';
 import { assertFrontendUrlConfigured } from './utils/frontend-url';
+import { destroyRateLimit, registerRateLimit } from './utils/rate-limit/runtime';
 
 /** Unsubscribes the rebuild hook; set while it is registered. */
 let stopRebuildHook: (() => void) | null = null;
@@ -48,6 +50,10 @@ export default {
         "[email] EMAIL_FROM is not set: emails go out from no-reply@ the frontend's host"
       );
     }
+
+    // Client IP, rate limits and the fediverse inbox guard (global:: middlewares
+    // in config/middlewares.ts); a no-op with RATE_LIMIT_ENABLED=false.
+    registerRateLimit(strapi);
 
     // Rejects citations without a reference, and keeps the article's
     // searchable plain text in step with its body.
@@ -223,13 +229,18 @@ export default {
       strapi.log.info(`[accounts] ${JSON.stringify(accounts)}`);
     }
 
+    if (await ensureRateLimitTable(strapi)) {
+      strapi.log.info('[rate-limit] created the table of the database store');
+    }
+
     scheduleUmamiSync(strapi);
 
     // Static and landing sites rebuild when published content changes.
     stopRebuildHook = registerRebuildHook(strapi);
   },
 
-  destroy() {
+  async destroy({ strapi }: { strapi: Core.Strapi }) {
+    await destroyRateLimit(strapi);
     stopRebuildHook?.();
     stopAuthorLocales?.();
     stopAuthorLocales = null;

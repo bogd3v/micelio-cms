@@ -62,6 +62,11 @@ services:
       DATABASE_NAME: strapi
       DATABASE_USERNAME: strapi
       DATABASE_SSL: 'false'
+      # No proxy here: the browser reaches Strapi through the published port
+      # and the frontend over loopback, both from private addresses, which the
+      # default `private` would trust to write X-Forwarded-For. `false` uses
+      # the socket address. Rate limiting stays on (RATE_LIMIT_ENABLED).
+      TRUST_PROXY: 'false'
     ports:
       - '127.0.0.1:1337:1337'
       # The frontend shares this service's network (see below).
