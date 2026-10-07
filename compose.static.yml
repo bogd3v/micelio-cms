@@ -1,0 +1,99 @@
+# Micelio demo as a static site (#90): the CMS runs only to feed the build.
+#
+#   docker compose -f compose.static.yml up
+#
+# Site: http://localhost:3000 (generated files, no frontend server) · Admin:
+# http://localhost:1337/admin. Same demo content as compose.demo.yml, seeded
+# with MICELIO_DEMO=static. This profile has its own project name, so it never
+# shares volumes, secrets or the seed's marker with the dynamic demo; run one
+# stack at a time (both want port 3000).
+#
+# After editing content, rebuild the site:
+#   docker compose -f compose.static.yml run --rm build
+#
+# Optional settings (images, newsletter form) go in an env file:
+#   docker compose --env-file demo/static.env.example -f compose.static.yml up
+#
+# `nuxt generate` needs about 2 GB of free RAM and a few minutes the first time.
+# Only for trying Micelio on your machine: ports are bound to 127.0.0.1.
+#
+# Micelio is AGPL-3.0-only (LICENSE): whoever hosts a modified copy for others
+# must publish their changes.
+
+name: micelio-demo-static
+
+services:
+  init:
+    extends:
+      file: compose.demo.yml
+      service: init
+    volumes:
+      - demo-secrets:/secrets
+
+  db:
+    extends:
+      file: compose.demo.yml
+      service: db
+    volumes:
+      - demo-secrets:/secrets:ro
+      - demo-db:/var/lib/postgresql
+
+  cms:
+    extends:
+      file: compose.demo.yml
+      service: cms
+    environment:
+      MICELIO_DEMO: static
+    # Only Strapi: the site is served by `site`, which owns port 3000.
+    ports: !override
+      - '127.0.0.1:1337:1337'
+    volumes:
+      - demo-secrets:/secrets:ro
+      - demo-uploads:/app/public/uploads
+
+  # Generates the site into the demo-site volume and exits. It shares the CMS's
+  # network namespace, so Strapi is http://localhost:1337 for the build and for
+  # the image links the pages carry. Only build.env is mounted: the rest of the
+  # secrets volume holds the CMS's keys.
+  build:
+    image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:latest}
+    network_mode: service:cms
+    entrypoint:
+      - sh
+      - -c
+      - set -a && . /run/secrets-build/build.env && set +a && exec micelio-builder generate
+    environment:
+      NUXT_PUBLIC_SITE_MODE: static
+      NUXT_PUBLIC_STRAPI_URL: http://localhost:1337
+      NUXT_PUBLIC_SITE_URL: http://localhost:3000
+      NUXT_PUBLIC_NEWSLETTER_FORM_ACTION: ${NUXT_PUBLIC_NEWSLETTER_FORM_ACTION:-}
+    volumes:
+      - type: volume
+        source: demo-secrets
+        target: /run/secrets-build/build.env
+        read_only: true
+        volume:
+          subpath: build.env
+      - demo-site:/out
+    depends_on:
+      cms:
+        condition: service_healthy
+
+  # Serves the generated files with the `_headers` rules applied (the CSP of a
+  # static host). Starts once the build has finished.
+  site:
+    image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:latest}
+    command: ['serve']
+    ports:
+      - '127.0.0.1:3000:8080'
+    volumes:
+      - demo-site:/out:ro
+    depends_on:
+      build:
+        condition: service_completed_successfully
+
+volumes:
+  demo-secrets:
+  demo-db:
+  demo-uploads:
+  demo-site:
