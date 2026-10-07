@@ -16,6 +16,20 @@ docker compose -f compose.demo.yml up
 
 The first run generates Strapi's keys, the database password and the frontend's API token into a volume (`scripts/demo-secrets.js`), and the CMS seeds the demo content once (`MICELIO_DEMO=true`). Ports are bound to `127.0.0.1`: it is a demo, not a deployment.
 
+### Dynamic or static
+
+| Profile | Command                                   | Choose it when                                                                         |
+| ------- | ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| Dynamic | `docker compose -f compose.demo.yml up`   | You want accounts, comments, newsletter, drafts and search served live by the frontend |
+| Static  | `docker compose -f compose.static.yml up` | You want plain files a CDN can serve; the CMS is only needed at build time             |
+
+The static profile has its own project name (`micelio-demo-static`), so it never shares volumes, secrets or the seed with the dynamic demo. Only run one stack at a time: both publish the site on port 3000. The `build` service (the `micelio-builder` image) runs `nuxt generate` against the CMS with the read-only build token and writes the site to the `demo-site` volume; `site` then serves it on <http://localhost:3000> with the generated `_headers` (the CSP of a static host). It only mounts `build.env`, not the secrets volume that holds the CMS's keys.
+
+- After editing content in the admin panel, rebuild: `docker compose -f compose.static.yml run --rm build`. `site` picks the new files up without a restart.
+- `nuxt generate` needs about 2 GB of free RAM and a few minutes the first time.
+- Images and the newsletter form endpoint (`NUXT_PUBLIC_NEWSLETTER_FORM_ACTION`) go in an env file: `docker compose --env-file demo/static.env.example -f compose.static.yml up`. Tokens never go there.
+- Rebuilding on publish is not wired locally (`REBUILD_HOOK_URL` stays unset).
+
 **Make it yours** in the admin panel, _Content Manager → Site settings_:
 
 | What                                                                         | Where                                                                                                                                                        |
