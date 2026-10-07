@@ -9,6 +9,9 @@
 # into the `demo-secrets` volume. `down -v` deletes everything.
 #
 # MICELIO_CMS_IMAGE and MICELIO_IMAGE pick other images, e.g. a local build.
+#
+# Micelio is AGPL-3.0-only (LICENSE): whoever hosts a modified copy for others
+# must publish their changes.
 
 name: micelio-demo
 
