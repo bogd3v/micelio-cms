@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { limitsAuth } from '../src/utils/rate-limit/rule';
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => {
   const r2Bucket = env('R2_BUCKET');
@@ -55,6 +56,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       }
     : { settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom } };
 
+  // Our limiter replaces the users-permissions one, but only while it limits
+  // the auth group: with RATE_LIMIT_AUTH=0 the plugin's own stays, so auth is never open.
+  const ownAuthLimit = limitsAuth(env);
+
   return {
     fediverse: {
       enabled: env.bool('FEDIVERSE_ENABLED', false),
@@ -73,6 +78,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     'users-permissions': {
       config: {
         jwt: { expiresIn: '7d' },
+        // Left unset, the plugin keeps its own limiter.
+        ...(ownAuthLimit ? { ratelimit: { enabled: false } } : {}),
       },
     },
     seo: {

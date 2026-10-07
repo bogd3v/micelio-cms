@@ -9,13 +9,17 @@
  *                 FRONTEND_API_TOKEN and BUILD_API_TOKEN, which the CMS turns
  *                 into the frontend's and the read-only build API tokens on
  *                 boot (src/migrations/api-tokens.ts)
- * - frontend.env  the frontend token as NUXT_STRAPI_API_TOKEN
+ *                 and RATE_LIMIT_FORWARDER_SECRET (rate limiting, #100)
+ * - frontend.env  the frontend token as NUXT_STRAPI_API_TOKEN, and the same
+ *                 forwarder secret as NUXT_STRAPI_FORWARDER_SECRET, so the
+ *                 frontend can pass its visitors' addresses to the CMS
  * - build.env     the build token as NUXT_STRAPI_API_TOKEN, for the static build
  *                 of micelio (ADR 0006); compose.demo.yml does not use it yet
  * - db_password   for Postgres' POSTGRES_PASSWORD_FILE
  *
  * Each file is created only when missing, and a volume from before build.env
- * gets BUILD_API_TOKEN appended to cms.env without touching the other keys, so
+ * or the forwarder secret gets the missing key appended without touching the
+ * other keys (if only one side has the secret, the other gets a copy), so
  * restarting the stack keeps sessions, tokens and the database password.
  * Values are base64 or hex, so single quotes are safe.
  */
@@ -80,23 +84,44 @@ if (!fresh) {
     DATABASE_PASSWORD: hex(24),
     FRONTEND_API_TOKEN: hex(64),
     BUILD_API_TOKEN: hex(64),
+    RATE_LIMIT_FORWARDER_SECRET: hex(32),
   };
   write(files.cms, envFile(cms));
   changed.push('cms.env');
 }
 
+// Appends missing keys to an env file, keeping what it has.
+const append = (file, values, label) => {
+  const current = fs.readFileSync(file, 'utf8');
+  const separator = current === '' || current.endsWith('\n') ? '' : '\n';
+  fs.appendFileSync(file, `${separator}${envFile(values)}`);
+  changed.push(label);
+};
+
 const newBuildToken = !cms.BUILD_API_TOKEN;
 if (newBuildToken) {
   cms.BUILD_API_TOKEN = hex(64);
-  const current = fs.readFileSync(files.cms, 'utf8');
-  const separator = current === '' || current.endsWith('\n') ? '' : '\n';
-  fs.appendFileSync(files.cms, `${separator}${envFile({ BUILD_API_TOKEN: cms.BUILD_API_TOKEN })}`);
-  changed.push('cms.env');
+  append(files.cms, { BUILD_API_TOKEN: cms.BUILD_API_TOKEN }, 'cms.env');
 }
 
-if (fresh || !fs.existsSync(files.frontend)) {
-  write(files.frontend, envFile({ NUXT_STRAPI_API_TOKEN: cms.FRONTEND_API_TOKEN }));
+// The forwarder secret is shared by cms.env and frontend.env: an existing
+// value on either side wins over a new one.
+const frontendExists = !fresh && fs.existsSync(files.frontend);
+const frontend = frontendExists ? parseEnv(files.frontend) : {};
+const secret = cms.RATE_LIMIT_FORWARDER_SECRET || frontend.NUXT_STRAPI_FORWARDER_SECRET || hex(32);
+if (!cms.RATE_LIMIT_FORWARDER_SECRET) {
+  cms.RATE_LIMIT_FORWARDER_SECRET = secret;
+  append(files.cms, { RATE_LIMIT_FORWARDER_SECRET: secret }, 'cms.env');
+}
+
+if (!frontendExists) {
+  write(
+    files.frontend,
+    envFile({ NUXT_STRAPI_API_TOKEN: cms.FRONTEND_API_TOKEN, NUXT_STRAPI_FORWARDER_SECRET: secret })
+  );
   changed.push('frontend.env');
+} else if (!frontend.NUXT_STRAPI_FORWARDER_SECRET) {
+  append(files.frontend, { NUXT_STRAPI_FORWARDER_SECRET: secret }, 'frontend.env');
 }
 if (fresh || newBuildToken || !fs.existsSync(files.build)) {
   write(files.build, envFile({ NUXT_STRAPI_API_TOKEN: cms.BUILD_API_TOKEN }));

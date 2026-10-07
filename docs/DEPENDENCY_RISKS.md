@@ -21,6 +21,11 @@ Drop an override once the parent ships the patched version, so it doesn't hold b
 
 `nodemailer` 9.1.1 is a net gain, not a clean fix: it closes 4 of the 7 advisories on 9.0.1, but 2 newer ones only affect `>=9.1.0` (GHSA-g57g-f23g-4646, GHSA-prgh-xp8r-p3m5). That leaves 5 advisories instead of 7, with 2 high in both versions.
 
+## Pinned direct dependencies
+
+- `knex` 3.0.1 is a direct dependency only so the rate limiting store (`src/utils/rate-limit/stores.ts`) can import it. It must stay on the exact version `@strapi/database` pins: bump it together with Strapi, never alone (close Dependabot PRs that bump only `knex`).
+- `rate-limiter-flexible` 11.2.1 (ISC, no runtime dependencies) is pinned exactly; see `docs/RATE_LIMITING.md`.
+
 ## Accepted
 
 | Package                  | Installed  | Fix                     | Pinned by                                            | Why it's accepted                                                                                                                                                                                                                                                                                                |

@@ -26,6 +26,7 @@ import {
 } from '@fedify/fedify/vocab';
 import { getActorHandle, type Actor, type DocumentLoader } from '@fedify/fedify/vocab';
 import { createMiddleware } from '@fedify/koa';
+import type { Context as KoaContext } from 'koa';
 
 import pkg from '../../package.json';
 import { ACTOR_IDENTIFIER, ACTOR_USERNAME, ACTOR_USERNAMES } from './constants/actor';
@@ -40,6 +41,7 @@ import {
   SHARED_INBOX_PATH,
 } from './constants/paths';
 import { ARTICLE_UID } from './constants/uids';
+import type { RequestGuard, RequestGuardKind } from './types/request-guard';
 import {
   buildArticle,
   buildArticleActivity,
@@ -558,8 +560,52 @@ function isFederationPath(path: string): boolean {
   return FEDERATION_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
+/** Turns a Fedify URI template into an exact-match regex (one segment per variable). */
+function pathTemplateToRegExp(template: string): RegExp {
+  const pattern = template
+    .split(/\{[^}]+\}/)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('[^/]+');
+  // A trailing slash still counts as the inbox, so it cannot dodge the guard.
+  return new RegExp(`^${pattern}/?$`);
+}
+
+const INBOX_PATTERNS = [INBOX_PATH, SHARED_INBOX_PATH].map(pathTemplateToRegExp);
+
+function requestGuardKind(method: string, path: string): RequestGuardKind {
+  return method === 'POST' && INBOX_PATTERNS.some((pattern) => pattern.test(path))
+    ? 'inbox'
+    : 'read';
+}
+
+const GUARD_WARNING_INTERVAL_MS = 60_000;
+
 export function mountFediverseMiddleware(strapi: Core.Strapi) {
-  const fedify = createMiddleware(getFederation(strapi), () => ({ strapi }));
+  const fedify = createMiddleware<FediverseContextData, KoaContext>(getFederation(strapi), () => ({
+    strapi,
+  }));
+  let lastGuardWarning = -Infinity;
+
+  /**
+   * Runs the host app's guard (registered as `plugin::fediverse.requestGuard`,
+   * e.g. a rate limiter). Read on every request: the root `register()` runs
+   * after this plugin's, so the guard does not exist yet at mount time. A
+   * missing guard, or one that fails, never blocks federation (fail open).
+   */
+  async function guardHandled(ctx: KoaContext): Promise<boolean> {
+    const guard = strapi.config.get('plugin::fediverse.requestGuard') as RequestGuard | undefined;
+    if (typeof guard !== 'function') return false;
+    try {
+      return (await guard(ctx, requestGuardKind(ctx.method, ctx.path))) === true;
+    } catch {
+      const now = Date.now();
+      if (now - lastGuardWarning >= GUARD_WARNING_INTERVAL_MS) {
+        lastGuardWarning = now;
+        strapi.log.warn('[fediverse] request guard failed; letting federation requests through');
+      }
+      return false;
+    }
+  }
 
   // `@fedify/koa` turns the Node request stream of every non-GET request into a
   // web stream *before* it knows whether the route is its own. That stream
@@ -568,6 +614,12 @@ export function mountFediverseMiddleware(strapi: Core.Strapi) {
   // drains it: any large POST/PUT elsewhere in the app (e.g. publishing a long
   // article in the admin) then hangs until the client gives up. Requests that
   // are not federation paths must therefore never reach it.
-  return (ctx: Parameters<typeof fedify>[0], next: Parameters<typeof fedify>[1]) =>
-    isFederationPath(ctx.path) ? fedify(ctx, next) : next();
+  //
+  // The guard runs before Fedify touches the request stream, so a request it
+  // rejects is answered with its body unread.
+  return async (ctx: KoaContext, next: () => Promise<void>) => {
+    if (!isFederationPath(ctx.path)) return next();
+    if (await guardHandled(ctx)) return;
+    return fedify(ctx, next);
+  };
 }

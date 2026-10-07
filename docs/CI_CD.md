@@ -429,6 +429,32 @@ BUILD_API_TOKEN=<32+ random characters>  # read-only Strapi token for the build,
 
 BogDev runs in dynamic mode and sets none of them.
 
+### Rate Limiting Variables
+
+The app limits requests itself (issue #100), on by default, whatever sits in front of it. Groups, store, client IP resolution, proxy setups and how to check the address the app sees are in `docs/RATE_LIMITING.md`; the variables are listed in `.env.example`. Traefik and Dokploy are the current deployment, not a requirement: the same variables apply behind any proxy or none.
+
+The two settings that depend on the infrastructure:
+
+```env
+RATE_LIMIT_ENABLED=true            # false restores the previous behaviour (only users-permissions' /api/auth limiter)
+TRUST_PROXY=1                      # proxy hops in front of the app; private (default), false, N or a CIDR list
+RATE_LIMIT_FORWARDER_SECRET=<32+ random characters>  # same value as NUXT_STRAPI_FORWARDER_SECRET in the frontend
+# RATE_LIMIT_STORE=database        # only with several replicas on PostgreSQL; memory (default) is per process
+```
+
+**Rollout in production** (the order matters, because the frontend calls the CMS from a single server address until it forwards its visitors' addresses):
+
+1. Set `RATE_LIMIT_ENABLED=false` and `TRUST_PROXY=1` (Traefik is the single hop in front of the CMS) in the production environment **before merging to `main`**, which deploys automatically. No limits change; the client address now comes from `TRUST_PROXY`.
+2. Deploy the micelio release that forwards the client address (same issue).
+3. Generate the secret (`openssl rand -base64 32`) and set it on both sides: `RATE_LIMIT_FORWARDER_SECRET` in the CMS and `NUXT_STRAPI_FORWARDER_SECRET` in the frontend. Set `RATE_LIMIT_ENABLED=true`, then redeploy both.
+4. Check the client address as `docs/RATE_LIMITING.md` describes before relying on the limits.
+
+**Rollback:** set `RATE_LIMIT_ENABLED=false` and redeploy (restart) the CMS; no image rollback and no data change is needed. The frontend keeps sending its forwarder headers, which the CMS ignores while disabled.
+
+**Staging** runs SQLite on one instance: use the default `memory` store. Buckets live in the process and reset on every deploy or restart. Keep `TRUST_PROXY=1` there too if Traefik fronts it.
+
+**`RATE_LIMIT_STORE=database`** is for several replicas on PostgreSQL sharing their counters. Production runs one replica, so it stays on `memory`; on SQLite the database store falls back to memory.
+
 ### Generating Security Keys
 
 Run locally:
