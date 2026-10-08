@@ -99,5 +99,8 @@ Micelio CMS is free software under the [GNU AGPL-3.0-only](LICENSE), like the [f
 
 - **Third-party material** (dependencies, Strapi's Enterprise code, the example data) and the content your site stores are not covered by Micelio's license and keep their own: see [THIRD-PARTY.md](THIRD-PARTY.md). Strapi's Enterprise code stays disabled.
 - **Contributing**: under the same license, with a DCO sign-off on every commit; see [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Future versions**: Micelio CMS is AGPL version 3 only. A proxy named in [LICENSE](LICENSE) (section 14) can accept a later version of the AGPL for it; a change to any other license is not possible this way.
+- **Integrations over the network**: Micelio's maintainer does not consider an app that only talks to Micelio CMS over its HTTP API, without including its code (the Micelio frontend, a hosting control panel, a bot), to be combined with it or covered by its license.
+- **Per file**: every file's license and copyright are recorded in [REUSE.toml](REUSE.toml), following the [REUSE specification](https://reuse.software/); the license texts are in [LICENSES/](LICENSES/).
 
 The reasons are in [ADR 0007](https://github.com/bogd3v/micelio/blob/main/docs/adr/0007-license.md) of the frontend.
