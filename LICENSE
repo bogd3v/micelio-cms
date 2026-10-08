@@ -10,9 +10,19 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the license below for more details.
 
 Third-party material in this repository (dependencies, including Strapi and its
-Enterprise code, example data, images and logos) is not covered by this license
-and keeps its own; neither is the content a site stores in Micelio, which
+Enterprise code, the parts of Strapi's project template the project started
+from, example data, images and logos) is not covered by this license and keeps
+its own; neither is the content a site stores in Micelio, which
 belongs to its authors. See THIRD-PARTY.md.
+
+Future versions (section 14): Micelio CMS is licensed under version 3 of the
+GNU Affero General Public License only. Alejandro Ramirez Garcia, or whoever he
+assigns his copyright in Micelio to, is the proxy of section 14 who can decide
+whether a later version of the GNU Affero General Public License, published by
+the Free Software Foundation, can be used for Micelio CMS; the proxy's public
+statement of acceptance of a version permanently authorizes its use. This
+allows only later versions of the GNU Affero General Public License, never
+another license.
 
 Additional term under section 7(e): this license grants no rights to use the
 names Micelio or BogDev or their logos as trademarks.

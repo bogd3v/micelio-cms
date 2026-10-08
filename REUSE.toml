@@ -1,0 +1,67 @@
+version = 1
+SPDX-PackageName = "Micelio CMS"
+SPDX-PackageDownloadLocation = "https://github.com/bogd3v/micelio-cms"
+
+# Licensing of every file, by path (REUSE specification 3.3, ADR 0007 of the frontend, amendment of 2026-10-08).
+# Later annotations win over earlier ones; THIRD-PARTY.md explains the third-party entries.
+
+# Micelio CMS: AGPL-3.0-only (LICENSE)
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2026 Alejandro Ramirez Garcia and the Micelio contributors"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Strapi's project template (create-strapi-app, templates/example), modified by Micelio
+[[annotations]]
+path = [
+  "data/data.json",
+  "scripts/seed.js",
+  "src/admin/app.example.tsx",
+  "config/admin.ts",
+  "config/api.ts",
+  "config/database.ts",
+  "config/middlewares.ts",
+  "config/plugins.ts",
+  "config/server.ts",
+  "src/index.ts",
+  "tsconfig.json",
+  "src/api/about/content-types/about/schema.json",
+  "src/api/article/content-types/article/schema.json",
+  "src/api/author/content-types/author/schema.json",
+  "src/api/category/content-types/category/schema.json",
+  "src/api/global/content-types/global/schema.json",
+  "src/api/article/controllers/article.ts",
+  "src/api/article/routes/article.ts",
+  "src/api/article/services/article.ts",
+  "src/components/shared/media.json",
+  "src/components/shared/seo.json",
+  "src/components/shared/slider.json",
+]
+SPDX-FileCopyrightText = ["2015-present Strapi Solutions SAS", "2026 Alejandro Ramirez Garcia and the Micelio contributors"]
+SPDX-License-Identifier = "AGPL-3.0-only AND MIT"
+
+# Strapi's project template, unmodified
+[[annotations]]
+path = [
+  "data/uploads/**",
+  "favicon.png",
+  "public/robots.txt",
+  "src/admin/tsconfig.json",
+  "src/admin/vite.config.example.ts",
+  "src/api/about/controllers/about.ts",
+  "src/api/about/routes/about.ts",
+  "src/api/about/services/about.ts",
+  "src/api/author/controllers/author.ts",
+  "src/api/author/routes/author.ts",
+  "src/api/author/services/author.ts",
+  "src/api/category/controllers/category.ts",
+  "src/api/category/routes/category.ts",
+  "src/api/category/services/category.ts",
+  "src/api/global/controllers/global.ts",
+  "src/api/global/routes/global.ts",
+  "src/api/global/services/global.ts",
+  "src/components/shared/quote.json",
+  "src/components/shared/rich-text.json",
+]
+SPDX-FileCopyrightText = "2015-present Strapi Solutions SAS"
+SPDX-License-Identifier = "MIT"
