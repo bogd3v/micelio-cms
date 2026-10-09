@@ -92,13 +92,19 @@ export function createRebuildHook(strapi: Core.Strapi, config: RebuildHookConfig
     strapi.log.error(`[rebuild] gave up after ${config.retries + 1} attempts`);
   }
 
+  /** Sends after the previous call settled, so calls go out in order. */
+  async function sendAfter(previous: Promise<void>, changes: RebuildChange[]): Promise<void> {
+    await previous;
+    await send(changes);
+  }
+
   function flush(): Promise<void> {
     if (timer) clearTimeout(timer);
     timer = null;
     if (pending.length === 0) return sending;
     const changes = pending;
     pending = [];
-    sending = sending.then(() => send(changes));
+    sending = sendAfter(sending, changes);
     return sending;
   }
 

@@ -329,10 +329,8 @@ describe('Author locales', () => {
 
   describe('a locale added later', () => {
     it('gets a localization of every existing author', async () => {
-      const total = await strapi.db
-        .query(AUTHOR)
-        .findMany({ where: { locale: 'en' } })
-        .then((rows) => rows.length);
+      const english = await strapi.db.query(AUTHOR).findMany({ where: { locale: 'en' } });
+      const total = english.length;
       expect(total).toBeGreaterThan(0);
       await strapi.plugin('i18n').service('locales').create({ code: 'fr', name: 'French (fr)' });
       const french = (await strapi.db

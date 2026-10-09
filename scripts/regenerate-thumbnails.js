@@ -70,7 +70,11 @@ async function regenerateThumbnails() {
   }
 }
 
-regenerateThumbnails().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await regenerateThumbnails();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+})();

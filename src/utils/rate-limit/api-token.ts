@@ -121,6 +121,15 @@ export function createTokenResolver(strapi: Core.Strapi, now = Date.now): TokenR
     }
   };
 
+  /** Runs the lookup and forgets it once settled, so concurrent callers share one request. */
+  const fetchShared = async (token: string, key: string): Promise<TokenInfo | null> => {
+    try {
+      return await fetchToken(token, key);
+    } finally {
+      pending.delete(key);
+    }
+  };
+
   return {
     peek(token) {
       const key = cacheKey(token);
@@ -136,7 +145,7 @@ export function createTokenResolver(strapi: Core.Strapi, now = Date.now): TokenR
       if (misses.get(key, current)) return Promise.resolve(null);
       let inFlight = pending.get(key);
       if (!inFlight) {
-        inFlight = fetchToken(token, key).finally(() => pending.delete(key));
+        inFlight = fetchShared(token, key);
         pending.set(key, inFlight);
       }
       return inFlight;

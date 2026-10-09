@@ -63,7 +63,11 @@ async function cleanupBrokenMedia() {
   }
 }
 
-cleanupBrokenMedia().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await cleanupBrokenMedia();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+})();
