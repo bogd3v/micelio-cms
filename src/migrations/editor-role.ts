@@ -28,6 +28,7 @@ const ACTIONS = [
   'plugin::users-permissions.user.me',
 ];
 
+/** Whether the role was created in this run and how many permissions were added. */
 export type EditorRoleReport = { roleCreated: boolean; permissionsGranted: number };
 
 /**

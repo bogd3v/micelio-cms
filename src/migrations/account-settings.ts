@@ -118,6 +118,7 @@ type EmailTemplates = Record<
   { options: Record<string, unknown> & { object: string; message: string } }
 >;
 
+/** `settingsApplied`: the settings were written in this run; `permissionsGranted`: permissions created in this run. */
 export type AccountSettingsReport = { settingsApplied: boolean; permissionsGranted: number };
 
 /**

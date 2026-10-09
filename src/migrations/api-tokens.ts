@@ -11,6 +11,7 @@ export interface EnvToken {
   permissions: string[];
 }
 
+/** Name of the frontend server's Custom API token. */
 export const FRONTEND_TOKEN_NAME = 'frontend';
 
 /**
@@ -34,6 +35,7 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'api::subscriber.subscriber.delete',
 ];
 
+/** Name of the static build's Custom API token. */
 export const BUILD_TOKEN_NAME = 'build';
 
 /**
@@ -51,6 +53,7 @@ export const BUILD_TOKEN_PERMISSIONS = [
   'api::author.author.find',
 ];
 
+/** Definition of the frontend token, created from `FRONTEND_API_TOKEN`. */
 export const FRONTEND_TOKEN: EnvToken = {
   env: 'FRONTEND_API_TOKEN',
   name: FRONTEND_TOKEN_NAME,
@@ -58,6 +61,7 @@ export const FRONTEND_TOKEN: EnvToken = {
   permissions: FRONTEND_TOKEN_PERMISSIONS,
 };
 
+/** Definition of the static build token, created from `BUILD_API_TOKEN`. */
 export const BUILD_TOKEN: EnvToken = {
   env: 'BUILD_API_TOKEN',
   name: BUILD_TOKEN_NAME,
@@ -68,6 +72,7 @@ export const BUILD_TOKEN: EnvToken = {
 /** Shortest access key accepted: a guessable token would open the subscribers. */
 const MIN_KEY_LENGTH = 32;
 
+/** `disabled`: the variable is unset; `created`, `updated`: the token was written; `unchanged`: key and permissions already match. */
 export type EnvTokenReport = 'disabled' | 'created' | 'updated' | 'unchanged';
 
 interface TokenRow {

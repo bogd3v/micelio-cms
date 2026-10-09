@@ -31,6 +31,7 @@ const VERSION = 1;
 // `true` and `static` write the same site; `landing` also makes the showcase page the home page.
 const DEMO_PROFILES = ['true', 'static', 'landing'];
 
+/** `disabled`: not a demo profile; `already-applied`: the marker exists; `skipped-existing-content`: articles exist; `applied`: demo content written. */
 export type DemoSeedReport =
   'disabled' | 'applied' | 'skipped-existing-content' | 'already-applied';
 

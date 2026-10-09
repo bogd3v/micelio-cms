@@ -20,6 +20,7 @@ export type RateLimitGroupName =
   | 'fediverse-inbox'
   | 'api';
 
+/** Where counters live: process `memory` or the shared `database` (`RATE_LIMIT_STORE`). */
 export type RateLimitStoreName = 'memory' | 'database';
 
 /** `config/rate-limit.ts`, read through `strapi.config.get('rate-limit')`. */

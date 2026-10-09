@@ -71,8 +71,11 @@ export default tseslint.config(
   {
     files: [
       'src/api/**/*.ts',
+      'src/constants/**/*.ts',
       'src/extensions/**/*.ts',
       'src/middlewares/**/*.ts',
+      'src/migrations/**/*.ts',
+      'src/types/**/*.ts',
       'src/utils/**/*.ts',
     ],
     rules: {

@@ -5,11 +5,14 @@
  * ships inside the image and carries no third-party license.
  */
 
+/** Locales the demo content is written in. */
 export type DemoLocale = 'en' | 'es';
 type Localized<T> = Record<DemoLocale, T>;
 
+/** `DemoLocale` values in the order the seed creates them. */
 export const DEMO_LOCALES: DemoLocale[] = ['en', 'es'];
 
+/** Name and description of the demo site, per locale. */
 export const DEMO_SITE: Localized<{ name: string; description: string }> = {
   en: {
     name: 'Field Notes',
@@ -21,16 +24,19 @@ export const DEMO_SITE: Localized<{ name: string; description: string }> = {
   },
 };
 
+/** The fictional author of every demo article; `example.com` is a reserved domain. */
 export const DEMO_AUTHOR = { name: 'Alex Moreno', email: 'alex@example.com' };
 
 /** The demo's only link: Micelio itself, the project the visitor is trying. */
 export const DEMO_SOCIAL_LINKS = [{ network: 'github', url: 'https://github.com/bogd3v/micelio' }];
 
+/** A demo category, identified by `slug`, with its localized text. */
 export interface DemoCategory {
   slug: string;
   text: Localized<{ name: string; description: string }>;
 }
 
+/** Categories of the demo site. */
 export const DEMO_CATEGORIES: DemoCategory[] = [
   {
     slug: 'garden',
@@ -48,11 +54,13 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
   },
 ];
 
+/** A demo tag, identified by `slug`, with its localized name. */
 export interface DemoTag {
   slug: string;
   name: Localized<string>;
 }
 
+/** Tags of the demo site. */
 export const DEMO_TAGS: DemoTag[] = [
   { slug: 'beginners', name: { en: 'Beginners', es: 'Principiantes' } },
   { slug: 'compost', name: { en: 'Compost', es: 'Compost' } },
@@ -63,6 +71,7 @@ type Block =
   | { __component: 'shared.rich-text'; body: string }
   | { __component: 'shared.quote'; title: string; body: string };
 
+/** A demo article: `category` and `tags` are slugs of `DEMO_CATEGORIES` and `DEMO_TAGS`. */
 export interface DemoArticle {
   category: string;
   tags: string[];
@@ -73,6 +82,7 @@ export interface DemoArticle {
 
 const richText = (body: string): Block => ({ __component: 'shared.rich-text', body });
 
+/** Articles of the demo site. */
 export const DEMO_ARTICLES: DemoArticle[] = [
   {
     category: 'garden',
@@ -219,6 +229,7 @@ La lechuga vieja no se pierde: cocínala con papa y cebolla, licúala y termína
   },
 ];
 
+/** Title and body of the demo About page, per locale. */
 export const DEMO_ABOUT: Localized<{ title: string; body: string }> = {
   en: {
     title: 'About',
@@ -296,6 +307,7 @@ export function triangleGltf(): string {
   });
 }
 
+/** Slug of the showcase page, per locale. */
 export const DEMO_SHOWCASE_SLUG: Localized<string> = { en: 'showcase', es: 'muestra' };
 
 /** Media the showcase page uses, uploaded by the seed. */

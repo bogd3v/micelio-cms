@@ -4,6 +4,7 @@
  * carries the ones its component declares.
  */
 
+/** Attribution of an image: its license, author and the pages that prove them. */
 export interface ImageCredit {
   license?: string | null;
   author?: string | null;
@@ -12,6 +13,7 @@ export interface ImageCredit {
   licenseUrl?: string | null;
 }
 
+/** A block of the article body; which fields are filled depends on `__component`. */
 export interface BodyBlock {
   __component?: string;
   /** `shared.rich-text` and `shared.quote`. */
