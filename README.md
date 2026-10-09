@@ -88,6 +88,7 @@ CI runs the same checks plus `npm run build` on every pull request to `main`.
 | Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md` |
 | Reporting vulnerabilities, dependency policy  | `SECURITY.md`               |
 | Accepted dependency vulnerabilities           | `docs/DEPENDENCY_RISKS.md`  |
+| The frontend's API token and its permissions  | `docs/API_TOKENS.md`        |
 
 ## Deployment
 
