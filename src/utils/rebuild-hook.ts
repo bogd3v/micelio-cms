@@ -8,8 +8,10 @@
 import type { Core } from '@strapi/strapi';
 import { ARTICLE_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
 
+/** The `event_type` sent in the `repository_dispatch` body of every rebuild call. */
 export const REBUILD_EVENT_TYPE = 'micelio-content';
 
+/** Settings of the rebuild hook, read from the `REBUILD_HOOK_*` environment variables. */
 export interface RebuildHookConfig {
   url: string;
   /** Sent as `Authorization: Bearer` (a GitHub token for `repository_dispatch`). */

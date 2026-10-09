@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import type { Core } from '@strapi/strapi';
 
+/** The kind of API token a bearer belongs to. */
 export type TokenKind = 'content-api' | 'admin';
 
+/** A stored API token, identified by kind and id. */
 export interface TokenInfo {
   kind: TokenKind;
   id: number;
@@ -69,6 +71,7 @@ class TtlCache<V> {
   }
 }
 
+/** Looks up which API token a bearer string belongs to. */
 export interface TokenResolver {
   /** Cached answer: the token, null for a known miss, undefined when not cached. */
   peek(token: string): TokenInfo | null | undefined;

@@ -46,7 +46,7 @@ export default tseslint.config(
   },
   // TSDoc on exported declarations (standard, section 4, "Doc comments (TSDoc)").
   // The jsdoc rule is a warning while the areas get their comments (bogd3v/micelio-cms#116);
-  // each area listed in the last block is already complete and fails on a missing one.
+  // each area listed in the last block is complete and fails on a missing one.
   {
     files: ['src/**/*.ts'],
     ignores: ['**/*.d.ts'],
@@ -69,7 +69,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/extensions/**/*.ts', 'src/middlewares/**/*.ts'],
+    files: [
+      'src/api/**/*.ts',
+      'src/extensions/**/*.ts',
+      'src/middlewares/**/*.ts',
+      'src/utils/**/*.ts',
+    ],
     rules: {
       'jsdoc/require-jsdoc': [
         'error',

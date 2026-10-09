@@ -9,6 +9,7 @@ import { CITATION_PATTERN } from './citations';
 /** Hard cap so a huge article can't bloat every row it is copied into. */
 export const MAX_PLAIN_TEXT_LENGTH = 100_000;
 
+/** Strips Markdown and HTML syntax from an article body, keeping the text a reader sees. */
 export function markdownToPlainText(markdown: string): string {
   return (
     markdown

@@ -6,6 +6,7 @@ import type { Forwarded } from './types';
 
 const digest = (value: string) => createHash('sha256').update(value).digest();
 
+/** Reads the client address the trusted frontend forwards and strips the forwarding headers. */
 export interface Forwarder {
   /** `useClient`: whether this path may take the forwarded address (only `/api/*`). */
   apply(

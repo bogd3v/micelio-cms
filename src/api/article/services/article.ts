@@ -7,18 +7,30 @@ import { ARTICLE_UID } from '../../../constants/uids';
 import { snippetAround } from '../utils/plain-text';
 import type { DraftSummary } from '../../../types/article-drafts';
 
+/** Shortest query, in characters, that the search accepts. */
 export const SEARCH_MIN_LENGTH = 3;
+/** Number of results `search` returns when the caller gives no usable limit. */
 export const SEARCH_DEFAULT_LIMIT = 10;
+/** Largest number of results `search` returns; a higher limit is clamped to it. */
 export const SEARCH_MAX_LIMIT = 50;
 
+/** Parameters of the article search. */
 export interface SearchOptions {
+  /** Text to look for, matched case-insensitively as a substring. */
   query: string;
+  /** Restricts the search to one locale; all locales when omitted. */
   locale?: string;
   /** Also search the description and the body, not only the title. */
   content?: boolean;
+  /**
+   * Results to return, between 1 and `SEARCH_MAX_LIMIT`.
+   *
+   * @defaultValue `SEARCH_DEFAULT_LIMIT`
+   */
   limit?: number;
 }
 
+/** The field of an article where a search query matched. */
 export type SearchMatch = 'title' | 'description' | 'content';
 
 interface SearchRow {

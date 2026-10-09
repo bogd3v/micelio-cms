@@ -146,6 +146,7 @@ function isTrusted(list: BlockList, ip: string): boolean {
   return list.check(ip, isIP(ip) === 4 ? 'ipv4' : 'ipv6');
 }
 
+/** The client address of a request and how it was found. */
 export interface ResolvedIp {
   /** Normalised address, never empty (`unknown` when the socket has none). */
   ip: string;
