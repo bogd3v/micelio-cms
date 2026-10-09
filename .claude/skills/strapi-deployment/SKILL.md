@@ -1,6 +1,6 @@
 ---
 name: strapi-deployment
-description: Use when the user asks about deploying, Docker, Dokploy, CI/CD, production environment variables, health checks, or build issues for the devbog Strapi backend.
+description: Use when the user asks about deploying, Docker, Dokploy, CI/CD, production environment variables, health checks, or build issues for the Micelio CMS.
 ---
 
 # Strapi Deployment Skill

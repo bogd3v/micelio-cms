@@ -1,6 +1,6 @@
 ---
 name: strapi-seeding
-description: Use when seeding sample data, importing content, setting public permissions programmatically, or extending the seed script for the devbog Strapi backend.
+description: Use when seeding sample data, importing content, setting public permissions programmatically, or extending the seed script for the Micelio CMS.
 ---
 
 # Strapi Seeding Skill

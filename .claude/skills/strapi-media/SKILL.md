@@ -1,11 +1,11 @@
 ---
 name: strapi-media
-description: Use when the user asks about images, file uploads, media fields, upload provider, image optimizer, breakpoints, or production upload storage for the devbog Strapi backend.
+description: Use when the user asks about images, file uploads, media fields, upload provider, image optimizer, breakpoints, or production upload storage for the Micelio CMS.
 ---
 
 # Strapi Media Skill
 
-Media handling is central to the blog backend. Images are used for article covers, author avatars, the site favicon, SEO share images, and inside dynamic-zone blocks.
+Media handling is central to the CMS. Images are used for article covers, author avatars, the site favicon, SEO share images, and inside dynamic-zone blocks.
 
 ## When to use this skill
 

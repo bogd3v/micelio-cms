@@ -106,13 +106,13 @@ npm run test:coverage  # Run Jest with coverage report
 
 ### Naming Conventions
 
-| Item                 | Convention          | Example                 |
-| -------------------- | ------------------- | ----------------------- |
-| Content types        | kebab-case singular | `api::article.article`  |
-| API routes           | kebab-case          | `/api/articles`         |
-| Controllers/Services | kebab-case          | `article.controller.ts` |
-| Components           | PascalCase          | `SharedMedia`           |
-| Config files         | camelCase           | `database.ts`           |
+| Item                 | Convention          | Example                  |
+| -------------------- | ------------------- | ------------------------ |
+| Content types        | kebab-case singular | `api::article.article`   |
+| API routes           | kebab-case          | `/api/articles`          |
+| Controllers/Services | kebab-case          | `controllers/article.ts` |
+| Components           | PascalCase          | `SharedMedia`            |
+| Config files         | camelCase           | `database.ts`            |
 
 ### Strapi API Patterns
 
@@ -160,19 +160,26 @@ const articles = await strapi.documents('api::article.article').findMany({
 
 ### Error Handling
 
+Catch an error only where it can be handled or given context, log it with `strapi.log` (never `console` in `src/`) and never swallow it. Scripts use `async`/`await` with `try`/`catch`, not promise chains. See section 4 of the [engineering standard](docs/engineering-standard.md).
+
 ```typescript
-// In services/queries - catch and log errors
+// In services/queries - catch, add context and log the cause
 try {
   await strapi.documents('api::model.model').create({ data });
 } catch (error) {
-  console.error({ model, data, error });
+  strapi.log.error(
+    `Could not create model: ${error instanceof Error ? error.message : String(error)}`
+  );
+  throw error;
 }
 
-// In standalone scripts - exit with code
-main().catch((error) => {
+// In standalone scripts - set the exit code
+try {
+  await main();
+} catch (error) {
   console.error(error);
-  process.exit(1);
-});
+  process.exitCode = 1;
+}
 ```
 
 ---
@@ -233,6 +240,7 @@ Project-specific agent skills live in `.claude/skills/`. They are loaded automat
 | `strapi-deployment`   | Deploying, changing Docker/Dokploy config, env vars, or health checks                   |
 | `strapi-subscriber`   | Working with newsletter subscriptions, signup, or confirmation flows                    |
 | `strapi-comments`     | Configuring or querying the comments plugin and moderation settings                     |
+| `strapi-fediverse`    | Working on the ActivityPub plugin, Fedify, followers, replies, or `FEDIVERSE_*` vars    |
 
 Each skill file is at `.claude/skills/<name>/SKILL.md`.
 
@@ -242,7 +250,7 @@ Each skill file is at `.claude/skills/<name>/SKILL.md`.
 
 1. **Jest + Supertest** configured for integration tests against an isolated SQLite database
 2. **ESLint + Prettier** configured — run `npm run lint` and `npm run format` before committing
-3. **Strict TypeScript disabled** (`strict: false` in tsconfig.json)
+3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, the fediverse plugin and `tests/`); `npm run typecheck` covers all three
 4. **PostgreSQL 18 managed by Dokploy** used for production database; backups are handled in the `bogdev-infra` repo
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
 6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and deploy on `main`

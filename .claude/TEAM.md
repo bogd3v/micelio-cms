@@ -22,15 +22,15 @@ The main session acts as **tech lead / orchestrator**. It splits the work, hands
 
 ## Where the plan lives
 
-- Work is tracked in GitHub issues; fediverse work in the `fediverse-federation` milestone (phases 0–5) with `docs/FEDIVERSE.md` as the living tracker. Frontend-wide planning is micelio's epic #240.
+- Work is tracked in GitHub issues; fediverse work in the `fediverse-federation` milestone (phases 0–5) with `docs/FEDIVERSE.md` as the living tracker. Cross-repository planning is micelio's epic #408 (engineering foundations).
 - `CLAUDE.md` holds the architecture notes and non-obvious findings; read the relevant section before changing an area.
 - Deployment and pipeline details are in `docs/CI_CD.md`; `main` → production, `develop` → staging.
 
 ## Cross-repo contract (`micelio-cms` ↔ `micelio`)
 
-- Content types, components and dynamic-zone blocks are defined in **micelio-cms** (`src/components/`, `src/api/*/content-types/`) and rendered here (`strapi-block` skill).
+- Content types, components and dynamic-zone blocks are defined in **micelio-cms** (`src/components/`, `src/api/*/content-types/`) and rendered by the frontend in **micelio** (its `strapi-block` skill).
 - Token permissions: micelio's `docs/security.md` must match what `micelio-cms/src/migrations/api-tokens.ts` grants.
-- `site.modules` and `site.theme` come from the CMS `api::site-setting`; theme rules are ADR 0005 here, enforced by `src/utils/site-theme.ts` there.
+- `site.modules` and `site.theme` come from the CMS `api::site-setting`; theme rules are ADR 0005 in micelio, enforced here by `src/utils/site-theme.ts`.
 - Order for a change that crosses the contract: CMS schema/permissions first (behind a default that keeps the old frontend working), frontend second, each in its own PR referencing the same issue.
 
 Clone both repos side by side (`../micelio`) so agents can read the other side of the contract. Agents only **read** the other repo; changes there happen in a session opened in that repo.
