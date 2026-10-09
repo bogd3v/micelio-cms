@@ -14,7 +14,7 @@ import { rateLimitState } from '../utils/rate-limit/state';
  * reads `ctx.ips`.
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
-  async (ctx: Context, next: Next) => {
+  async (ctx: Context, next: Next): Promise<void> => {
     const settings = getClientIpSettings(strapi);
     if (!settings) return next();
 

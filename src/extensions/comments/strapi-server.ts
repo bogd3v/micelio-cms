@@ -10,7 +10,7 @@ interface CommentsPlugin {
   };
 }
 
-export default (plugin: CommentsPlugin) => {
+export default (plugin: CommentsPlugin): CommentsPlugin => {
   const { schema } = plugin.contentTypes.comment;
 
   schema.attributes = {

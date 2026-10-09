@@ -40,7 +40,7 @@ export default (_config: unknown, _deps: { strapi: Core.Strapi }) =>
   async (
     ctx: { method: string; path: string; status: number; body?: unknown; notFound: () => void },
     next: () => Promise<unknown>
-  ) => {
+  ): Promise<void> => {
     await next();
 
     if (ctx.method !== 'GET' || !ctx.path.startsWith(COMMENTS_API_PREFIX)) return;

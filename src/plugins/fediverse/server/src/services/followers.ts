@@ -223,7 +223,13 @@ export async function countFollowers(
   return await query(strapi).count({ where: await followersWhere(strapi, blocked) });
 }
 
-export default () => ({
+export default (): {
+  isActorBlocked: typeof isActorBlocked;
+  recordFollower: typeof recordFollower;
+  removeFollower: typeof removeFollower;
+  listFollowers: typeof listFollowers;
+  countFollowers: typeof countFollowers;
+} => ({
   isActorBlocked,
   recordFollower,
   removeFollower,

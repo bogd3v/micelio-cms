@@ -605,7 +605,9 @@ const GUARD_WARNING_INTERVAL_MS = 60_000;
  * `plugin::fediverse.requestGuard` runs first and may answer the request
  * itself.
  */
-export function mountFediverseMiddleware(strapi: Core.Strapi) {
+export function mountFediverseMiddleware(
+  strapi: Core.Strapi
+): (ctx: KoaContext, next: () => Promise<void>) => Promise<void> {
   const fedify = createMiddleware<FediverseContextData, KoaContext>(getFederation(strapi), () => ({
     strapi,
   }));
@@ -642,7 +644,7 @@ export function mountFediverseMiddleware(strapi: Core.Strapi) {
   //
   // The guard runs before Fedify touches the request stream, so a request it
   // rejects is answered with its body unread.
-  return async (ctx: KoaContext, next: () => Promise<void>) => {
+  return async (ctx: KoaContext, next: () => Promise<void>): Promise<void> => {
     if (!isFederationPath(ctx.path)) return next();
     if (await guardHandled(ctx)) return;
     return fedify(ctx, next);

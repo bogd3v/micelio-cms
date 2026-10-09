@@ -150,7 +150,9 @@ export async function ensureEnvToken(
 }
 
 /** The frontend's token, from `FRONTEND_API_TOKEN`. */
-export const ensureFrontendToken = (strapi: Core.Strapi) => ensureEnvToken(strapi, FRONTEND_TOKEN);
+export const ensureFrontendToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
+  ensureEnvToken(strapi, FRONTEND_TOKEN);
 
 /** The static build's read-only token, from `BUILD_API_TOKEN`. */
-export const ensureBuildToken = (strapi: Core.Strapi) => ensureEnvToken(strapi, BUILD_TOKEN);
+export const ensureBuildToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
+  ensureEnvToken(strapi, BUILD_TOKEN);

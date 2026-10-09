@@ -63,7 +63,7 @@ async function limitApi(ctx: Context, runtime: RateLimitRuntime, isMcp: boolean)
  * request the fediverse guard already counted.
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
-  async (ctx: Context, next: Next) => {
+  async (ctx: Context, next: Next): Promise<void> => {
     const runtime = getRateLimitRuntime(strapi);
     const state = rateLimitState(ctx);
     if (!runtime || state.checked) return next();

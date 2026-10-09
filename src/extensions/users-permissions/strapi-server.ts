@@ -28,7 +28,7 @@ type SessionUser = {
   role?: { id: number; documentId: string; name: string; type: string };
 };
 
-export default (plugin: UsersPermissionsPlugin) => {
+export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
   // The frontend reads the role of the session user (`role.type === 'editor'`)
   // from /users/me, but populating `role` needs `role.find` on the caller's
   // role, which would list every role to anyone signed in. The authenticated

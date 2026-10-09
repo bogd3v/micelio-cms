@@ -17,7 +17,7 @@ function query(strapi: Core.Strapi) {
  * (used here) can insert duplicates. (type, actor, article) is folded into one
  * key that the deduplication below is built on.
  */
-export function interactionKey(type: InteractionType, actorId: string, documentId: string) {
+export function interactionKey(type: InteractionType, actorId: string, documentId: string): string {
   return `${type}|${actorId}|${documentId}`;
 }
 
@@ -100,7 +100,11 @@ export async function countInteractions(
   return { likes, boosts };
 }
 
-export default () => ({
+export default (): {
+  recordInteraction: typeof recordInteraction;
+  removeInteraction: typeof removeInteraction;
+  countInteractions: typeof countInteractions;
+} => ({
   recordInteraction,
   removeInteraction,
   countInteractions,

@@ -17,7 +17,7 @@ import { getRateLimitRuntime } from '../utils/rate-limit/runtime';
  * attacker use up an account's quota; accepted.
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
-  async (ctx: Context, next: Next) => {
+  async (ctx: Context, next: Next): Promise<void> => {
     const runtime = getRateLimitRuntime(strapi);
     if (!runtime) return next();
     const path = normalizePath(ctx.path);

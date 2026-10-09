@@ -31,6 +31,12 @@ export interface RebuildChange {
   locale?: string | null;
 }
 
+interface RebuildHook {
+  schedule(change: RebuildChange): void;
+  flush(): Promise<void>;
+  stop(): void;
+}
+
 interface EntryEvent {
   uid?: string;
   entry?: { documentId?: string; locale?: string | null };
@@ -60,7 +66,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * network errors and non-2xx answers. It never throws: a failing hook is
  * logged, and publishing is never blocked or failed by it.
  */
-export function createRebuildHook(strapi: Core.Strapi, config: RebuildHookConfig) {
+export function createRebuildHook(strapi: Core.Strapi, config: RebuildHookConfig): RebuildHook {
   let pending: RebuildChange[] = [];
   let timer: NodeJS.Timeout | null = null;
   let sending: Promise<void> = Promise.resolve();

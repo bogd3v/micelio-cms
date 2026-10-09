@@ -44,12 +44,14 @@ export default tseslint.config(
       ],
     },
   },
-  // TSDoc on exported declarations (standard, section 4, "Doc comments (TSDoc)").
+  // TSDoc on exported declarations and explicit types at module boundaries (standard, section 4).
   {
     files: ['src/**/*.ts'],
     ignores: ['**/*.d.ts'],
     plugins: { tsdoc, jsdoc },
     rules: {
+      // Exported functions declare their return type (standard, section 4, "TypeScript").
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
       'tsdoc/syntax': 'error',
       'jsdoc/require-jsdoc': [
         'error',

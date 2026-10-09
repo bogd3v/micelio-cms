@@ -32,7 +32,10 @@ function walkComments(value: unknown, visit: (comment: CommentNode) => void): vo
  * response body, in place, from `fieldsById`. Comments without a row get
  * `null` for both, so clients can rely on the keys being present.
  */
-export function attachFediverseFields(body: unknown, fieldsById: Map<number, FediverseFields>) {
+export function attachFediverseFields(
+  body: unknown,
+  fieldsById: Map<number, FediverseFields>
+): void {
   walkComments(body, (comment) => {
     const fields = fieldsById.get(comment.id as number);
     comment.fediverseUri = fields?.fediverseUri ?? null;
@@ -50,7 +53,7 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (
     ctx: { method: string; path: string; status: number; body?: unknown },
     next: () => Promise<unknown>
-  ) => {
+  ): Promise<void> => {
     await next();
 
     if (ctx.method !== 'GET' || !ctx.path.startsWith(COMMENTS_API_PREFIX)) return;
