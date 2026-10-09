@@ -349,6 +349,48 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       }
     });
 
+    it('sends no Accept to a blocked actor that follows', async () => {
+      const blocked = await createRemoteActor({ preferredUsername: 'blocked-follow' });
+      const sentinel = await createRemoteActor({ preferredUsername: 'sentinel-follow' });
+      try {
+        const row = await followersService.recordFollower(strapi, {
+          actorId: blocked.actorUrl,
+          inbox: blocked.inboxUrl,
+        });
+        await strapi.db.query('plugin::fediverse.follower').update({
+          where: { documentId: row.documentId },
+          data: { blocked: true },
+        });
+
+        const follow = (remote: typeof blocked) =>
+          remote.postSignedActivity(`${actorUrl}/inbox`, {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            id: `${remote.actorUrl}/follows/blocked`,
+            type: 'Follow',
+            actor: remote.actorUrl,
+            object: actorUrl,
+          });
+        expect((await follow(blocked)).ok).toBe(true);
+        expect((await follow(sentinel)).ok).toBe(true);
+
+        // Inbox listeners run inline, before the POST returns (there is no queue): the
+        // sentinel's Accept confirms the blocked actor's Follow has already been handled.
+        await waitUntil(() =>
+          sentinel.inboxDeliveries.find((activity) => activity.type === 'Accept')
+        );
+        expect(blocked.inboxDeliveries.find((activity) => activity.type === 'Accept')).toBe(
+          undefined
+        );
+        const kept = await strapi.db
+          .query('plugin::fediverse.follower')
+          .findOne({ where: { actorId: blocked.actorUrl } });
+        expect(kept?.blocked).toBe(true);
+      } finally {
+        await blocked.close();
+        await sentinel.close();
+      }
+    });
+
     it('ignores a Follow addressed to a different actor', async () => {
       const remote = await createRemoteActor({ preferredUsername: 'misaddressed' });
       try {

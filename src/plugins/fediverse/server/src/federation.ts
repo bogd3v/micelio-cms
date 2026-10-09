@@ -372,13 +372,17 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
 
       const avatar = await extractAvatarUrl(strapi, remoteActor, ctx.documentLoader);
 
-      await recordFollower(strapi, {
+      const follower = await recordFollower(strapi, {
         actorId: actorId.href,
         handle,
         name,
         inbox: remoteActor?.inboxId?.href ?? null,
         avatar,
       });
+
+      // A blocked actor gets no answer at all: an Accept would show the follow as
+      // accepted on its server, and a Reject would tell it that it is blocked.
+      if (follower.blocked) return;
 
       if (remoteActor == null || remoteActor.inboxId == null) {
         // Without the remote actor's inbox we cannot deliver a signed Accept;
