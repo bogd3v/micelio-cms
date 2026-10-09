@@ -257,6 +257,72 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       expect(reFollowed.blocked).toBe(true);
     });
 
+    describe('duplicate rows for one actor', () => {
+      const followerQuery = () => strapi.db.query('plugin::fediverse.follower');
+      const rowsOf = (actorId: string) =>
+        followerQuery().findMany({ where: { actorId }, orderBy: { id: 'asc' } });
+      // `unique: true` creates no database index, so concurrent Follows can leave two rows.
+      const insertDuplicates = async (actorId: string, blockedFlags: boolean[]) => {
+        for (const blocked of blockedFlags) {
+          await followerQuery().create({ data: { actorId, blocked } });
+        }
+      };
+
+      it('settles concurrent Follows from one actor into a single row', async () => {
+        const actorId = 'https://race.example/users/racer';
+
+        await Promise.all(
+          Array.from({ length: 5 }, () => followersService.recordFollower(strapi, { actorId }))
+        );
+
+        expect(await rowsOf(actorId)).toHaveLength(1);
+      });
+
+      it('treats an actor as blocked when any of its rows is blocked', async () => {
+        const actorId = 'https://dup.example/users/dup-blocked';
+        await insertDuplicates(actorId, [false, true]);
+
+        await expect(followersService.isActorBlocked(strapi, actorId)).resolves.toBe(true);
+        expect((await followersService.listFollowers(strapi)).map((f) => f.actorId)).not.toContain(
+          actorId
+        );
+        // The blocked actor's unblocked duplicate is not counted either.
+        await expect(followersService.countFollowers(strapi)).resolves.toBe(0);
+        await insertDuplicates('https://dup.example/users/dup-ok', [false]);
+        await expect(followersService.countFollowers(strapi)).resolves.toBe(1);
+      });
+
+      it('keeps every row of a blocked actor on Undo or Block', async () => {
+        const actorId = 'https://dup.example/users/dup-undo';
+        await insertDuplicates(actorId, [false, true]);
+
+        await expect(followersService.removeFollower(strapi, actorId)).resolves.toBe(false);
+
+        expect(await rowsOf(actorId)).toHaveLength(2);
+      });
+
+      it('removes all rows of an actor that is not blocked', async () => {
+        const actorId = 'https://dup.example/users/dup-plain';
+        await insertDuplicates(actorId, [false, false]);
+
+        await expect(followersService.removeFollower(strapi, actorId)).resolves.toBe(true);
+
+        expect(await rowsOf(actorId)).toHaveLength(0);
+      });
+
+      it('merges the duplicates on the next Follow and keeps the block', async () => {
+        const actorId = 'https://dup.example/users/dup-merge';
+        await insertDuplicates(actorId, [false, true]);
+
+        const record = await followersService.recordFollower(strapi, { actorId });
+
+        expect(record.blocked).toBe(true);
+        const rows = await rowsOf(actorId);
+        expect(rows).toHaveLength(1);
+        expect(rows[0].blocked).toBe(true);
+      });
+    });
+
     it('removeFollower deletes the row and reports whether one existed', async () => {
       const created = await followersService.recordFollower(strapi, {
         actorId: 'https://example.social/users/bob',
