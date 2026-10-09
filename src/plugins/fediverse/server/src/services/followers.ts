@@ -79,11 +79,19 @@ export async function recordFollower(
 /**
  * Deletes a remote actor's follower row, on `Undo(Follow)` or `Block`.
  *
- * @returns `false` when the actor had no row.
+ * @remarks
+ * A row an admin has blocked is kept: the block is the admin's decision, and
+ * the blocked actor must not be able to lift it by undoing its own follow.
+ *
+ * @returns `false` when the actor had no row, or its row is blocked.
  */
 export async function removeFollower(strapi: Core.Strapi, actorId: string): Promise<boolean> {
   const existing = (await query(strapi).findOne({ where: { actorId } })) as FollowerRow | null;
   if (!existing) return false;
+  if (existing.blocked) {
+    strapi.log.info(`[fediverse] kept the blocked actor ${actorId}: only an admin lifts a block`);
+    return false;
+  }
 
   await query(strapi).delete({ where: { documentId: existing.documentId } });
   return true;
