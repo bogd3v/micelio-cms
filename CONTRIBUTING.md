@@ -1,6 +1,6 @@
 # Contributing to Micelio CMS
 
-Thanks for helping. Conventions, commands and project structure are in [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md); the roadmap is the epic [bogd3v/micelio#240](https://github.com/bogd3v/micelio/issues/240).
+Thanks for helping. Conventions, commands and project structure are in [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md); the rules every Micelio repository shares are in the [engineering standard](docs/engineering-standard.md); the roadmap is the epic [bogd3v/micelio#240](https://github.com/bogd3v/micelio/issues/240).
 
 ## License of your contribution
 

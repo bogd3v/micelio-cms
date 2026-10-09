@@ -7,3 +7,5 @@ node_modules/
 public/uploads/
 coverage/
 package-lock.json
+docs/engineering-standard.md
+.github/
