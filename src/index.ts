@@ -26,6 +26,7 @@ import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
 import { assertAccentOverridesValid } from './utils/site-theme';
+import { assertSecurityContactValid } from './utils/site-security-contact';
 import { assertTimezoneValid } from './utils/site-timezone';
 import { createAuthorsForLocale, registerAuthorLocalesMiddleware } from './utils/author-locales';
 import { assertPageSectionsValid } from './utils/page-sections';
@@ -99,7 +100,8 @@ export default {
       return next();
     });
 
-    // Rejects incomplete accent overrides, two overrides for one mode and an unknown timezone.
+    // Rejects incomplete accent overrides, two overrides for one mode, an unknown timezone
+    // and a malformed security contact.
     strapi.documents.use(async (context, next) => {
       if (
         context.uid === SITE_SETTING_UID &&
@@ -109,6 +111,7 @@ export default {
         if (data) {
           assertAccentOverridesValid(data);
           assertTimezoneValid(data);
+          assertSecurityContactValid(data);
         }
       }
       return next();

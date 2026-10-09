@@ -127,6 +127,15 @@
         }
       }
     },
+    "securityContact": {
+      "type": "string",
+      "maxLength": 512,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
     "privacyUpdatedAt": {
       "type": "datetime",
       "pluginOptions": {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { setPublicPermissions, setRolePermissions } from './helpers/permissions';
@@ -233,6 +233,55 @@ describe('Site settings', () => {
     ['an unknown network', { socialLinks: [{ network: 'myspace', url: 'https://myspace.com' }] }],
     ['a malformed contact email', { contactEmail: 'not-an-email' }],
     ['a malformed privacy email', { privacyContactEmail: 'ana@' }],
+    ['a security contact with an http scheme', { securityContact: 'http://example.com/security' }],
+    ['a security contact with a script scheme', { securityContact: 'javascript:alert(1)' }],
+    ['a security contact with a tel scheme', { securityContact: 'tel:+15550100' }],
+    ['a security contact that is not a URI', { securityContact: 'security@example.com' }],
+    ['a mailto contact without an address', { securityContact: 'mailto:' }],
+    ['an https contact without a host', { securityContact: 'https://' }],
+    [
+      'a security contact on several lines',
+      { securityContact: 'mailto:a@example.com\nmailto:b@example.com' },
+    ],
+    [
+      'a security contact with a control character',
+      { securityContact: 'mailto:a@example.com\u0000' },
+    ],
+    ['a security contact with an uppercase scheme', { securityContact: 'MAILTO:a@example.com' }],
+    ['an https contact without slashes', { securityContact: 'https:example.com' }],
+    ['an https contact with a backslash', { securityContact: 'https:\\\\example.com' }],
+    ['an https contact with credentials', { securityContact: 'https://user:pw@example.com' }],
+    [
+      'a mailto contact with two addresses',
+      { securityContact: 'mailto:a@example.com,b@example.com' },
+    ],
+    [
+      'a mailto contact with an encoded comma',
+      { securityContact: 'mailto:a@example.com%2Cb@example.com' },
+    ],
+    ['a mailto contact with a cc', { securityContact: 'mailto:a@example.com?cc=b@example.com' }],
+    [
+      'a mailto contact with an encoded line break',
+      { securityContact: 'mailto:a@example.com?subject=%0D%0ABcc:b@example.com' },
+    ],
+    [
+      'a security contact with a zero-width space',
+      { securityContact: 'mailto:a@example.com\u200b' },
+    ],
+    [
+      'a security contact with a bidi override',
+      { securityContact: 'https://example.com/\u202efdp' },
+    ],
+    [
+      'a security contact with a non-breaking space',
+      { securityContact: 'https://example.com/\u00a0x' },
+    ],
+    ['a security contact that is not a string', { securityContact: 42 }],
+    ['a security contact with a space', { securityContact: 'https://example.com/a b' }],
+    [
+      'a security contact longer than 512 characters',
+      { securityContact: `https://example.com/${'a'.repeat(512)}` },
+    ],
   ])('rejects %s', async (_case, data) => {
     await expect(
       strapi.documents(SITE_SETTING).update({
@@ -242,5 +291,47 @@ describe('Site settings', () => {
         data,
       })
     ).rejects.toMatchObject({ name: 'ValidationError' });
+  });
+
+  describe('security contact', () => {
+    beforeEach(async () => {
+      await strapi.documents(SITE_SETTING).update({
+        documentId: await documentId(),
+        locale: 'en',
+        data: { securityContact: '' },
+      });
+    });
+
+    async function saveContact(securityContact: string): Promise<void> {
+      await strapi.documents(SITE_SETTING).update({
+        documentId: await documentId(),
+        locale: 'en',
+        data: { securityContact },
+      });
+    }
+
+    it('is empty by default and returned to the frontend token', async () => {
+      expect((await read()).securityContact || null).toBeNull();
+    });
+
+    it.each([
+      ['a mailto URI', 'mailto:security@example.com'],
+      ['a mailto URI with a subject', 'mailto:security@example.com?subject=Report'],
+      ['an https URI', 'https://example.com/security'],
+    ])('accepts %s and returns it to the frontend token', async (_case, value) => {
+      await saveContact(value);
+      expect((await read()).securityContact).toBe(value);
+    });
+
+    it('trims surrounding whitespace', async () => {
+      await saveContact('  https://example.com/security \n');
+      expect((await read()).securityContact).toBe('https://example.com/security');
+    });
+
+    it('can be cleared', async () => {
+      await saveContact('https://example.com/security');
+      await saveContact('');
+      expect((await read()).securityContact).toBe('');
+    });
   });
 });
