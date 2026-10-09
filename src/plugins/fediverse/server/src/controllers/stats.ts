@@ -47,7 +47,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     ctx.body = await countInteractions(strapi, documentId);
   },
 
-  /** GET /articles/stats?documentIds=a,b,c → { [documentId]: { likes, boosts, replies } } */
+  /** `GET /articles/stats?documentIds=a,b,c`, answered as `{ [documentId]: { likes, boosts, replies } }`. */
   async batch(ctx: Context) {
     const raw = ctx.query.documentIds;
     const ids = [
