@@ -83,6 +83,7 @@
     "postcss": "^8.5.28",
     "markdown-it": "^14.3.2",
     "dompurify": "^3.4.16",
-    "@opentelemetry/core": "^2.8.0"
+    "@opentelemetry/core": "^2.8.0",
+    "handlebars": "^4.7.10"
   }
 }

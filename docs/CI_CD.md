@@ -7,6 +7,7 @@ This document explains how the continuous integration and deployment pipeline wo
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Workflow Steps](#workflow-steps)
+- [Pull request labels and release notes](#pull-request-labels-and-release-notes)
 - [Key Files](#key-files)
 - [Dokploy Configuration](#dokploy-configuration)
 - [Environment Variables](#environment-variables)
@@ -93,7 +94,7 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
 
 ### 1. Trigger
 
-The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` (typecheck, lint, format, tests, build) as a reusable workflow; nothing is built or deployed unless it passes. Pull requests to `main` or `develop` run `ci.yml` on their own. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
+The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` (audit, typecheck, lint, format, tests, build) as a reusable workflow; nothing is built or deployed unless it passes. Pull requests to `main` or `develop` run `ci.yml` on their own. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
 
 **File:** `.github/workflows/deploy.yml`
 
@@ -147,6 +148,12 @@ If the new container fails health checks, Dokploy automatically rolls back to th
 
 ---
 
+## Pull request labels and release notes
+
+`.github/workflows/pr-labels.yml` labels each pull request from its conventional title prefix: `feat` → `enhancement`, `fix` → `bug`, `docs` → `documentation`, `refactor` and `style` → `refactor`, `test` → `testing`, `ci` → `ci`, `perf` → `performance`, `chore` → `code-quality`. The scope `security` adds `security` and the scope `deps` gives `dependencies` (Dependabot PRs are skipped). `.github/release.yml` groups GitHub's generated release notes by those labels. The labels are repository settings, so a fork needs them created once.
+
+`ci.yml` also runs `npm audit --audit-level=critical`. A finding that cannot be fixed yet goes in `docs/DEPENDENCY_RISKS.md` with its reason, never silenced without one.
+
 ## Key Files
 
 ### Dockerfile
@@ -196,7 +203,7 @@ Excludes unnecessary files from the Docker image:
 
 Three jobs:
 
-1. `ci`: Runs `.github/workflows/ci.yml` (typecheck, lint, format, tests, build)
+1. `ci`: Runs `.github/workflows/ci.yml` (audit, typecheck, lint, format, tests, build)
 2. `build-and-push`: Builds and pushes Docker image (depends on `ci`)
 3. `deploy`: Triggers Dokploy deployment (depends on build success)
 

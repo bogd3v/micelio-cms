@@ -1,0 +1,45 @@
+name: PR labels
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Label from the title
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add the label of the conventional prefix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          type=$(printf '%s' "$TITLE" | sed -nE 's/^([a-z]+)(\([^)]*\))?!?:.*/\1/p')
+          scope=$(printf '%s' "$TITLE" | sed -nE 's/^[a-z]+\(([^)]*)\)!?:.*/\1/p')
+          case "$type" in
+            feat) labels=enhancement ;;
+            fix) labels=bug ;;
+            docs) labels=documentation ;;
+            refactor|style) labels=refactor ;;
+            test) labels=testing ;;
+            ci) labels=ci ;;
+            perf) labels=performance ;;
+            chore) labels=code-quality ;;
+            *) labels= ;;
+          esac
+          case "$scope" in
+            security|seguridad) labels="${labels:+$labels,}security" ;;
+            deps|deps-dev) labels=dependencies ;;
+          esac
+          if [ -z "$labels" ]; then
+            echo "::notice::No conventional prefix in the title; the PR will go to Other changes"
+            exit 0
+          fi
+          gh pr edit "$PR" --repo "$REPO" --add-label "$labels"
