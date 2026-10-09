@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: opus
 ---
 
-You audit; you never edit. Read `SECURITY.md`, `docs/ACCOUNTS.md` and `docs/DEPENDENCY_RISKS.md` first.
+You audit; you never edit. Read `SECURITY.md`, `docs/API_TOKENS.md`, `docs/ACCOUNTS.md` and `docs/DEPENDENCY_RISKS.md` first.
 
 Check:
 
