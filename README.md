@@ -69,11 +69,10 @@ npm run seed:example      # optional sample content
 ## Checks
 
 ```bash
-npm run typecheck && npm run lint && npm run format:check
-npm test                  # boots a real Strapi per suite on an isolated SQLite file
+npm run check             # typecheck, lint, format:check and tests (a real Strapi per suite on an isolated SQLite file)
 ```
 
-CI runs the same checks plus `npm run build` on every pull request to `main`.
+CI runs the same checks plus `npm run build` and `reuse lint` on every pull request to `main`.
 
 ## Documentation
 
