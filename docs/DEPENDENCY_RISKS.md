@@ -17,6 +17,7 @@ The parent pins an older patch of the same major, so `overrides` lifts it:
 | `dompurify`           | `@strapi/content-manager` (3.4.13)               | `^3.4.16`  | 1             |
 | `@opentelemetry/core` | `@opentelemetry/sdk-metrics` (2.7.1, via Fedify) | `^2.8.0`   | 1             |
 | `axios`               | `@strapi/*` (1.19.0)                             | `^1.20.0`  | npm audit     |
+| `handlebars`          | `@strapi/generators`, `plop` (4.7.9)             | `^4.7.10`  | npm audit     |
 
 Drop an override once the parent ships the patched version, so it doesn't hold back later updates.
 
