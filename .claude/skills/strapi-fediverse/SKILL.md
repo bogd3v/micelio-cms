@@ -1,11 +1,11 @@
 ---
 name: strapi-fediverse
-description: Use when working on the ActivityPub/fediverse federation of the BogDev blog — the src/plugins/fediverse plugin, Fedify, followers, article federation, replies as comments, likes/boosts, the stats endpoint, FEDIVERSE_* env vars, or testing federation locally and on staging.
+description: Use when working on the ActivityPub/fediverse federation of the Micelio site — the src/plugins/fediverse plugin, Fedify, followers, article federation, replies as comments, likes/boosts, the stats endpoint, FEDIVERSE_* env vars, or testing federation locally and on staging.
 ---
 
 # Strapi Fediverse Skill
 
-The blog is an ActivityPub actor (`@devbog@<api domain>`) served by a local Strapi plugin built on **Fedify**. Read `docs/FEDIVERSE.md` first: it is the architecture doc and records the findings behind every non-obvious decision. This skill is the quick map.
+The site is an ActivityPub actor (`@devbog@<api domain>`) served by a local Strapi plugin built on **Fedify**. Read `docs/FEDIVERSE.md` first: it is the architecture doc and records the findings behind every non-obvious decision. This skill is the quick map.
 
 ## When to use this skill
 

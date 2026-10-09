@@ -1,6 +1,6 @@
 ---
 name: strapi-comments
-description: Use when the user asks about the comments plugin, article comments, comment moderation, nested comments, or public comment permissions in the devbog Strapi backend.
+description: Use when the user asks about the comments plugin, article comments, comment moderation, nested comments, or public comment permissions in the Micelio CMS.
 ---
 
 # Strapi Comments Skill

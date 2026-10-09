@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-A more detailed `AGENTS.md` already exists in this repo with naming conventions and Strapi API patterns — read it for anything not covered here. Project skills live in `.claude/skills/` (content types, API consumers, media, seeding, deployment, subscribers, comments) and MCP servers (Strapi, Dokploy) are declared in `.mcp.json`; their secrets are read from `~/.claude/secrets/`, never from the repo.
+A more detailed `AGENTS.md` already exists in this repo with naming conventions and Strapi API patterns — read it for anything not covered here. Project skills live in `.claude/skills/` (content types, API consumers, media, seeding, deployment, subscribers, comments, fediverse) and MCP servers (Strapi, Dokploy) are declared in `.mcp.json`; their secrets are read from `~/.claude/secrets/`, never from the repo.
 
 ## Project
 
-Strapi 5 (TypeScript) headless CMS backend for the BogDev blog, deployed as a Docker image to a Hetzner VPS via Dokploy (see `docs/CI_CD.md`). Production DB is PostgreSQL 18 managed by Dokploy on the same VPS (`bogdev-prod`), reached through `DATABASE_URL`; local dev defaults to SQLite.
+Strapi 5 (TypeScript) headless CMS of Micelio, a site engine (BogDev is the first site that runs it), deployed as a Docker image to a Hetzner VPS via Dokploy (see `docs/CI_CD.md`). Production DB is PostgreSQL 18 managed by Dokploy on the same VPS (`bogdev-prod`), reached through `DATABASE_URL`; local dev defaults to SQLite.
 
 ## Commands
 

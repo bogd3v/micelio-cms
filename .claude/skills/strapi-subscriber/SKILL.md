@@ -1,6 +1,6 @@
 ---
 name: strapi-subscriber
-description: Use when the user asks about newsletter subscriptions, email signup, subscriber deduplication, confirmation or unsubscribe tokens, or the subscriber API in the devbog Strapi backend.
+description: Use when the user asks about newsletter subscriptions, email signup, subscriber deduplication, confirmation or unsubscribe tokens, or the subscriber API in the Micelio CMS.
 ---
 
 # Strapi Subscriber Skill
