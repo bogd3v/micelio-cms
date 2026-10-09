@@ -52,7 +52,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 
 ## How it behaves
 
-- **Follow:** `Follow` → follower row + signed `Accept`. A blocked actor's `Follow` gets no answer. `Undo(Follow)`/`Block` remove it unless the actor is blocked (the row is kept, so only an admin lifts a block). A blocked actor's activities are ignored and their interactions stop counting.
+- **Follow:** `Follow` → follower row + signed `Accept`. A blocked actor's `Follow` gets no answer. `actorId` has no database index, so followers settle duplicate rows like interactions do; treat an actor as blocked if any of its rows is. `Undo(Follow)`/`Block` remove it unless the actor is blocked (the row is kept, so only an admin lifts a block). A blocked actor's activities are ignored and their interactions stop counting.
 - **Articles:** publishing sends `Create(Article)` (public `to`, followers in `cc`); publishing an already-sent article again is an `Update`; unpublish/delete is a `Delete`. Only the default locale, only published, and only articles with a `slug`. Each fan-out logs how many followers it reached (`no followers yet` means nothing was sent).
 - **Replies:** a `Create(Note)` replying to an article (by ActivityPub id or frontend URL) or to a stored reply becomes a `PENDING` comment. Content is stripped to plain text. Edits go back to `PENDING`; deletes set `removed`. Anything else is ignored.
 - **Moderation:** approve/reject in the admin comments moderation view. The global middleware hides `PENDING`/`REJECTED` comments from `GET /api/comments/*`; never remove it.
