@@ -897,6 +897,15 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
         };
       }>;
     publishedAt: Schema.Attribute.DateTime;
+    securityContact: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 512;
+      }>;
     socialLinks: Schema.Attribute.Component<'site.social-link', true> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {

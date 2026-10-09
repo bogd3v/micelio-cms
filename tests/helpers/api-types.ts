@@ -66,6 +66,7 @@ export interface ApiSiteSetting {
   defaultOgImage: unknown;
   socialLinks: { network: string; url: string }[];
   contactEmail: string | null;
+  securityContact?: string | null;
   privacyContactEmail: string | null;
   privacyUpdatedAt: string | null;
   supportHandle: string | null;
