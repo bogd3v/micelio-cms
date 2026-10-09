@@ -1,7 +1,7 @@
 import { errors } from '@strapi/utils';
 import type { Context } from 'koa';
 import { RATE_LIMIT_MESSAGE } from '../../constants/rate-limit';
-import type { RateLimitDecision } from './stores';
+import type { RateLimitDecision } from './types';
 
 /** `RateLimit-*` headers of the group's current window. */
 export function setRateLimitHeaders(ctx: Context, decision: RateLimitDecision): void {

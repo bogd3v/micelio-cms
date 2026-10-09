@@ -14,6 +14,7 @@ import {
 } from '../../constants/rate-limit';
 import type { RateLimitConfig, RateLimitGroupName, RateLimitRule } from '../../types/rate-limit';
 import { hmacKey } from './keys';
+import type { RateLimitDecision } from './types';
 
 /** Counters that are not a route group. */
 export type LimiterName =
@@ -22,17 +23,6 @@ export type LimiterName =
   | 'token-lookup'
   /** Everything the forwarding frontend sends in one group, per peer. */
   | `ceiling:${RateLimitGroupName}`;
-
-/** Outcome of counting one request. */
-export interface RateLimitDecision {
-  allowed: boolean;
-  limit: number;
-  remaining: number;
-  /** Seconds until the window resets (and when to retry, if not allowed). */
-  resetSeconds: number;
-  /** `RateLimit-Policy` value, e.g. `10;w=60`. */
-  policy: string;
-}
 
 export interface Limiters {
   /** The rule behind a counter, or null when it is off. */

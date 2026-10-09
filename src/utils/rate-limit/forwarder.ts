@@ -2,17 +2,9 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import type { Context } from 'koa';
 import { FORWARDED_IP_HEADER, FORWARDER_SECRET_HEADER } from '../../constants/rate-limit';
 import { normalizeIp } from '../client-ip';
+import type { Forwarded } from './types';
 
 const digest = (value: string) => createHash('sha256').update(value).digest();
-
-export interface Forwarded {
-  /** The frontend identified itself with the shared secret. */
-  forwarded: boolean;
-  /** The request also named a valid client: its buckets, not a token's, apply. */
-  clientSupplied: boolean;
-  /** Client address to count: the forwarded one when valid, else `resolved`. */
-  ip: string;
-}
 
 export interface Forwarder {
   /** `useClient`: whether this path may take the forwarded address (only `/api/*`). */

@@ -3,29 +3,11 @@ import type { Core } from '@strapi/strapi';
 import { MIN_FORWARDER_SECRET_LENGTH } from '../../constants/rate-limit';
 import type { RateLimitConfig, TrustProxy } from '../../types/rate-limit';
 import { parseTrustProxy } from '../client-ip';
-import { createTokenResolver, type TokenResolver } from './api-token';
-import { createForwarder, type Forwarder } from './forwarder';
+import { createTokenResolver } from './api-token';
+import { createForwarder } from './forwarder';
 import { createRequestGuard } from './guard';
-import { createLimiters, type Limiters } from './stores';
-
-/** What resolving the client address needs; present even with rate limiting off. */
-export interface ClientIpSettings {
-  trust: TrustProxy;
-  /** `PROXY_IP_HEADER`. */
-  header: string;
-  /** Logs a warning, at most once a minute per `key`. Never pass an address or an email. */
-  warn(key: string, message: string): void;
-}
-
-/** Everything the middlewares and the fediverse guard share, built once on register. */
-export interface RateLimitRuntime extends ClientIpSettings {
-  config: RateLimitConfig;
-  /** Keys the HMACs of emails and of the shared store's keys. */
-  secret: Buffer;
-  limiters: Limiters;
-  tokens: TokenResolver;
-  forwarder: Forwarder;
-}
+import { createLimiters } from './stores';
+import type { ClientIpSettings, RateLimitRuntime } from './types';
 
 const runtimes = new WeakMap<Core.Strapi, RateLimitRuntime>();
 const clientIpSettings = new WeakMap<Core.Strapi, ClientIpSettings>();

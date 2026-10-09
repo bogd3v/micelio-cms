@@ -6,9 +6,9 @@ import { extractBearer, isTokenCandidate } from '../utils/rate-limit/api-token';
 import { classifyRequest, normalizePath } from '../utils/rate-limit/groups';
 import { groupKey, tokenKey } from '../utils/rate-limit/keys';
 import { rejectTooManyRequests, setRateLimitHeaders } from '../utils/rate-limit/respond';
-import { getRateLimitRuntime, type RateLimitRuntime } from '../utils/rate-limit/runtime';
+import { getRateLimitRuntime } from '../utils/rate-limit/runtime';
 import { rateLimitState } from '../utils/rate-limit/state';
-import type { RateLimitDecision } from '../utils/rate-limit/stores';
+import type { RateLimitDecision, RateLimitRuntime } from '../utils/rate-limit/types';
 
 /** Counts a decision: rejects when over the limit, else sets the headers. */
 function enforce(ctx: Context, decision: RateLimitDecision | null): void {

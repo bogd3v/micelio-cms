@@ -76,6 +76,7 @@ npm run test:coverage  # Run Jest with coverage report
 
 - **`constants/`, `types/`, `utils/`** hold what more than one file uses, or configuration-like values (content type UIDs, route prefixes, license tables). Import UIDs from `constants/uids.ts` instead of repeating `'api::article.article'`.
 - Code specific to one domain stays next to it: `src/api/article/utils/` (citations, plain text), search limits in the article service.
+- `npm run lint` runs `scripts/check-placement.mjs`: a type or constant imported by two or more files of `src/` must live in `src/types/`, `src/constants/` or the `types.ts` / `constants.ts` of its feature folder. It skips `src/migrations/` and the fediverse plugin.
 - A type that is a service's contract (its inputs and outputs) goes in `types/`; row shapes private to one query stay in that file.
 - `src/migrations/` is self-contained on purpose: each migration keeps its own constants so it keeps working after the code it migrated away from changes.
 - The fediverse plugin mirrors this layout under `src/plugins/fediverse/server/src/` and **never imports from the root `src/`**: it is a separate TypeScript project bundled by esbuild.

@@ -3,7 +3,7 @@ import type { RequestGuard } from '../../types/rate-limit';
 import { resolveClientIp } from '../client-ip';
 import { groupKey } from './keys';
 import { setRateLimitHeaders, writeTooManyRequests } from './respond';
-import type { RateLimitRuntime } from './runtime';
+import type { RateLimitRuntime } from './types';
 import { rateLimitState } from './state';
 
 /**
