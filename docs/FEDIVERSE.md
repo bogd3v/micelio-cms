@@ -155,7 +155,7 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
 
 1. Remote user searches `@bogdev@api.bogdev.com.co` → WebFinger resolves → actor profile shown.
 2. Inbox receives `Follow` → create `fediverse-follower` row → auto-send signed `Accept`.
-3. `Undo(Follow)` or incoming `Block` → remove follower. Admin sets `blocked: true` → excluded from fan-out, their activities ignored.
+3. `Undo(Follow)` or incoming `Block` → remove follower, unless the actor is blocked: a blocked row is kept, so an actor cannot lift its own block. Admin sets `blocked: true` → excluded from fan-out, their activities ignored. Deleting a blocked row in the admin panel lifts the block (the next `Follow` creates a fresh row): to keep it, leave the row and its flag. Unblocking an actor whose row was kept makes it an active follower again, even if it undid its follow meanwhile; delete the row instead to drop it.
 
 ### 2. Publish / update / delete articles
 

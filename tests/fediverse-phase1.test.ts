@@ -235,6 +235,28 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       expect(reFollowed.name).toBe('Blocked Alice');
     });
 
+    it('removeFollower keeps the row of a blocked actor, so it cannot lift its own block', async () => {
+      const created = await followersService.recordFollower(strapi, {
+        actorId: 'https://example.social/users/blocked-carol',
+      });
+      await strapi.db.query('plugin::fediverse.follower').update({
+        where: { documentId: created.documentId },
+        data: { blocked: true },
+      });
+
+      await expect(followersService.removeFollower(strapi, created.actorId)).resolves.toBe(false);
+
+      const row = await strapi.db
+        .query('plugin::fediverse.follower')
+        .findOne({ where: { actorId: created.actorId } });
+      expect(row?.blocked).toBe(true);
+
+      const reFollowed = await followersService.recordFollower(strapi, {
+        actorId: created.actorId,
+      });
+      expect(reFollowed.blocked).toBe(true);
+    });
+
     it('removeFollower deletes the row and reports whether one existed', async () => {
       const created = await followersService.recordFollower(strapi, {
         actorId: 'https://example.social/users/bob',
@@ -381,6 +403,66 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
         });
       } finally {
         await remote.close();
+      }
+    });
+
+    it('keeps a blocked actor blocked when it sends Undo(Follow) or Block', async () => {
+      const blocked = await createRemoteActor({ preferredUsername: 'blocked-undo' });
+      const sentinel = await createRemoteActor({ preferredUsername: 'sentinel-undo' });
+      try {
+        const row = await followersService.recordFollower(strapi, {
+          actorId: blocked.actorUrl,
+          inbox: blocked.inboxUrl,
+        });
+        await strapi.db.query('plugin::fediverse.follower').update({
+          where: { documentId: row.documentId },
+          data: { blocked: true },
+        });
+        await followersService.recordFollower(strapi, {
+          actorId: sentinel.actorUrl,
+          inbox: sentinel.inboxUrl,
+        });
+
+        const undo = (remote: typeof blocked) =>
+          remote.postSignedActivity(`${actorUrl}/inbox`, {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            id: `${remote.actorUrl}/undo/keep`,
+            type: 'Undo',
+            actor: remote.actorUrl,
+            object: {
+              id: `${remote.actorUrl}/follows/keep`,
+              type: 'Follow',
+              actor: remote.actorUrl,
+              object: actorUrl,
+            },
+          });
+        expect((await undo(blocked)).ok).toBe(true);
+        const block = await blocked.postSignedActivity(`${actorUrl}/inbox`, {
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          id: `${blocked.actorUrl}/block/keep`,
+          type: 'Block',
+          actor: blocked.actorUrl,
+          object: actorUrl,
+        });
+        expect(block.ok).toBe(true);
+
+        // Inbox listeners run inline, before the POST returns (there is no queue): the
+        // sentinel's removal confirms the listeners above have already run.
+        expect((await undo(sentinel)).ok).toBe(true);
+        await waitUntil(async () => {
+          const gone = await strapi.db
+            .query('plugin::fediverse.follower')
+            .findOne({ where: { actorId: sentinel.actorUrl } });
+          return gone == null;
+        });
+
+        const kept = await strapi.db
+          .query('plugin::fediverse.follower')
+          .findOne({ where: { actorId: blocked.actorUrl } });
+        expect(kept?.blocked).toBe(true);
+      } finally {
+        await blocked.close();
+        await sentinel.close();
       }
     });
 
