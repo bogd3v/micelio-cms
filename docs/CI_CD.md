@@ -743,3 +743,9 @@ If you encounter issues not covered in this document:
 4. Ask in the team chat or create an issue
 
 **Last updated:** 2026-06-20
+
+## Deployment summary
+
+Moved from `CLAUDE.md` (#113); the text is unchanged.
+
+`main` deploys to production (`api.bogdev.com.co`) and `develop` to staging (`staging-api.bogdev.com.co`): `.github/workflows/deploy.yml` builds and pushes a Docker image to GHCR and calls the Dokploy API on the Hetzner VPS behind Traefik, health-checked at `/_health`. Staging runs SQLite, is started/stopped with `staging-toggle.yml`, and builds from the branch with Nixpacks (`npm start`, so `prestart` creates `public/uploads`). It needs a persistent volume on `/app/.tmp` or every deploy wipes users, followers and the actor key. Full details, troubleshooting, and how to change the pipeline are in `docs/CI_CD.md`.

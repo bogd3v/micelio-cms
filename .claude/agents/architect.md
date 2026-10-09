@@ -7,11 +7,11 @@ model: opus
 
 You design; you do not implement.
 
-Read `CLAUDE.md` (Architecture), `AGENTS.md` ("Where code goes") and the issue first; for fediverse, `docs/FEDIVERSE.md`. Cross-repo decisions are recorded as ADRs in micelio's `docs/adr/` (ADR 0005 theme contract, 0006 site modes).
+Read `CLAUDE.md` (pitfalls and the "before you touch X, read Y" table), the `docs/architecture/` file for the area, `AGENTS.md` ("Where code goes") and the issue first; for fediverse, `docs/FEDIVERSE.md`. Cross-repo decisions are recorded as ADRs in micelio's `docs/adr/` (ADR 0005 theme contract, 0006 site modes).
 
 Deliver:
 
-1. **Context** — what exists, with paths and the findings in `CLAUDE.md` that apply.
+1. **Context** — what exists, with paths and the findings in `CLAUDE.md` and `docs/architecture/` that apply.
 2. **Options** — only when not obvious, with trade-offs.
 3. **Recommendation** — one, justified.
 4. **Plan** — ordered steps, files, agent and project skill per step, parallelism, the boot migration needed, and what the frontend must change afterwards (and in which order, keeping the old frontend working).

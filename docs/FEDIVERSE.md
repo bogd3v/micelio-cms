@@ -387,3 +387,16 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - [Mastodon ActivityPub spec](https://docs.joinmastodon.org/spec/activitypub)
 - [W3C ActivityPub](https://www.w3.org/TR/activitypub/) / [Activity Streams 2.0](https://www.w3.org/TR/activitystreams-core/)
 - [Strapi 5 Server API — server-level middleware via `strapi.server.use()`](https://docs.strapi.io/cms/plugins-development/server-lifecycle)
+
+## Implementation notes
+
+Non-obvious findings moved from `CLAUDE.md` (#113), unchanged except for the opening sentence. The plugin lives in `src/plugins/fediverse/` and is a local Strapi plugin (not a workspace package) implementing ActivityPub federation with `@fedify/fedify` + `@fedify/koa`. It is gated by `FEDIVERSE_ENABLED` (default `false`) in `config/plugins.ts`. Read this document before touching it, or `src/extensions/comments/` (which adds `fediverseUri`/`fediverseActorHandle` fields to the comments schema for reply ingestion/dedupe).
+
+- Fedify's middleware is mounted in plugin `register()` (not `bootstrap()`), via `strapi.server.use()` directly — this must run before Strapi's `initMiddlewares()` mounts `strapi::body`, since HTTP signature verification needs the raw request body, and before the router mounts at `listen()` time.
+- Strapi 5 does **not** emit `afterPublish`/`afterUnpublish` through `strapi.db.lifecycles`; publish/unpublish state is only observable via `strapi.eventHub` (`entry.publish` / `entry.unpublish`), fired asynchronously after the transaction commits.
+- All federation state that must survive a restart (followers, actor keys, interactions) is stored in Strapi content types, not Fedify's `MemoryKvStore` (which only backs transient caches/idempotency).
+- Strapi's `unique: true` is only Document Service validation — there is no database index, so `db.query` writes can create duplicates. Race-prone inserts (see `services/interactions.ts`) dedupe after inserting.
+- The Fedify Koa middleware is guarded to federation paths only (`mountFediverseMiddleware`): unguarded, it stalls any non-GET request with a body over ~16 KB on other routes, because it consumes the request stream before `strapi::body` can.
+- Behind Traefik, `config/server.ts` needs `proxy: { koa: true }`; otherwise `ctx.protocol` is `http` and every ActivityPub URL is generated with the wrong scheme.
+- Fediverse code paths are split across `federation.ts` (Fedify dispatchers and inbox listeners) and `services/` (`articles`, `publisher`, `replies`, `interactions`, `followers`, `keys`, `actor-profile`); `docs/FEDIVERSE.md` has the per-phase findings.
+- The comments plugin findings are in [architecture/comments.md](architecture/comments.md).
