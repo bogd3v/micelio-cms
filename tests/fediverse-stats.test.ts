@@ -23,6 +23,8 @@ interface ArticleOptions {
 interface CommentOptions {
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   fediverse?: boolean;
+  /** `false`: a fediverse reply stored without an actor handle (it could not be resolved). */
+  handle?: boolean;
   removed?: boolean;
   authorId?: string;
 }
@@ -79,7 +81,7 @@ describe('Fediverse batch stats and ranking', () => {
 
   async function comment(
     documentId: string,
-    { approvalStatus = 'APPROVED', fediverse = true, ...extra }: CommentOptions = {}
+    { approvalStatus = 'APPROVED', fediverse = true, handle = true, ...extra }: CommentOptions = {}
   ) {
     actorCounter += 1;
     const actorId = `https://remote.example/users/replier${actorCounter}`;
@@ -92,7 +94,7 @@ describe('Fediverse batch stats and ranking', () => {
         authorName: 'Replier',
         ...(fediverse
           ? {
-              fediverseActorHandle: `@replier${actorCounter}@remote.example`,
+              ...(handle ? { fediverseActorHandle: `@replier${actorCounter}@remote.example` } : {}),
               fediverseUri: `${actorId}/notes/1`,
             }
           : {}),
@@ -197,6 +199,25 @@ describe('Fediverse batch stats and ranking', () => {
         [articles.c]: { likes: 0, boosts: 2, replies: 0 },
         [articles.d]: { likes: 0, boosts: 0, replies: 0 },
       });
+    });
+
+    it('counts a fediverse reply whose actor handle could not be resolved', async () => {
+      // ingestReply stores such a reply with a `fediverseUri` but no handle.
+      const documentId = await publishedArticle('no-handle', '2026-05-01T00:00:00.000Z');
+      try {
+        await comment(documentId, { handle: false });
+
+        const res = await get('/api/fediverse/articles/stats', { documentIds: documentId }).expect(
+          200
+        );
+
+        expect(res.body[documentId]).toEqual({ likes: 0, boosts: 0, replies: 1 });
+      } finally {
+        await strapi.db
+          .query(COMMENT_UID)
+          .deleteMany({ where: { related: `${ARTICLE_UID}:${documentId}` } });
+        await strapi.documents(ARTICLE_UID).delete({ documentId });
+      }
     });
 
     it('leaves out unpublished and unknown articles', async () => {

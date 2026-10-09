@@ -68,8 +68,9 @@ function interactionCounts(
 
 /**
  * Fediverse replies per article documentId (`document_id`, `replies`): approved
- * comments with a `fediverseActorHandle` that were not removed or blocked, and
- * whose author is not a blocked actor.
+ * comments with a `fediverseUri` (set on every reply, unlike the actor handle,
+ * which is null when it could not be resolved) that were not removed or blocked,
+ * and whose author is not a blocked actor.
  */
 function replyCounts(strapi: Core.Strapi, blocked: string[], documentIds?: string[]): QueryBuilder {
   const knex = strapi.db.connection;
@@ -80,7 +81,7 @@ function replyCounts(strapi: Core.Strapi, blocked: string[], documentIds?: strin
     .select(knex.raw('SUBSTR(??, ?) as document_id', [related, RELATED_PREFIX.length + 1]))
     .count({ replies: '*' })
     .where(comment.column('approvalStatus'), 'APPROVED')
-    .whereNotNull(comment.column('fediverseActorHandle'))
+    .whereNotNull(comment.column('fediverseUri'))
     .where((q) => q.whereNull(comment.column('removed')).orWhere(comment.column('removed'), false))
     .where((q) => q.whereNull(comment.column('blocked')).orWhere(comment.column('blocked'), false))
     // Grouped by the column itself: Postgres would treat two parameterized
