@@ -58,6 +58,12 @@ export async function recordInteraction(
   return oldest.id === created.id ? 'created' : 'exists';
 }
 
+/**
+ * Removes an actor's like or boost of an article, on `Undo(Like)` or
+ * `Undo(Announce)`.
+ *
+ * @returns `false` when there was nothing to remove.
+ */
 export async function removeInteraction(
   strapi: Core.Strapi,
   input: Omit<InteractionInput, 'handle'>

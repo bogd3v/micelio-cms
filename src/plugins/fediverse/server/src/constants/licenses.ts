@@ -1,10 +1,15 @@
 /** Labels of `shared.image-credit` values in the federated attribution line. */
 
+/** One label per language of the attribution line: `es` for Spanish locales, `en` for the rest. */
 export interface LocalizedLabel {
   es: string;
   en: string;
 }
 
+/**
+ * Labels of the credit `kind` values, the prefix of the line (`Foto: …`). A
+ * missing or unknown kind reads as `photo`.
+ */
 export const CREDIT_KINDS: Record<string, LocalizedLabel> = {
   photo: { es: 'Foto', en: 'Photo' },
   illustration: { es: 'Ilustración', en: 'Illustration' },
@@ -12,6 +17,11 @@ export const CREDIT_KINDS: Record<string, LocalizedLabel> = {
   screenshot: { es: 'Captura', en: 'Screenshot' },
 };
 
+/**
+ * Labels and deed URLs of the credit `license` values. The credit's own
+ * `licenseUrl` takes precedence over `url`; a license with neither is shown
+ * without a link, and an unknown value is left out of the line.
+ */
 export const LICENSES: Record<string, { label: LocalizedLabel; url?: string }> = {
   'own-work': { label: { es: 'obra propia', en: 'own work' } },
   cc0: {

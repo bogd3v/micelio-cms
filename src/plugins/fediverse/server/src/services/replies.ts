@@ -54,6 +54,11 @@ export function stripLeadingMentions(text: string, usernames: string | string[])
   return text.replace(new RegExp(`^(?:@(?:${names})(?:@[\\w.-]+)?\\s+)+`, 'i'), '').trim();
 }
 
+/**
+ * The text a reply is stored with: the Note's HTML as plain text, without the
+ * leading mentions of the blog, cut to 5000 characters. An empty result means
+ * there is nothing to store and the reply is ignored.
+ */
 export function toCommentContent(html: string, usernames: string | string[]): string {
   return stripLeadingMentions(htmlToPlainText(html), usernames).slice(0, MAX_CONTENT_LENGTH);
 }
