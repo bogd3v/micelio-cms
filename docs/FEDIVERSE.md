@@ -110,7 +110,7 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 | Field                  | Purpose                                                                                                                           |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `fediverseUri`         | Remote Note object id (unique — checked by the Document Service, not a DB index) — dedupe of ingested replies + thread resolution |
-| `fediverseActorHandle` | `@user@host` of the remote author (display/source badge on frontend)                                                              |
+| `fediverseActorHandle` | `@user@host`, or `null` when it could not be resolved of the remote author (display/source badge on frontend)                     |
 
 ### Custom public routes
 
@@ -120,7 +120,7 @@ All `auth: false`, aggregates only (never who interacted), and absent when `FEDI
 - `GET /api/fediverse/articles/stats?documentIds=a,b,c` (at most 50, else 400) → `{ [documentId]: { likes, boosts, replies } }`. Only articles published in the default locale are included; other ids are left out. `Cache-Control: public, max-age=60`.
 - `GET /api/fediverse/articles/ranking?page=1&pageSize=6&locale=es&category=ia&tag=vue&search=rag` → `{ data: [{ documentId, likes, boosts, replies }], meta: { pagination: { page, pageSize, pageCount, total } } }`. Articles published in `locale` (default locale if omitted), ordered by `likes + boosts + replies` desc, then `publishedAt` desc; articles with no interactions come last so paging covers the whole blog. `pageSize` defaults to 6, max 50. Optional filters narrow the list before ranking, so pages match the blog filters: `category` (category slug), `tag` (tag slug; combined with the others with AND) and `search` (title contains it, case-insensitive; `%` and `_` are plain text; ignored under 3 characters). `Cache-Control: public, max-age=60`.
 
-`replies` counts approved comments with a `fediverseActorHandle` that are not removed or blocked. Blocked actors' likes, boosts and replies never count.
+`replies` counts approved comments with a `fediverseUri` (every fediverse reply has one, even when its actor handle could not be resolved) that are not removed or blocked. Blocked actors' likes, boosts and replies never count.
 
 ### Dependencies
 
@@ -185,7 +185,7 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
 | `approvalStatus`       | `PENDING` — set explicitly; the plugin's public API would show it, so a global middleware hides it until a moderator approves |
 | `locale`               | The default (federated) locale; the frontend reads comments per locale (`?locale=`), and only that version federates          |
 | `fediverseUri`         | Note object id (dedupe key)                                                                                                   |
-| `fediverseActorHandle` | `@user@host`                                                                                                                  |
+| `fediverseActorHandle` | `@user@host`, or `null` when it could not be resolved                                                                         |
 
 3. Dedupe: skip if a comment with the same `fediverseUri` exists.
 4. `Update(Note)` → edit the content **and send the comment back to `PENDING`** (an approved comment must not be swappable for spam); `Delete(Note)` → set `removed`. Both are only honoured from the original author.

@@ -5,8 +5,8 @@ export interface ArticleStats {
   likes: number;
   boosts: number;
   /**
-   * Approved comments with a `fediverseActorHandle` that are not removed or
-   * blocked; local comments do not count.
+   * Approved comments with a `fediverseUri` that are not removed or blocked;
+   * local comments do not count.
    */
   replies: number;
 }
