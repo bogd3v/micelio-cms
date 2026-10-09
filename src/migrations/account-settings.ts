@@ -50,8 +50,15 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
+interface EmailTemplateText {
+  object: string;
+  message: string;
+}
+
+type EmailTemplateTexts = Record<'email_confirmation' | 'reset_password', EmailTemplateText>;
+
 /** Sign-up confirmation and password reset emails, in English or Spanish. */
-export function accountEmailTemplates(siteName: string, language: string) {
+export function accountEmailTemplates(siteName: string, language: string): EmailTemplateTexts {
   const site = escapeHtml(siteName);
   if (language === 'es') {
     return {
@@ -114,7 +121,7 @@ async function siteIdentity(strapi: Core.Strapi): Promise<{ name: string; langua
 }
 
 type EmailTemplates = Record<
-  keyof ReturnType<typeof accountEmailTemplates>,
+  keyof EmailTemplateTexts,
   { options: Record<string, unknown> & { object: string; message: string } }
 >;
 

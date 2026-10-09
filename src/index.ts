@@ -41,7 +41,7 @@ let stopAuthorLocales: (() => void) | null = null;
 
 export default {
   /** Before init: Document Service middlewares and extra admin routes. */
-  register({ strapi }: { strapi: Core.Strapi }) {
+  register({ strapi }: { strapi: Core.Strapi }): void {
     // Links in emails, analytics paths and the site settings' URL point to the
     // frontend; in production there is no default to fall back on.
     assertFrontendUrlConfigured();
@@ -142,7 +142,7 @@ export default {
    * On every boot, before listening: idempotent data migrations
    * (src/migrations), then the Umami cron. Order matters where noted.
    */
-  async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+  async bootstrap({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     // First: nothing below may touch an author or an article before they match.
     const authorLocales = await ensureAuthorLocales(strapi);
     if (authorLocales.created > 0 || authorLocales.relinked > 0) {
@@ -239,7 +239,7 @@ export default {
     stopRebuildHook = registerRebuildHook(strapi);
   },
 
-  async destroy({ strapi }: { strapi: Core.Strapi }) {
+  async destroy({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     await destroyRateLimit(strapi);
     stopRebuildHook?.();
     stopAuthorLocales?.();

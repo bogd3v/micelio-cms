@@ -2,6 +2,14 @@ import type { Core } from '@strapi/strapi';
 import { SITE_SETTING_UID } from '../constants/uids';
 import { frontendBaseUrl } from '../utils/frontend-url';
 
+interface NeutralSiteSettings {
+  name: string;
+  description: string;
+  url: string;
+  defaultLocale: string;
+  modules: Record<string, never>;
+}
+
 const PERMISSION_UID = 'plugin::users-permissions.permission';
 const SITE_SETTING_ACTION_PREFIX = `${SITE_SETTING_UID}.`;
 
@@ -19,7 +27,7 @@ const NEUTRAL_TEXT: Record<string, { name: string; description: string }> = {
  * frontend's URL, and every module on. No author, links or contacts: each
  * site fills in its own in the admin panel.
  */
-export function neutralSiteSettings(locale: string, defaultLocale: string) {
+export function neutralSiteSettings(locale: string, defaultLocale: string): NeutralSiteSettings {
   return {
     ...(NEUTRAL_TEXT[locale] ?? NEUTRAL_TEXT.en),
     url: frontendBaseUrl(),

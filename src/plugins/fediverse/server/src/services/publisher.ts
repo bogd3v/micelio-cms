@@ -124,7 +124,7 @@ async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
  * the events fire after the Strapi operation has committed, and federation
  * problems must never surface as editor-facing errors.
  */
-export function subscribe(strapi: Core.Strapi) {
+export function subscribe(strapi: Core.Strapi): void {
   const guarded =
     (
       uid: string,
@@ -166,7 +166,7 @@ export function subscribe(strapi: Core.Strapi) {
 }
 
 /** Stops federating article and profile changes; called by the plugin's `destroy()`. */
-export function unsubscribe() {
+export function unsubscribe(): void {
   for (const off of unsubscribers) off();
   unsubscribers = [];
 }

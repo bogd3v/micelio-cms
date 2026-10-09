@@ -34,7 +34,7 @@ export function canReadDrafts(state: RequestState): boolean {
  * requests (not `content-api` routes) and calls outside a request (cron,
  * eventHub, bootstrap) are left alone.
  */
-export function restrictDraftsToEditors(strapi: Core.Strapi) {
+export function restrictDraftsToEditors(strapi: Core.Strapi): void {
   strapi.documents.use(async (context, next) => {
     const status = (context.params as { status?: unknown }).status;
     if (!READ_ACTIONS.has(context.action) || status === undefined || status === 'published') {

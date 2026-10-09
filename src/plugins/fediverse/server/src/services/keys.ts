@@ -112,7 +112,10 @@ export async function getStoredKeyPairEntries(
   return isStoredKeyPairs(stored) ? stored : null;
 }
 
-export default () => ({
+export default (): {
+  getActorKeyPairs: typeof getActorKeyPairs;
+  getStoredKeyPairEntries: typeof getStoredKeyPairEntries;
+} => ({
   getActorKeyPairs,
   getStoredKeyPairEntries,
 });

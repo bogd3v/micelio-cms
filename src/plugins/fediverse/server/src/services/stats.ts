@@ -249,7 +249,10 @@ export async function rankArticles(
   };
 }
 
-export default () => ({
+export default (): {
+  statsForArticles: typeof statsForArticles;
+  rankArticles: typeof rankArticles;
+} => ({
   statsForArticles,
   rankArticles,
 });

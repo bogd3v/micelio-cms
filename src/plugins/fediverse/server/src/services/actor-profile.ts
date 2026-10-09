@@ -94,6 +94,8 @@ export async function getActorProfile(strapi: Core.Strapi, baseUrl: string): Pro
   };
 }
 
-export default () => ({
+export default (): {
+  getActorProfile: typeof getActorProfile;
+} => ({
   getActorProfile,
 });

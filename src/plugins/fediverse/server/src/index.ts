@@ -19,7 +19,7 @@ import {
 import { frontendBaseUrl } from './utils/frontend-url';
 
 const plugin = {
-  register({ strapi }: { strapi: Core.Strapi }) {
+  register({ strapi }: { strapi: Core.Strapi }): void {
     // Without an actor identity or a frontend URL the plugin would federate
     // under a made-up account or link to another site: refuse to start.
     assertActorConfigured();
@@ -33,12 +33,12 @@ const plugin = {
     strapi.server.use(mountFediverseMiddleware(strapi));
   },
 
-  bootstrap({ strapi }: { strapi: Core.Strapi }) {
+  bootstrap({ strapi }: { strapi: Core.Strapi }): void {
     subscribe(strapi);
     subscribePublisher(strapi);
   },
 
-  destroy() {
+  destroy(): void {
     unsubscribe();
     unsubscribePublisher();
   },
@@ -54,7 +54,7 @@ const plugin = {
 
   config: {
     default: {},
-    validator() {},
+    validator(): void {},
   },
 
   controllers: {

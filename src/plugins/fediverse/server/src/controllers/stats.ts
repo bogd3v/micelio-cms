@@ -34,7 +34,11 @@ function textParam(value: unknown): string | undefined {
 }
 
 /** Public fediverse counts for the frontend. Only aggregates; never who interacted. */
-export default ({ strapi }: { strapi: Core.Strapi }) => ({
+export default ({
+  strapi,
+}: {
+  strapi: Core.Strapi;
+}): Record<'find' | 'batch' | 'ranking', (ctx: Context) => Promise<void>> => ({
   async find(ctx: Context) {
     const { documentId } = ctx.params;
 

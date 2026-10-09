@@ -322,11 +322,16 @@ export interface ShowcaseMedia {
   category: string;
 }
 
+interface ShowcaseSection {
+  __component: string;
+  [attribute: string]: unknown;
+}
+
 /**
  * A page that uses every section of the catalog once, to see how the theme
  * styles each of them (#75, #84).
  */
-export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia) {
+export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): ShowcaseSection[] {
   const es = locale === 'es';
   const t = (en: string, spanish: string) => (es ? spanish : en);
   const blog = es ? '/es/blog' : '/blog';

@@ -23,7 +23,7 @@ let unsubscribers: Array<() => void> = [];
  * Records article publish events so tests can verify `strapi.eventHub`
  * delivers them. The actual federation lives in `services/publisher.ts`.
  */
-export function subscribe(strapi: Core.Strapi) {
+export function subscribe(strapi: Core.Strapi): void {
   const track =
     (action: string) =>
     async (payload: EntryEvent): Promise<void> => {
@@ -49,7 +49,7 @@ export function subscribe(strapi: Core.Strapi) {
 }
 
 /** Stops recording; called by the plugin's `destroy()`. */
-export function unsubscribe() {
+export function unsubscribe(): void {
   for (const off of unsubscribers) off();
   unsubscribers = [];
 }
@@ -60,11 +60,15 @@ export function getEvents(): TrackedLifecycleEvent[] {
 }
 
 /** Forgets the recorded events. */
-export function clear() {
+export function clear(): void {
   events.length = 0;
 }
 
-export default () => ({
+export default (): {
+  getEvents: typeof getEvents;
+  clear: typeof clear;
+  unsubscribe: typeof unsubscribe;
+} => ({
   getEvents,
   clear,
   unsubscribe,
