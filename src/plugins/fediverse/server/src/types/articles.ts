@@ -1,5 +1,6 @@
 /** A published article as the federation layer sees it. */
 
+/** The image attached to a federated article. */
 export interface MediaRecord {
   url: string;
   mime: string | null;
@@ -8,6 +9,7 @@ export interface MediaRecord {
   creditHtml: string | null;
 }
 
+/** A published article with a slug: what its `Article` object and frontend link are built from. */
 export interface ArticleRecord {
   documentId: string;
   title: string;

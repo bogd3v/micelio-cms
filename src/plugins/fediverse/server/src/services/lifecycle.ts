@@ -48,15 +48,18 @@ export function subscribe(strapi: Core.Strapi) {
   ];
 }
 
+/** Stops recording; called by the plugin's `destroy()`. */
 export function unsubscribe() {
   for (const off of unsubscribers) off();
   unsubscribers = [];
 }
 
+/** A copy of the events recorded since boot or the last `clear`. */
 export function getEvents(): TrackedLifecycleEvent[] {
   return [...events];
 }
 
+/** Forgets the recorded events. */
 export function clear() {
   events.length = 0;
 }

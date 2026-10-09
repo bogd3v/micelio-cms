@@ -165,6 +165,7 @@ export function subscribe(strapi: Core.Strapi) {
   ];
 }
 
+/** Stops federating article and profile changes; called by the plugin's `destroy()`. */
 export function unsubscribe() {
   for (const off of unsubscribers) off();
   unsubscribers = [];

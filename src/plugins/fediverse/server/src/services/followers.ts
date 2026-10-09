@@ -76,6 +76,11 @@ export async function recordFollower(
   return toRecord(created as FollowerRow);
 }
 
+/**
+ * Deletes a remote actor's follower row, on `Undo(Follow)` or `Block`.
+ *
+ * @returns `false` when the actor had no row.
+ */
 export async function removeFollower(strapi: Core.Strapi, actorId: string): Promise<boolean> {
   const existing = (await query(strapi).findOne({ where: { actorId } })) as FollowerRow | null;
   if (!existing) return false;
@@ -90,6 +95,12 @@ export async function isActorBlocked(strapi: Core.Strapi, actorId: string): Prom
   return row?.blocked === true;
 }
 
+/**
+ * Followers in the order they first followed.
+ *
+ * @param options - `blocked: true` lists the actors an admin has blocked
+ * instead of the active followers.
+ */
 export async function listFollowers(
   strapi: Core.Strapi,
   options: { blocked?: boolean } = {}
@@ -102,6 +113,12 @@ export async function listFollowers(
   return rows.map(toRecord);
 }
 
+/**
+ * Number of active followers.
+ *
+ * @param options - `blocked: true` counts the actors an admin has blocked
+ * instead.
+ */
 export async function countFollowers(
   strapi: Core.Strapi,
   options: { blocked?: boolean } = {}

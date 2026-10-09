@@ -319,6 +319,11 @@ export function buildArticleActivity(
   return kind === 'create' ? new Create(options) : new Update(options);
 }
 
+/**
+ * `Delete` of an article, sent when it is unpublished or deleted, with a
+ * `Tombstone` in place of the object and the same public addressing as the
+ * `Create`.
+ */
 export function buildDeleteActivity(
   ctx: Context<unknown>,
   actorIdentifier: string,
@@ -346,6 +351,10 @@ export async function isFederated(strapi: Core.Strapi, documentId: string): Prom
   return documentId in (await readFederated(strapi));
 }
 
+/**
+ * Records in the plugin store whether the article's `Create` has been sent.
+ * Clearing it after a `Delete` makes the next publish a `Create` again.
+ */
 export async function setFederated(
   strapi: Core.Strapi,
   documentId: string,

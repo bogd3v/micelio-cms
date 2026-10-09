@@ -219,6 +219,17 @@ export async function buildActor(
   });
 }
 
+/**
+ * Builds the Fedify `Federation` of the blog actor, with every dispatcher and
+ * inbox listener registered.
+ *
+ * @remarks
+ * Its key-value store is in memory: durable state lives in the plugin's
+ * content types. `getFederation` keeps one per Strapi instance.
+ *
+ * @param log - Receives failed outbox deliveries, which Fedify would otherwise
+ * report only through LogTape.
+ */
 export function createFediverseFederation(log?: Logger): Federation<FediverseContextData> {
   const federation = createFederation<FediverseContextData>({
     kv: new MemoryKvStore(),
@@ -580,6 +591,16 @@ function requestGuardKind(method: string, path: string): RequestGuardKind {
 
 const GUARD_WARNING_INTERVAL_MS = 60_000;
 
+/**
+ * Koa middleware that hands federation paths to Fedify and passes every other
+ * request on untouched.
+ *
+ * @remarks
+ * Mounted in `register()`, ahead of `strapi::body`, so Fedify reads the raw
+ * body that HTTP signature verification needs. A guard registered as
+ * `plugin::fediverse.requestGuard` runs first and may answer the request
+ * itself.
+ */
 export function mountFediverseMiddleware(strapi: Core.Strapi) {
   const fedify = createMiddleware<FediverseContextData, KoaContext>(getFederation(strapi), () => ({
     strapi,

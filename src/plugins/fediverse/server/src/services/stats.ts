@@ -8,9 +8,13 @@ import { listFollowers } from './followers';
 /** Comments point at their article as `api::article.article:<documentId>`. */
 const RELATED_PREFIX = `${ARTICLE_UID}:`;
 
+/** Most documentIds `GET /api/fediverse/articles/stats` accepts in one request; more is a 400. */
 export const BATCH_MAX_IDS = 50;
+/** Ranking page size when the request gives none or an invalid one. */
 export const RANKING_DEFAULT_PAGE_SIZE = 6;
+/** Largest ranking page size; a larger request is capped, not rejected. */
 export const RANKING_MAX_PAGE_SIZE = 50;
+/** Shortest ranking `search` that filters; a shorter one is ignored. */
 export const RANKING_SEARCH_MIN_LENGTH = 3;
 
 type Knex = Core.Strapi['db']['connection'];
