@@ -367,7 +367,7 @@ FEDIVERSE_ACTOR_SUMMARY=
 
 Requirements that are easy to miss:
 
-- **Node ≥ 20.19 or ≥ 22.12.** Fedify depends on an ESM-only package that `require()` only loads from those versions on. `node:20-alpine` currently resolves to 20.20, and the plugin was verified under that version with PostgreSQL.
+- **Node ≥ 22.12.** Fedify depends on an ESM-only package that `require()` only loads from that version on. The production image is `node:22-alpine`, and `engines` says `>=22.12.0`.
 - **Persistent database.** Followers, the actor's key pair and the record of federated articles live in the database. If it is wiped (for instance a SQLite file on a non-persistent volume), every deploy generates a new actor key and drops all followers.
 - **`config/server.ts` uses `proxy: { koa: true }`**, needed behind Traefik so generated URLs use `https`.
 - **No reverse-proxy or DNS changes.** Fedify's routes (`/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/*`) are served by Strapi on the same domain as the API.

@@ -9,6 +9,6 @@ model: sonnet
 - Follow `AGENTS.md`: `import type`, core factories, UIDs from `src/constants/uids.ts`, shared code in `constants/`/`types/`/`utils/`, domain code next to its API.
 - Strapi 5 specifics from `CLAUDE.md`: publish events only via `strapi.eventHub`; `unique: true` has no DB index; comments plugin responses pass through its zod schema; extend comments via `src/extensions/comments/strapi-server.ts`.
 - No BogDev-specific values in code (#83): instance values come from env or site settings.
-- Before finishing: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run test`. If the plan has a real flaw, stop and report.
+- Before finishing: `npm run check`. If the plan has a real flaw, stop and report.
 
 Report back briefly: what changed (files), commands run and their real results, open questions. No process narration.

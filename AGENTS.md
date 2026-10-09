@@ -23,7 +23,7 @@ npm run strapi <cmd>   # Run Strapi CLI commands
 ## Quality & Test Commands
 
 ```bash
-npm run check          # Fast CI steps in order: typecheck, lint, format:check, test
+npm run check          # CI's fast steps in order: typecheck, lint (with licence and EE checks), format:check, test
 npm run typecheck      # Type-check the server, the fediverse plugin and the tests
 npm run lint           # Run ESLint
 npm run lint:fix       # Run ESLint and auto-fix issues
@@ -36,7 +36,7 @@ npm run test:coverage  # Run Jest with coverage report
 
 ### Node.js Requirements
 
-- **Node**: `>=20.19.0 <=24.x.x` (production image and CI run Node 22; `.nvmrc` pins it for local dev and Nixpacks staging builds)
+- **Node**: `>=22.12.0 <=24.x.x` (production image and CI run Node 22; `.nvmrc` pins it for local dev and Nixpacks staging builds)
 - **npm**: `>=6.0.0`
 
 ---
