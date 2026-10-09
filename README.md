@@ -76,18 +76,18 @@ CI runs the same checks plus `npm run build` and `reuse lint` on every pull requ
 
 ## Documentation
 
-| Topic                                         | Where                       |
-| --------------------------------------------- | --------------------------- |
-| Architecture, commands, non-obvious behaviour | `CLAUDE.md`                 |
-| Conventions, project layout, Strapi patterns  | `AGENTS.md`                 |
-| CI/CD, Docker, Dokploy, environment variables | `docs/CI_CD.md`             |
-| Reader accounts, editors, account deletion    | `docs/ACCOUNTS.md`          |
-| Umami visitors and most read articles         | `docs/ANALYTICS.md`         |
-| ActivityPub federation (`fediverse` plugin)   | `docs/FEDIVERSE.md`         |
-| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md` |
-| Reporting vulnerabilities, dependency policy  | `SECURITY.md`               |
-| Accepted dependency vulnerabilities           | `docs/DEPENDENCY_RISKS.md`  |
-| The frontend's API token and its permissions  | `docs/API_TOKENS.md`        |
+| Topic                                         | Where                             |
+| --------------------------------------------- | --------------------------------- |
+| Architecture, commands, non-obvious behaviour | `CLAUDE.md`, `docs/architecture/` |
+| Conventions, project layout, Strapi patterns  | `AGENTS.md`                       |
+| CI/CD, Docker, Dokploy, environment variables | `docs/CI_CD.md`                   |
+| Reader accounts, editors, account deletion    | `docs/ACCOUNTS.md`                |
+| Umami visitors and most read articles         | `docs/ANALYTICS.md`               |
+| ActivityPub federation (`fediverse` plugin)   | `docs/FEDIVERSE.md`               |
+| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md`       |
+| Reporting vulnerabilities, dependency policy  | `SECURITY.md`                     |
+| Accepted dependency vulnerabilities           | `docs/DEPENDENCY_RISKS.md`        |
+| The frontend's API token and its permissions  | `docs/API_TOKENS.md`              |
 
 ## Deployment
 

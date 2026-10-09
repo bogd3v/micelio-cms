@@ -72,3 +72,9 @@ Without `UMAMI_URL`, `UMAMI_WEBSITE_ID` and `UMAMI_API_KEY` the sync never runs.
 ## Tests
 
 `tests/article-stats.test.ts` runs against `tests/helpers/fake-umami.ts`, which answers the metrics endpoint and records requests: path matching per locale, pagination, the API key header, Umami failures, duplicate cleanup and the endpoint. The widget's summary and its admin route (401 without an admin session) are covered in the same suite. `tests/frontend-url.test.ts` covers the path parser.
+
+## Implementation notes
+
+Moved from `CLAUDE.md` (#113); the text is unchanged.
+
+`api::article-stat` holds the visitors of each published article translation, synced hourly from a self-hosted Umami (cron added in `bootstrap()`, gated by `UMAMI_URL`/`UMAMI_WEBSITE_ID`/`UMAMI_API_KEY` in `config/umami.ts`), and serves `GET /api/articles/popular` plus a Visitors widget on the admin homepage (`src/admin/app.tsx`, backed by the admin-API route `/article-stats/summary` registered in `register()`). Details in `docs/ANALYTICS.md`.

@@ -64,10 +64,10 @@ Without `SMTP_HOST` Strapi keeps its default `sendmail` provider, which can't de
 
 ## Roles
 
-| Role            | Who                      | What it adds                                                                       |
-| --------------- | ------------------------ | ---------------------------------------------------------------------------------- |
-| `Authenticated` | Every confirmed reader   | Strapi's defaults (`user.me`, `auth.changePassword`, sessions) + `user.destroyMe`  |
-| `Editor`        | People who review drafts | Draft reads (see the Drafts section of `CLAUDE.md`) + `user.me` + `user.destroyMe` |
+| Role            | Who                      | What it adds                                                                      |
+| --------------- | ------------------------ | --------------------------------------------------------------------------------- |
+| `Authenticated` | Every confirmed reader   | Strapi's defaults (`user.me`, `auth.changePassword`, sessions) + `user.destroyMe` |
+| `Editor`        | People who review drafts | Draft reads (see [drafts](architecture/drafts.md)) + `user.me` + `user.destroyMe` |
 
 The Editor role is created by `src/migrations/editor-role.ts` (issue #53).
 
@@ -79,3 +79,9 @@ The Editor role is created by `src/migrations/editor-role.ts` (issue #53).
 4. The change applies on their next request; `GET /api/users/me` returns `role.type: "editor"`. No new sign-in is needed: the JWT only carries the user id.
 
 To revoke it, set the role back to `Authenticated`.
+
+## Implementation notes
+
+Moved from `CLAUDE.md` (#113); the text is unchanged.
+
+Reader sign-up, sign-in, email confirmation and password reset are the `users-permissions` endpoints, configured once on boot by `src/migrations/account-settings.ts` (email templates with the site settings' name in the language of their `defaultLocale`, frontend links from `FRONTEND_URL`; afterwards the admin panel owns them) and sent through nodemailer when `SMTP_HOST` is set. `src/extensions/users-permissions/strapi-server.ts` adds `DELETE /api/users/me` (current password in the body, deletes only the JWT's user, keeps their comments as «Anónimo») and always returns the user's role from `/users/me`. `strapi::body` parses DELETE bodies for that route. Details and how to make someone an editor in `docs/ACCOUNTS.md`.

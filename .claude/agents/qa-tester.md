@@ -5,7 +5,7 @@ tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
 ---
 
-Follow the Testing section of `CLAUDE.md`:
+Follow `docs/architecture/testing.md`:
 
 - Suites in `tests/` boot Strapi with `setupStrapi()`/`cleanupStrapi()`; env vars a suite needs are set in `beforeAll` before `setupStrapi()`.
 - TypeScript under `strict`; globals from `@jest/globals`; response shapes in `tests/helpers/api-types.ts`; deliberate invalid inputs carry `// @ts-expect-error` with the reason.
