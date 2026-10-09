@@ -26,4 +26,4 @@ This adds a `Signed-off-by: Your Name <you@example.com>` line that must match th
 ## Pull requests
 
 - Commits, PR titles and descriptions in English, with a conventional prefix (`feat`, `fix`, `docs`, `refactor`, `style`, `test`, `ci`, `perf`, `chore`).
-- Run `npm run lint`, `npm run typecheck`, `npm run format:check` and `npm run test` before opening the PR.
+- Run `npm run check` (typecheck, lint, format check and tests) before opening the PR.

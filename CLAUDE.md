@@ -14,6 +14,7 @@ Strapi 5 (TypeScript) headless CMS of Micelio, a site engine (BogDev is the firs
 npm run develop         # dev server with hot reload (alias: dev)
 npm run start           # production server, no reload
 npm run build           # build the admin panel
+npm run check           # typecheck, lint, format:check and test, in the order CI runs them
 npm run typecheck       # tsc --noEmit for root, the fediverse plugin and tests/ (three separate projects)
 npm run lint / lint:fix
 npm run format / format:check
