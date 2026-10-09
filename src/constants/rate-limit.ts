@@ -2,6 +2,7 @@ import type { RateLimitGroupName } from '../types/rate-limit';
 
 /** Headers the frontend sends so the CMS limits its users, not its one IP. */
 export const FORWARDER_SECRET_HEADER = 'x-micelio-forwarder-secret';
+/** Header carrying the visitor address the frontend saw; trusted only with a valid secret. */
 export const FORWARDED_IP_HEADER = 'x-micelio-client-ip';
 
 /** `RATE_LIMIT_FORWARDER_SECRET` must be at least this long. */
@@ -29,6 +30,7 @@ export const SHARED_GROUPS: readonly RateLimitGroupName[] = [
 
 /** Paths never limited (compared after normalisation). */
 export const EXEMPT_PATHS = ['/_health', '/favicon.ico'] as const;
+/** Path prefixes never limited (compared after normalisation). */
 export const EXEMPT_PREFIXES = ['/uploads/'] as const;
 
 /** Admin routes that take credentials: limited by client IP, the rest of /admin is exempt. */
@@ -81,6 +83,8 @@ export const AUTH_KEY_PATHS = [
   '/api/auth/logout',
 ] as const;
 
+/** Path of the MCP endpoint, limited in the `api` group. */
 export const MCP_PATH = '/mcp';
 
+/** Message of the 429 response body. */
 export const RATE_LIMIT_MESSAGE = 'Too many requests, please try again later.';

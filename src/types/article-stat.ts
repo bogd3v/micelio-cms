@@ -1,5 +1,6 @@
 /** Contracts of the article-stat service (visitors synced from Umami). */
 
+/** `config/umami.ts`: connection to the Umami instance; the sync is off while `url` is empty. */
 export interface UmamiConfig {
   url: string;
   websiteId: string;
@@ -11,12 +12,14 @@ export interface UmamiConfig {
 /** `30d`: visitors of the last 30 days; `all`: since Umami started counting. */
 export type PopularPeriod = '30d' | 'all';
 
+/** Options of `popular`. */
 export interface PopularOptions {
   locale?: string;
   period?: PopularPeriod;
   limit?: number;
 }
 
+/** An article of the most-read list, with the fields a card needs. */
 export interface PopularArticle {
   documentId: string;
   slug: string | null;
@@ -29,6 +32,7 @@ export interface PopularArticle {
   views: number;
 }
 
+/** What one Umami sync wrote. */
 export interface SyncReport {
   /** Published article translations whose counts were written. */
   articles: number;
@@ -38,6 +42,7 @@ export interface SyncReport {
   otherPaths: number;
 }
 
+/** Visitors and page views of the whole site over one window. */
 export interface WebsiteTotals {
   visitors: number;
   pageviews: number;

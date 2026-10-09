@@ -6,6 +6,7 @@ import {
   type AuthorBase,
 } from '../utils/author-locales';
 
+/** What `ensureAuthorLocales` changed in one run. */
 export interface AuthorLocalesReport {
   /** Author localizations created. */
   created: number;

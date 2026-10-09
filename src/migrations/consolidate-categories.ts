@@ -3,10 +3,12 @@ import type { Core } from '@strapi/strapi';
 const CATEGORY_UID = 'api::category.category';
 const ARTICLE_UID = 'api::article.article';
 
+/** Stable identifiers of the five blog categories. */
 export type CategoryKey = 'privacidad' | 'diy' | 'ia' | 'software' | 'linux';
 
 /** Locales the categories are translated into. Spanish is the blog's own language. */
 export const CATEGORY_LOCALES = ['es', 'en'] as const;
+/** A locale of `CATEGORY_LOCALES`. */
 export type CategoryLocale = (typeof CATEGORY_LOCALES)[number];
 
 interface CategoryText {
@@ -14,6 +16,7 @@ interface CategoryText {
   description: string;
 }
 
+/** A category the consolidation leaves in place, with its translations and the old slugs it absorbs. */
 export interface CategoryTarget {
   slug: string;
   /** Stable identifier the frontend paints the category with; never shown. */
@@ -27,6 +30,7 @@ export interface CategoryTarget {
   sources: string[];
 }
 
+/** What `consolidateCategories` changed in one run, by category slug unless noted. */
 export interface ConsolidationReport {
   created: string[];
   updated: string[];
@@ -406,6 +410,7 @@ export async function consolidateCategories(strapi: Core.Strapi): Promise<Consol
   return report;
 }
 
+/** Whether the run created, updated, localized, merged, removed or relinked anything. */
 export function hasChanges(report: ConsolidationReport): boolean {
   return (
     report.created.length > 0 ||
