@@ -72,4 +72,6 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 
 Subagents live in `.claude/agents/`; how the main session orchestrates them, with each one's model and the hard limits, is in `.claude/TEAM.md`.
 
+@docs/engineering-standard.md
+
 @.claude/TEAM.md

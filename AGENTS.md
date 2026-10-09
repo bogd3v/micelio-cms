@@ -4,6 +4,10 @@ This is a **Strapi 5** CMS backend project. Below are conventions and commands f
 
 ---
 
+## Engineering standard
+
+The rules shared by every Micelio repository live in [`docs/engineering-standard.md`](docs/engineering-standard.md). This file adds what is specific to this repository (stack, commands, folders, naming) and may tighten the standard, never relax it. When the two disagree, the standard wins.
+
 ## Build Commands
 
 ```bash

@@ -1,0 +1,6 @@
+# Same file as in micelio; the repository name in the URL is this one.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/bogd3v/micelio-cms/security/advisories/new
+    about: Privately, through a security advisory. Never in a public issue.
