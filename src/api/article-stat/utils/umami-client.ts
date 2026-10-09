@@ -4,6 +4,7 @@ import type { UmamiConfig, WebsiteTotals } from '../../../types/article-stat';
 const PAGE_SIZE = 500;
 const TIMEOUT_MS = 15_000;
 
+/** Visitors of one URL path, as Umami reports them. */
 export interface PathVisitors {
   /** URL path without the query string. */
   path: string;
@@ -11,6 +12,7 @@ export interface PathVisitors {
   visitors: number;
 }
 
+/** Whether the Umami URL, website id and API key are all set; narrows `config` when true. */
 export function isUmamiConfigured(config: UmamiConfig | undefined): config is UmamiConfig {
   return Boolean(config?.url && config.websiteId && config.apiKey);
 }

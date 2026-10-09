@@ -24,6 +24,7 @@ export type LimiterName =
   /** Everything the forwarding frontend sends in one group, per peer. */
   | `ceiling:${RateLimitGroupName}`;
 
+/** The rate-limit counters of the app, in memory or, for the shared groups, in PostgreSQL. */
 export interface Limiters {
   /** The rule behind a counter, or null when it is off. */
   rule(name: LimiterName): RateLimitRule | null;

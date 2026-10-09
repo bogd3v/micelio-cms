@@ -19,7 +19,9 @@ import {
   type PathVisitors,
 } from '../utils/umami-client';
 
+/** Number of articles `popular` returns when the caller gives no usable limit. */
 export const POPULAR_DEFAULT_LIMIT = 5;
+/** Largest number of articles `popular` returns; a higher limit is clamped to it. */
 export const POPULAR_MAX_LIMIT = 50;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RECENT_WINDOW_MS = 30 * DAY_MS;
