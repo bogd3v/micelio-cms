@@ -159,6 +159,10 @@ const articles = await strapi.documents('api::article.article').findMany({
 - Integer: `env.int('PORT', 1337)`
 - Array: `env.array('APP_KEYS')`
 
+### Async code
+
+`async`/`await` with `try`/`catch`. No `.then()`, `.catch()` or `.finally()` chains; `no-restricted-syntax` in `eslint.config.mjs` fails `npm run lint` on them. `Promise.all`, `race`, `any` and `allSettled` are fine when awaited. `new Promise` only inside a small helper that adapts an event or callback API. A script's entry point wraps its `main()` in an async function with `try`/`catch` and exits non-zero on failure.
+
 ### Error Handling
 
 Catch an error only where it can be handled or given context, log it with `strapi.log` (never `console` in `src/`) and never swallow it. Scripts use `async`/`await` with `try`/`catch`, not promise chains. See section 4 of the [engineering standard](docs/engineering-standard.md).

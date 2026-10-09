@@ -31,15 +31,16 @@ async function createRemoteActor({
 
   const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/actor') {
-      buildActorDocument()
-        .then((doc) => {
+      void (async () => {
+        try {
+          const doc = await buildActorDocument();
           res.writeHead(200, { 'content-type': ACTIVITY_JSON });
           res.end(JSON.stringify(doc));
-        })
-        .catch((error) => {
+        } catch (error) {
           res.writeHead(500);
           res.end(String(error));
-        });
+        }
+      })();
       return;
     }
 

@@ -32,6 +32,14 @@ export default tseslint.config(
       '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.property.name=/^(then|catch|finally)$/]",
+          message: 'No promise chains: use await with try/catch (AGENTS.md, Async code).',
+        },
+      ],
     },
   }
 );
