@@ -87,6 +87,8 @@ npm run test:coverage  # Run Jest with coverage report
 
 ### TypeScript Conventions
 
+Every exported declaration under `src/` has a TSDoc comment (standard, section 4, "Doc comments (TSDoc)"). `npm run lint` checks the syntax (`tsdoc/syntax`) and, per area, that the comment exists (`jsdoc/require-jsdoc`; see `eslint.config.mjs`). Default exports that the framework discovers need none.
+
 1. **Use `import type` for type-only imports**:
 
    ```typescript
