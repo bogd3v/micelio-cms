@@ -42,6 +42,18 @@ describe('Article plain text and content search', () => {
   });
 
   describe('markdownToPlainText', () => {
+    it('never rebuilds a tag or a comment out of nested ones', () => {
+      const inputs = [
+        '<scr<b>ipt>alert(1)',
+        '<<b>script>alert(1)',
+        '<scr<!-- c -->ipt>alert(1)',
+        'a<!<!-- x -->-- y -->b',
+      ];
+      for (const markdown of inputs) {
+        expect(markdownToPlainText(markdown)).not.toMatch(/<\/?[a-z!]|<!--|--!?>/i);
+      }
+    });
+
     it('drops Markdown and HTML syntax but keeps the words and the code', () => {
       const markdown = [
         '## Un **título** con `código`',

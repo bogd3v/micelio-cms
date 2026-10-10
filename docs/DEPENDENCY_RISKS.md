@@ -59,6 +59,14 @@ The `fixAvailable` that npm suggests for these is a downgrade (`@strapi/plugin-u
 
 To dismiss these alerts on GitHub, use the reason `tolerable_risk` for `react-router` and `stream-json`, and `vulnerable_code_not_actually_used` for the rest.
 
+## CodeQL alerts
+
+`.github/workflows/codeql.yml` publishes its alerts to code scanning. An alert that is not fixed is dismissed there with the reason below.
+
+| Rule                                         | Where                                                                                                        | Why it is dismissed                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js/incomplete-multi-character-sanitization` | `src/api/article/utils/plain-text.ts` (2 alerts), `src/plugins/fediverse/server/src/services/replies.ts` (1) | False positive. The tag patterns `<[^>]+>` and `<[^>]*>` also match inner `<`, so nested input such as `<scr<b>ipt>` ends as `ipt>`, never as a tag. The one rebuildable case, a comment around a tag, is removed by the tag pass that runs after it. The tests "never rebuilds" in `tests/article-search.test.ts` and `tests/fediverse-phase3.test.ts` keep it true. Over-eager stripping of a lone `<` is a separate bug (#161). |
+
 ## OpenSSF Scorecard
 
 `.github/workflows/scorecard.yml` runs weekly and on pushes to `main`, and publishes its results to code scanning. A check that stays below its maximum is listed here with the reason. First run: 5.8 of 10 on 2026-10-10 (`https://api.scorecard.dev/projects/github.com/bogd3v/micelio-cms`).
