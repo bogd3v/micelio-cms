@@ -11,7 +11,8 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
-# Read-only by default; build-and-push adds packages: write for GHCR.
+# Read-only by default; build-and-push adds packages, id-token and attestations
+# write (GHCR push and the signed provenance).
 permissions:
   contents: read
 
@@ -26,13 +27,18 @@ jobs:
   build-and-push:
     needs: ci
     runs-on: ubuntu-latest
+    # id-token and attestations let the provenance be signed and stored with the image.
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -55,15 +61,31 @@ jobs:
             type=raw,value=staging,enable=${{ github.ref == 'refs/heads/develop' }}
 
       - name: Build and push Docker image
+        id: push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           target: production
           push: true
+          # The public provenance records build args: never pass secrets as
+          # `build-args`, use `secrets:` instead.
+          sbom: true
+          provenance: mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Signed attestation that this repository's workflow built this digest;
+      # `gh attestation verify` checks it (docs/operate/verify-image.md).
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+          # Storage records need artifact-metadata: write, which this job does not get.
+          create-storage-record: false
 
   deploy:
     needs: build-and-push
