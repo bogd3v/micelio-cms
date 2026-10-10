@@ -18,7 +18,8 @@ npm run check           # typecheck, lint, format:check and test, in the order C
 npm run typecheck       # tsc --noEmit for root, the fediverse plugin and tests/ (three separate projects)
 npm run lint / lint:fix
 npm run format / format:check
-npm run test             # jest --forceExit --detectOpenHandles
+npm run test             # jest --forceExit (parallel workers)
+npm run test:handles     # same, serial, with --detectOpenHandles to find leaks
 npm run test:watch
 npm run generate:keys    # generate Strapi secrets into .env
 npm run seed:example     # run scripts/seed.js
