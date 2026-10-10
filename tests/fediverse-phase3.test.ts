@@ -454,6 +454,12 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
       );
     });
 
+    it('htmlToPlainText never rebuilds a tag out of nested ones', () => {
+      for (const html of ['<scr<b>ipt>alert(1)', '<<b>script>alert(1)', '<a<!-- c -->>alert(1)']) {
+        expect(htmlToPlainText(html)).not.toMatch(/<\/?[a-z!]/i);
+      }
+    });
+
     it('stripLeadingMentions removes only our own leading mentions', () => {
       expect(stripLeadingMentions('@devbog@blog.example @devbog hi @devbog', 'devbog')).toBe(
         'hi @devbog'
