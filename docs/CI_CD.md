@@ -118,6 +118,7 @@ The `build-and-push` job runs on GitHub's Ubuntu runners:
 2. **Login to GHCR**: Authenticates using `GITHUB_TOKEN`
 3. **Build Docker image**: Multi-stage build (see [Dockerfile](#dockerfile))
 4. **Push to GHCR**: Tags with commit SHA and `latest`
+5. **Attest**: Attaches an SBOM and build provenance to the pushed digest and signs the provenance (see [verify the image](operate/verify-image.md))
 
 **Image tags created:**
 
