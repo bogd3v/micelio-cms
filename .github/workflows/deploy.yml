@@ -24,8 +24,32 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
 
+  # Builds the image while `ci` runs and fills the layer cache; nothing leaves
+  # the runner. `build-and-push` then reuses the cache once `ci` has passed.
+  build-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: production
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Pushing and deploying wait for both: a red `ci` leaves GHCR and Dokploy untouched.
   build-and-push:
-    needs: ci
+    needs: [ci, build-image]
     runs-on: ubuntu-latest
     # id-token and attestations let the provenance be signed and stored with the image.
     permissions:
@@ -73,8 +97,8 @@ jobs:
           provenance: mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Read-only: `build-image` already filled the cache, saving it again costs ~25 s.
           cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       # Signed attestation that this repository's workflow built this digest;
       # `gh attestation verify` checks it (docs/operate/verify-image.md).
