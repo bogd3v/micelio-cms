@@ -22,6 +22,7 @@ module.exports = {
     '/.strapi/',
   ],
   modulePathIgnorePatterns: ['<rootDir>/dist/', '<rootDir>/build/'],
+  globalSetup: './tests/jest.global-setup.js',
   setupFilesAfterEnv: ['./tests/jest.setup.ts'],
   transform: {
     '^.+\\.[cm]?[jt]sx?$': '<rootDir>/tests/helpers/esbuild-transformer.js',

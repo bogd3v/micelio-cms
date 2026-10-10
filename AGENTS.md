@@ -31,6 +31,7 @@ npm run format         # Format files with Prettier
 npm run format:check   # Check formatting without writing files
 npm run test           # Run Jest test suite
 npm run test:watch     # Run Jest in watch mode
+npm run test:handles    # Serial run with --detectOpenHandles, to find leaked handles
 npm run test:coverage  # Run Jest with coverage report
 ```
 

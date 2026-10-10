@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { AddressInfo } from 'net';
 import { Client } from 'pg';
-import { createStrapi, compileStrapi, type Core } from '@strapi/strapi';
+import { createStrapi, type Core } from '@strapi/strapi';
 
 // One SQLite file per Jest worker: suites run in parallel workers and each one
 // deletes/recreates its database, so a shared file makes them clobber each other.
@@ -92,8 +92,8 @@ async function setupStrapi() {
     fs.unlinkSync(TEST_DB_PATH);
   }
 
-  const appContext = await compileStrapi();
-  instance = createStrapi(appContext);
+  // `tests/jest.global-setup.js` compiled the sources into dist/ before any suite ran.
+  instance = createStrapi({ appDir: process.cwd(), distDir: path.join(process.cwd(), 'dist') });
   await instance.load();
   await instance.start();
 
