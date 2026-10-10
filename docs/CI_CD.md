@@ -112,6 +112,8 @@ Third-party actions are pinned to a commit SHA (with the tag in a comment); upda
 
 ### 2. Build Job
 
+`build-image` builds the image while `ci` runs and fills the GitHub Actions layer cache (`type=gha`); nothing is pushed. `build-and-push` waits for both `ci` and `build-image`, so a red `ci` pushes no tag and calls no Dokploy, and its build is almost all cache hits. If the cache is evicted it simply builds in full, only slower.
+
 The `build-and-push` job runs on GitHub's Ubuntu runners:
 
 1. **Checkout code**: Downloads the repository
@@ -204,11 +206,12 @@ Excludes unnecessary files from the Docker image:
 
 **Location:** `.github/workflows/deploy.yml`
 
-Three jobs:
+Four jobs:
 
 1. `ci`: Runs `.github/workflows/ci.yml` (audit, typecheck, lint, format, REUSE, tests, build, as parallel jobs)
-2. `build-and-push`: Builds and pushes Docker image (depends on `ci`)
-3. `deploy`: Triggers Dokploy deployment (depends on build success)
+2. `build-image`: Builds the image in parallel with `ci` to warm the layer cache (no push)
+3. `build-and-push`: Builds from that cache, pushes the image and attests it (depends on `ci` and `build-image`)
+4. `deploy`: Triggers Dokploy deployment (depends on build success)
 
 ### Health Check Endpoint
 
