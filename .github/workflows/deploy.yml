@@ -11,7 +11,8 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
-# Read-only by default; build-and-push adds packages: write for GHCR.
+# Read-only by default; build-and-push adds packages, id-token and attestations
+# write (GHCR push and the signed provenance).
 permissions:
   contents: read
 
@@ -36,6 +37,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -64,6 +67,8 @@ jobs:
           context: .
           target: production
           push: true
+          # The public provenance records build args: never pass secrets as
+          # `build-args`, use `secrets:` instead.
           sbom: true
           provenance: mode=max
           tags: ${{ steps.meta.outputs.tags }}
@@ -79,6 +84,8 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+          # Storage records need artifact-metadata: write, which this job does not get.
+          create-storage-record: false
 
   deploy:
     needs: build-and-push

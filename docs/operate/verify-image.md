@@ -15,10 +15,13 @@ Every image that CI publishes to `ghcr.io/bogd3v/micelio-cms` carries two things
 Needs the [GitHub CLI](https://cli.github.com/) and a login to GHCR if the package is private.
 
 ```bash
-gh attestation verify oci://ghcr.io/bogd3v/micelio-cms:<tag> --repo bogd3v/micelio-cms
+gh attestation verify oci://ghcr.io/bogd3v/micelio-cms:<tag> \
+  --repo bogd3v/micelio-cms \
+  --signer-workflow bogd3v/micelio-cms/.github/workflows/deploy.yml \
+  --source-ref refs/heads/main
 ```
 
-`<tag>` is a release tag or a commit SHA. The command exits 0 and prints the workflow and commit that built the digest when the attestation is valid. Any other exit code means do not run the image.
+`<tag>` is the short commit SHA tag (`abc1234`) or `latest`. Images published before this attestation existed carry none, so the command fails on them. `--signer-workflow` and `--source-ref` reject an image built from any other workflow or branch; staging builds (`develop`) are attested too, so drop `--source-ref` only to check one. The command exits 0 and prints the workflow and commit that built the digest when the attestation is valid. Any other exit code means do not run the image.
 
 ## Print the bill of materials
 
@@ -26,9 +29,9 @@ gh attestation verify oci://ghcr.io/bogd3v/micelio-cms:<tag> --repo bogd3v/micel
 docker buildx imagetools inspect ghcr.io/bogd3v/micelio-cms:<tag> --format '{{ json .SBOM }}'
 ```
 
-The output is SPDX JSON. Pipe it to `jq '.SPDX.packages[].name'` for a list of package names.
+The output wraps an SPDX JSON document under an `SPDX` key. Pipe it to `jq '.SPDX.packages[].name'` for a list of package names.
 
 ## Notes
 
-- Verify the tag you deploy. Tags such as `latest` move; the digest in the output is what was checked.
+- Verify the tag you deploy. `latest` moves; the digest in the output is what was checked.
 - A registry listing shows extra `unknown/unknown` entries next to the image. Those are the attestation manifests, not other platforms.

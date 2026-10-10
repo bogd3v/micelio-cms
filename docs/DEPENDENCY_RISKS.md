@@ -62,3 +62,5 @@ To dismiss these alerts on GitHub, use the reason `tolerable_risk` for `react-ro
 ## OpenSSF Scorecard
 
 `.github/workflows/scorecard.yml` runs weekly and on pushes to `main`, and publishes its results to code scanning. A check that stays below its maximum is listed here with the reason. The first run's findings are added when it has run.
+
+`sbom: true` makes BuildKit pull its `docker/buildkit-syft-scanner` image at build time, unpinned. It is Docker-maintained and only reads the image filesystem, so the risk is accepted. Pinning the `node:22-alpine` base image by digest would close the Scorecard `Pinned-Dependencies` finding the Dockerfile will likely raise.
