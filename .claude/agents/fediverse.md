@@ -10,7 +10,7 @@ Load the `strapi-fediverse` skill and read `docs/FEDIVERSE.md` before touching c
 - The plugin is its own TypeScript project bundled by esbuild (`npm run build:fediverse`); it **never imports from root `src/`**.
 - Fedify middleware is mounted in `register()` and guarded to federation paths only; raw body is needed for HTTP signatures.
 - Durable state (followers, keys, interactions) lives in Strapi content types, never in `MemoryKvStore`. Inserts that race dedupe after insert.
-- Behind Traefik URLs depend on `proxy: { koa: true }`.
+- Behind a TLS-terminating proxy URLs depend on `proxy: { koa: true }`.
 - Tests force `FEDIVERSE_ENABLED=true` before Strapi boots and use `tests/helpers/remote-actor.ts`.
 - Record any non-obvious finding for `docs/FEDIVERSE.md` in your report.
 

@@ -82,10 +82,10 @@ When seeding or querying dynamic zones, populate the nested `file` (and `credit`
 
 ## Production upload storage
 
-The local provider stores files under the path set by `UPLOAD_PATH`. In the current Dokploy setup:
+The local provider stores files under the path set by `UPLOAD_PATH`. On a Docker deployment:
 
 - `UPLOAD_PATH=/app/public/uploads`
-- A bind mount maps host `../files/strapi-uploads` to container `/app/public/uploads`.
+- A persistent volume (or bind mount) is mounted at the container's `/app/public/uploads`.
 
 If uploads disappear after a deployment, the volume mount is missing or incorrect.
 

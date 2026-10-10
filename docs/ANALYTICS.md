@@ -1,9 +1,9 @@
 # Analytics (Umami)
 
-The blog's analytics run on a self-hosted [Umami](https://umami.is) 3.4 in Dokploy, on the same VPS. This backend only **reads** from it, to rank the most read articles. Infrastructure (DNS, Umami's database, its backup) lives in `bogdev-infra`; the tracker lives in the frontend.
+The blog's analytics run on a self-hosted [Umami](https://umami.is) 3.4. This backend only **reads** from it, to rank the most read articles. Infrastructure (DNS, Umami's database, its backup) belongs to whoever operates the node; the tracker lives in the frontend.
 
 ```
-visitor ──► bogdev.com.co/bd.js, /api/bd ──(Nuxt proxy, x-real-ip)──► Umami ◄──(hourly, API key)── Strapi
+visitor ──► example.com/bd.js, /api/bd ──(Nuxt proxy, x-real-ip)──► Umami ◄──(hourly, API key)── Strapi
                                                                                                    │
                                                           GET /api/articles/popular ◄── article_stats
 ```
@@ -55,12 +55,12 @@ Its data comes from `GET /article-stats/summary` on the **admin** API (admin ses
 
 ## Configuration
 
-| Variable           | Meaning                                                                                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `UMAMI_URL`        | Internal address of the Umami app in `dokploy-network` (`http://<app name>:3000`), not the public domain                                                                              |
-| `UMAMI_WEBSITE_ID` | Website id of `bogdev.com.co` in Umami                                                                                                                                                |
-| `UMAMI_API_KEY`    | API key (`umami_…`) of the **View only** user `strapi-reader`, which sees the website through the `BogDev` team. Umami API keys can't reach `/api/auth`, `/api/users` or `/api/admin` |
-| `UMAMI_SYNC_CRON`  | Optional, default `0 * * * *`                                                                                                                                                         |
+| Variable           | Meaning                                                                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UMAMI_URL`        | An address the CMS container can reach (for example `http://umami:3000`), not necessarily the public domain                                                                                        |
+| `UMAMI_WEBSITE_ID` | Website id of `example.com` in Umami                                                                                                                                                               |
+| `UMAMI_API_KEY`    | API key (`umami_…`) of the **View only** user `strapi-reader`, which sees the website through the team that owns the website. Umami API keys can't reach `/api/auth`, `/api/users` or `/api/admin` |
+| `UMAMI_SYNC_CRON`  | Optional, default `0 * * * *`                                                                                                                                                                      |
 
 Without `UMAMI_URL`, `UMAMI_WEBSITE_ID` and `UMAMI_API_KEY` the sync never runs. `STRAPI_DISABLE_CRON=true` (set by the test harness) turns off every cron task.
 

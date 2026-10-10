@@ -15,7 +15,7 @@ The main session acts as **tech lead / orchestrator**. It splits the work, hands
 | `qa-tester`       | sonnet | Jest suites against a real Strapi on SQLite                                                          |
 | `code-reviewer`   | opus   | Review every diff before it is called done                                                           |
 | `security`        | opus   | Permissions, API tokens, drafts access, accounts, CORS, admin CSP, uploads, secrets                  |
-| `devops`          | sonnet | Dockerfile, CI/deploy/staging workflows, Dokploy config, demo compose, dependencies                  |
+| `devops`          | sonnet | Dockerfile, CI and image workflows, demo compose, dependencies                                       |
 | `docs-writer`     | haiku  | `docs/architecture/*.md`, `CLAUDE.md` table, `AGENTS.md`, `docs/*.md`, skills, issue Progress drafts |
 
 **Escalation:** if an agent fails the same task twice, or the problem is exceptionally hard (concurrency, a subtle regression, a contract that touches both repos), relaunch it with `model: opus`; `model: fable` only as a last resort, and say in the summary why. Never start with the most expensive model.
@@ -24,7 +24,7 @@ The main session acts as **tech lead / orchestrator**. It splits the work, hands
 
 - Work is tracked in GitHub issues; fediverse work in the `fediverse-federation` milestone (phases 0–5) with `docs/FEDIVERSE.md` as the living tracker. Cross-repository planning is micelio's epic #408 (engineering foundations).
 - `CLAUDE.md` holds the pitfalls and a "before you touch X, read Y" table; the architecture notes and non-obvious findings are in `docs/architecture/` and the subsystem documents it points to. Read the relevant one before changing an area.
-- Deployment and pipeline details are in `docs/CI_CD.md`; `main` → production, `develop` → staging.
+- The operator's documentation is in `docs/operate/`; the CI and image pipeline is in `docs/architecture/ci-pipeline.md`.
 
 ## Cross-repo contract (`micelio-cms` ↔ `micelio`)
 
@@ -57,13 +57,13 @@ Clone both repos side by side (`../micelio`) so agents can read the other side o
 
 - Never push, merge, tag, release, deploy, or run anything against production or staging. The orchestrator prepares; the user approves. The one exception is content through the `strapi` MCP server (below).
 - Subagents never call MCP servers; they do not list MCP tools on purpose. If a task seems to need them, stop and report to the orchestrator.
-- Never call the `dokploy` MCP server.
+- Never call a deployment-platform MCP server declared in `.mcp.json`.
 - Never read or print `~/.claude/secrets/`, `.env` or tokens. Use `.env.example` to learn variable names.
 - Code, identifiers, commits, PR titles and descriptions in English (see `AGENTS.md`).
 
 ## Content through the Strapi MCP (orchestrator only)
 
-The `strapi` MCP server points at **production** (`api.bogdev.com.co/mcp`). It is the preferred way to load or fix content (site settings, pages, authors, categories, articles, media metadata), because it is faster than the admin panel.
+The `strapi` MCP server points at **production** (the URL in `.mcp.json`). It is the preferred way to load or fix content (site settings, pages, authors, categories, articles, media metadata), because it is faster than the admin panel.
 
 - Only the main session calls it. Reads (`get_*`, `list_*`, `media_get_*`, `media_list_*`) need no approval.
 - Before writing, read the current value, then show the user what changes (field, locale, old → new) and get their approval for that batch. Never overwrite a non-empty value the task did not ask to replace; report the difference instead.

@@ -46,7 +46,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
       name: 'strapi::cors',
       // Browser origins allowed to call the API with credentials. Unset keeps
       // Strapi's default `*`, which reflects any origin; production sets it to
-      // the frontend (docs/CI_CD.md). Server-to-server calls ignore CORS.
+      // the frontend (docs/operate/configure.md). Server-to-server calls ignore CORS.
       config: { origin: env.array('CORS_ORIGINS', ['*']) },
     },
     'strapi::poweredBy',

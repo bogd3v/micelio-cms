@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-A more detailed `AGENTS.md` already exists in this repo with naming conventions and Strapi API patterns — read it for anything not covered here. Project skills live in `.claude/skills/` (content types, API consumers, media, seeding, deployment, subscribers, comments, fediverse) and MCP servers (Strapi, Dokploy) are declared in `.mcp.json`; their secrets are read from `~/.claude/secrets/`, never from the repo.
+A more detailed `AGENTS.md` already exists in this repo with naming conventions and Strapi API patterns — read it for anything not covered here. Project skills live in `.claude/skills/` (content types, API consumers, media, seeding, deployment, subscribers, comments, fediverse) and MCP servers are declared in `.mcp.json`; their secrets are read from `~/.claude/secrets/`, never from the repo.
 
 ## Project
 
-Strapi 5 (TypeScript) headless CMS of Micelio, a site engine (BogDev is the first site that runs it), deployed as a Docker image to a Hetzner VPS via Dokploy (see `docs/CI_CD.md`). Production DB is PostgreSQL 18 managed by Dokploy on the same VPS (`bogdev-prod`), reached through `DATABASE_URL`; local dev defaults to SQLite.
+Strapi 5 (TypeScript) headless CMS of Micelio, a site engine, shipped as a Docker image (see `docs/operate/install.md`). The production database is PostgreSQL 18, reached through `DATABASE_URL`; local dev defaults to SQLite.
 
 ## Commands
 
@@ -55,7 +55,9 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 | Analytics                                | `docs/ANALYTICS.md`                                           |
 | Rate limiting, client IP                 | `docs/RATE_LIMITING.md`                                       |
 | Tests                                    | `docs/architecture/testing.md`                                |
-| Deployment, CI, staging                  | `docs/CI_CD.md`, skill `strapi-deployment`                    |
+| Install, configure, upgrade, back up     | `docs/operate/`, skill `strapi-deployment`                    |
+| CI and the image pipeline                | `docs/architecture/ci-pipeline.md`                            |
+| Where each document lives                | `docs/README.md`                                              |
 
 Subsystem knowledge lives in these files, not here (standard, section 1). Add a new subsystem's notes to `docs/architecture/` and a row to this table.
 

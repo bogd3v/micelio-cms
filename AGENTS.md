@@ -37,7 +37,7 @@ npm run test:coverage  # Run Jest with coverage report
 
 ### Node.js Requirements
 
-- **Node**: `>=22.12.0 <=24.x.x` (production image and CI run Node 22; `.nvmrc` pins it for local dev and Nixpacks staging builds)
+- **Node**: `>=22.12.0 <=24.x.x` (production image and CI run Node 22; `.nvmrc` pins it for local dev)
 - **npm**: `>=6.0.0`
 
 ---
@@ -205,7 +205,7 @@ const connections = {
 ```
 
 - **Development default**: SQLite
-- **Production**: PostgreSQL 18, managed by Dokploy on the VPS (`DATABASE_URL`)
+- **Production**: PostgreSQL 18 (`DATABASE_URL`)
 
 ---
 
@@ -246,7 +246,7 @@ Project-specific agent skills live in `.claude/skills/`. They are loaded automat
 | `strapi-api-consumer` | Documenting or debugging how front-end/mobile apps consume the REST API                 |
 | `strapi-media`        | Working with images, uploads, the upload provider, or image optimizer breakpoints       |
 | `strapi-seeding`      | Seeding sample data, importing content, or setting public permissions programmatically  |
-| `strapi-deployment`   | Deploying, changing Docker/Dokploy config, env vars, or health checks                   |
+| `strapi-deployment`   | Docker image, env vars, health checks, backups                                          |
 | `strapi-subscriber`   | Working with newsletter subscriptions, signup, or confirmation flows                    |
 | `strapi-comments`     | Configuring or querying the comments plugin and moderation settings                     |
 | `strapi-fediverse`    | Working on the ActivityPub plugin, Fedify, followers, replies, or `FEDIVERSE_*` vars    |
@@ -260,7 +260,7 @@ Each skill file is at `.claude/skills/<name>/SKILL.md`.
 1. **Jest + Supertest** configured for integration tests against an isolated SQLite database
 2. **ESLint + Prettier** configured — run `npm run check` before committing
 3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, the fediverse plugin and `tests/`); `npm run typecheck` covers all three
-4. **PostgreSQL 18 managed by Dokploy** used for production database; backups are handled in the `bogdev-infra` repo
+4. **PostgreSQL 18** is the production database; backup and restore are in `docs/operate/backup.md`
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
-6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and deploy on `main`
-7. **MCP servers** are configured in `.mcp.json` (Claude Code asks for approval the first time): `strapi` (`https://api.bogdev.com.co/mcp`) authenticates with a Strapi **Admin API token** (content API tokens from Settings → API Tokens are rejected by `/mcp` with 401) and `dokploy` (`@dokploy/mcp`) with a Dokploy API key. Neither secret is in the repo: they are read from `~/.claude/secrets/strapi-mcp-admin-token` and `~/.claude/secrets/dokploy-api-key` (`.claude/scripts/secret-header.sh` builds the auth header). GitHub and Playwright MCP servers are not configured here; Claude Code has its own plugins for both
+6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and build the image on `main` (`docs/architecture/ci-pipeline.md`)
+7. **MCP servers** are configured in `.mcp.json` (Claude Code asks for approval the first time). The `strapi` server authenticates with a Strapi **Admin API token** (content API tokens from Settings → API Tokens are rejected by `/mcp` with 401). No secret is in the repo: they are read from `~/.claude/secrets/` (`.claude/scripts/secret-header.sh` builds the auth header). GitHub and Playwright MCP servers are not configured here; Claude Code has its own plugins for both.

@@ -5,7 +5,7 @@ description: Use when working on the ActivityPub/fediverse federation of the Mic
 
 # Strapi Fediverse Skill
 
-The site is an ActivityPub actor (`@devbog@<api domain>`) served by a local Strapi plugin built on **Fedify**. Read `docs/FEDIVERSE.md` first: it is the architecture doc and records the findings behind every non-obvious decision. This skill is the quick map.
+The site is an ActivityPub actor (`@blog@<api domain>`) served by a local Strapi plugin built on **Fedify**. Read `docs/FEDIVERSE.md` first: it is the architecture doc and records the findings behind every non-obvious decision. This skill is the quick map.
 
 ## When to use this skill
 
@@ -63,7 +63,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 
 - Strapi's `unique: true` creates **no database index**; `db.query` can insert duplicates. Dedupe after insert if a race matters (see `services/interactions.ts`).
 - `strapi-plugin-comments` config keys other than `enabledCollections` are inert, and its public API shows pending comments unless the middleware hides them. Extend its schema through `strapi-server.ts`, never with an extension `schema.json` (shallow merge replaces all attributes).
-- Behind Traefik `config/server.ts` needs `proxy: { koa: true }`, or every generated URL is `http://`.
+- Behind a TLS-terminating proxy `config/server.ts` needs `proxy: { koa: true }`, or every generated URL is `http://`.
 - Only the outer activity's actor is signature-verified: check embedded actors/authors against it (`Undo`, `Note.attributedTo`).
 - The document service does not autogenerate `slug` (only the admin UI does); articles without one are skipped with a warning.
 - Fedify reports delivery errors through LogTape (unconfigured); `onOutboxError`/inbox `onError` write them to Strapi's log — look for `[fediverse]` lines.
@@ -85,8 +85,8 @@ TEST_DATABASE_URL=postgres://user:pass@127.0.0.1:5432/postgres npm test   # Post
 
 ## Testing against the real fediverse
 
-- **Staging** (`staging-api.bogdev.com.co`, see `docs/CI_CD.md`): follow `@devbog@staging-api.bogdev.com.co` from a Mastodon account, publish an article with a slug, reply/like/boost, and read the app logs for `[fediverse]` lines. Do not redeploy between following and publishing unless `/app/.tmp` is persistent.
-- **Fedify CLI** (same library as the plugin, so it checks the wire format, not other servers' behaviour): `npx @fedify/cli webfinger @devbog@<domain>`, `npx @fedify/cli lookup @devbog@<domain> <article-url>`, `npx @fedify/cli nodeinfo <domain>`, and `npx @fedify/cli inbox` for an ephemeral inbox behind a tunnel.
+- **Staging** (a public HTTPS domain, see `docs/operate/configure.md`): follow `@blog@staging.example.com` from a Mastodon account, publish an article with a slug, reply/like/boost, and read the app logs for `[fediverse]` lines. Do not redeploy between following and publishing unless `/app/.tmp` is persistent.
+- **Fedify CLI** (same library as the plugin, so it checks the wire format, not other servers' behaviour): `npx @fedify/cli webfinger @blog@<domain>`, `npx @fedify/cli lookup @blog@<domain> <article-url>`, `npx @fedify/cli nodeinfo <domain>`, and `npx @fedify/cli inbox` for an ephemeral inbox behind a tunnel.
 - Cross-server behaviour (Pleroma/Akkoma, Misskey, GoToSocial) still needs a manual check against a real instance.
 
 ## Do not

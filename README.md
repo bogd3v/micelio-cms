@@ -1,6 +1,6 @@
 # Micelio CMS
 
-Strapi 5 (TypeScript) headless CMS of [Micelio](https://github.com/bogd3v/micelio), a site engine. [BogDev](https://bogdev.com.co) is the reference site running it. The CMS provides articles, categories, tags, comments, reader accounts, newsletter subscribers, visitor stats from Umami and optional ActivityPub federation. Production runs at `api.bogdev.com.co` (PostgreSQL), staging at `staging-api.bogdev.com.co` (SQLite).
+Strapi 5 (TypeScript) headless CMS of [Micelio](https://github.com/bogd3v/micelio), a site engine. The CMS provides articles, categories, tags, comments, reader accounts, newsletter subscribers, visitor stats from Umami and optional ActivityPub federation.
 
 ## Run your own site
 
@@ -52,7 +52,7 @@ The static and landing profiles have their own project names (`micelio-demo-stat
 | Fediverse      | A public HTTPS domain for the CMS and `FEDIVERSE_*`, see `docs/FEDIVERSE.md`                                            |
 | Media on a CDN | An S3-compatible bucket such as Cloudflare R2 (`R2_*`); without it uploads stay on the CMS's disk                       |
 
-Turn off in the site settings the modules whose services you don't set up. `docs/CI_CD.md` describes how BogDev deploys it with Dokploy.
+Turn off in the site settings the modules whose services you don't set up. [`docs/operate/`](docs/operate/install.md) covers installing the image, every variable, upgrades and backups.
 
 ## Development
 
@@ -76,22 +76,20 @@ CI runs the same checks plus `npm run build` and `reuse lint` on every pull requ
 
 ## Documentation
 
-| Topic                                         | Where                             |
-| --------------------------------------------- | --------------------------------- |
-| Architecture, commands, non-obvious behaviour | `CLAUDE.md`, `docs/architecture/` |
-| Conventions, project layout, Strapi patterns  | `AGENTS.md`                       |
-| CI/CD, Docker, Dokploy, environment variables | `docs/CI_CD.md`                   |
-| Reader accounts, editors, account deletion    | `docs/ACCOUNTS.md`                |
-| Umami visitors and most read articles         | `docs/ANALYTICS.md`               |
-| ActivityPub federation (`fediverse` plugin)   | `docs/FEDIVERSE.md`               |
-| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md`       |
-| Reporting vulnerabilities, dependency policy  | `SECURITY.md`                     |
-| Accepted dependency vulnerabilities           | `docs/DEPENDENCY_RISKS.md`        |
-| The frontend's API token and its permissions  | `docs/API_TOKENS.md`              |
+The documentation is organised by reader; start at [`docs/README.md`](docs/README.md).
 
-## Deployment
-
-Pushing to `main` builds a Docker image, pushes it to GHCR and deploys it to production through Dokploy; `develop` deploys staging. See `docs/CI_CD.md`.
+| Topic                                         | Where                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Install, configure, upgrade, back up          | [`docs/operate/`](docs/operate/install.md)                                           |
+| Every environment variable                    | [`docs/operate/configure.md`](docs/operate/configure.md), `.env.example`             |
+| Architecture, commands, non-obvious behaviour | `CLAUDE.md`, [`docs/architecture/`](docs/architecture/overview.md)                   |
+| Conventions, project layout, Strapi patterns  | `AGENTS.md`                                                                          |
+| Reader accounts, editors, account deletion    | [`docs/ACCOUNTS.md`](docs/ACCOUNTS.md)                                               |
+| Umami visitors and most read articles         | [`docs/ANALYTICS.md`](docs/ANALYTICS.md)                                             |
+| ActivityPub federation (`fediverse` plugin)   | [`docs/FEDIVERSE.md`](docs/FEDIVERSE.md)                                             |
+| The frontend's API token and its permissions  | [`docs/API_TOKENS.md`](docs/API_TOKENS.md)                                           |
+| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md`                                                          |
+| Reporting vulnerabilities, dependency policy  | [`SECURITY.md`](SECURITY.md), [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md) |
 
 ## License
 
