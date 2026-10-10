@@ -1,0 +1,124 @@
+# The frontend's contract suite against a CMS built from this pull request. The suite lives in bogd3v/micelio
+# (e2e/contract/, `npm run test:contract`); it starts the image given in CONTRACT_CMS_IMAGE with Postgres and the demo content
+# (MICELIO_DEMO). Docs: docs/architecture/ci-pipeline.md. It does not gate `deploy`.
+#
+# The frontend's own workflow cannot be called from here: a called workflow checks out the caller's repository, so the frontend's
+# source is checked out below instead.
+name: Contract tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - src/api/**
+      - src/components/**
+      - src/extensions/**
+      - src/middlewares/**
+      - src/utils/**
+      - src/migrations/api-tokens.ts
+      - .github/workflows/contract.yml
+  workflow_dispatch:
+    inputs:
+      frontend_ref:
+        description: Branch, tag or commit of bogd3v/micelio to test against (default main)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  # Until micelio-cms publishes `edge` and a release exists (S6, bogd3v/micelio#414), the frontend's current `main`, which is what
+  # its `latest` image is built from. Then this becomes the latest release and the previous MINOR.
+  FRONTEND_REF: ${{ inputs.frontend_ref || 'main' }}
+  CMS_IMAGE: micelio-cms:contract
+
+jobs:
+  contract:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # packages: write is for the Postgres copy in GHCR; a fork's token is read-only and the script falls back to Docker Hub.
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the CMS
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      # Loaded into the runner's Docker, never pushed: the suite uses a local image as it is.
+      - name: Build the CMS image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: production
+          load: true
+          push: false
+          tags: ${{ env.CMS_IMAGE }}
+          cache-from: type=gha
+
+      # After the image build: inside the Docker context, Strapi's TypeScript build would compile the frontend's sources.
+      - name: Checkout the frontend
+        id: frontend
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: bogd3v/micelio
+          ref: ${{ env.FRONTEND_REF }}
+          path: frontend
+          persist-credentials: false
+
+      - name: Print the frontend under test
+        working-directory: frontend
+        run: |
+          sha="$(git rev-parse HEAD)"
+          echo "Frontend bogd3v/micelio ${FRONTEND_REF} at ${sha}"
+          echo "Contract suite: frontend \`${FRONTEND_REF}\` at \`${sha}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install the frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build the frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve the Postgres image
+        id: postgres
+        working-directory: frontend
+        env:
+          OWNER: ${{ github.repository_owner }}
+          SOURCE_URL: ${{ github.server_url }}/bogd3v/micelio
+        run: echo "image=$(MIRROR_OWNER="${OWNER,,}" MIRROR_REGISTRY=ghcr.io SOURCE_URL="${SOURCE_URL}" scripts/ci/mirror-image.sh postgres:18-alpine)" >> "$GITHUB_OUTPUT"
+
+      - name: Run the contract suite
+        working-directory: frontend
+        env:
+          POSTGRES_IMAGE: ${{ steps.postgres.outputs.image }}
+        run: CONTRACT_CMS_IMAGE="${CMS_IMAGE}" CONTRACT_POSTGRES_IMAGE="${POSTGRES_IMAGE}" npm run test:contract

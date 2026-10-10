@@ -27,6 +27,26 @@ A push that changes only files the image never contains (`docs/**`, Markdown fil
 
 Image tags and how a release produces them are in [Releasing](https://github.com/bogd3v/micelio/blob/main/docs/architecture/releasing.md) and [Upgrade](../operate/upgrade.md#image-tags). Each pushed digest carries a signed provenance attestation and an SBOM; see [Verify the image](../operate/verify-image.md). Third-party actions are pinned to a commit SHA with the tag in a comment; update both together.
 
+## Contract tests: `contract.yml`
+
+**Kind:** explanation, with the commands to run it locally. It checks that the frontend still works against the CMS this repository builds (standard, sections 6 and 7); our own suites boot a real Strapi but never the frontend.
+
+The job builds the `production` image of the commit, loads it into the runner's Docker (it is not pushed) and runs the frontend's suite against it: `npm run test:contract` in `bogd3v/micelio` ([its notes](https://github.com/bogd3v/micelio/blob/main/docs/architecture/contract-tests.md)). The suite starts the image with Postgres and the demo content (`MICELIO_DEMO`), builds the frontend and calls its server routes: site settings, posts, pages, the about page, search, categories, tags, comments, the subscriber write and the refusal of drafts. It also compares the frontend's mock Strapi with this CMS by shape.
+
+- **When it runs:** on pull requests to `main` or `develop` that touch `src/api/`, `src/components/`, `src/extensions/`, `src/middlewares/`, `src/utils/`, `src/migrations/api-tokens.ts` or the workflow, on every push to `main`, and by hand (`workflow_dispatch`, with an optional `frontend_ref`).
+- **Which frontend:** the `main` of `bogd3v/micelio`, which is what its `latest` image is built from, until this repository publishes `edge` and a release exists (ADR 0010 in `bogd3v/micelio`). The run prints the commit it used, in the log and the step summary. Then the default becomes the latest release and the previous MINOR (one line, `FRONTEND_REF`).
+- **Why a checkout and not the frontend's reusable workflow:** a called workflow checks out the caller's repository, so it would try to build this CMS as the frontend.
+- **It does not gate `deploy`.** Mark the `Contract Tests` check as required in the ruleset once it has proven stable.
+- **When it fails:** a change here breaks something the frontend reads. If the break is on purpose, the pull request says so (`!` in the title and a `BREAKING CHANGE:` paragraph) and the failure is the evidence that the release needs upgrade notes and a frontend pull request; do not switch the job off. If the frontend is wrong, fix it there.
+
+Run it locally with Docker, next to a checkout of the frontend:
+
+```bash
+docker build --target production -t micelio-cms:contract .
+cd ../micelio && npm ci && npm run build
+CONTRACT_CMS_IMAGE=micelio-cms:contract npm run test:contract
+```
+
 ## Pull request labels and release notes
 
 `.github/workflows/pr-labels.yml` labels each pull request from its conventional title prefix: `feat` → `enhancement`, `fix` → `bug`, `docs` → `documentation`, `refactor` and `style` → `refactor`, `test` → `testing`, `ci` → `ci`, `perf` → `performance`, `chore` → `code-quality`. The scope `security` adds `security` and the scope `deps` gives `dependencies` (Dependabot pull requests are skipped). `.github/release.yml` groups GitHub's generated release notes by those labels. The labels are repository settings, so a fork creates them once.
