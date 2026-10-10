@@ -2,8 +2,8 @@
 set -e
 
 # The container starts as root only to fix the ownership of the writable
-# directories, then runs the app as the unprivileged node user. Production
-# bind-mounts them from the host (see docs/CI_CD.md), and host directories
+# directories, then runs the app as the unprivileged node user. A deployment
+# may bind-mount them from the host (see docs/operate/troubleshooting.md), and host directories
 # created before the image switched away from root are still owned by root.
 if [ "$(id -u)" = '0' ]; then
   for dir in /app/public/uploads /app/.tmp; do

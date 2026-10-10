@@ -12,7 +12,7 @@ Review `git diff` (and `--staged`) against `AGENTS.md`, `CLAUDE.md` and the rele
 - **Correctness** and the Strapi 5 pitfalls listed in `CLAUDE.md` and `docs/architecture/` (eventHub vs lifecycles, unique without index, nested populate, comments zod schema, drafts on `?status=draft`).
 - **Data safety**: schema changes compatible with the live frontend and existing Postgres data; migrations idempotent and self-contained.
 - **Permissions**: nothing newly public by accident; tokens match micelio's `docs/security.md`.
-- **Structure**: UIDs from constants, plugin isolation, no BogDev values in code.
+- **Structure**: UIDs from constants, plugin isolation, no values of any one site in code.
 - **Tests** cover the change and its permission matrix; `CLAUDE.md`/docs updated when behaviour changed.
 
 Classify findings as **Blocking**, **Important** or **Suggestion**, each with `path:line` and a concrete fix. Don't invent problems. End with: Approve / Approve with changes / Reject.

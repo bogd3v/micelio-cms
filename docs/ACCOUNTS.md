@@ -43,10 +43,10 @@ DELETE requests have their JSON body parsed (`strapi::body` → `parsedMethods` 
 
 `src/migrations/account-settings.ts` runs in `bootstrap()` after the Editor role migration:
 
-- **Once** (marker `core/migrations/account-settings` in the store): Users & Permissions → Advanced settings get sign-up on, default role `Authenticated`, one account per email, email confirmation on, confirmation redirect `<FRONTEND_URL>/account/confirmed` and reset page `<FRONTEND_URL>/account/reset-password`; the email templates are written with the site's name (site settings, seeded just before) in the language of its `defaultLocale`, English or Spanish («Confirm your email for <site>» / «Confirma tu correo en <site>»), HTML-escaped, with an empty sender, so `EMAIL_FROM` is used. Production got BogDev's Spanish templates when this first ran and keeps them. From then on the admin panel owns these values: later boots don't overwrite what an admin changes.
+- **Once** (marker `core/migrations/account-settings` in the store): Users & Permissions → Advanced settings get sign-up on, default role `Authenticated`, one account per email, email confirmation on, confirmation redirect `<FRONTEND_URL>/account/confirmed` and reset page `<FRONTEND_URL>/account/reset-password`; the email templates are written with the site's name (site settings, seeded just before) in the language of its `defaultLocale`, English or Spanish («Confirm your email for <site>» / «Confirma tu correo en <site>»), HTML-escaped, with an empty sender, so `EMAIL_FROM` is used. An existing site keeps the templates it already has. From then on the admin panel owns these values: later boots don't overwrite what an admin changes.
 - **Every boot** (idempotent): grants `user.destroyMe` to the three roles above if missing.
 
-`FRONTEND_URL` must be right **before the first boot** of this version (production `https://bogdev.com.co`, staging the staging frontend); in production it is required, and Strapi stops on boot without it. If it wasn't, fix the two URLs in the admin panel (Settings → Users & Permissions plugin → Advanced settings).
+`FRONTEND_URL` must be right **before the first boot** of this version (for example `https://example.com`); in production it is required, and Strapi stops on boot without it. If it wasn't, fix the two URLs in the admin panel (Settings → Users & Permissions plugin → Advanced settings).
 
 ## Email (SMTP)
 
