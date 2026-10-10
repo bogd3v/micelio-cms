@@ -19,7 +19,14 @@ Please include the affected endpoint or file, steps to reproduce, the impact you
 | Fix for critical / high severity | 14 days after triage |
 | Fix for medium / low severity    | next planned release |
 
-You will be credited in the advisory unless you prefer otherwise.
+## What to expect
+
+- **Acknowledgement** within 3 days of the report, in the advisory thread.
+- **First assessment** within 7 days: whether we can reproduce it, the severity and the plan. If we decide it is not a vulnerability, we say why.
+- **Updates** in the same thread at least every 14 days until the report is closed.
+- **Disclosure**: the fix is prepared in a private fork of the advisory and released first. The advisory is then published with the affected and fixed versions, and the release notes point to it under "Security". Details stay private until a fix is available, or until 90 days after the report if none can be made, whichever comes first.
+- **Credit**: you are named in the advisory unless you prefer otherwise. Tell us in the report how you want to appear.
+- **Accepted risks**: a known weakness we cannot fix yet is written down with the reason in [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md).
 
 ## Scope
 
