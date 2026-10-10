@@ -94,7 +94,7 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
 
 ### 1. Trigger
 
-The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` (audit, typecheck, lint, format, tests, build) as a reusable workflow; nothing is built or deployed unless it passes. Pull requests to `main` or `develop` run `ci.yml` on their own. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
+The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` as a reusable workflow; nothing is built or deployed unless it passes. `ci.yml` runs `checks` (audit, typecheck, lint, format), `reuse`, `test` (two Jest shards) and `build` in parallel, and a final job named `ci` that passes only when all of them do. That name is the check the "Protect main" ruleset requires, so keep it when adding a job, and add the new job to its `needs`. Pull requests to `main` or `develop` run `ci.yml` on their own. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
 
 **File:** `.github/workflows/deploy.yml`
 
@@ -206,7 +206,7 @@ Excludes unnecessary files from the Docker image:
 
 Three jobs:
 
-1. `ci`: Runs `.github/workflows/ci.yml` (audit, typecheck, lint, format, tests, build)
+1. `ci`: Runs `.github/workflows/ci.yml` (audit, typecheck, lint, format, REUSE, tests, build, as parallel jobs)
 2. `build-and-push`: Builds and pushes Docker image (depends on `ci`)
 3. `deploy`: Triggers Dokploy deployment (depends on build success)
 
