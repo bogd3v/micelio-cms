@@ -50,7 +50,7 @@ describe('Article plain text and content search', () => {
         'a<!<!-- x -->-- y -->b',
       ];
       for (const markdown of inputs) {
-        expect(markdownToPlainText(markdown)).not.toMatch(/<\/?[a-z!]|<!--|-->/i);
+        expect(markdownToPlainText(markdown)).not.toMatch(/<\/?[a-z!]|<!--|--!?>/i);
       }
     });
 
