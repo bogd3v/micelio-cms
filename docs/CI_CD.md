@@ -176,6 +176,8 @@ Multi-stage build optimized for production:
    - Exposes port 1337
    - Defines health check with busybox `wget` (no `curl` in the image)
 
+The base image is pinned by digest (`FROM node:22-alpine@sha256:… AS base`), so two builds of the same commit start from the same layers. The tag stays in the line for readers and must match the Node major in `.nvmrc`. Dependabot's `docker` ecosystem reads the tag and the digest together and opens a weekly `chore(docker)` pull request that moves the digest to the current one of that tag; major tag changes are ignored and done by hand. To bump it manually: `docker buildx imagetools inspect node:22-alpine` and copy the top-level `Digest`.
+
 npm downloads use a BuildKit cache mount, so the Dockerfile needs BuildKit (the default in `docker buildx`, which CI uses, and in Podman).
 
 **Why multi-stage?**
@@ -375,7 +377,7 @@ FEDIVERSE_ACTOR_SUMMARY=
 
 Requirements that are easy to miss:
 
-- **Node ≥ 22.12.** Fedify depends on an ESM-only package that `require()` only loads from that version on. The production image is `node:22-alpine`, and `engines` says `>=22.12.0`.
+- **Node ≥ 22.12.** Fedify depends on an ESM-only package that `require()` only loads from that version on. The production image is `node:22-alpine` (pinned by digest), and `engines` says `>=22.12.0`.
 - **Persistent database.** Followers, the actor's key pair and the record of federated articles live in the database. If it is wiped (for instance a SQLite file on a non-persistent volume), every deploy generates a new actor key and drops all followers.
 - **`config/server.ts` uses `proxy: { koa: true }`**, needed behind Traefik so generated URLs use `https`.
 - **No reverse-proxy or DNS changes.** Fedify's routes (`/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/*`) are served by Strapi on the same domain as the API.
