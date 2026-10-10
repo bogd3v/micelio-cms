@@ -94,7 +94,7 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
 
 ### 1. Trigger
 
-The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` as a reusable workflow; nothing is built or deployed unless it passes. `ci.yml` runs `checks` (audit, typecheck, lint, format), `reuse`, `test` (two Jest shards) and `build` in parallel, and a final job named `ci` that passes only when all of them do. That name is the check the "Protect main" ruleset requires, so keep it when adding a job, and add the new job to its `needs`. Pull requests to `main` or `develop` run `ci.yml` on their own. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
+The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` as a reusable workflow; nothing is built or deployed unless it passes. `ci.yml` runs `checks` (audit, typecheck, lint, format), `reuse`, `test` (two Jest shards) and `build` in parallel, and a final job named `ci` that passes only when all of them do. That name is the check the "Protect main" ruleset requires, so keep it when adding a job, and add the new job to its `needs`. A push that changes only files the image never contains (`docs/**`, Markdown files, `.claude/**`, issue and pull request templates, `release.yml`, `dependabot.yml`; the `paths-ignore` list in `deploy.yml`, which follows `.dockerignore`) does not trigger it: nothing is built or deployed. Pull requests to `main` or `develop` run `ci.yml` on their own regardless. It can also be run by hand from the Actions tab (`workflow_dispatch`) to rebuild and redeploy without a new commit: run it on `main` for production or on `develop` for staging.
 
 **File:** `.github/workflows/deploy.yml`
 
@@ -102,6 +102,7 @@ The workflow triggers on every push to `main` (production) and `develop` (stagin
 on:
   push:
     branches: ['main', 'develop']
+    paths-ignore: ['docs/**', '**.md', '.claude/**'] # shortened; the full list is in the file
   workflow_dispatch:
 concurrency:
   group: deploy-${{ github.ref }}

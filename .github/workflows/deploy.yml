@@ -3,6 +3,16 @@ name: Build and Deploy
 on:
   push:
     branches: ['main', 'develop']
+    # Files the image never contains (see .dockerignore): a merge that touches
+    # only these neither rebuilds nor redeploys. Run it by hand to force a deploy.
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.claude/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+      - '.github/release.yml'
+      - '.github/dependabot.yml'
   workflow_dispatch:
 
 # One deploy per branch at a time; a newer push waits instead of cancelling
