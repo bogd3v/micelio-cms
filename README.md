@@ -91,6 +91,10 @@ The documentation is organised by reader; start at [`docs/README.md`](docs/READM
 | Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md`                                                          |
 | Reporting vulnerabilities, dependency policy  | [`SECURITY.md`](SECURITY.md), [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md) |
 
+## Releases
+
+Releases follow [Semantic Versioning](https://github.com/bogd3v/micelio/blob/main/docs/adr/0010-semantic-versioning.md) and share one release line with the [frontend](https://github.com/bogd3v/micelio): the CMS of a line also serves the frontend of the previous MINOR. Each release `vX.Y.Z` publishes the image `ghcr.io/bogd3v/micelio-cms` as `X.Y.Z`, `X.Y` and `latest`; builds of `main` are `edge`. The demo Compose files follow `latest`, the newest stable release. Pin `X.Y.Z` for anything you keep running. The notes of each release state the frontend line it was tested with and the minimum Node and PostgreSQL versions; [Upgrade](docs/operate/upgrade.md) explains the tags and the steps. How a release is cut is in [the CI and image pipeline](docs/architecture/ci-pipeline.md).
+
 ## License
 
 Micelio CMS is free software under the [GNU AGPL-3.0-only](LICENSE), like the [frontend](https://github.com/bogd3v/micelio). If you run a modified Micelio as a service, you must offer its source to your users.

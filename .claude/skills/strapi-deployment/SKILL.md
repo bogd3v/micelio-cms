@@ -13,17 +13,19 @@ The CMS ships as a Docker image (`ghcr.io/bogd3v/micelio-cms`) that runs on any 
 - Adding or documenting environment variables.
 - Debugging a container that does not start or fails its health check.
 - Changing the CI or image workflows.
+- Tags, versions or releases of the image: `main` publishes `edge`, only the Release workflow publishes `X.Y.Z`, `X.Y` and `latest`, and the demo Compose files default to `latest` (a test checks it).
 
 ## Where the answer is
 
-| Question                                   | Read                                                |
-| ------------------------------------------ | --------------------------------------------------- |
-| How do I run a node?                       | `docs/operate/install.md`                           |
-| What does a variable do?                   | `docs/operate/configure.md`, `.env.example`         |
-| How do I upgrade, back up, restore?        | `docs/operate/upgrade.md`, `docs/operate/backup.md` |
-| It does not start, 502, uploads disappear  | `docs/operate/troubleshooting.md`                   |
-| What do CI and the image workflow do?      | `docs/architecture/ci-pipeline.md`                  |
-| Rate limiting and client IP behind a proxy | `docs/RATE_LIMITING.md`                             |
+| Question                                        | Read                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------- |
+| How do I run a node?                            | `docs/operate/install.md`                                     |
+| What does a variable do?                        | `docs/operate/configure.md`, `.env.example`                   |
+| How do I upgrade, back up, restore?             | `docs/operate/upgrade.md`, `docs/operate/backup.md`           |
+| It does not start, 502, uploads disappear       | `docs/operate/troubleshooting.md`                             |
+| What do CI and the image workflow do?           | `docs/architecture/ci-pipeline.md`                            |
+| Which image tag do I pin, how is a release cut? | `docs/operate/upgrade.md`, `docs/architecture/ci-pipeline.md` |
+| Rate limiting and client IP behind a proxy      | `docs/RATE_LIMITING.md`                                       |
 
 ## Dockerfile rules
 
