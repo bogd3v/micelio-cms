@@ -1,7 +1,8 @@
 name: Release
 
 # Only the maintainer runs it (ADR 0010). It defaults to a dry run: it prints the version and the
-# notes it would publish and changes nothing.
+# notes it would publish and changes nothing. Publishing is a second job in the `release`
+# environment, which waits for the maintainer's approval; only that job asks for packages: write.
 on:
   workflow_dispatch:
     inputs:
@@ -22,10 +23,7 @@ on:
         type: string
         default: ''
 
-permissions:
-  contents: write
-  packages: write
-  actions: read
+permissions: {}
 
 concurrency:
   group: release
@@ -36,10 +34,21 @@ env:
   IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
-  release:
-    name: Release
+  plan:
+    name: Plan
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # contents: write only because the endpoint that generates release notes asks for it; nothing
+    # is written. packages: read lets the checks inspect the images.
+    permissions:
+      contents: write
+      packages: read
+      actions: read
+      pull-requests: read
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      version: ${{ steps.plan.outputs.version }}
+      prerelease: ${{ steps.plan.outputs.prerelease }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -163,12 +172,45 @@ jobs:
           done
           if [ "$failed" = 1 ] && [ "$DRY_RUN" != true ]; then exit 1; fi
 
+      - name: Keep the notes for the publish job
+        if: ${{ !inputs.dry_run }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes
+          path: release-notes.md
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: plan
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    # The maintainer approves here (Settings, Environments, release).
+    environment: release
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Download the notes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-notes
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       # A manifest copy of the image already built and tested for this commit: nothing is rebuilt
       - name: Tag the images
-        if: ${{ !inputs.dry_run }}
         env:
-          VERSION: ${{ steps.plan.outputs.version }}
-          PRERELEASE: ${{ steps.plan.outputs.prerelease }}
+          VERSION: ${{ needs.plan.outputs.version }}
+          PRERELEASE: ${{ needs.plan.outputs.prerelease }}
         run: |
           short="${GITHUB_SHA::7}"
           tags=("$VERSION")
@@ -182,12 +224,11 @@ jobs:
           done
 
       - name: Tag main and publish the release
-        if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          TAG: ${{ steps.plan.outputs.tag }}
-          PRERELEASE: ${{ steps.plan.outputs.prerelease }}
+          TAG: ${{ needs.plan.outputs.tag }}
+          PRERELEASE: ${{ needs.plan.outputs.prerelease }}
         run: |
           flags=()
           if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
