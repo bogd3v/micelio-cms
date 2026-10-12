@@ -38,6 +38,13 @@ jobs:
             security|seguridad) labels="${labels:+$labels,}security" ;;
             deps|deps-dev) labels=dependencies ;;
           esac
+          if printf '%s' "$TITLE" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
+            labels="${labels:+$labels,}breaking"
+            gh label create breaking --repo "$REPO" --color B60205 --description "Breaking change: needs upgrade notes" --force
+          else
+            # The title was edited: a PR that no longer has the marker leaves "Breaking changes"
+            gh pr edit "$PR" --repo "$REPO" --remove-label breaking || true
+          fi
           if [ -z "$labels" ]; then
             echo "::notice::No conventional prefix in the title; the PR will go to Other changes"
             exit 0

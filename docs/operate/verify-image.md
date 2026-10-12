@@ -21,7 +21,7 @@ gh attestation verify oci://ghcr.io/bogd3v/micelio-cms:<tag> \
   --source-ref refs/heads/main
 ```
 
-`<tag>` is the short commit SHA tag (`abc1234`) or `latest`. Images published before this attestation existed carry none, so the command fails on them. `--signer-workflow` and `--source-ref` reject an image built from any other workflow or branch; staging builds (`develop`) are attested too, so drop `--source-ref` only to check one. The command exits 0 and prints the workflow and commit that built the digest when the attestation is valid. Any other exit code means do not run the image.
+`<tag>` is the short commit SHA tag (`abc1234`), `edge`, a release version (`X.Y.Z`) or `latest`. Images published before this attestation existed carry none, so the command fails on them. `--signer-workflow` and `--source-ref` reject an image built from any other workflow or branch; staging builds (`develop`) are attested too, so drop `--source-ref` only to check one. The command exits 0 and prints the workflow and commit that built the digest when the attestation is valid. Any other exit code means do not run the image.
 
 ## Print the bill of materials
 
