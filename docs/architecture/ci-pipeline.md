@@ -25,7 +25,18 @@ On a push to `main` or `develop`, `deploy.yml` calls `ci.yml` first; nothing is 
 
 A push that changes only files the image never contains (`docs/**`, Markdown files, `.claude/**`, the issue and pull request templates, `release.yml`, `dependabot.yml`; the `paths-ignore` list in `deploy.yml`, which follows `.dockerignore`) triggers nothing. Run the workflow by hand (`workflow_dispatch`) to rebuild without a new commit. A newer push waits for a running one: `concurrency` never cuts a build short.
 
-Image tags and how a release produces them are in [Releasing](https://github.com/bogd3v/micelio/blob/main/docs/architecture/releasing.md) and [Upgrade](../operate/upgrade.md#image-tags). Each pushed digest carries a signed provenance attestation and an SBOM; see [Verify the image](../operate/verify-image.md). Third-party actions are pinned to a commit SHA with the tag in a comment; update both together.
+A push to `main` publishes the image as the short commit SHA and `edge`; a push to `develop` publishes the SHA and `staging`. `latest` and the version tags come only from a release (below). The tags and what an operator should pin are in [Upgrade](../operate/upgrade.md#image-tags). Each pushed digest carries a signed provenance attestation and an SBOM; see [Verify the image](../operate/verify-image.md). Third-party actions are pinned to a commit SHA with the tag in a comment; update both together.
+
+## Releases: `release.yml`
+
+**Kind:** explanation of how a release is cut ([ADR 0010](https://github.com/bogd3v/micelio/blob/main/docs/adr/0010-semantic-versioning.md) in `bogd3v/micelio` decides the policy). Only the maintainer runs it, by hand from `main` (`workflow_dispatch`); it defaults to a dry run that prints the version and the notes and changes nothing.
+
+1. `scripts/release/version.mjs` reads the titles of the pull requests merged since the last stable tag and takes the highest bump: `!` is breaking, `feat` adds, the rest fixes. Before 1.0.0 a breaking change raises MINOR and everything else raises PATCH. The first release is the `version` of `package.json`. `--rc` plans `vX.Y.Z-rc.N`, which moves neither `X.Y` nor `latest`.
+2. The notes start with "Upgrade notes" (the `upgrade_notes` input, required when a pull request is breaking) and "Compatibility" (the `micelio` release line it was tested with, the `frontend_line` input; the Node range of `engines`; PostgreSQL 18 or newer), then GitHub's generated notes with "Breaking changes" first. A `!` in a pull request title adds the `breaking` label (`pr-labels.yml`).
+3. Before anything changes it checks that `frontend_line` is the MAJOR.MINOR of the release, that `package.json` holds the version, that the tag does not exist, that `deploy.yml` passed on the commit and that the image `:<sha>` exists and `:<version>` is not already a different image. In a dry run a failure is a warning.
+4. It adds the tags `X.Y.Z`, `X.Y` and `latest` to the image already built and tested for that commit (a manifest copy, nothing is rebuilt, so the attestation still applies), then creates the tag and the GitHub release.
+
+A published version never changes. To release, merge a `chore(release)` pull request when `package.json` needs the new version, run the dry run, then run it again with `dry_run` off.
 
 ## Contract tests: `contract.yml`
 
@@ -49,7 +60,7 @@ CONTRACT_CMS_IMAGE=micelio-cms:contract npm run test:contract
 
 ## Pull request labels and release notes
 
-`.github/workflows/pr-labels.yml` labels each pull request from its conventional title prefix: `feat` → `enhancement`, `fix` → `bug`, `docs` → `documentation`, `refactor` and `style` → `refactor`, `test` → `testing`, `ci` → `ci`, `perf` → `performance`, `chore` → `code-quality`. The scope `security` adds `security` and the scope `deps` gives `dependencies` (Dependabot pull requests are skipped). `.github/release.yml` groups GitHub's generated release notes by those labels. The labels are repository settings, so a fork creates them once.
+`.github/workflows/pr-labels.yml` labels each pull request from its conventional title prefix: `feat` → `enhancement`, `fix` → `bug`, `docs` → `documentation`, `refactor` and `style` → `refactor`, `test` → `testing`, `ci` → `ci`, `perf` → `performance`, `chore` → `code-quality`. The scope `security` adds `security` and the scope `deps` gives `dependencies` (Dependabot pull requests are skipped). A `!` after the type or scope also adds `breaking`, and removes it when the title is edited without it. `.github/release.yml` groups GitHub's generated release notes by those labels, with "Breaking changes" first. The labels are repository settings, so a fork creates them once.
 
 ## The Dockerfile
 
