@@ -54,7 +54,8 @@ Without an email provider no confirmation or reset email leaves the server, and 
 
 ```env
 SMTP_HOST=smtp.example.com
-SMTP_PORT=587            # 465 = implicit TLS; any other port upgrades with STARTTLS
+SMTP_PORT=587            # 465 = implicit TLS; any other port must offer STARTTLS
+SMTP_REQUIRE_TLS=true  # only the value false turns it off (a relay on a trusted network; it then may send in clear)
 SMTP_USER=
 SMTP_PASS=
 EMAIL_FROM="My site <no-reply@example.com>"   # unset: no-reply@<FRONTEND_URL host>, with a warning on boot

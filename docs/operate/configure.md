@@ -87,6 +87,7 @@ Reader accounts need SMTP for the confirmation and password reset emails, and `F
 ```env
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587                                 # 465 = implicit TLS
+SMTP_REQUIRE_TLS=true                         # refuse to send in clear; only the value false turns it off
 SMTP_USER=
 SMTP_PASS=
 EMAIL_FROM="My site <no-reply@example.com>"   # a sender the SMTP provider accepts; unset: no-reply@<FRONTEND_URL host>

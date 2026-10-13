@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { limitsAuth } from '../src/utils/rate-limit/rule';
+import { smtpTlsOptions } from '../src/utils/smtp';
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => {
   const r2Bucket = env('R2_BUCKET');
@@ -48,8 +49,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         providerOptions: {
           host: smtpHost,
           port: smtpPort,
-          // 465 is implicit TLS; other ports upgrade with STARTTLS.
-          secure: smtpPort === 465,
+          ...smtpTlsOptions(smtpPort, env('SMTP_REQUIRE_TLS')),
           auth: { user: env('SMTP_USER'), pass: env('SMTP_PASS') },
         },
         settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom },
