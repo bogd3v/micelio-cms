@@ -123,6 +123,19 @@ describe('Public comments API', () => {
     expect(contents).not.toContain('rejected from the fediverse');
   });
 
+  it('keeps them out when the path differs in letter case', async () => {
+    for (const path of [`/API/Comments/${relation}/flat`, `/api/COMMENTS/${relation}`]) {
+      const res = await request(strapi.server.httpServer).get(path).expect(200);
+      const items: ApiComment[] = Array.isArray(res.body) ? res.body : res.body.data;
+      const contents = [...items, ...items.flatMap((item) => item.children ?? [])].map(
+        (item) => item.content
+      );
+      expect(contents.length).toBeGreaterThan(0);
+      expect(contents).not.toContain('pending from the fediverse');
+      expect(contents).not.toContain('rejected from the fediverse');
+    }
+  });
+
   it('does not link the original note of a blocked reply', async () => {
     const items = await commentsAt(`/api/comments/${relation}/flat`);
     const blocked = byContent(items, 'blocked by a moderator');

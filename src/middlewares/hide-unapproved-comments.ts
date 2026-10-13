@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
-import { COMMENTS_API_PREFIX } from '../constants/comments';
 import { COMMENT_UID } from '../constants/uids';
+import { isCommentsApiPath } from '../utils/comments-path';
 
 const HIDDEN_STATUSES = new Set(['PENDING', 'REJECTED']);
 
@@ -67,7 +67,7 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   ): Promise<void> => {
     await next();
 
-    if (ctx.method !== 'GET' || !ctx.path.startsWith(COMMENTS_API_PREFIX)) return;
+    if (ctx.method !== 'GET' || !isCommentsApiPath(ctx.path)) return;
     if (ctx.status !== 200 || ctx.body == null) return;
 
     const ids = new Set<number>();
