@@ -54,6 +54,10 @@ Out of scope: volumetric denial of service, social engineering, reports from aut
 
 Good-faith research that follows these rules won't be pursued.
 
+## How security is verified
+
+Security review follows the OWASP Application Security Verification Standard, version 5.0.0. [`docs/security/asvs.md`](docs/security/asvs.md) maps every level 1 and level 2 requirement to where it is enforced, what Strapi guarantees upstream, or why it does not apply. An open requirement that is not exploitable is tracked in an issue with the `security` label; one that is exploitable is tracked only in a private security advisory, so the mapping says "Private advisory" and nothing more.
+
 ## The frontend's API token
 
 How the frontend reads content with a custom API token, and the permissions that token carries, is documented in [`docs/API_TOKENS.md`](docs/API_TOKENS.md). Give each token only the permissions it needs, and rotate it if it leaks.
