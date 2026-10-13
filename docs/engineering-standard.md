@@ -1,6 +1,6 @@
 # Micelio engineering standard
 
-Version 1.0 (2026-10-08). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
+Version 1.1 (2026-10-12). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
 
 These are the rules shared by every Micelio repository: the frontend (`micelio`), the CMS (`micelio-cms`), theme packages, the theme registry and whatever comes next. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`.
 
@@ -21,6 +21,7 @@ Each fact has one home. Other documents link to it instead of repeating it.
 | `docs/` | Documentation, organised by reader (section 12) |
 | `README.md` | What Micelio is and the shortest path to a running site |
 | `CONTRIBUTING.md`, `SECURITY.md` | The terms of a contribution and how to report a vulnerability |
+| `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `TRADEMARKS.md` | How people treat each other in the project, who decides what, and how the name and the logo may be used |
 | GitHub releases | What changed in each version and what an upgrade needs |
 | GitHub issues and milestones | The plan and its progress |
 
@@ -89,6 +90,12 @@ Reach decides the place. A declaration starts in the file that uses it and is pr
 - "Not found" is a normal result, not an exception.
 - Use the platform's logger (`strapi.log` in the CMS, `console.warn` and `console.error` in Nitro). `console.log` does not ship outside scripts.
 - Logs **must not** contain secrets, tokens, email addresses or raw IP addresses.
+
+### HTTP APIs
+
+- An API that Micelio designs answers an error as a problem detail (RFC 9457, `application/problem+json`): `type`, `title`, `status`, `detail`, and a stable, machine-readable `code` as an extension member. A client branches on `code`, never on the text.
+- Its reference is an OpenAPI document generated from the schemas that validate its requests and responses. Lint fails when the document drifts from them.
+- An API whose format belongs to a framework (Strapi's content API) keeps that format.
 
 ### Doc comments (TSDoc)
 
@@ -243,12 +250,14 @@ While the version is `0.y.z`, a breaking change raises `y` and everything else r
 - Every change of behaviour comes with a test at the lowest level that can catch it. A bug fix starts with the test that fails.
 - Levels, from cheapest to most expensive: unit (pure helpers), component, integration (a real build, a real Strapi on SQLite), end to end (Playwright), contract (theme checks, visual regression, axe) and performance budgets. `AGENTS.md` lists the commands of each repository.
 - Prefer the real thing to a mock. The CMS suites boot a real Strapi; the frontend replaces Strapi only at the HTTP boundary, with one shared mock server.
+- What the two repositories promise each other is tested against the real thing: a contract suite runs the frontend against a real CMS, in the CI of both repositories. A change that breaks the other side fails before it merges.
+- A mock is checked against what it replaces: the frontend's mock of the CMS is generated from the CMS's schemas or verified against a real instance.
 - Tests are deterministic: no call to a real external service, no fixed sleeps, no dependence on order, clock or timezone.
 - New fixtures use neutral data and reserved domains (`example.com`, `*.test`).
 - Thresholds, budgets and visual baselines are floors. They are never lowered or regenerated to make a pull request pass; a justified change is its own pull request with the reason and the new numbers. Visual baselines come from the CI artifact, not from a local machine.
 - A test that fails once is neither ignored nor retried until green: rerun it alone, compare with `main`, and write the outcome in the pull request.
 
-## 9. Security, privacy, accessibility and performance
+## 9. Security, privacy, accessibility, performance and sustainability
 
 ### Security
 
@@ -258,6 +267,8 @@ While the version is `0.y.z`, a breaking change raises `y` and everything else r
 - The Content Security Policy is built from hashes. A new inline script, embed or media origin is probed on a production build before merging.
 - Anything that writes, authenticates or sends email is rate limited.
 - A security fix is its own pull request with the `security` scope. Vulnerabilities are reported privately, as each repository's `SECURITY.md` says.
+- Security review follows the OWASP Application Security Verification Standard: level 2 for authentication, sessions, access control and input handling, level 1 for the rest. Each repository's security document maps the requirements that apply to where they are enforced and tested.
+- A site serves `/.well-known/security.txt` (RFC 9116) when its owner has set a security contact, and nothing otherwise.
 
 ### Privacy
 
@@ -266,15 +277,22 @@ While the version is `0.y.z`, a breaking change raises `y` and everything else r
 
 ### Accessibility
 
+- The target is WCAG 2.2, level AA.
 - Semantic HTML first; ARIA only where HTML has no element for the job. Everything works with the keyboard and has a visible focus.
 - `prefers-reduced-motion` is honoured. Every heavy island has a static alternative.
-- The contrast matrix of `theme:check` and the axe run (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`) pass with no exclusions.
+- The contrast matrix of `theme:check` and the axe run (the WCAG 2.0, 2.1 and 2.2 rules of levels A and AA) pass with no exclusions.
+- Automated rules find only part of the problems. A theme is admitted with a manual check recorded in its report: keyboard only, a screen reader, 200 % zoom and reflow at 320 px, reduced motion and forced colors.
 
 ### Performance
 
 - Every page type has a budget, measured in CI for every installed theme and site mode. A change that moves a budget records the number and the reason in `docs/performance.md`.
 
-## 10. Dependencies, licences and runtime
+### Sustainability
+
+- Micelio follows the W3C Web Sustainability Guidelines where they apply to a site engine: less data transferred, no work the visitor did not ask for, static output whenever the content allows it.
+- The performance report estimates the emissions of each page type from the bytes it transfers, next to its weight. The estimate becomes a budget once it has a baseline.
+
+## 10. Dependencies, licences, supply chain and runtime
 
 - A new production dependency **must** be justified in the pull request: what it replaces, what it weighs, its licence and who maintains it. Prefer the platform (principle 5).
 - Licences are checked against the allowlist (`npm run lint:licenses`). Third-party material keeps its licence file next to it, is listed in `THIRD-PARTY.md` and annotated in `REUSE.toml`.
@@ -283,6 +301,8 @@ While the version is `0.y.z`, a breaking change raises `y` and everything else r
 - Dependabot proposes grouped minor and patch updates weekly. A major upgrade is done by hand, in its own pull request, with the full suite.
 - An alert that cannot be fixed yet is written down with the reason the risk is accepted.
 - GitHub Actions are pinned by commit SHA, with the version in a comment.
+- Every published artifact (an image, a theme package) carries a software bill of materials and a signed build provenance attestation, and the operator documentation says how to verify them.
+- The OpenSSF Scorecard runs on every repository. A finding is fixed or written down with the reason, like a dependency alert.
 - All repositories run the same Node major. `.nvmrc` is the source: CI reads it, and `engines` and `@types/node` match it.
 
 ## 11. Git, pull requests and review
@@ -371,12 +391,12 @@ Agents follow everything above. They are also held to these rules:
 ## 14. Starting a new repository
 
 - [ ] `LICENSE`, `REUSE.toml`, `THIRD-PARTY.md` and the licence allowlist check
-- [ ] `README.md`, `CONTRIBUTING.md` (licence terms and DCO) and `SECURITY.md`
+- [ ] `README.md`, `CONTRIBUTING.md` (licence terms and DCO), `SECURITY.md` and `CODE_OF_CONDUCT.md`, with links to the governance and trademark documents
 - [ ] `AGENTS.md`, `CLAUDE.md`, `.claude/TEAM.md` and a copy of this standard
 - [ ] `.editorconfig`, `.nvmrc` and `.env.example`
 - [ ] A `version` in `package.json` and the release workflow of section 7
 - [ ] The scripts `dev`, `build`, `typecheck`, `lint`, `lint:fix`, `test` and `check`
-- [ ] CI with the required checks of section 15, the DCO check and Dependabot
+- [ ] CI with the required checks of section 15, the DCO check, Dependabot and the Scorecard workflow
 - [ ] The pull request template, the issue templates, the title-to-label workflow and the release notes configuration
 - [ ] `main` protected: changes arrive by pull request, required checks pass, no force push
 
@@ -395,6 +415,8 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | Known vulnerabilities | `npm audit --audit-level=critical` | No |
 | Sign-off | The `DCO` workflow | No |
 | The repository's own suites | Integration, end to end, theme checks, performance budgets | No |
+| The contract with the other repository | The contract suite against a real CMS | No |
+| Supply chain | SBOM and provenance on every published artifact; the Scorecard workflow | No |
 
 ## 16. Changing this standard
 
@@ -405,3 +427,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | Version | Date | Change |
 | --- | --- | --- |
 | 1.0 | 2026-10-08 | First version, written from the conventions of `micelio` and `micelio-cms` |
+| 1.1 | 2026-10-09 | Contract tests between repositories, OWASP ASVS, problem details and OpenAPI, SBOM and provenance, `security.txt`, WCAG 2.2 with a manual check, sustainability, and the community documents |
