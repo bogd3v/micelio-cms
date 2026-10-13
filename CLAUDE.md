@@ -46,6 +46,7 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 | Comments                                 | `docs/architecture/comments.md`, skill `strapi-comments`      |
 | Drafts, editor role                      | `docs/architecture/drafts.md`                                 |
 | Accounts, users-permissions              | `docs/ACCOUNTS.md`                                            |
+| Security review, any requirement         | `docs/security/asvs.md`, agent `security`                     |
 | Subscribers                              | `docs/architecture/subscribers.md`, skill `strapi-subscriber` |
 | Site settings, theme, modules            | `docs/architecture/site-settings.md`                          |
 | Authors                                  | `docs/architecture/authors.md`                                |
