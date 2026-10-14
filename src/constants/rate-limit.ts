@@ -22,6 +22,7 @@ export const SHARED_GROUPS: readonly RateLimitGroupName[] = [
   'auth',
   'auth-identifier',
   'admin-auth',
+  'admin-identifier',
   'auth-email',
   'comments',
   'upload',
@@ -69,6 +70,9 @@ export const AUTH_EMAIL_PATHS = [
 
 /** Login by identifier and password: also limited per account, not only per client. */
 export const AUTH_LOCAL_PATH = '/api/auth/local';
+
+/** Admin sign-in: also limited per account, not only per client. */
+export const ADMIN_LOGIN_PATH = '/admin/login';
 
 /** `/api/auth/*` routes keyed by their exact path; any other one shares one key. */
 export const AUTH_KEY_PATHS = [

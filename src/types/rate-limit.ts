@@ -14,6 +14,7 @@ export type RateLimitGroupName =
   | 'auth'
   | 'auth-identifier'
   | 'admin-auth'
+  | 'admin-identifier'
   | 'auth-email'
   | 'comments'
   | 'upload'

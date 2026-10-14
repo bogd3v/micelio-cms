@@ -33,6 +33,7 @@ describe('Rate limiting (application level)', () => {
       RATE_LIMIT_AUTH_EMAIL: '2/3600',
       RATE_LIMIT_ADMIN_AUTH: '3/300',
       RATE_LIMIT_AUTH_IDENTIFIER: '3/900',
+      RATE_LIMIT_ADMIN_IDENTIFIER: '3/900',
       RATE_LIMIT_UPLOAD: '3/600',
       RATE_LIMIT_API: '8/60',
     });
@@ -393,6 +394,38 @@ describe('Rate limiting (application level)', () => {
         .set(asClient('203.0.113.51'))
         .send({ email: 'a@example.com', password: 'wrong-password' });
       expect(other.status).not.toBe(429);
+    });
+  });
+
+  describe('admin-identifier group', () => {
+    const login = (ip: string, email: unknown) =>
+      http().post('/admin/login').set(asClient(ip)).send({ email, password: 'wrong-password' });
+
+    it('limits one admin account across many clients; case and spaces share the bucket', async () => {
+      const results = await statuses(5, (i) =>
+        login(
+          `203.0.113.${190 + i}`,
+          [
+            'Boss@Example.com',
+            ' boss@example.com',
+            'BOSS@example.com ',
+            'boss@example.com',
+            'boss@example.com',
+          ][i]
+        )
+      );
+      expect(results.slice(0, 3)).not.toContain(429);
+      expect(results.slice(3)).toEqual([429, 429]);
+      // Another account from a fresh client is unaffected.
+      expect((await login('203.0.113.196', 'other-admin@example.com')).status).not.toBe(429);
+    });
+
+    it('does not share its bucket with reader sign-in of the same address', async () => {
+      const reader = await http()
+        .post('/api/auth/local')
+        .set(asClient('203.0.113.197'))
+        .send({ identifier: 'boss@example.com', password: 'wrong-password' });
+      expect(reader.status).not.toBe(429);
     });
   });
 

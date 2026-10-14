@@ -20,6 +20,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): RateLimitConfig => ({
     // Sign-in attempts per account (identifier), whatever the client
     'auth-identifier': rule(env('RATE_LIMIT_AUTH_IDENTIFIER'), { points: 10, duration: 900 }),
     'admin-auth': rule(env('RATE_LIMIT_ADMIN_AUTH'), { points: 20, duration: 300 }),
+    // Admin sign-in attempts per account (email), whatever the client
+    'admin-identifier': rule(env('RATE_LIMIT_ADMIN_IDENTIFIER'), { points: 10, duration: 900 }),
     'auth-email': rule(env('RATE_LIMIT_AUTH_EMAIL'), { points: 5, duration: 3600 }),
     comments: rule(env('RATE_LIMIT_COMMENTS'), { points: 10, duration: 600 }),
     upload: rule(env('RATE_LIMIT_UPLOAD'), { points: 30, duration: 600 }),

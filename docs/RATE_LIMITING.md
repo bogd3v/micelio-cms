@@ -23,22 +23,23 @@ RateLimit-Reset: 60          # seconds until the window resets, not a timestamp
 RateLimit-Policy: 600;w=60   # <points>;w=<window seconds>
 ```
 
-A 429 adds `Retry-After` (the same seconds, at least 1). The per-account `auth-identifier` and `auth-email` limits set headers only when they reject.
+A 429 adds `Retry-After` (the same seconds, at least 1). The per-account `auth-identifier`, `admin-identifier` and `auth-email` limits set headers only when they reject.
 
 ## Groups and Limits
 
 Paths are lower-cased and normalized before matching, so `/API/Auth/Local/` is the same route.
 
-| Group             | Routes                                                                                                             | Key                                           | Default    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ---------- |
-| `auth`            | Any method on `/api/auth/*` and `/api/connect/*`, plus `DELETE /api/users/me`                                      | Client + route family (below)                 | 10 / 60 s  |
-| `auth-identifier` | `POST /api/auth/local` (sign-in)                                                                                   | HMAC of the trimmed, lower-cased `identifier` | 10 / 900 s |
-| `auth-email`      | `POST /api/auth/forgot-password`, `/api/auth/send-email-confirmation`, `/api/auth/local/register`                  | HMAC of the trimmed, lower-cased `email`      | 5 / 3600 s |
-| `admin-auth`      | `POST /admin/login`, `/admin/forgot-password`, `/admin/reset-password`, `/admin/register-admin`, `/admin/register` | Client                                        | 20 / 300 s |
-| `comments`        | Non-GET/HEAD/OPTIONS `/api/comments/*`                                                                             | Client (never a token)                        | 10 / 600 s |
-| `upload`          | Non-GET/HEAD/OPTIONS `/api/upload/*`                                                                               | Client (never a token)                        | 30 / 600 s |
-| `fediverse-inbox` | `POST` to the federation inbox paths (handled by the fediverse guard)                                              | Client                                        | 60 / 60 s  |
-| `api`             | Everything else under `/api/*`, federation requests other than inbox POSTs, and `/mcp`                             | Client, or content-API token after overflow   | 600 / 60 s |
+| Group              | Routes                                                                                                             | Key                                           | Default    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ---------- |
+| `auth`             | Any method on `/api/auth/*` and `/api/connect/*`, plus `DELETE /api/users/me`                                      | Client + route family (below)                 | 10 / 60 s  |
+| `admin-identifier` | `POST /admin/login` (admin sign-in)                                                                                | HMAC of the trimmed, lower-cased `email`      | 10 / 900 s |
+| `auth-identifier`  | `POST /api/auth/local` (sign-in)                                                                                   | HMAC of the trimmed, lower-cased `identifier` | 10 / 900 s |
+| `auth-email`       | `POST /api/auth/forgot-password`, `/api/auth/send-email-confirmation`, `/api/auth/local/register`                  | HMAC of the trimmed, lower-cased `email`      | 5 / 3600 s |
+| `admin-auth`       | `POST /admin/login`, `/admin/forgot-password`, `/admin/reset-password`, `/admin/register-admin`, `/admin/register` | Client                                        | 20 / 300 s |
+| `comments`         | Non-GET/HEAD/OPTIONS `/api/comments/*`                                                                             | Client (never a token)                        | 10 / 600 s |
+| `upload`           | Non-GET/HEAD/OPTIONS `/api/upload/*`                                                                               | Client (never a token)                        | 30 / 600 s |
+| `fediverse-inbox`  | `POST` to the federation inbox paths (handled by the fediverse guard)                                              | Client                                        | 60 / 60 s  |
+| `api`              | Everything else under `/api/*`, federation requests other than inbox POSTs, and `/mcp`                             | Client, or content-API token after overflow   | 600 / 60 s |
 
 "Client" is `ctx.request.ip` with IPv6 addresses grouped by their /64, since one subscriber controls the whole prefix. A rule of `0` (or `0/...`) turns a group off; an unset or unparsable value keeps the default.
 
@@ -48,6 +49,7 @@ Paths are lower-cased and normalized before matching, so `/API/Auth/Local/` is t
 
 ### Per-account limits
 
+- `admin-identifier` does the same for the admin panel, per admin email and across all IPs, alongside the per-client `admin-auth` group; the admin has no second factor, so guessing one account from many addresses is otherwise never counted. Its bucket is separate from `auth-identifier`.
 - `auth-identifier` counts sign-in attempts per login identifier across all IPs, alongside the per-client `auth` group. Past its limit the sign-in answers 429 (a silent answer would look like a wrong password).
 - `auth-email` counts emails per address. Past its limit `forgot-password` and `send-email-confirmation` answer their normal 200 without sending anything, so the response does not reveal whether the address exists; `register` has no such answer and gets a 429.
 - A missing or non-string identifier or email shares one bucket per client. Keys are HMACs, so the store never holds the address.
@@ -75,6 +77,7 @@ Limits are `points/seconds` (`10/60`; spaces allowed) or `0` to turn the group o
 | `TRUST_PROXY_PROTOCOL`        | `true`                      | Only drives Koa's `proxy` option (`ctx.protocol` and `ctx.host` follow `X-Forwarded-Proto`/`-Host`, needed for ActivityPub URLs). It does not affect the client IP. |
 | `RATE_LIMIT_AUTH`             | `10/60`                     | `auth` group. With `0` the users-permissions limiter stays (see below).                                                                                             |
 | `RATE_LIMIT_AUTH_IDENTIFIER`  | `10/900`                    | Sign-ins per login identifier.                                                                                                                                      |
+| `RATE_LIMIT_ADMIN_IDENTIFIER` | `10/900`                    | Admin sign-ins per email.                                                                                                                                           |
 | `RATE_LIMIT_ADMIN_AUTH`       | `20/300`                    | Admin credential routes.                                                                                                                                            |
 | `RATE_LIMIT_AUTH_EMAIL`       | `5/3600`                    | Emails per address.                                                                                                                                                 |
 | `RATE_LIMIT_COMMENTS`         | `10/600`                    | Comment writes.                                                                                                                                                     |
@@ -143,7 +146,7 @@ Counters live in the process: replicas count independently (3 replicas allow rou
 
 ### Database (Postgres)
 
-`RATE_LIMIT_STORE=database` stores the counters of `auth`, `auth-identifier`, `admin-auth`, `auth-email`, `comments`, `upload` and `fediverse-inbox` in the `micelio_rate_limits` table, shared between replicas. The `api` group, the token buckets, the token lookup budget and the forwarder ceiling always count in memory, per process: they are the hot path.
+`RATE_LIMIT_STORE=database` stores the counters of `auth`, `auth-identifier`, `admin-auth`, `admin-identifier`, `auth-email`, `comments`, `upload` and `fediverse-inbox` in the `micelio_rate_limits` table, shared between replicas. The `api` group, the token buckets, the token lookup budget and the forwarder ceiling always count in memory, per process: they are the hot path.
 
 - A separate knex pool (max 3 connections, 1.5 s acquire timeout) so counting cannot starve Strapi's pool.
 - Keys are HMACs derived from `APP_KEYS[0]`; rotating it only resets the counters. Expired rows are pruned every 5 minutes.
