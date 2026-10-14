@@ -49,6 +49,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
       // the frontend (docs/operate/configure.md). Server-to-server calls ignore CORS.
       config: { origin: env.array('CORS_ORIGINS', ['*']) },
     },
+    // Uploads come from the admin origin with the local provider; see upload-headers.ts.
+    'global::upload-headers',
     'strapi::poweredBy',
     // Before the body is read, so a flood is refused without parsing it.
     'global::rate-limit',

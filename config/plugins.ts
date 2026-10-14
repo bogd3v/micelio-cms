@@ -66,7 +66,12 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       resolve: './src/plugins/fediverse',
     },
     upload: {
-      config: uploadConfig,
+      // No site needs HTML in the media library, and a served HTML file is
+      // a page on this origin (src/utils/upload-headers.ts).
+      config: {
+        ...uploadConfig,
+        security: { deniedTypes: ['text/html', 'application/xhtml+xml'] },
+      },
     },
     email: {
       config: emailConfig,
