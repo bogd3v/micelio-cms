@@ -203,6 +203,29 @@ export function resolveClientIp(
 }
 
 /**
+ * Whether `X-Forwarded-Proto` and `-Host` of a request may be believed, under
+ * the same rule that decides who the client is: the socket peer must be a
+ * trusted proxy (`private`, a CIDR list), or, for a hop count, the proxy
+ * header must have at least that many entries. `false` trusts none.
+ *
+ * @param peer - The socket's remote address.
+ * @param header - Value of the proxy header (`PROXY_IP_HEADER`), used only for hop counts.
+ */
+export function trustsForwardedHeaders(
+  trust: TrustProxy,
+  peer: string | null | undefined,
+  header: string | null | undefined
+): boolean {
+  if (trust.kind === 'none') return false;
+  if (trust.kind === 'hops') {
+    const entries = (header ?? '').split(',').filter((entry) => entry.trim()).length;
+    return trust.hops > 0 && entries >= trust.hops;
+  }
+  const socket = normalizeIp(peer);
+  return socket !== null && isTrusted(trust.trusted, socket);
+}
+
+/**
  * Bucket key of an address: IPv4 as is, IPv6 by its /64, since one subscriber
  * controls the whole prefix. Only for limiter keys; the full address stays in
  * `ctx.request.ip`.

@@ -35,7 +35,12 @@ import { restrictDraftsToEditors } from './utils/drafts-access';
 import { assertFrontendUrlConfigured } from './utils/frontend-url';
 import { assertSecretsConfigured } from './utils/secrets';
 import { assertUpstreamsUseTls } from './utils/plain-http';
-import { destroyRateLimit, registerRateLimit } from './utils/rate-limit/runtime';
+import { installForwardedTrust } from './utils/forwarded-trust';
+import {
+  destroyRateLimit,
+  getClientIpSettings,
+  registerRateLimit,
+} from './utils/rate-limit/runtime';
 
 /** Unsubscribes the rebuild hook; set while it is registered. */
 let stopRebuildHook: (() => void) | null = null;
@@ -61,6 +66,9 @@ export default {
     // Client IP, rate limits and the fediverse inbox guard (global:: middlewares
     // in config/middlewares.ts); a no-op with RATE_LIMIT_ENABLED=false.
     registerRateLimit(strapi);
+    // ctx.protocol and ctx.host follow the forwarded headers only from trusted peers.
+    const clientIp = getClientIpSettings(strapi);
+    if (clientIp) installForwardedTrust(strapi.server.app, clientIp);
 
     // Rejects citations without a reference, and keeps the article's
     // searchable plain text in step with its body.

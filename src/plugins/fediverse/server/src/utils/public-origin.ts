@@ -4,10 +4,10 @@
  *
  * @remarks
  * Without it Fedify takes the scheme and host from the request, which with
- * `TRUST_PROXY_PROTOCOL` means `X-Forwarded-Host` and `-Proto`: a client
- * that reaches the app can then have the actor document name its own host,
- * and a cache may store it. Unset (local development, tests) keeps the
- * request-derived origin.
+ * `TRUST_PROXY_PROTOCOL` means `X-Forwarded-Host` and `-Proto`, honoured only
+ * from the peers `TRUST_PROXY` trusts. A proxy it does not list can then have
+ * the actor document name its own host, and a cache may store it. Unset (local
+ * development, tests) keeps the request-derived origin.
  *
  * @returns The origin, without path, or `undefined` when `URL` is unset or not an absolute URL.
  */
