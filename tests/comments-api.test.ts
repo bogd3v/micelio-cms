@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole } from './helpers/permissions';
@@ -131,5 +131,39 @@ describe('Public comments API', () => {
     expect(blocked?.blocked).toBe(true);
     expect(blocked?.fediverseUri).toBeNull();
     expect(blocked?.fediverseActorHandle).toBeNull();
+  });
+
+  it('sends no reply notification, whatever the guest wrote as name and address', async () => {
+    // The plugin looks the super admin up as the sender, and fails without one.
+    const superAdmin = await strapi.db
+      .query('admin::role')
+      .findOne({ where: { code: 'strapi-super-admin' } });
+    await strapi.service('admin::user').create({
+      email: 'owner@example.com',
+      firstname: 'Owner',
+      password: 'Passw0rd!x',
+      isActive: true,
+      roles: [superAdmin.id],
+    });
+    const send = jest
+      .spyOn(strapi.plugin('email').service('email'), 'send')
+      .mockResolvedValue(undefined);
+    const client = strapi.plugin('comments').service('client');
+    const guest = (id: string, name: string, email: string) => ({ id, name, email });
+
+    const parent = await client.create({
+      relation,
+      content: 'a guest asks',
+      author: guest('guest-victim', 'Victim', 'victim@example.com'),
+    });
+    await client.create({
+      relation,
+      content: 'a reply',
+      threadOf: parent.id,
+      author: guest('guest-attacker', '<img src=x onerror=alert(1)>', 'attacker@example.com'),
+    });
+
+    expect(send).not.toHaveBeenCalled();
+    send.mockRestore();
   });
 });
