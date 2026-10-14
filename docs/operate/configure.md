@@ -53,9 +53,12 @@ BUILD_API_TOKEN=<32+ random characters>      # read-only, for static builds
 CORS_ORIGINS=https://example.com   # browser origins allowed by CORS, comma separated
 STRAPI_MCP_ENABLED=true            # /mcp (admin API tokens); false where no agent needs it
 POPULATE_MAX_DEPTH=3               # relation levels a content API `populate`, `filters` or `sort` may nest
+STRAPI_REMOTE_TRANSFER_ENABLED=false   # Strapi's remote data transfer; off by default
 ```
 
 Without `CORS_ORIGINS` only the origin of `FRONTEND_URL` is allowed (browsers fetch 3D scene models from the CMS, and that is the one page that needs it). List more origins, comma separated, when the site is also served from another one, such as `www` and the bare domain. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed. Credentials (cookies, `Authorization`) are allowed only to listed origins: `CORS_ORIGINS=*` still reflects any origin, without credentials.
+
+`STRAPI_REMOTE_TRANSFER_ENABLED` is off by default. Strapi enables its remote data transfer unless told otherwise: with a transfer token created in the admin panel (`TRANSFER_TOKEN_SALT` signs them), another Strapi instance can pull or push the whole database over `/admin/transfer`. Nothing in these guides uses it: back up with `pg_dump` and the uploads volume ([Backup](backup.md)). Set it to `true` only for the time of a migration between instances, then back to `false`; with it off those routes answer `404`. Local `strapi export` and `strapi import` need no setting.
 
 The request log (`global::request-logger`, instead of Strapi's `strapi::logger`) writes the method, the path, the time and the status, never the query string: account confirmation and the newsletter lookups carry emails and live tokens there. A reverse proxy in front has its own access log; configure it the same way.
 
