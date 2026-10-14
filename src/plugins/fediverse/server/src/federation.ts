@@ -571,6 +571,19 @@ export function getFederation(strapi: Core.Strapi): Federation<FediverseContextD
   return federation;
 }
 
+/**
+ * The path Fedify routes on: `@fedify/koa` builds its `Request` from `ctx.url`,
+ * and the WHATWG parser resolves `.`, `..` and `%2e` segments. Classifying the
+ * raw `ctx.path` would let `/fediverse/user/x/./inbox` reach the inbox as a read.
+ */
+function routedPath(ctx: KoaContext): string {
+  try {
+    return new URL(ctx.url, 'http://localhost').pathname;
+  } catch {
+    return ctx.path;
+  }
+}
+
 function isFederationPath(path: string): boolean {
   return FEDERATION_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
@@ -623,7 +636,7 @@ export function mountFediverseMiddleware(
     const guard = strapi.config.get('plugin::fediverse.requestGuard') as RequestGuard | undefined;
     if (typeof guard !== 'function') return false;
     try {
-      return (await guard(ctx, requestGuardKind(ctx.method, ctx.path))) === true;
+      return (await guard(ctx, requestGuardKind(ctx.method, routedPath(ctx)))) === true;
     } catch {
       const now = Date.now();
       if (now - lastGuardWarning >= GUARD_WARNING_INTERVAL_MS) {
@@ -645,7 +658,7 @@ export function mountFediverseMiddleware(
   // The guard runs before Fedify touches the request stream, so a request it
   // rejects is answered with its body unread.
   return async (ctx: KoaContext, next: () => Promise<void>): Promise<void> => {
-    if (!isFederationPath(ctx.path)) return next();
+    if (!isFederationPath(routedPath(ctx))) return next();
     if (await guardHandled(ctx)) return;
     return fedify(ctx, next);
   };

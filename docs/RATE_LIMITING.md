@@ -157,6 +157,7 @@ Counters live in the process: replicas count independently (3 replicas allow rou
 Fedify's middleware runs before every root middleware and needs the raw body, so the inbox is limited by a guard. The root registers it in `plugin::fediverse.requestGuard` (`src/utils/rate-limit/guard.ts`) only while limiting is on; the plugin reads it on every federation-path request (`mountFediverseMiddleware` in `federation.ts`) and calls it before Fedify.
 
 - The guard resolves the IP itself, never reads the body, counts `POST` inbox paths in `fediverse-inbox` and other federation requests in `api`, and marks the request so the root middleware does not count it again. It does not use the forwarder or tokens.
+- Paths are classified after the same normalisation Fedify applies (`new URL(ctx.url).pathname`: `.`, `..` and `%2e` segments are resolved), so `/fediverse/user/x/./inbox` counts as the inbox, not as a read.
 - If it returns `true` the 429 is already written. If it is missing or throws, the request goes through (fail open; a thrown error logs a warning at most once a minute).
 
 ## Reverse-Proxy Limits (optional)
