@@ -41,15 +41,15 @@ An open requirement that an attacker could exploit is **not** described here or 
 | V9 Self-contained Tokens                | L1     | 0      | 4        | 1      | 2      |
 | V10 OAuth and OIDC                      | L1     | 0      | 0        | 29     | 0      |
 | V11 Cryptography                        | L1     | 2      | 5        | 1      | 6      |
-| V12 Secure Communication                | L1     | 1      | 1        | 5      | 2      |
+| V12 Secure Communication                | L1     | 2      | 1        | 5      | 1      |
 | V13 Configuration                       | L1     | 5      | 2        | 2      | 4      |
 | V14 Data Protection                     | L1     | 1      | 2        | 0      | 6      |
 | V15 Secure Coding and Architecture      | L1     | 7      | 0        | 0      | 6      |
 | V16 Security Logging and Error Handling | L1     | 2      | 1        | 2      | 11     |
 | V17 WebRTC                              | L1     | 0      | 0        | 7      | 0      |
-| **Total (253 requirements)**            |        | **52** | **36**   | **81** | **84** |
+| **Total (253 requirements)**            |        | **53** | **36**   | **81** | **83** |
 
-Of the open requirements, 21 are tracked in private security advisories and 64 are not exploitable and are grouped in the five issues above.
+Of the open requirements, 20 are tracked in private security advisories and 63 are not exploitable and are grouped in the five issues above.
 
 ## Keeping it true
 
@@ -267,7 +267,7 @@ Of the open requirements, 21 are tracked in private security advisories and 64 a
 | V12.1.3         | mTLS client certificates validated before use               | N/A      | No mTLS anywhere in the CMS                                                                                                                                                                                                                                                                                                      |
 | V12.2.1         | TLS for all client connections, no insecure fallback        | N/A      | Operator/deployment: HTTPS and redirects live in the proxy (`docs/operate/install.md:33`); Strapi sends HSTS by default (`node_modules/@strapi/core/dist` 5.56.0 `middlewares/security.js:24-27`), not disabled in `config/middlewares.ts:20-44`                                                                                 |
 | V12.2.2         | Publicly trusted certificates on external services          | N/A      | Operator/deployment: certificates belong to the proxy                                                                                                                                                                                                                                                                            |
-| V12.3.1         | Encrypted protocol for all inbound and outbound connections | Open     | Private advisory                                                                                                                                                                                                                                                                                                                 |
+| V12.3.1         | Encrypted protocol for all inbound and outbound connections | Met      | Outbound email uses TLS: port 465 is implicit TLS and any other port must upgrade with STARTTLS, or the send fails (`requireTLS`, on by default; only `SMTP_REQUIRE_TLS=false` turns it off) (`src/utils/smtp.ts`, `config/plugins.ts`). Test: `tests/smtp.test.ts`                                                              |
 | V12.3.2         | TLS clients validate server certificates                    | Upstream | Node `fetch` (Umami, rebuild hook, Fedify), the AWS SDK (R2, `https://` endpoint in `config/plugins.ts:17`), nodemailer and `pg` verify certificates by default; `config/database.ts:23` keeps `rejectUnauthorized` true unless `DATABASE_SSL_REJECT_UNAUTHORIZED=false`; no `NODE_TLS_REJECT_UNAUTHORIZED` in the repo. No test |
 | V12.3.3         | TLS for internal HTTP service connections                   | Open     | Plain `http://` is accepted for `UMAMI_URL`, which carries the Umami API key (`config/umami.ts:10-14`, `src/api/article-stat/utils/umami-client.ts:21-22`), and for `REBUILD_HOOK_URL` with its bearer token (`src/utils/rebuild-hook.ts:47-55`, `:80-89`); no check warns about it. Tracked in #178                             |
 | V12.3.4         | Internal TLS uses trusted or pinned CAs                     | Met      | The database connection can pin a CA (`DATABASE_SSL_CA`, `DATABASE_SSL_CAPATH`) and verifies certificates by default (`config/database.ts:17-24`). No test                                                                                                                                                                       |
