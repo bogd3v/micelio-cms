@@ -30,7 +30,7 @@ The other keys currently in the file (`approvalScores`, `moderation`, `nested`, 
 
 - `related` is `api::article.article:<documentId>` (the document id, not the numeric id).
 - `threadOf` points at the parent comment (nesting).
-- `authorId`, `authorName`, `authorAvatar` identify the author. `authorEmail` is exposed publicly by the plugin, so never store an email you don't intend to publish.
+- `authorId`, `authorName`, `authorAvatar` identify the author. `authorEmail` is stored and shown to moderators in the admin panel; the public API never returns it (`src/middlewares/strip-comment-author-email.ts`), so keep the guest's address only when the flow needs it. See `docs/architecture/comments.md`.
 - Extra fields added by `src/extensions/comments/strapi-server.ts`: `fediverseUri` (remote Note id, used to dedupe) and `fediverseActorHandle` (`@user@host`). Fediverse replies are created with `strapi.documents('plugin::comments.comment')` by `src/plugins/fediverse/server/src/services/replies.ts`; see `docs/FEDIVERSE.md` (Phase 3).
 - Extend the schema in `strapi-server.ts`, not with an extension `schema.json`: Strapi merges schema files shallowly, so a `schema.json` with `attributes` replaces every attribute of the plugin.
 
