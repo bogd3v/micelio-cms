@@ -2,6 +2,8 @@
 
 Reader accounts for the Micelio frontend (issue #52, frontend bogd3v/micelio#186). They are plain `users-permissions` users: registration, sign-in, email confirmation and password reset are the plugin's own endpoints. This backend adds the configuration, the Spanish emails and one route, `DELETE /api/users/me`.
 
+Every sign-in, sign-up, reset and session pathway of the CMS, with its limits and lifetimes, is in [`security/authentication.md`](security/authentication.md).
+
 ## Endpoints the frontend uses
 
 | Action              | Endpoint                                                                     |
@@ -40,6 +42,16 @@ The response always carries the user's own role, `{ id, documentId, name, type }
 Permissions: the action `plugin::users-permissions.user.destroyMe` is granted to **Public**, **Authenticated** and **Editor**. Public has it only so a request without a JWT reaches the controller and gets a 401 instead of Strapi's 403; the controller rejects it. `user.destroy` (`DELETE /api/users/:id`) stays off for every role.
 
 DELETE requests have their JSON body parsed (`strapi::body` → `parsedMethods` in `config/middlewares.ts`); Koa's default parses only POST, PUT and PATCH.
+
+## Sessions
+
+Reader sessions are JWTs that last 7 days from sign-in and cannot be listed or revoked one by one. Sign-ins from several devices are allowed. The full rules, admin sessions included, are in [`security/authentication.md`](security/authentication.md).
+
+### Ending a reader's sessions
+
+- **One account:** in the admin panel, Content Manager → User → set **blocked** and save. The next request with a JWT of that account is refused, and sign-in answers "Your account has been blocked by an administrator". Unblocking restores access; the JWTs issued before are valid again until their 7 days end.
+- **Every reader:** rotate `JWT_SECRET` and restart the CMS. Every reader JWT stops verifying and every reader signs in again. Admin sessions use `ADMIN_JWT_SECRET` and are not affected.
+- **After a password change or reset:** every JWT issued before it is refused, with one-second resolution. The person who changed the password keeps the new JWT.
 
 ## Settings applied on boot
 
