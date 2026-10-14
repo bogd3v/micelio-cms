@@ -129,6 +129,8 @@ UMAMI_PUBLIC_URL=https://analytics.example.com   # optional, link in the admin w
 STRAPI_DISABLE_CRON=false        # true disables every cron task, this one included
 ```
 
+In production the CMS refuses to boot, naming the variable, when `UMAMI_URL` is `http://` and its host is public. `https://` is always accepted, and so is `http://` on a private network: a loopback or private address, `localhost`, a service name without a dot, or a name ending in `.internal`, `.local` or `.localhost`. There is no setting to switch the check off. The API key would otherwise cross the network in the clear.
+
 Check that the container reaches Umami before you deploy: the first sync runs right after boot and logs `[umami] synced article visitors: {...}`, or `[umami] sync failed` with the reason.
 
 ## Static and landing sites (rebuild hook)
@@ -140,6 +142,8 @@ REBUILD_HOOK_URL=https://api.github.com/repos/<owner>/<site-repo>/dispatches
 REBUILD_HOOK_TOKEN=<fine-grained token with Contents: read and write on that repo>
 REBUILD_HOOK_DEBOUNCE_MS=60000   # changes within the window produce one call
 ```
+
+`REBUILD_HOOK_URL` follows the same rule as `UMAMI_URL`: in production a public `http://` URL stops the boot, because the bearer token would travel in the clear.
 
 A site in dynamic mode sets none of them.
 

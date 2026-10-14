@@ -96,6 +96,16 @@ function privateRanges(): BlockList {
 }
 
 /**
+ * True when an IP address is loopback, RFC 1918, link-local or unique-local.
+ * Anything that is not an IP address is false.
+ */
+export function isPrivateAddress(raw: string): boolean {
+  const ip = normalizeIp(raw);
+  if (!ip) return false;
+  return privateRanges().check(ip, isIP(ip) === 4 ? 'ipv4' : 'ipv6');
+}
+
+/**
  * Parses `TRUST_PROXY`: `private` (default, also the empty value), `false`
  * (or `0`), a number of proxy hops, or a comma separated list of addresses and
  * CIDR ranges where `private` stands for the private ranges. `true` is
