@@ -57,7 +57,7 @@ Its data comes from `GET /article-stats/summary` on the **admin** API (admin ses
 
 | Variable           | Meaning                                                                                                                                                                                            |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `UMAMI_URL`        | An address the CMS container can reach (for example `http://umami:3000`), not necessarily the public domain                                                                                        |
+| `UMAMI_URL`        | An address the CMS container can reach (for example `http://umami:3000`), not necessarily the public domain. In production a public host must use `https://` (the boot stops otherwise)            |
 | `UMAMI_WEBSITE_ID` | Website id of `example.com` in Umami                                                                                                                                                               |
 | `UMAMI_API_KEY`    | API key (`umami_…`) of the **View only** user `strapi-reader`, which sees the website through the team that owns the website. Umami API keys can't reach `/api/auth`, `/api/users` or `/api/admin` |
 | `UMAMI_SYNC_CRON`  | Optional, default `0 * * * *`                                                                                                                                                                      |
