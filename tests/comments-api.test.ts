@@ -166,4 +166,20 @@ describe('Public comments API', () => {
     expect(send).not.toHaveBeenCalled();
     send.mockRestore();
   });
+
+  it('keeps pending and rejected comments out of a list that omits approvalStatus', async () => {
+    const query = 'omit[0]=approvalStatus&omit[1]=blocked';
+    for (const path of [`/api/comments/${relation}/flat`, `/api/comments/${relation}`]) {
+      const res = await request(strapi.server.httpServer).get(`${path}?${query}`).expect(200);
+      const items: ApiComment[] = Array.isArray(res.body) ? res.body : res.body.data;
+      const contents = [...items, ...items.flatMap((item) => item.children ?? [])].map(
+        (item) => item.content
+      );
+
+      expect(items.every((item) => !('approvalStatus' in item))).toBe(true);
+      expect(contents).toContain('from the blog');
+      expect(contents).not.toContain('pending from the fediverse');
+      expect(contents).not.toContain('rejected from the fediverse');
+    }
+  });
 });
