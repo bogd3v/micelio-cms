@@ -52,7 +52,7 @@ BUILD_API_TOKEN=<32+ random characters>      # read-only, for static builds
 ```env
 CORS_ORIGINS=https://example.com   # browser origins allowed by CORS, comma separated
 STRAPI_MCP_ENABLED=true            # /mcp (admin API tokens); false where no agent needs it
-POPULATE_MAX_DEPTH=3               # relation levels a content API `populate` may nest
+POPULATE_MAX_DEPTH=3               # relation levels a content API `populate`, `filters` or `sort` may nest
 ```
 
 Without `CORS_ORIGINS` only the origin of `FRONTEND_URL` is allowed (browsers fetch 3D scene models from the CMS, and that is the one page that needs it). List more origins, comma separated, when the site is also served from another one, such as `www` and the bare domain. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed. Credentials (cookies, `Authorization`) are allowed only to listed origins: `CORS_ORIGINS=*` still reflects any origin, without credentials.
@@ -61,7 +61,7 @@ The request log (`global::request-logger`, instead of Strapi's `strapi::logger`)
 
 Every response carries HSTS (one year, subdomains included), `nosniff` and a frame restriction (`frame-ancestors 'self'`), federation responses too, and the CSP sets `base-uri 'none'`. Answers that are per user or token-only (`/api/auth/*`, `/api/users/me`, site settings, subscribers, and content API reads with `status=draft`) carry `Cache-Control: private, no-store`; public content is left to your proxy or CDN. A CDN that keeps its own copy must honour these headers. HSTS makes browsers refuse plain http for the domain for a year: serve the CMS over https before exposing it.
 
-A content API request whose `populate` nests deeper than `POPULATE_MAX_DEPTH` levels (default 3, the deepest the Micelio frontend asks for) is answered with 400: Strapi has no limit of its own, and articles, categories and tags relate back to each other. A custom frontend that needs more raises the value.
+A content API request whose `populate`, `filters` or `sort` nests deeper than `POPULATE_MAX_DEPTH` levels (default 3, the deepest the Micelio frontend asks for) is answered with 400: Strapi has no limit of its own, and articles, categories and tags relate back to each other. In `filters` each relation key is a level and `$and`, `$or`, `$not` and comparison operators (`$eq`, `$in`) are not (`filters[category][slug][$eq]` is 2); in `sort`, each dotted segment is. A custom frontend that needs more raises the value.
 
 ## Rate limiting
 
