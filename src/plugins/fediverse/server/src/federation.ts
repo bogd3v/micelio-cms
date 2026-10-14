@@ -66,6 +66,7 @@ import type { InteractionType } from './types/interactions';
 import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
 import { publicOrigin } from './utils/public-origin';
+import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
 import { cleanRemoteText } from './utils/remote-text';
 
 const OUTBOX_PAGE_SIZE = 20;
@@ -660,6 +661,8 @@ export function mountFediverseMiddleware(
   // rejects is answered with its body unread.
   return async (ctx: KoaContext, next: () => Promise<void>): Promise<void> => {
     if (!isFederationPath(routedPath(ctx))) return next();
+    // Before the guard and Fedify, so a refusal or an error carries them too.
+    for (const [name, value] of Object.entries(FEDERATION_SECURITY_HEADERS)) ctx.set(name, value);
     if (await guardHandled(ctx)) return;
     return fedify(ctx, next);
   };
