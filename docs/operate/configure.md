@@ -57,6 +57,8 @@ POPULATE_MAX_DEPTH=3               # relation levels a content API `populate` ma
 
 Without `CORS_ORIGINS` Strapi reflects any `Origin` with credentials allowed, so list the frontend in production. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed.
 
+The request log (`global::request-logger`, instead of Strapi's `strapi::logger`) writes the method, the path, the time and the status, never the query string: account confirmation and the newsletter lookups carry emails and live tokens there. A reverse proxy in front has its own access log; configure it the same way.
+
 A content API request whose `populate` nests deeper than `POPULATE_MAX_DEPTH` levels (default 3, the deepest the Micelio frontend asks for) is answered with 400: Strapi has no limit of its own, and articles, categories and tags relate back to each other. A custom frontend that needs more raises the value.
 
 ## Rate limiting

@@ -65,6 +65,7 @@ import type { FediverseContextData } from './types/federation';
 import type { InteractionType } from './types/interactions';
 import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
+import { cleanRemoteText } from './utils/remote-text';
 
 const OUTBOX_PAGE_SIZE = 20;
 
@@ -117,16 +118,11 @@ async function describeRemoteActor(
 ) {
   let handle: string | null = null;
   try {
-    handle = await getActorHandle(actor ?? fallbackId);
+    handle = cleanRemoteText(await getActorHandle(actor ?? fallbackId));
   } catch {
     handle = null;
   }
-  const displayName = actor?.name;
-  const username = actor?.preferredUsername;
-  const name =
-    (typeof displayName === 'string' && displayName) ||
-    (typeof username === 'string' && username) ||
-    handle;
+  const name = cleanRemoteText(actor?.name) || cleanRemoteText(actor?.preferredUsername) || handle;
   return { handle, name, avatar: await extractAvatarUrl(strapi, actor, documentLoader) };
 }
 
@@ -157,7 +153,7 @@ async function receiveInteraction(
   });
   let handle: string | null = null;
   try {
-    handle = await getActorHandle((actor as Actor | null) ?? activity.actorId);
+    handle = cleanRemoteText(await getActorHandle((actor as Actor | null) ?? activity.actorId));
   } catch {
     handle = null;
   }
@@ -358,16 +354,14 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
 
       let handle: string | null = null;
       try {
-        handle = await getActorHandle(remoteActor ?? actorId);
+        handle = cleanRemoteText(await getActorHandle(remoteActor ?? actorId));
       } catch {
         handle = null;
       }
 
-      const displayName = remoteActor?.name ?? null;
-      const preferredUsername = remoteActor?.preferredUsername ?? null;
       const name =
-        (typeof displayName === 'string' ? displayName : null) ??
-        (typeof preferredUsername === 'string' ? preferredUsername : null) ??
+        cleanRemoteText(remoteActor?.name) ??
+        cleanRemoteText(remoteActor?.preferredUsername) ??
         handle;
 
       const avatar = await extractAvatarUrl(strapi, remoteActor, ctx.documentLoader);
