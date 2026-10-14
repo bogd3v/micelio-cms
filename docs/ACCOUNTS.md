@@ -19,7 +19,9 @@ Reader accounts for the Micelio frontend (issue #52, frontend bogd3v/micelio#186
 - The confirmation link points at the API, which confirms and redirects (302) to `<FRONTEND_URL>/account/confirmed`.
 - The reset email links to `<FRONTEND_URL>/account/reset-password?code=…`; the frontend posts that `code` to `/api/auth/reset-password`.
 - A `role` (or any field other than `username`, `email`, `password`) in the sign-up body is rejected with 400. There is no `register.allowedFields`.
-- JWTs last **7 days** (`jwt.expiresIn` in `config/plugins.ts`, signed with `JWT_SECRET`).
+- JWTs last **7 days** (`jwt.expiresIn` in `config/plugins.ts`, signed with `JWT_SECRET`). A JWT issued before the person's last password change (reset or change) is rejected with 401.
+- A reset code works for **one hour** after `forgot-password` issued it, and once. An expired code answers 400 `Incorrect code provided`, the same as a wrong one, and is discarded. Codes issued before this rule existed carry no issue time and are refused: the person asks for a new one.
+- Both rules use two private columns on `up_users`, `reset_password_issued_at` and `password_changed_at`, added by `src/extensions/users-permissions/reset-security.ts`; Strapi creates them on boot. JWT revocation has a one-second resolution (`iat`), and `jwtManagement: 'refresh'` with short access tokens stays a separate, frontend-coordinated change.
 
 ### `GET /api/users/me`
 
