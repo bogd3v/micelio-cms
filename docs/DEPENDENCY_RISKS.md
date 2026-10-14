@@ -2,7 +2,7 @@
 
 Dependabot alerts that stay open because the fix needs a major version that a parent package pins. Each entry says why the risk is accepted and what would close it. Review this list on every Strapi upgrade. Patches within the same major go in through `overrides` in `package.json` instead (see `SECURITY.md`).
 
-Last reviewed: 2026-10-07, Strapi 5.56.0. `npm audit --omit=dev` reports 46 vulnerabilities (38 high, 8 moderate); every one is covered below.
+Last reviewed: 2026-10-14, Strapi 5.56.0. `npm audit --omit=dev` reports 46 vulnerabilities (38 high, 8 moderate); none is critical, and every one is covered below. The remediation time frames in `SECURITY.md` apply from this review: the entries below were reviewed on 2026-10-14, and each is a written decision for its severity.
 
 ## Fixed through overrides
 
@@ -27,7 +27,7 @@ Drop an override once the parent ships the patched version, so it doesn't hold b
 
 ## Pinned direct dependencies
 
-- `knex` 3.0.1 is a direct dependency only so the rate limiting store (`src/utils/rate-limit/stores.ts`) can import it. It must stay on the exact version `@strapi/database` pins: bump it together with Strapi, never alone (close Dependabot PRs that bump only `knex`).
+- `knex` 3.3.0 is pinned exactly and is a direct dependency only so the rate limiting store (`src/utils/rate-limit/stores.ts`) can import it. It opens its own connection pool, so it does not have to match the copy `@strapi/database` installs for Strapi (3.0.1, nested under `@strapi/database`; `package-lock.json` holds both). Dependabot moved it from 3.0.1 to 3.3.0 on its own (987af32), which the earlier rule of staying on the version Strapi pins would have forbidden. The store runs only on PostgreSQL, so a knex bump is exercised by `tests/rate-limit-database.test.ts` only when `TEST_DATABASE_URL` is set (the default SQLite run skips that block): run it against Postgres before merging; if the two copies ever have to be one, set an `overrides` entry for `@strapi/database`.
 - `rate-limiter-flexible` 11.2.1 (ISC, no runtime dependencies) is pinned exactly; see `docs/RATE_LIMITING.md`.
 
 ## Accepted

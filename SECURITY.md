@@ -65,5 +65,22 @@ How the frontend reads content with a custom API token, and the permissions that
 ## How dependencies are handled
 
 - Dependabot opens grouped minor and patch updates weekly. Major versions (Strapi, Node, nodemailer, etc.) are upgraded by hand after testing.
-- Dependabot security alerts are triaged as they arrive. Patches within the same major go in through `overrides` in `package.json` when the parent package pins an older version.
+- Dependabot security alerts and `npm audit` findings are triaged as they arrive. Patches within the same major go in through `overrides` in `package.json` when the parent package pins an older version.
+- CI fails on a critical `npm audit` finding (`npm audit --audit-level=critical`), so a critical alert in a production dependency blocks merging until it is fixed or written down.
 - Alerts that can't be fixed without a major upgrade, and why the risk is accepted, are listed in [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md).
+
+### Remediation time frames
+
+The time runs from the day the advisory appears in Dependabot or `npm audit`, as the severity those tools report. These are targets for a small maintainer team, not guarantees. They match the times for reported vulnerabilities above where the two overlap.
+
+| Severity | A fix exists within the same major | The fix needs a major upgrade or a parent that pins the package              |
+| -------- | ---------------------------------- | ---------------------------------------------------------------------------- |
+| Critical | 7 days                             | Mitigation or a written decision in `docs/DEPENDENCY_RISKS.md` within 7 days |
+| High     | 14 days                            | Written decision within 14 days                                              |
+| Moderate | 30 days                            | Written decision within 30 days                                              |
+| Low      | Next planned release               | Written decision at the next review                                          |
+
+- "Fix" means a patched version installed, through a Dependabot pull request or an `overrides` entry, and released in the next image. "Written decision" means an entry in [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md) with the advisory, why it is accepted (for example the vulnerable code is never reached) and what would close it. Accepting a risk does not stop the clock on the upgrade that would close it: the entry is reviewed on every Strapi upgrade and at least every 90 days.
+- A finding that is exploitable in a way the advisory does not describe goes through a private security advisory instead, and the faster time of the reporting table applies.
+- Packages that only run in development, tests or the image build follow the same table, but their findings are listed in `docs/DEPENDENCY_RISKS.md` as not shipped.
+- Only the latest release line is fixed. An operator on an older line upgrades first.
