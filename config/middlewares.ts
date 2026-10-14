@@ -13,7 +13,8 @@ function mediaOriginsFrom(baseUrl: string | undefined): string[] {
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => {
   const mediaOrigins = mediaOriginsFrom(env('R2_BASE_URL'));
   return [
-    'strapi::logger',
+    // Not strapi::logger: it logs the query string (emails, tokens).
+    'global::request-logger',
     'strapi::errors',
     // Sets the client address for everything below (TRUST_PROXY).
     'global::client-ip',
