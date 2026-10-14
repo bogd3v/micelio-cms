@@ -369,6 +369,7 @@ describe('assertRateLimitConfig', () => {
       auth: null,
       'auth-identifier': null,
       'admin-auth': null,
+      'admin-identifier': null,
       'auth-email': null,
       comments: null,
       upload: null,

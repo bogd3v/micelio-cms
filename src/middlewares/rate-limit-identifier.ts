@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import type { Context, Next } from 'koa';
-import { AUTH_LOCAL_PATH } from '../constants/rate-limit';
+import { ADMIN_LOGIN_PATH, AUTH_LOCAL_PATH } from '../constants/rate-limit';
 import { isAuthEmailRoute, normalizePath } from '../utils/rate-limit/groups';
 import { identityKey } from '../utils/rate-limit/keys';
 import { rejectTooManyRequests } from '../utils/rate-limit/respond';
@@ -9,7 +9,8 @@ import { getRateLimitRuntime } from '../utils/rate-limit/runtime';
 /**
  * Limits the account routes per account, after the body is parsed (the
  * group's per-client limit already ran). `POST /api/auth/local` counts per
- * login identifier and answers 429 past its limit. For the routes that send an
+ * login identifier and answers 429 past its limit; `POST /admin/login` does
+ * the same per admin email (`admin-identifier`). For the routes that send an
  * email, per address: past the limit `forgot-password` and
  * `send-email-confirmation` answer what they always do without sending
  * anything, so the response says nothing about the address; `register` has no
@@ -29,6 +30,16 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
       const decision = await runtime.limiters.consume(
         'auth-identifier',
         identityKey(runtime.secret, body?.identifier, ctx.request.ip)
+      );
+      if (decision && !decision.allowed) return rejectTooManyRequests(ctx, decision);
+      return next();
+    }
+
+    // Same for the admin panel, which has no second factor.
+    if (ctx.method.toUpperCase() === 'POST' && path === ADMIN_LOGIN_PATH) {
+      const decision = await runtime.limiters.consume(
+        'admin-identifier',
+        identityKey(runtime.secret, body?.email, ctx.request.ip)
       );
       if (decision && !decision.allowed) return rejectTooManyRequests(ctx, decision);
       return next();
