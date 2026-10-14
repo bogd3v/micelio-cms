@@ -61,7 +61,7 @@ Requires Node 22 (`.nvmrc`).
 ```bash
 npm ci
 cp .env.example .env
-npm run generate:keys     # fills the Strapi secrets in .env
+npm run generate:keys     # prints the Strapi secrets: paste them over the empty ones in .env
 npm run develop           # http://localhost:1337/admin, SQLite in .tmp/data.db
 npm run seed:example      # optional sample content
 ```

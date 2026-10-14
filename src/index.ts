@@ -33,6 +33,7 @@ import { assertPageSectionsValid } from './utils/page-sections';
 import { registerRebuildHook } from './utils/rebuild-hook';
 import { restrictDraftsToEditors } from './utils/drafts-access';
 import { assertFrontendUrlConfigured } from './utils/frontend-url';
+import { assertSecretsConfigured } from './utils/secrets';
 import { destroyRateLimit, registerRateLimit } from './utils/rate-limit/runtime';
 
 /** Unsubscribes the rebuild hook; set while it is registered. */
@@ -46,6 +47,8 @@ export default {
     // Links in emails, analytics paths and the site settings' URL point to the
     // frontend; in production there is no default to fall back on.
     assertFrontendUrlConfigured();
+    // Keys and salts copied from an example file are public.
+    assertSecretsConfigured();
     if (process.env.SMTP_HOST && !process.env.EMAIL_FROM) {
       strapi.log.warn(
         "[email] EMAIL_FROM is not set: emails go out from no-reply@ the frontend's host"
