@@ -100,6 +100,50 @@ describe('Rate limiting: fediverse inbox', () => {
     expect((await postInbox('/fediverse/inbox', client)).status).toBe(429);
   });
 
+  it('limits an inbox path written with dot segments in the inbox bucket', async () => {
+    const client = asClient('203.0.113.96');
+    const disguised = [
+      '/fediverse/user/devbog/./inbox',
+      '/fediverse/user/devbog/%2e/inbox',
+      '/fediverse/user/x/../devbog/inbox',
+    ];
+    // Three deliveries spend the inbox bucket (3/60); the api bucket is 5/60,
+    // so a fourth one is refused only if they were all counted as inbox.
+    const body = JSON.stringify({
+      '@context': 'https://www.w3.org/ns/activitystreams',
+      id: 'https://mastodon.social/tests/rate-limit/2',
+      type: 'Follow',
+      actor: 'https://mastodon.social/users/test',
+      object: `http://${serverHost()}${ACTOR}`,
+    });
+    // The raw request line is sent as is: superagent would resolve the dots itself.
+    const rawPost = (path: string) =>
+      new Promise<number>((resolve, reject) => {
+        const [host, port] = serverHost().split(':');
+        const req = http.request(
+          {
+            host,
+            port: Number(port),
+            path,
+            method: 'POST',
+            headers: {
+              ...client,
+              'Content-Type': ACTIVITY_JSON,
+              'Content-Length': String(Buffer.byteLength(body)),
+            },
+          },
+          (res) => {
+            res.resume();
+            resolve(res.statusCode ?? 0);
+          }
+        );
+        req.on('error', (error) => reject(error));
+        req.end(body);
+      });
+    for (const path of disguised) expect([path, await rawPost(path)]).toEqual([path, 401]);
+    expect(await rawPost(INBOX)).toBe(429);
+  });
+
   it('keeps counting clients apart', async () => {
     expect((await postInbox(INBOX, asClient('203.0.113.93'))).status).toBe(401);
   });
