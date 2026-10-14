@@ -26,6 +26,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
         contentSecurityPolicy: {
           useDefaults: true,
           directives: {
+            // No <base> element is needed; 'none' blocks the tag-injection route.
+            'base-uri': ["'none'"],
             'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
             'img-src': [
               "'self'",
@@ -57,6 +59,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     },
     // Uploads come from the admin origin with the local provider; see upload-headers.ts.
     'global::upload-headers',
+    // Per-user and token-only answers must not be cached; see cache-control.ts.
+    'global::cache-control',
     'strapi::poweredBy',
     // Before the body is read, so a flood is refused without parsing it.
     'global::rate-limit',
@@ -70,7 +74,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     },
     // Needs the parsed body (the email of the account routes).
     'global::rate-limit-identifier',
-    'strapi::session',
+    // Nothing in the app sends this cookie cross-site; Lax is Koa's strict-enough default.
+    { name: 'strapi::session', config: { sameSite: 'lax' } },
     'strapi::favicon',
     'strapi::public',
     // Outer to hide-unapproved-comments, so it only enriches what survives pruning.
