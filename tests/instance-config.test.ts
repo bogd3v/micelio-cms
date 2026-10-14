@@ -5,6 +5,7 @@ import {
   frontendBaseUrl,
 } from '../src/utils/frontend-url';
 import { frontendBaseUrl as pluginFrontendBaseUrl } from '../src/plugins/fediverse/server/src/utils/frontend-url';
+import { assertSecretsConfigured } from '../src/utils/secrets';
 import { assertActorConfigured } from '../src/plugins/fediverse/server/src/constants/actor';
 
 // A new instance must not borrow BogDev's identity: what identifies a site
@@ -57,6 +58,57 @@ describe('Instance configuration', () => {
       );
       expect(() => assertActorConfigured('blog', '')).toThrow('FEDIVERSE_ACTOR_USERNAME');
       expect(() => assertActorConfigured('blog', 'blog')).not.toThrow();
+    });
+  });
+
+  describe('secrets in production', () => {
+    const strong = (seed: string) => seed.repeat(32).slice(0, 44);
+    const good = () => ({
+      NODE_ENV: 'production',
+      APP_KEYS: `${strong('a')},${strong('b')}`,
+      API_TOKEN_SALT: strong('c'),
+      ADMIN_JWT_SECRET: strong('d'),
+      TRANSFER_TOKEN_SALT: strong('e'),
+      JWT_SECRET: strong('f'),
+      ENCRYPTION_KEY: strong('g'),
+    });
+
+    it('accepts generated keys', () => {
+      expect(() => assertSecretsConfigured(good())).not.toThrow();
+    });
+
+    it('names each placeholder, empty and short secret, never its value', () => {
+      const env = {
+        ...good(),
+        JWT_SECRET: 'tobemodified',
+        ENCRYPTION_KEY: '',
+        API_TOKEN_SALT: 'short-one',
+        APP_KEYS: `${strong('a')},toBeModified2`,
+      };
+      expect(() => assertSecretsConfigured(env)).toThrow(
+        /APP_KEYS is a placeholder.*API_TOKEN_SALT is shorter than 32 characters.*JWT_SECRET is a placeholder.*ENCRYPTION_KEY is not set/
+      );
+      expect(() => assertSecretsConfigured(env)).not.toThrow(/short-one/);
+    });
+
+    it('checks nothing outside production', () => {
+      expect(() => assertSecretsConfigured({ NODE_ENV: 'development' })).not.toThrow();
+      expect(() => assertSecretsConfigured({})).not.toThrow();
+    });
+
+    it('requires a database password of your own with postgres and no URL', () => {
+      const postgres = { ...good(), DATABASE_CLIENT: 'postgres' };
+      expect(() => assertSecretsConfigured(postgres)).toThrow('DATABASE_PASSWORD is not set');
+      expect(() => assertSecretsConfigured({ ...postgres, DATABASE_PASSWORD: 'strapi' })).toThrow(
+        'DATABASE_PASSWORD is the example password'
+      );
+      expect(() =>
+        assertSecretsConfigured({ ...postgres, DATABASE_PASSWORD: 'Zk4-own-password' })
+      ).not.toThrow();
+      expect(() =>
+        assertSecretsConfigured({ ...postgres, DATABASE_URL: 'postgres://u:p@db/strapi' })
+      ).not.toThrow();
+      expect(() => assertSecretsConfigured({ ...good(), DATABASE_CLIENT: 'sqlite' })).not.toThrow();
     });
   });
 });

@@ -182,7 +182,7 @@ MICELIO_DEMO=false   # seeds a bilingual demo site once on an empty database (co
 node scripts/generate-keys.js
 ```
 
-Copy the output into the environment of your container. `npm run generate:keys` does the same for a local `.env`.
+Copy the output into the environment of your container, or over the empty values of a local `.env` (`npm run generate:keys` prints the same). In production the CMS refuses to start when `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `JWT_SECRET` or `ENCRYPTION_KEY` is empty, a placeholder (`tobemodified`, `changeme`) or shorter than 32 characters, and the message names each one. With `DATABASE_CLIENT=postgres` and no `DATABASE_URL`, `DATABASE_PASSWORD` must be set and must not be `strapi`; `docker-compose.yml` refuses to start without it.
 
 ## Docker and backup variables
 

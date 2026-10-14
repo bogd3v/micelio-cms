@@ -40,6 +40,10 @@ The CMS does not follow `X-Forwarded-Proto`. Keep `TRUST_PROXY_PROTOCOL` at its 
 
 Since the release that added `SMTP_REQUIRE_TLS` (default `true`), the CMS refuses to send email through an SMTP server that does not offer `STARTTLS` (ports other than 465), and sign-up shows "Error sending confirmation email". Use a provider that offers `STARTTLS` or port 465. A relay on a network you trust, such as a local mail catcher, needs `SMTP_REQUIRE_TLS=false`.
 
+## The CMS stops with "Insecure configuration in production"
+
+A Strapi secret is empty, a placeholder or shorter than 32 characters, or the PostgreSQL password is missing or `strapi`. The message lists each variable by name. Generate fresh keys with `node scripts/generate-keys.js`, set them, and choose a database password of your own. Changing `JWT_SECRET` signs every reader out; changing `ENCRYPTION_KEY` makes stored API-token copies unreadable, so rotate it only on an instance that never used the real one.
+
 ## The image does not build
 
 Run `npm run build` locally to catch TypeScript errors, make sure `package-lock.json` is committed, and check `.dockerignore` does not exclude something the build needs. The Dockerfile needs BuildKit.
