@@ -401,6 +401,10 @@ Non-obvious findings moved from `CLAUDE.md` (#113), unchanged except for the ope
 - Fediverse code paths are split across `federation.ts` (Fedify dispatchers and inbox listeners) and `services/` (`articles`, `publisher`, `replies`, `interactions`, `followers`, `keys`, `actor-profile`); `docs/FEDIVERSE.md` has the per-phase findings.
 - The comments plugin findings are in [architecture/comments.md](architecture/comments.md).
 
+## Origin of the ids
+
+When `URL` is set, `getFederation` passes its origin (`publicOrigin`, `src/plugins/fediverse/server/src/utils/public-origin.ts`) to `createFederation`, so the actor, inbox, key and WebFinger ids never depend on the request's `Host` or `X-Forwarded-*` headers. The publisher already used `server.url`. With `URL` unset (development, tests) Fedify takes the origin from the request. Test: `tests/fediverse-origin.test.ts`.
+
 ## Remote text in logs and storage
 
 A handle or display name from a remote server is untrusted text. `cleanRemoteText` (`src/plugins/fediverse/server/src/utils/remote-text.ts`) turns control characters and line breaks into spaces, drops invisible format characters (zero width, bidi overrides) and cuts the value to 255 characters, before it is logged or stored as a follower's or an interaction's `handle` and `name`. Other remote values in log lines are URLs, which are serialised and so carry no line breaks.

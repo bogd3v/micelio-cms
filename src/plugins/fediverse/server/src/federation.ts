@@ -65,6 +65,7 @@ import type { FediverseContextData } from './types/federation';
 import type { InteractionType } from './types/interactions';
 import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
+import { publicOrigin } from './utils/public-origin';
 import { cleanRemoteText } from './utils/remote-text';
 
 const OUTBOX_PAGE_SIZE = 20;
@@ -225,10 +226,16 @@ export async function buildActor(
  *
  * @param log - Receives failed outbox deliveries, which Fedify would otherwise
  * report only through LogTape.
+ * @param origin - Fixed public origin for every id Fedify builds; without it the
+ * origin comes from the request (see `publicOrigin`).
  */
-export function createFediverseFederation(log?: Logger): Federation<FediverseContextData> {
+export function createFediverseFederation(
+  log?: Logger,
+  origin?: string
+): Federation<FediverseContextData> {
   const federation = createFederation<FediverseContextData>({
     kv: new MemoryKvStore(),
+    ...(origin ? { origin } : {}),
     // Fedify reports delivery failures through LogTape, which isn't configured
     // here, so without this hook a rejected delivery (e.g. Mastodon answering
     // 401/422) would leave no trace in Strapi's logs.
@@ -559,7 +566,7 @@ const federations = new WeakMap<Core.Strapi, Federation<FediverseContextData>>()
 export function getFederation(strapi: Core.Strapi): Federation<FediverseContextData> {
   let federation = federations.get(strapi);
   if (federation == null) {
-    federation = createFediverseFederation(strapi.log);
+    federation = createFediverseFederation(strapi.log, publicOrigin());
     federations.set(strapi, federation);
   }
   return federation;
