@@ -55,7 +55,7 @@ STRAPI_MCP_ENABLED=true            # /mcp (admin API tokens); false where no age
 POPULATE_MAX_DEPTH=3               # relation levels a content API `populate` may nest
 ```
 
-Without `CORS_ORIGINS` Strapi reflects any `Origin` with credentials allowed, so list the frontend in production. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed.
+Without `CORS_ORIGINS` only the origin of `FRONTEND_URL` is allowed (browsers fetch 3D scene models from the CMS, and that is the one page that needs it). List more origins, comma separated, when the site is also served from another one, such as `www` and the bare domain. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed. Credentials (cookies, `Authorization`) are allowed only to listed origins: `CORS_ORIGINS=*` still reflects any origin, without credentials.
 
 The request log (`global::request-logger`, instead of Strapi's `strapi::logger`) writes the method, the path, the time and the status, never the query string: account confirmation and the newsletter lookups carry emails and live tokens there. A reverse proxy in front has its own access log; configure it the same way.
 

@@ -20,6 +20,7 @@ describe('CORS (CORS_ORIGINS)', () => {
       .set('Origin', origin)
       .set('Access-Control-Request-Method', 'GET');
     expect(res.headers['access-control-allow-origin']).toBe(origin);
+    expect(res.headers['access-control-allow-credentials']).toBe('true');
   });
 
   it('does not allow other origins', async () => {

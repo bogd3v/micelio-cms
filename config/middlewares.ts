@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { corsAllowsCredentials, corsOrigins as corsOriginsFrom } from '../src/utils/cors-origins';
 
 /** Origin of the public media host (R2), so the admin can show uploads. */
 function mediaOriginsFrom(baseUrl: string | undefined): string[] {
@@ -12,6 +13,7 @@ function mediaOriginsFrom(baseUrl: string | undefined): string[] {
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => {
   const mediaOrigins = mediaOriginsFrom(env('R2_BASE_URL'));
+  const corsOrigins = corsOriginsFrom(env.array('CORS_ORIGINS', []), env('FRONTEND_URL'));
   return [
     // Not strapi::logger: it logs the query string (emails, tokens).
     'global::request-logger',
@@ -45,10 +47,13 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     },
     {
       name: 'strapi::cors',
-      // Browser origins allowed to call the API with credentials. Unset keeps
-      // Strapi's default `*`, which reflects any origin; production sets it to
-      // the frontend (docs/operate/configure.md). Server-to-server calls ignore CORS.
-      config: { origin: env.array('CORS_ORIGINS', ['*']) },
+      // Browser origins allowed to call the API: CORS_ORIGINS, or the frontend's
+      // origin when it is unset (src/utils/cors-origins.ts). Credentials go only
+      // to listed origins, never to `*`. Server-to-server calls ignore CORS.
+      config: {
+        origin: corsOrigins,
+        credentials: corsAllowsCredentials(corsOrigins),
+      },
     },
     // Uploads come from the admin origin with the local provider; see upload-headers.ts.
     'global::upload-headers',
