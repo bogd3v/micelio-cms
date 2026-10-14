@@ -320,7 +320,9 @@ describe('Accounts (users-permissions)', () => {
       const comment = (items as { content: string; author: unknown }[]).find(
         (item) => item.content === 'written before leaving'
       );
-      expect(comment?.author).toMatchObject({ id: 'anonymous', name: 'Anónimo', email: null });
+      expect(comment?.author).toMatchObject({ id: 'anonymous', name: 'Anónimo' });
+      // The public API never returns an author email (strip-comment-author-email).
+      expect(comment?.author).not.toHaveProperty('email');
 
       const row = await strapi
         .query(COMMENT_UID)

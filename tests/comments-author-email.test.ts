@@ -1,0 +1,132 @@
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import request from 'supertest';
+import { setupStrapi, cleanupStrapi } from './strapi';
+import { getPublicRole, getRole } from './helpers/permissions';
+import type { ApiComment } from './helpers/api-types';
+import { stripAuthorEmails } from '../src/utils/comment-author';
+
+const ARTICLE_UID = 'api::article.article';
+const COMMENT_UID = 'plugin::comments.comment';
+const EMAIL = 'commenter@example.test';
+const ACTIONS = ['findAll', 'findAllFlat', 'findAllInHierarchy'];
+
+describe('Comment author emails', () => {
+  let relation: string;
+  let userId: number;
+  const http = () => request(strapi.server.httpServer);
+
+  beforeAll(async () => {
+    await setupStrapi();
+    const publicRole = await getPublicRole();
+    for (const action of ACTIONS) {
+      await strapi.query('plugin::users-permissions.permission').create({
+        data: { action: `plugin::comments.client.${action}`, role: publicRole.id },
+      });
+    }
+    await strapi.service('plugin::users-permissions.users-permissions').initialize();
+
+    const draft = await strapi
+      .documents(ARTICLE_UID)
+      .create({ data: { title: 'Email target', slug: 'email-target' } });
+    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
+    relation = `${ARTICLE_UID}:${draft.documentId}`;
+
+    const role = await getRole('authenticated');
+    const user = await strapi.plugin('users-permissions').service('user').add({
+      username: 'commenter',
+      email: EMAIL,
+      password: 'Sup3r-secret',
+      provider: 'local',
+      confirmed: true,
+      role: role.id,
+    });
+    userId = user.id;
+    await strapi.documents(COMMENT_UID).create({
+      data: {
+        content: 'by a visitor',
+        related: relation,
+        approvalStatus: 'APPROVED',
+        authorId: 'visitor-1',
+        authorName: 'Visitor',
+        authorEmail: EMAIL,
+      },
+    });
+    await strapi.documents(COMMENT_UID).create({
+      data: {
+        content: 'by a user',
+        related: relation,
+        approvalStatus: 'APPROVED',
+        authorUser: userId,
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await cleanupStrapi();
+  });
+
+  it.each([
+    ['the flat list', (relation: string) => `/api/comments/${relation}/flat`],
+    ['the hierarchy', (relation: string) => `/api/comments/${relation}`],
+  ])('does not return an author email in %s', async (_name, path) => {
+    const res = await http().get(path(relation));
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(res.body)).not.toContain(EMAIL);
+    const comments = (Array.isArray(res.body) ? res.body : res.body.data) as ApiComment[];
+    // Both authors are still there, only the address is gone.
+    expect(comments.map((comment) => comment.author?.name).sort()).toEqual([
+      'Visitor',
+      'commenter',
+    ]);
+  });
+
+  it('does not return it in a reply either', async () => {
+    const parent = await strapi
+      .documents(COMMENT_UID)
+      .findFirst({ filters: { authorId: 'visitor-1' } });
+    await strapi.documents(COMMENT_UID).create({
+      data: {
+        content: 'a reply',
+        related: relation,
+        approvalStatus: 'APPROVED',
+        authorId: 'visitor-2',
+        authorName: 'Replier',
+        authorEmail: EMAIL,
+        threadOf: parent!.id,
+      },
+    });
+    const res = await http().get(`/api/comments/${relation}`);
+    expect(JSON.stringify(res.body)).toContain('a reply');
+    expect(JSON.stringify(res.body)).not.toContain(EMAIL);
+  });
+});
+
+describe('stripAuthorEmails', () => {
+  it('drops author.email through data and children, and keeps the rest', () => {
+    const input = {
+      data: [
+        {
+          id: 1,
+          author: { id: 'a', name: 'A', email: 'a@example.test' },
+          children: [{ id: 2, author: { id: 'b', email: 'b@example.test' }, children: [] }],
+        },
+      ],
+    };
+    expect(stripAuthorEmails(input)).toEqual({
+      data: [
+        {
+          id: 1,
+          author: { id: 'a', name: 'A' },
+          children: [{ id: 2, author: { id: 'b' }, children: [] }],
+        },
+      ],
+    });
+    // The input is not changed.
+    expect(input.data[0].author.email).toBe('a@example.test');
+  });
+
+  it('leaves values without an author alone', () => {
+    expect(stripAuthorEmails(null)).toBeNull();
+    expect(stripAuthorEmails({ id: 1, author: null })).toEqual({ id: 1, author: null });
+  });
+});

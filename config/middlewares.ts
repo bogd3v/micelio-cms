@@ -76,6 +76,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     // Outer to hide-unapproved-comments, so it only enriches what survives pruning.
     'global::fediverse-comment-fields',
     'global::hide-unapproved-comments',
+    'global::strip-comment-author-email',
   ];
 };
 
