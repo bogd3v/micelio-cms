@@ -64,7 +64,7 @@ export function accountEmailTemplates(siteName: string, language: string): Email
     return {
       email_confirmation: {
         object: `Confirma tu correo en ${site}`,
-        message: `<p>Hola <%= USER.username %>,</p>
+        message: `<p>Hola,</p>
 
 <p>Gracias por crear tu cuenta en ${site}. Confirma tu correo con este enlace:</p>
 
@@ -87,7 +87,7 @@ export function accountEmailTemplates(siteName: string, language: string): Email
   return {
     email_confirmation: {
       object: `Confirm your email for ${site}`,
-      message: `<p>Hi <%= USER.username %>,</p>
+      message: `<p>Hi,</p>
 
 <p>Thanks for creating your account on ${site}. Confirm your email with this link:</p>
 
@@ -120,6 +120,33 @@ async function siteIdentity(strapi: Core.Strapi): Promise<{ name: string; langua
   return { name: localized?.name || any?.name || FALLBACK_SITE_NAME, language };
 }
 
+// `<%= %>` writes its value unescaped, and the username is chosen by whoever
+// signs up, so the earlier default greeting let them put HTML in the email.
+const USERNAME_PLACEHOLDER = /\s*<%=\s*USER\.username\s*%>/g;
+
+/**
+ * Removes the unescaped username placeholder from the stored email templates,
+ * including the ones written by earlier versions of this migration. Runs on
+ * every boot and changes nothing once the placeholder is gone.
+ */
+async function removeUsernameFromTemplates(strapi: Core.Strapi): Promise<void> {
+  const pluginStore = strapi.store({ type: 'plugin', name: 'users-permissions' });
+  const email = (await pluginStore.get({ key: 'email' })) as EmailTemplates | null;
+  if (!email) return;
+  let changed = false;
+  for (const template of Object.values(email)) {
+    const message = template?.options?.message;
+    if (typeof message !== 'string') continue;
+    const cleaned = message.replace(USERNAME_PLACEHOLDER, '');
+    if (cleaned === message) continue;
+    template.options.message = cleaned;
+    changed = true;
+  }
+  if (!changed) return;
+  await pluginStore.set({ key: 'email', value: email });
+  strapi.log.info('Removed the unescaped username placeholder from the stored email templates.');
+}
+
 type EmailTemplates = Record<
   keyof EmailTemplateTexts,
   { options: Record<string, unknown> & { object: string; message: string } }
@@ -138,8 +165,9 @@ export type AccountSettingsReport = { settingsApplied: boolean; permissionsGrant
  *   leave them alone, so what an admin changes in the panel sticks; an
  *   instance where they were already applied (BogDev's, in Spanish) keeps
  *   its templates.
- * - Every boot (idempotent): grants `DELETE /api/users/me` to the Public,
- *   Authenticated and Editor roles. Runs after `seedSiteSettings` and
+ * - Every boot (idempotent): removes the unescaped username placeholder from
+ *   the stored email templates, and grants `DELETE /api/users/me` to the
+ *   Public, Authenticated and Editor roles. Runs after `seedSiteSettings` and
  *   `ensureEditorRole`.
  */
 export async function applyAccountSettings(strapi: Core.Strapi): Promise<AccountSettingsReport> {
@@ -166,6 +194,8 @@ export async function applyAccountSettings(strapi: Core.Strapi): Promise<Account
 
     await strapi.store.set({ ...MARKER, value: { version: VERSION } });
   }
+
+  await removeUsernameFromTemplates(strapi);
 
   let permissionsGranted = 0;
   for (const type of DELETE_ME_ROLES) {

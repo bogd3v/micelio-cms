@@ -20,7 +20,7 @@ interface SentEmail {
   text?: string;
 }
 
-type EmailTemplates = Record<string, { options: { object: string } }>;
+type EmailTemplates = Record<string, { options: { object: string; message: string } }>;
 type User = { id: number };
 
 describe('Accounts (users-permissions)', () => {
@@ -363,6 +363,30 @@ describe('Accounts (users-permissions)', () => {
       // No Spanish site settings exist, so the name comes from the default locale.
       expect(email.email_confirmation.options.object).toBe('Confirma tu correo en La Huerta');
       expect(email.reset_password.options.object).toBe('Restablece tu contraseña de La Huerta');
+    });
+
+    it('removes the username placeholder from templates stored by earlier versions', async () => {
+      const store = pluginStore();
+      const email = (await store.get({ key: 'email' })) as EmailTemplates;
+      email.email_confirmation.options.message = '<p>Hi <%= USER.username %>,</p><p><%= URL %></p>';
+      await store.set({ key: 'email', value: email });
+
+      await applyAccountSettings(strapi);
+
+      const after = (await store.get({ key: 'email' })) as EmailTemplates;
+      expect(after.email_confirmation.options.message).toBe('<p>Hi,</p><p><%= URL %></p>');
+
+      await applyAccountSettings(strapi);
+      expect(await store.get({ key: 'email' })).toEqual(after);
+    });
+
+    it('puts no user-chosen value in the emails, so none can inject HTML', () => {
+      for (const language of ['en', 'es']) {
+        const templates = accountEmailTemplates('La Huerta', language);
+        for (const { message } of Object.values(templates)) {
+          expect(message).not.toContain('USER.');
+        }
+      }
     });
 
     it('escapes the site name, so it cannot inject HTML or template code', () => {
