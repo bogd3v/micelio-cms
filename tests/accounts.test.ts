@@ -191,6 +191,69 @@ describe('Accounts (users-permissions)', () => {
     });
   });
 
+  describe('reset code expiry and session revocation', () => {
+    const requestCode = async (email: string): Promise<string> => {
+      sent.length = 0;
+      await http().post('/api/auth/forgot-password').send({ email }).expect(200);
+      return new URL(linkIn(sent[0])).searchParams.get('code') as string;
+    };
+    const reset = (code: string, password: string) =>
+      http()
+        .post('/api/auth/reset-password')
+        .send({ code, password, passwordConfirmation: password });
+    const backdateCode = (email: string, ms: number) =>
+      strapi.db.query(USER_UID).update({
+        where: { email },
+        data: { resetPasswordIssuedAt: new Date(Date.now() - ms).toISOString() },
+      });
+
+    it('refuses a code older than an hour and burns it', async () => {
+      await createUser('stale-code');
+      const code = await requestCode('stale-code@example.com');
+      await backdateCode('stale-code@example.com', 61 * 60 * 1000);
+
+      const res = await reset(code, 'N3w-secret-one');
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toBe('Incorrect code provided');
+
+      // A fresh code for the same user no longer collides with the burnt one.
+      const fresh = await requestCode('stale-code@example.com');
+      await reset(fresh, 'N3w-secret-one').expect(200);
+    });
+
+    it('accepts a code issued just under an hour ago', async () => {
+      await createUser('recent-code');
+      const code = await requestCode('recent-code@example.com');
+      await backdateCode('recent-code@example.com', 59 * 60 * 1000);
+      await reset(code, 'N3w-secret-two').expect(200);
+    });
+
+    it('refuses a code that has no issue time (issued before this fix)', async () => {
+      const user = await createUser('legacy-code');
+      await strapi.db
+        .query(USER_UID)
+        .update({ where: { id: user.id }, data: { resetPasswordToken: 'a'.repeat(128) } });
+      await reset('a'.repeat(128), 'N3w-secret-three').expect(400);
+    });
+
+    it('rejects a JWT issued before the reset, and accepts the one the reset returns', async () => {
+      const user = await createUser('old-session');
+      // `iat` has second precision: age the old token by a second.
+      const old = strapi
+        .plugin('users-permissions')
+        .service('jwt')
+        .issue({ id: user.id }, { notBefore: 0 }) as string;
+      await http().get('/api/users/me').set('Authorization', `Bearer ${old}`).expect(200);
+
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      const code = await requestCode('old-session@example.com');
+      const res = await reset(code, 'N3w-secret-four').expect(200);
+
+      await http().get('/api/users/me').set('Authorization', `Bearer ${old}`).expect(401);
+      await http().get('/api/users/me').set('Authorization', `Bearer ${res.body.jwt}`).expect(200);
+    });
+  });
+
   describe('GET /api/users/me', () => {
     it('returns the editor role', async () => {
       const editor = await createUser('editor-me', 'editor');

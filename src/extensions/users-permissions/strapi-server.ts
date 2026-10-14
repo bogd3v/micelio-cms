@@ -4,11 +4,27 @@
 import type { Context, Next } from 'koa';
 import { errors } from '@strapi/utils';
 import { checkPassword, deleteAccount } from './delete-account';
+import {
+  SECURITY_ATTRIBUTES,
+  wrapJwtService,
+  wrapResetPassword,
+  wrapUserService,
+} from './reset-security';
 
 type Route = { method: string; path: string; handler: string; config?: Record<string, unknown> };
 
+/** The plugin exports `auth` as a factory, so a property assigned on it would be ignored. */
+type AuthControllerFactory = (args: {
+  strapi: unknown;
+}) => Record<string, (ctx: Context) => Promise<unknown>>;
+
 interface UsersPermissionsPlugin {
-  controllers: { user: Record<string, (ctx: Context) => Promise<unknown>> };
+  controllers: {
+    user: Record<string, (ctx: Context) => Promise<unknown>>;
+    auth: AuthControllerFactory;
+  };
+  services: Record<string, (args: { strapi: unknown }) => Record<string, never>>;
+  contentTypes: { user: { schema: { attributes: Record<string, unknown> } } };
   routes: { 'content-api': { routes: Route[] } };
 }
 
@@ -29,6 +45,17 @@ type SessionUser = {
 };
 
 export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
+  // Reset codes expire and a password change revokes older JWTs (GHSA-xfrm-8c63-m3cj).
+  Object.assign(plugin.contentTypes.user.schema.attributes, SECURITY_ATTRIBUTES);
+  plugin.services.user = wrapUserService(plugin.services.user as never) as never;
+  plugin.services.jwt = wrapJwtService(plugin.services.jwt as never) as never;
+  const authFactory = plugin.controllers.auth;
+  plugin.controllers.auth = (args) => {
+    const auth = authFactory(args);
+    auth.resetPassword = wrapResetPassword(auth.resetPassword);
+    return auth;
+  };
+
   // The frontend reads the role of the session user (`role.type === 'editor'`)
   // from /users/me, but populating `role` needs `role.find` on the caller's
   // role, which would list every role to anyone signed in. The authenticated
