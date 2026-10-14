@@ -52,9 +52,12 @@ BUILD_API_TOKEN=<32+ random characters>      # read-only, for static builds
 ```env
 CORS_ORIGINS=https://example.com   # browser origins allowed by CORS, comma separated
 STRAPI_MCP_ENABLED=true            # /mcp (admin API tokens); false where no agent needs it
+POPULATE_MAX_DEPTH=3               # relation levels a content API `populate` may nest
 ```
 
 Without `CORS_ORIGINS` Strapi reflects any `Origin` with credentials allowed, so list the frontend in production. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed.
+
+A content API request whose `populate` nests deeper than `POPULATE_MAX_DEPTH` levels (default 3, the deepest the Micelio frontend asks for) is answered with 400: Strapi has no limit of its own, and articles, categories and tags relate back to each other. A custom frontend that needs more raises the value.
 
 ## Rate limiting
 

@@ -53,6 +53,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     // Before the body is read, so a flood is refused without parsing it.
     'global::rate-limit',
     'strapi::query',
+    // Needs the parsed query. Strapi has no populate depth limit.
+    { name: 'global::populate-depth', config: { maxDepth: env.int('POPULATE_MAX_DEPTH', 3) } },
     {
       name: 'strapi::body',
       // DELETE too: DELETE /api/users/me takes the current password in its body.
