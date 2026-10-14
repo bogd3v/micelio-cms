@@ -160,7 +160,7 @@ While enabled, the two required values have no defaults: without them the plugin
 
 - **Node 22.12 or later.** Fedify depends on an ESM-only package that `require()` loads only from that version on. The image is on Node 22.
 - **A persistent database.** Followers, the actor's key pair and the record of federated articles live in the database. If it is wiped, the next boot generates a new actor key and every follower is lost.
-- **Proxy headers.** Behind a TLS-terminating proxy, generated URLs use `https` only if the CMS follows `X-Forwarded-Proto` and `X-Forwarded-Host`: that is the default; `TRUST_PROXY_PROTOCOL=false` turns it off.
+- **Proxy headers.** Behind a TLS-terminating proxy, generated URLs use `https` only if the CMS follows `X-Forwarded-Proto` and `X-Forwarded-Host`: that is the default; `TRUST_PROXY_PROTOCOL=false` turns it off. Federation does not depend on those headers when `URL` is set: every actor, inbox, key and WebFinger id is built from the origin of `URL`, so a forged `X-Forwarded-Host` cannot make the actor document name another host. Set `URL` to the real public origin in production; unset, the ids follow the request.
 - **No proxy or DNS changes.** Fedify's routes (`/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/*`) are served by the CMS on the same domain as the API.
 
 ### Enable it on a running site
