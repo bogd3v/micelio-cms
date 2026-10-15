@@ -4,6 +4,7 @@
 import type { Context, Next } from 'koa';
 import { errors } from '@strapi/utils';
 import { checkPassword, deleteAccount } from './delete-account';
+import { onlyConfirmation, wrapEmailConfirmation } from './email-confirmation';
 import { wrapJwtClaims } from './jwt-claims';
 import {
   SECURITY_ATTRIBUTES,
@@ -54,6 +55,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
   plugin.controllers.auth = (args) => {
     const auth = authFactory(args);
     auth.resetPassword = wrapResetPassword(auth.resetPassword);
+    auth.emailConfirmation = wrapEmailConfirmation(auth.emailConfirmation);
     return auth;
   };
 
@@ -96,6 +98,18 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
     config: {
       prefix: '',
       middlewares: [onlyPassword, 'plugin::users-permissions.rateLimit'],
+    },
+  });
+
+  // POST confirms without a GET (ASVS V3.5.3). Same action as the GET, so the
+  // Public role's permission already covers it.
+  plugin.routes['content-api'].routes.push({
+    method: 'POST',
+    path: '/auth/email-confirmation',
+    handler: 'auth.emailConfirmation',
+    config: {
+      prefix: '',
+      middlewares: [onlyConfirmation, 'plugin::users-permissions.rateLimit'],
     },
   });
 

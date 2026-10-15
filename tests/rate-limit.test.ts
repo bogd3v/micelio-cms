@@ -187,6 +187,19 @@ describe('Rate limiting (application level)', () => {
       expect((await http().post('/api/AUTH/local').set(client).send({})).status).toBe(429);
     });
 
+    it('counts GET and POST /api/auth/email-confirmation in one bucket', async () => {
+      const client = asClient('203.0.113.44');
+      const token = 'a'.repeat(40);
+      const results = await statuses(7, (i) =>
+        i % 2 === 0
+          ? http().get(`/api/auth/email-confirmation?confirmation=${token}`).set(client)
+          : http().post('/api/auth/email-confirmation').set(client).send({ confirmation: token })
+      );
+      // 400 (invalid token), not 405: the POST route exists.
+      expect(results.slice(0, 5)).toEqual([400, 400, 400, 400, 400]);
+      expect(results.slice(5)).toEqual([429, 429]);
+    });
+
     it('limits DELETE /api/users/me with the plugin limiter off', async () => {
       const client = { ...asClient('203.0.113.42'), Authorization: `Bearer ${userJwt}` };
       const results = await statuses(7, () =>

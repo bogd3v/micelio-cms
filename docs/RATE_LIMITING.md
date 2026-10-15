@@ -45,7 +45,7 @@ Paths are lower-cased and normalized before matching, so `/API/Auth/Local/` is t
 
 ### Auth route families
 
-`auth` keys include the path, so one client may use each family up to the limit: each exact path of `/api/auth/local`, `/local/register`, `/forgot-password`, `/reset-password`, `/send-email-confirmation`, `/change-password`, `/email-confirmation`, `/refresh` and `/logout` has its own key; `/api/connect/*` is one family; `/api/auth/:provider/callback` is one family; any other `/api/auth/*` shares one key; `DELETE /api/users/me` has its own. A made-up path segment therefore cannot open a new bucket.
+`auth` keys include the path, so one client may use each family up to the limit: each exact path of `/api/auth/local`, `/local/register`, `/forgot-password`, `/reset-password`, `/send-email-confirmation`, `/change-password`, `/email-confirmation`, `/refresh` and `/logout` has its own key; `/api/connect/*` is one family; `/api/auth/:provider/callback` is one family; any other `/api/auth/*` shares one key; `DELETE /api/users/me` has its own. A made-up path segment therefore cannot open a new bucket. The key has no method, so `GET` and `POST /api/auth/email-confirmation` count in the same bucket. The `POST` route keeps only the `confirmation` field of the body before the users-permissions limiter reads it, so an extra `email` cannot open a fresh bucket.
 
 ### Per-account limits
 

@@ -3,6 +3,8 @@ import { createHmac } from 'node:crypto';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole, getRole } from './helpers/permissions';
+import { restoreRateLimitEnv, setRateLimitEnv } from './helpers/rate-limit-env';
+import { NO_STORE } from '../src/utils/cache-control';
 import { accountEmailTemplates, applyAccountSettings } from '../src/migrations/account-settings';
 
 const USER_UID = 'plugin::users-permissions.user';
@@ -54,6 +56,16 @@ describe('Accounts (users-permissions)', () => {
 
   beforeAll(async () => {
     process.env.FRONTEND_URL = 'https://bogdev.test';
+    // `RATE_LIMIT_ENABLED=true` turns on every app-level group for this suite and,
+    // as a side effect, switches the plugin limiter off. The suite sends many
+    // requests from one client, so the groups it can hit get high limits.
+    setRateLimitEnv({
+      RATE_LIMIT_ENABLED: 'true',
+      RATE_LIMIT_AUTH: '1000/60',
+      RATE_LIMIT_AUTH_EMAIL: '1000/60',
+      RATE_LIMIT_AUTH_IDENTIFIER: '1000/60',
+      RATE_LIMIT_API: '1000/60',
+    });
     await setupStrapi();
 
     // Captures what would go out through SMTP.
@@ -76,6 +88,7 @@ describe('Accounts (users-permissions)', () => {
 
   afterAll(async () => {
     await cleanupStrapi();
+    restoreRateLimitEnv();
     delete process.env.FRONTEND_URL;
   });
 
@@ -225,6 +238,71 @@ describe('Accounts (users-permissions)', () => {
 
       expect(res.status).toBe(400);
       expect(await strapi.query(USER_UID).count({ where: { username: 'mallory' } })).toBe(0);
+    });
+  });
+
+  describe('email confirmation', () => {
+    const CONFIRM_PATH = '/api/auth/email-confirmation';
+    /** Signs up and returns the emailed token. */
+    const signUp = async (username: string): Promise<string> => {
+      sent.length = 0;
+      await http()
+        .post('/api/auth/local/register')
+        .send({ username, email: `${username}@example.com`, password: PASSWORD })
+        .expect(200);
+      const token = new URL(linkIn(sent[0])).searchParams.get('confirmation');
+      if (!token) throw new Error('The link has no token');
+      return token;
+    };
+    const isConfirmed = async (username: string): Promise<boolean> =>
+      (await strapi.query(USER_UID).findOne({ where: { username } })).confirmed;
+
+    it('confirms with POST and the emailed token', async () => {
+      const token = await signUp('post-confirm');
+
+      const res = await http().post(CONFIRM_PATH).send({ confirmation: token }).expect(204);
+      expect(res.headers['cache-control']).toBe(NO_STORE);
+      expect(await isConfirmed('post-confirm')).toBe(true);
+      await http()
+        .post('/api/auth/local')
+        .send({ identifier: 'post-confirm@example.com', password: PASSWORD })
+        .expect(200);
+    });
+
+    it('refuses a used, unknown or malformed token', async () => {
+      const token = await signUp('post-refused');
+
+      for (const body of [
+        { confirmation: 'a'.repeat(40) },
+        { confirmation: token.toUpperCase() },
+        { confirmation: token.slice(1) },
+        { confirmation: [token] },
+        { confirmation: { $ne: '' } },
+        {},
+      ]) {
+        const res = await http().post(CONFIRM_PATH).send(body).expect(400);
+        expect(res.body.error.message).toBe('Invalid token');
+        expect(await isConfirmed('post-refused')).toBe(false);
+      }
+
+      await http().post(CONFIRM_PATH).send({ confirmation: token }).expect(204);
+      const reused = await http().post(CONFIRM_PATH).send({ confirmation: token }).expect(400);
+      expect(reused.body.error.message).toBe('Invalid token');
+    });
+
+    it('ignores a token in the query of a POST', async () => {
+      const token = await signUp('post-query');
+
+      await http().post(`${CONFIRM_PATH}?confirmation=${token}`).send({}).expect(400);
+      expect(await isConfirmed('post-query')).toBe(false);
+    });
+
+    it('does not issue a JWT', async () => {
+      const token = await signUp('post-no-jwt');
+
+      const res = await http().post(CONFIRM_PATH).send({ confirmation: token }).expect(204);
+      expect(res.body).toEqual({});
+      expect(res.text).toBe('');
     });
   });
 
