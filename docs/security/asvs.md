@@ -32,24 +32,24 @@ An open requirement that an attacker could exploit is **not** described here or 
 | --------------------------------------- | ------ | ------ | -------- | ------ | ------ |
 | V1 Encoding and Sanitization            | L2     | 11     | 4        | 8      | 4      |
 | V2 Validation and Business Logic        | L2     | 9      | 0        | 1      | 1      |
-| V3 Web Frontend Security                | L1     | 7      | 2        | 0      | 10     |
-| V4 API and Web Service                  | L1     | 0      | 1        | 7      | 2      |
-| V5 File Handling                        | L1     | 1      | 3        | 2      | 3      |
-| V6 Authentication                       | L2     | 5      | 6        | 13     | 11     |
-| V7 Session Management                   | L2     | 3      | 5        | 2      | 8      |
-| V8 Authorization                        | L2     | 5      | 0        | 1      | 1      |
+| V3 Web Frontend Security                | L1     | 14     | 2        | 0      | 3      |
+| V4 API and Web Service                  | L1     | 2      | 1        | 7      | 0      |
+| V5 File Handling                        | L1     | 2      | 3        | 2      | 2      |
+| V6 Authentication                       | L2     | 9      | 6        | 13     | 7      |
+| V7 Session Management                   | L2     | 7      | 5        | 2      | 4      |
+| V8 Authorization                        | L2     | 6      | 0        | 1      | 0      |
 | V9 Self-contained Tokens                | L1     | 0      | 4        | 1      | 2      |
 | V10 OAuth and OIDC                      | L1     | 0      | 0        | 29     | 0      |
-| V11 Cryptography                        | L1     | 3      | 5        | 1      | 5      |
-| V12 Secure Communication                | L1     | 2      | 1        | 5      | 1      |
-| V13 Configuration                       | L1     | 6      | 2        | 2      | 3      |
-| V14 Data Protection                     | L1     | 1      | 2        | 0      | 6      |
-| V15 Secure Coding and Architecture      | L1     | 7      | 0        | 0      | 6      |
-| V16 Security Logging and Error Handling | L1     | 4      | 1        | 2      | 9      |
+| V11 Cryptography                        | L1     | 5      | 5        | 1      | 3      |
+| V12 Secure Communication                | L1     | 3      | 1        | 5      | 0      |
+| V13 Configuration                       | L1     | 7      | 2        | 2      | 2      |
+| V14 Data Protection                     | L1     | 5      | 2        | 0      | 2      |
+| V15 Secure Coding and Architecture      | L1     | 11     | 0        | 0      | 2      |
+| V16 Security Logging and Error Handling | L1     | 6      | 1        | 2      | 7      |
 | V17 WebRTC                              | L1     | 0      | 0        | 7      | 0      |
-| **Total (253 requirements)**            |        | **64** | **36**   | **81** | **72** |
+| **Total (253 requirements)**            |        | **97** | **36**   | **81** | **39** |
 
-Of the open requirements, 9 are tracked in private security advisories and 63 are not exploitable and are grouped in the five issues above.
+Of the 39 open requirements, 33 are not exploitable and are grouped in the five issues above, V3.5.4 is an accepted risk written in its row, and 5 (V1.3.3, V1.3.4, V5.2.2, V14.2.1, V15.3.1) still wait for a decision between a private advisory and an accepted-risk note.
 
 ## Keeping it true
 
