@@ -78,6 +78,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     { name: 'strapi::session', config: { sameSite: 'lax' } },
     'strapi::favicon',
     'strapi::public',
+    // Needs the parsed query; refuses author filters before the plugin runs.
+    'global::restrict-comment-filters',
     // Outer to hide-unapproved-comments, so it only enriches what survives pruning.
     'global::fediverse-comment-fields',
     'global::hide-unapproved-comments',

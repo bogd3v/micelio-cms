@@ -12,7 +12,8 @@ function isHidden(value: unknown, hiddenIds: ReadonlySet<number> = new Set()): b
 
 /**
  * Collects the ids of the comments in a response body: a bare array, a single
- * comment, or `{ data: [...] }`, with nested `children` arrays.
+ * comment, or `{ data: [...] }`, with nested `children` arrays and `threadOf`
+ * parents (an object, or a bare id).
  */
 function collectIds(value: unknown, ids: Set<number>): void {
   if (Array.isArray(value)) {
@@ -20,8 +21,10 @@ function collectIds(value: unknown, ids: Set<number>): void {
     return;
   }
   if (value == null || typeof value !== 'object') return;
-  const node = value as { id?: unknown; data?: unknown; children?: unknown };
+  const node = value as { id?: unknown; data?: unknown; children?: unknown; threadOf?: unknown };
   if (typeof node.id === 'number') ids.add(node.id);
+  if (typeof node.threadOf === 'number') ids.add(node.threadOf);
+  else if (node.threadOf != null) collectIds(node.threadOf, ids);
   if ('data' in node) collectIds(node.data, ids);
   if ('children' in node) collectIds(node.children, ids);
 }
@@ -30,7 +33,8 @@ function collectIds(value: unknown, ids: Set<number>): void {
  * Removes hidden comments — and, since they hang off a hidden parent, their
  * whole subtree — from the shapes the comments plugin returns: a bare array
  * (hierarchy), or `{ data: [...] }` (flat / per-author), with nested
- * `children` arrays.
+ * `children` arrays. A `threadOf` that points to a hidden comment becomes
+ * `null`.
  *
  * @param hiddenIds - Ids known to be hidden, for a response whose comments
  * carry no `approvalStatus` (a client can drop it with `omit` or `fields`).
@@ -45,6 +49,11 @@ export function pruneHiddenComments<T>(value: T, hiddenIds?: ReadonlySet<number>
     const node: Record<string, unknown> = { ...(value as Record<string, unknown>) };
     if ('data' in node) node.data = pruneHiddenComments(node.data, hiddenIds);
     if ('children' in node) node.children = pruneHiddenComments(node.children, hiddenIds);
+    // The parent of a visible reply may itself be hidden: it must not leak through `threadOf`.
+    const parent = node.threadOf;
+    if (typeof parent === 'number' ? hiddenIds?.has(parent) : isHidden(parent, hiddenIds)) {
+      node.threadOf = null;
+    }
     return node as T;
   }
   return value;
