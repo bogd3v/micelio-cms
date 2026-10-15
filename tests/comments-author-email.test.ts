@@ -3,7 +3,8 @@ import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole, getRole } from './helpers/permissions';
 import type { ApiComment } from './helpers/api-types';
-import { stripAuthorEmails } from '../src/utils/comment-author';
+import { AUTHOR_FILTER_KEYS } from '../src/constants/comments';
+import { findBlockedFilterKey, stripPrivateCommentFields } from '../src/utils/comment-author';
 
 const ARTICLE_UID = 'api::article.article';
 const COMMENT_UID = 'plugin::comments.comment';
@@ -101,7 +102,7 @@ describe('Comment author emails', () => {
   });
 });
 
-describe('stripAuthorEmails', () => {
+describe('stripPrivateCommentFields', () => {
   it('drops author.email through data and children, and keeps the rest', () => {
     const input = {
       data: [
@@ -112,7 +113,7 @@ describe('stripAuthorEmails', () => {
         },
       ],
     };
-    expect(stripAuthorEmails(input)).toEqual({
+    expect(stripPrivateCommentFields(input)).toEqual({
       data: [
         {
           id: 1,
@@ -126,7 +127,53 @@ describe('stripAuthorEmails', () => {
   });
 
   it('leaves values without an author alone', () => {
-    expect(stripAuthorEmails(null)).toBeNull();
-    expect(stripAuthorEmails({ id: 1, author: null })).toEqual({ id: 1, author: null });
+    expect(stripPrivateCommentFields(null)).toBeNull();
+    expect(stripPrivateCommentFields({ id: 1, author: null })).toEqual({ id: 1, author: null });
+  });
+});
+
+describe('stripPrivateCommentFields: threadOf and reports', () => {
+  it('drops the email on threadOf and the reports at every level', () => {
+    const input = {
+      data: [
+        {
+          id: 2,
+          reports: [{ id: 9, content: 'x' }],
+          author: { id: 'b', email: 'b@example.test' },
+          threadOf: { id: 1, author: { id: 'a', email: 'a@example.test' }, reports: [{ id: 8 }] },
+          children: [{ id: 3, reports: [], threadOf: 2 }],
+        },
+      ],
+    };
+    expect(stripPrivateCommentFields(input)).toEqual({
+      data: [
+        {
+          id: 2,
+          author: { id: 'b' },
+          threadOf: { id: 1, author: { id: 'a' } },
+          children: [{ id: 3, threadOf: 2 }],
+        },
+      ],
+    });
+  });
+});
+
+describe('findBlockedFilterKey', () => {
+  it('finds an author key at any depth, in objects and arrays', () => {
+    expect(findBlockedFilterKey({ authorEmail: { $eq: 'a' } }, AUTHOR_FILTER_KEYS)).toBe(
+      'authorEmail'
+    );
+    expect(
+      findBlockedFilterKey(
+        { $and: [{ $or: [{ threadOf: { authorId: 'x' } }] }] },
+        AUTHOR_FILTER_KEYS
+      )
+    ).toBe('authorId');
+  });
+
+  it('answers null for other filters and for non-objects', () => {
+    expect(findBlockedFilterKey({ content: { $contains: 'a' } }, AUTHOR_FILTER_KEYS)).toBeNull();
+    expect(findBlockedFilterKey(undefined, AUTHOR_FILTER_KEYS)).toBeNull();
+    expect(findBlockedFilterKey('authorEmail', AUTHOR_FILTER_KEYS)).toBeNull();
   });
 });

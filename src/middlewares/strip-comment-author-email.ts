@@ -1,10 +1,11 @@
 import type { Core } from '@strapi/strapi';
 import { isCommentsApiPath } from '../utils/comments-path';
-import { stripAuthorEmails } from '../utils/comment-author';
+import { stripPrivateCommentFields } from '../utils/comment-author';
 
 /**
- * Removes the author's email from every response of the comments plugin's
- * public API (`stripAuthorEmails`). Moderators read emails in the admin panel,
+ * Removes the author's email (also on `threadOf`) and the abuse reports from
+ * every successful response of the comments plugin's public API
+ * (`stripPrivateCommentFields`). Moderators read both in the admin panel,
  * which is not this API.
  */
 export default (_config: unknown, _: { strapi: Core.Strapi }) =>
@@ -14,5 +15,5 @@ export default (_config: unknown, _: { strapi: Core.Strapi }) =>
   ): Promise<void> => {
     await next();
     if (!isCommentsApiPath(ctx.path) || ctx.status >= 300 || ctx.body == null) return;
-    ctx.body = stripAuthorEmails(ctx.body);
+    ctx.body = stripPrivateCommentFields(ctx.body);
   };
