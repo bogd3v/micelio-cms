@@ -6,19 +6,20 @@ Every sign-in, sign-up, reset and session pathway of the CMS, with its limits an
 
 ## Endpoints the frontend uses
 
-| Action              | Endpoint                                                                     |
-| ------------------- | ---------------------------------------------------------------------------- |
-| Sign up             | `POST /api/auth/local/register` — `{ username, email, password }` only       |
-| Sign in             | `POST /api/auth/local` — `{ identifier, password }`                          |
-| Confirm email       | `GET /api/auth/email-confirmation?confirmation=…` (link in the email)        |
-| Resend confirmation | `POST /api/auth/send-email-confirmation` — `{ email }`                       |
-| Forgot password     | `POST /api/auth/forgot-password` — `{ email }`                               |
-| Reset password      | `POST /api/auth/reset-password` — `{ code, password, passwordConfirmation }` |
-| Current user        | `GET /api/users/me` (`role` is always included, see below)                   |
-| Delete own account  | `DELETE /api/users/me` — `{ password }`, JWT required                        |
+| Action              | Endpoint                                                                           |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| Sign up             | `POST /api/auth/local/register` — `{ username, email, password }` only             |
+| Sign in             | `POST /api/auth/local` — `{ identifier, password }`                                |
+| Confirm email       | `POST /api/auth/email-confirmation` — `{ confirmation }` (the token from the link) |
+| Resend confirmation | `POST /api/auth/send-email-confirmation` — `{ email }`                             |
+| Forgot password     | `POST /api/auth/forgot-password` — `{ email }`                                     |
+| Reset password      | `POST /api/auth/reset-password` — `{ code, password, passwordConfirmation }`       |
+| Current user        | `GET /api/users/me` (`role` is always included, see below)                         |
+| Delete own account  | `DELETE /api/users/me` — `{ password }`, JWT required                              |
 
 - Sign-up returns `{ user }` without a `jwt`: the account can't sign in until the email is confirmed (`POST /api/auth/local` answers 400 "Your account email is not confirmed").
-- The confirmation link points at the API, which confirms and redirects (302) to `<FRONTEND_URL>/account/confirmed`.
+- The frontend confirms with `POST /api/auth/email-confirmation` and the JSON body `{ "confirmation": "<token>" }`, taking the token from the link's `confirmation` query parameter. It answers 204 with no body and no JWT (`Cache-Control: no-store`), so the person signs in afterwards. A malformed, unknown or already used token answers 400 `Invalid token`. A token in the query of the POST is ignored.
+- The link in the email still opens `GET /api/auth/email-confirmation?confirmation=…`, which confirms and redirects (302) to `<FRONTEND_URL>/account/confirmed`. This GET is legacy: it will stop confirming and only redirect, so a frontend should not depend on it for confirmation. A mail scanner that opens the link can spend the token, which is why the POST exists (ASVS V3.5.3, #178).
 - The reset email links to `<FRONTEND_URL>/account/reset-password?code=…`; the frontend posts that `code` to `/api/auth/reset-password`.
 - A password needs **8 or more characters** (at most 72 bytes), may not be one of the 3000 most common passwords or in the local list of breached passwords, and may not contain `micelio`, `strapi` or a word of `PASSWORD_BANNED_WORDS`; sign-up, reset and change answer 400 with the reason. There are no composition rules. See `docs/security/authentication.md`.
 - Reader JWTs carry `type: 'reader'` and `aud: 'micelio:reader'`, and a token without them is refused with 401, even when its signature is valid. **Upgrade note:** JWTs issued before this release have neither claim, so every reader signs in again once after the upgrade.
