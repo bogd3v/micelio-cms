@@ -3,9 +3,9 @@ import { isCommentsApiPath } from '../utils/comments-path';
 import { stripPrivateCommentFields } from '../utils/comment-author';
 
 /**
- * Removes the author's email (also on `threadOf`) and the abuse reports from
- * every successful response of the comments plugin's public API
- * (`stripPrivateCommentFields`). Moderators read both in the admin panel,
+ * Removes the author's email and the abuse reports from every successful
+ * response of the comments plugin's public API, and reduces `threadOf` to
+ * `{ id }` (`stripPrivateCommentFields`). Moderators read both in the admin panel,
  * which is not this API.
  */
 export default (_config: unknown, _: { strapi: Core.Strapi }) =>

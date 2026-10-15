@@ -133,7 +133,7 @@ describe('stripPrivateCommentFields', () => {
 });
 
 describe('stripPrivateCommentFields: threadOf and reports', () => {
-  it('drops the email on threadOf and the reports at every level', () => {
+  it('reduces threadOf to its id and drops the reports at every level', () => {
     const input = {
       data: [
         {
@@ -150,10 +150,21 @@ describe('stripPrivateCommentFields: threadOf and reports', () => {
         {
           id: 2,
           author: { id: 'b' },
-          threadOf: { id: 1, author: { id: 'a' } },
+          threadOf: { id: 1 },
           children: [{ id: 3, threadOf: 2 }],
         },
       ],
+    });
+  });
+});
+
+describe('stripPrivateCommentFields: threadOf values', () => {
+  it('keeps null and a bare id, and gives an object without id as an empty object', () => {
+    expect(stripPrivateCommentFields({ id: 1, threadOf: null })).toEqual({ id: 1, threadOf: null });
+    expect(stripPrivateCommentFields({ id: 1, threadOf: 7 })).toEqual({ id: 1, threadOf: 7 });
+    expect(stripPrivateCommentFields({ id: 1, threadOf: { content: 'x' } })).toEqual({
+      id: 1,
+      threadOf: { id: undefined },
     });
   });
 });

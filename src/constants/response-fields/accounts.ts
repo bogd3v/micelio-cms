@@ -24,24 +24,8 @@ const COMMENT: Shape = {
   locale: 'surplus',
 };
 
-/** The parent of a reply, as the plugin returns it: the whole comment, of which the frontend reads the id. */
-const THREAD_PARENT: Shape = {
-  id: 'required',
-  documentId: 'surplus',
-  content: 'surplus',
-  blocked: 'surplus',
-  blockedThread: 'surplus',
-  blockReason: 'surplus',
-  isAdminComment: 'surplus',
-  removed: 'surplus',
-  approvalStatus: 'surplus',
-  related: 'surplus',
-  createdAt: 'surplus',
-  updatedAt: 'surplus',
-  publishedAt: 'surplus',
-  locale: 'surplus',
-  author: { use: 'surplus', of: { id: 'surplus', name: 'surplus', avatar: 'surplus' } },
-};
+/** The parent of a reply: only its id, which is what the frontend reads (`stripPrivateCommentFields`). */
+const THREAD_PARENT: Shape = { id: 'required' };
 
 /** The subscriber row, as `find`, `create` and `update` return it. */
 const SUBSCRIBER_FIELDS: Shape = {

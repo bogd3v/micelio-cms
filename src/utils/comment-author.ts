@@ -1,12 +1,14 @@
 /**
  * Copy of a comments API response without what a reader must not get: the
- * email of any comment's author (also on `threadOf`) and the abuse reports.
+ * email of any comment's author and the abuse reports. The parent of a reply
+ * (`threadOf`) is reduced to `{ id }`, the only part the frontend reads
+ * (ASVS V15.3.1); `null` and a bare id are kept as they are.
  *
  * @remarks
  * The plugin's `blockedAuthorProps` setting is not applied on the public read
  * routes, `autopopulate` hands out `author.email`, and `reports` carries the
  * text of unresolved reports. Walks the shapes the plugin returns: a bare
- * array, a single comment, `{ data: [...] }`, and nested `children` and `threadOf`.
+ * array, a single comment, `{ data: [...] }`, and nested `children`.
  */
 export function stripPrivateCommentFields<T>(value: T): T {
   if (Array.isArray(value)) return value.map((item) => stripPrivateCommentFields(item)) as T;
@@ -19,8 +21,12 @@ export function stripPrivateCommentFields<T>(value: T): T {
     delete rest.email;
     node.author = rest;
   }
-  for (const key of ['data', 'children', 'threadOf']) {
+  for (const key of ['data', 'children']) {
     if (key in node) node[key] = stripPrivateCommentFields(node[key]);
+  }
+  const parent = node.threadOf;
+  if (parent != null && typeof parent === 'object' && !Array.isArray(parent)) {
+    node.threadOf = { id: (parent as { id?: unknown }).id };
   }
   return node as T;
 }

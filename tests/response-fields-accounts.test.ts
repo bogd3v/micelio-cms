@@ -168,6 +168,19 @@ describe('Response fields of comments, the signed-in user and subscribers (ASVS 
     });
   });
 
+  it('threadOf is { id } or null on the flat list, for both callers', async () => {
+    for (const headers of [{}, frontend] as Record<string, string>[]) {
+      const res = await http().get(`/api/comments/${relation}/flat`).set(headers);
+      const replies = (res.body.data as { threadOf?: unknown }[]).filter((c) => c.threadOf);
+      expect(replies.length).toBeGreaterThanOrEqual(2);
+      for (const reply of replies) expect(Object.keys(reply.threadOf as object)).toEqual(['id']);
+      const answers = (res.body.data as { content: string; threadOf?: unknown }[]).filter((c) =>
+        c.content.startsWith('An answer to a pending')
+      );
+      for (const answer of answers) expect(answer.threadOf).toBeNull();
+    }
+  });
+
   it('comments.post returns only listed fields and every required one', async () => {
     const res = await http()
       .post(`/api/comments/${relation}`)
@@ -180,6 +193,7 @@ describe('Response fields of comments, the signed-in user and subscribers (ASVS 
       });
     expect(res.status).toBe(200);
     assertShape(route('comments.post'), 'frontend', [res.body]);
+    expect(res.body.threadOf).toEqual({ id: parentId });
     expect(JSON.stringify(res.body)).not.toContain(POSTER_EMAIL);
   });
 
