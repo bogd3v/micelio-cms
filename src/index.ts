@@ -36,6 +36,7 @@ import { assertFrontendUrlConfigured } from './utils/frontend-url';
 import { assertSecretsConfigured } from './utils/secrets';
 import { assertUpstreamsUseTls } from './utils/plain-http';
 import { installForwardedTrust } from './utils/forwarded-trust';
+import { warnLocalUploadsInProduction } from './utils/upload-provider';
 import {
   destroyRateLimit,
   getClientIpSettings,
@@ -57,6 +58,8 @@ export default {
     assertSecretsConfigured();
     // Umami and the rebuild hook receive a credential: no plain http to a public host.
     assertUpstreamsUseTls();
+    // Production should not serve uploads from the admin origin (local provider).
+    warnLocalUploadsInProduction(strapi);
     if (process.env.SMTP_HOST && !process.env.EMAIL_FROM) {
       strapi.log.warn(
         "[email] EMAIL_FROM is not set: emails go out from no-reply@ the frontend's host"

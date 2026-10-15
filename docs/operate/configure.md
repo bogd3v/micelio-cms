@@ -120,6 +120,8 @@ R2_BASE_URL=https://media.example.com   # public URL of the bucket; also allowed
 
 With the local disk the files are served from the CMS origin, the one the admin panel runs on, so the CMS treats an upload as untrusted: HTML and XHTML uploads are refused, and everything under `/uploads` is sent with `X-Content-Type-Options: nosniff`. Anything that is not a raster image, video, audio or PDF (an SVG, a text file) also gets `Content-Security-Policy: … sandbox` and `Content-Disposition: attachment`, so opened on its own it runs no script; as an `<img>` it renders as usual. A bucket on its own origin avoids the question, and is the better choice when editors are not all trusted.
 
+The local provider is meant for development and small setups. A file that a browser renders inline runs with the privileges of the admin origin, which is why `global::upload-headers` serves only raster images, video, audio and PDF inline and everything else as an attachment under a sandbox policy. In production, serve uploads from object storage (the `R2_*` variables above) or from another hostname. With `NODE_ENV=production` and the local provider, the CMS logs one `[uploads]` warning at boot and keeps starting; there is no setting to silence it. Setting `R2_BUCKET` removes it.
+
 ## Analytics (Umami)
 
 The CMS reads the visitors of each article from a self-hosted [Umami](https://umami.is) every hour and serves the most read list at `GET /api/articles/popular`. Without `UMAMI_URL` nothing runs and that endpoint answers an empty list. Full behaviour in `docs/ANALYTICS.md`.
