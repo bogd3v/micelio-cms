@@ -8,10 +8,10 @@ The rules come from [ADR 0010](https://github.com/bogd3v/micelio/blob/main/docs/
 
 - **One release line.** `micelio` (the frontend) and `micelio-cms` (this CMS) share MAJOR and MINOR; each has its own PATCH. "Micelio 1.4" is any `micelio 1.4.z` with any `micelio-cms 1.4.z`.
 - **CMS first.** Upgrade the CMS, then the frontend. The CMS of a release line also serves the frontend of the previous MINOR, so the site keeps working between the two steps.
-- **Within a MAJOR, no manual step.** The new version runs its boot migrations when it starts. They are idempotent, so a restart that stops halfway is safe to repeat. Across a MAJOR the release notes give the order and any step you must do by hand.
+- **From 1.0.0, within a MAJOR, no manual step.** The new version runs its boot migrations when it starts. They are idempotent, so a restart that stops halfway is safe to repeat. Across a MAJOR the release notes give the order and any step you must do by hand.
 - **Going back is not supported across a MINOR.** Restore the backup you took before the upgrade instead.
 - **Only the latest release line gets fixes**, security fixes included.
-- **Before 1.0.0**, a breaking change raises the second number (`0.y.z`), so read the notes of every `0.y` you cross.
+- **Before 1.0.0 nothing is stable.** A breaking change raises the second number (`0.y.z`) and may remove or rename a contract (content types, the API, the theme contract, environment variables, image names) without a deprecation period. Read the notes of every `0.y` you cross, and pin `X.Y.Z` instead of `latest` or `X.Y`. The guarantees in the other rules (the CMS also serving the previous MINOR, migrations with no manual step, deprecation before removal) are the target from 1.0.0; before it, the release notes say what holds.
 
 ## 1. Read the release notes
 
@@ -35,12 +35,12 @@ Then upgrade the frontend as its own [upgrade guide](https://github.com/bogd3v/m
 
 The image is `ghcr.io/bogd3v/micelio-cms`. Each release `vX.Y.Z` publishes these tags:
 
-| Tag                          | Moves                       | Use it for                                                 |
-| ---------------------------- | --------------------------- | ---------------------------------------------------------- |
-| `X.Y.Z`, for example `0.1.0` | Never                       | An exact version. Pin production to this.                  |
-| `X.Y`, for example `0.1`     | With each PATCH of the line | Following the patches of a line without a MINOR change.    |
-| `latest`                     | With each stable release    | The newest stable release. It may be a new MINOR or MAJOR. |
-| `edge`                       | With each merge to `main`   | Testing only. Not a release.                               |
-| A commit SHA                 | Never                       | A specific build of `main`.                                |
+| Tag                          | Moves                       | Use it for                                                                                    |
+| ---------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
+| `X.Y.Z`, for example `0.1.0` | Never                       | An exact version. Pin production to this.                                                     |
+| `X.Y`, for example `0.1`     | With each PATCH of the line | Following the patches of a line without a MINOR change.                                       |
+| `latest`                     | With each release           | The newest release. It may be a new MINOR or MAJOR, and before 1.0.0 it may break your setup. |
+| `edge`                       | With each merge to `main`   | Testing only. Not a release.                                                                  |
+| A commit SHA                 | Never                       | A specific build of `main`.                                                                   |
 
 A release candidate, `vX.Y.Z-rc.N`, moves neither `X.Y` nor `latest`. A published version never changes: a bad release is fixed by the next patch. [Verify an image](verify-image.md) before you run it if you want to check where it was built.
