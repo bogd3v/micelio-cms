@@ -26,7 +26,7 @@ The project started from the example template of `create-strapi-app` (`templates
 
 ## Common passwords list
 
-`src/constants/common-passwords.ts` holds the 498 passwords of 8 or more characters among the 3000 most frequent of `Passwords/Common-Credentials/10k-most-common.txt` in [SecLists](https://github.com/danielmiessler/SecLists) (MIT, Copyright (c) 2018 Daniel Miessler). Its license is in `src/constants/common-passwords.LICENSE.txt`. It is used only to refuse those passwords at sign-up, reset and change.
+`src/constants/common-passwords.ts` holds the 498 passwords of 8 or more characters among the 3000 most frequent of `Passwords/Common-Credentials/10k-most-common.txt` in [SecLists](https://github.com/danielmiessler/SecLists) (MIT, Copyright (c) 2018 Daniel Miessler). Its license is in `src/constants/common-passwords.LICENSE.txt`. It is used only to refuse those passwords at sign-up, reset and change. `src/constants/breached-passwords.ts` adds 45,986 passwords of 8 or more characters from `Passwords/Common-Credentials/100k-most-used-passwords-NCSC.txt` of the same repository, under the same license.
 
 ## Example data
 
