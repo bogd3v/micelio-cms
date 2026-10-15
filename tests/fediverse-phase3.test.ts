@@ -470,6 +470,7 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
 
     it('htmlToPlainText strips a comment that holds a >, and bounds hostile nesting', () => {
       expect(htmlToPlainText('a<!-- x > y -->b')).toBe('ab');
+      expect(htmlToPlainText('a <!-- never closed')).toBe('a  never closed');
       const nested = `${'<a'.repeat(5_000)}>${'>'.repeat(5_000)}text`;
       expect(htmlToPlainText(nested)).not.toMatch(/<\/?[a-z!]/i);
     });

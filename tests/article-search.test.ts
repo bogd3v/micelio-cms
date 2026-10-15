@@ -64,6 +64,7 @@ describe('Article plain text and content search', () => {
         'const xs: Array<string> = []\n\nafter'
       );
       expect(markdownToPlainText('a<!-- x > y -->b')).toBe('ab');
+      expect(markdownToPlainText('a <!-- never closed')).toBe('a never closed');
     });
 
     it('bounds the work on hostile nesting and leaves no tag', () => {

@@ -22,12 +22,20 @@ const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g;
 /** A tag start with no `>` left to close it, removed when stripping keeps rebuilding tags. */
 const TAG_START = /<(?=[A-Za-z/!])/g;
 
+/** A comment opener with no `-->` after it, which no other pattern removes. */
+const COMMENT_OPEN = /<!--/g;
+
 /** Passes of tag stripping before the tag starts that remain are dropped. */
 const MAX_STRIP_PASSES = 4;
 
 /** A fenced code block (to the end of the text when it is not closed) or an inline code span. */
 const CODE =
   /^[ \t]*(?:```|~~~)[^\n]*\n[\s\S]*?(?:^[ \t]*(?:```|~~~)[^\n]*$|(?![\s\S]))|`+[^`\n]+`+/gm;
+
+/** One pass: complete comments, tags, then a comment opener that was never closed. */
+function removeMarkup(text: string): string {
+  return text.replace(HTML_COMMENT, '').replace(HTML_TAG, '').replace(COMMENT_OPEN, '');
+}
 
 /**
  * Removes the HTML tags and comments of a text and keeps every other `<`.
@@ -38,11 +46,11 @@ const CODE =
 function stripHtml(text: string): string {
   let current = text;
   for (let pass = 0; pass < MAX_STRIP_PASSES; pass++) {
-    const next = current.replace(HTML_COMMENT, '').replace(HTML_TAG, '');
+    const next = removeMarkup(current);
     if (next === current) return next;
     current = next;
   }
-  return current.replace(HTML_COMMENT, '').replace(TAG_START, '');
+  return removeMarkup(current.replace(TAG_START, ''));
 }
 
 /** Strips the HTML of a Markdown text but leaves code, where `<` is what the author wrote. */
