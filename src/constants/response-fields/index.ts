@@ -1,3 +1,4 @@
+import { ACCOUNT_ROUTES } from './accounts';
 import { ARTICLE_ROUTES } from './articles';
 import { FEDIVERSE_ROUTES } from './fediverse';
 import { PAGE_ROUTES } from './pages';
@@ -14,6 +15,7 @@ export const RESPONSE_SURFACES: readonly ResponseSurface[] = [
   { title: 'Categories and tags', routes: TAXONOMY_ROUTES },
   { title: 'About and pages', routes: PAGE_ROUTES },
   { title: 'Authors, global and site settings', routes: SITE_ROUTES },
+  { title: 'Comments, sign in, the signed-in user and subscribers', routes: ACCOUNT_ROUTES },
   { title: 'Fediverse counters', routes: FEDIVERSE_ROUTES },
 ];
 

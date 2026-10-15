@@ -24,6 +24,7 @@ The suites seed one fully populated record of each content type, private attribu
 | `tests/response-fields-fediverse.test.ts`  | The fediverse counters                                                                                     |
 | `tests/response-fields-articles.test.ts`   | Articles, and the 400 for a query that names `plainText` or the author email                               |
 | `tests/response-fields-pages-site.test.ts` | Categories, tags, About, pages, authors, global, site settings, and who cannot read them                   |
+| `tests/response-fields-accounts.test.ts`   | Comments, sign up and sign in, the signed-in user, subscribers                                             |
 | `tests/response-fields-checker.test.ts`    | The checker itself, on made-up and on real shapes                                                          |
 | `tests/response-fields-rules.test.ts`      | The rules the constants must keep, such as no private attribute and no required key under a surplus object |
 | `tests/response-fields-docs.test.ts`       | That this document renders the constants                                                                   |
@@ -42,7 +43,7 @@ Each surface has a summary table, then one table per route with one row per obje
 | Auth     | What the route asks of the caller. Token routes have no role permission at all (`src/migrations/page-permissions.ts`, `site-settings.ts` and `subscriber-permissions.ts` remove them on every boot), so the public role gets 403. |
 | Counts   | The summary counts the keys of the whole response, shared objects included, once per place they appear.                                                                                                                           |
 
-Callers in the tests: the **public role** (with `find` granted where the route is not public by default), the **frontend token** and the **build token** (`FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS` in `src/migrations/api-tokens.ts`), an **editor** and a signed-in **reader** (a JWT). The suites also check who cannot read: the draft list answers the public role, a reader, the frontend token and the build token with 403; the page and site settings routes answer the public role, a reader and an editor with 403, and `global` answers the frontend token and the build token with 403.
+Callers in the tests: the **public role** (with `find` granted where the route is not public by default), the **frontend token** and the **build token** (`FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS` in `src/migrations/api-tokens.ts`), an **editor** and a signed-in **reader** (a JWT). The suites also check who cannot read: the draft list answers the public role, a reader, the frontend token and the build token with 403; the page and site settings routes answer the public role, a reader and an editor with 403, and `global` answers the frontend token and the build token with 403; the subscriber routes answer the public role, a reader, an editor and the build token with 403, and the comment routes answer the build token with 403.
 
 ## What every response adds and cannot lose
 
@@ -52,13 +53,17 @@ Strapi adds `id` and `documentId` to every document whatever `fields` says, adds
 
 These fields are public content, the caller's own data, or file metadata including the original file name and provider metadata. They are listed so a later change can decide.
 
-| Where                                              | Surplus                                                                                                                                                                                                                                 | Follow-up                                                                                                                       |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `pages.find`, `site-setting.find`, `articles.feed` | The whole file row of every image: `name`, `hash`, `ext`, `size`, `formats`, `provider`, `provider_metadata`, `previewUrl`, timestamps. `name` is the original file name and `provider_metadata` is whatever the upload provider stores | micelio: name the fields of each media in the populate, as `POST_CARD_POPULATE` does                                            |
-| `articles.feed`                                    | The whole `category` and `author` (`bio`, `description`, `key`, `bird`, `pillar`, `order`)                                                                                                                                              | micelio: name the fields the feed reads (`title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url`, `category.name`) |
-| `site-setting.find`                                | `tagline`, `securityContact`, `timezone`, `addressLocality`: public identity the frontend schema does not read yet                                                                                                                      | micelio: read them (`security.txt` needs `securityContact`) or stop populating                                                  |
-| `articles.popular`, `authors.find`, `global.find`  | Everything: no frontend caller                                                                                                                                                                                                          | Keep for integrators, or revoke `find` where an operator granted it                                                             |
-| `articles.search`                                  | `locale`, `meta.query`, `meta.count`                                                                                                                                                                                                    | None needed                                                                                                                     |
+| Where                                              | Surplus                                                                                                                                                                                                                                                | Follow-up                                                                                                                                    |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages.find`, `site-setting.find`, `articles.feed` | The whole file row of every image: `name`, `hash`, `ext`, `size`, `formats`, `provider`, `provider_metadata`, `previewUrl`, timestamps. `name` is the original file name and `provider_metadata` is whatever the upload provider stores                | micelio: name the fields of each media in the populate, as `POST_CARD_POPULATE` does                                                         |
+| `articles.feed`                                    | The whole `category` and `author` (`bio`, `description`, `key`, `bird`, `pillar`, `order`)                                                                                                                                                             | micelio: name the fields the feed reads (`title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url`, `category.name`)              |
+| `comments.flat`, `comments.post`                   | `threadOf` is the whole parent comment, of which the frontend reads `id`; the parent's `blockReason`, the moderator's text, is public by design ([comments.md](../architecture/comments.md))                                                           | CMS: reduce `threadOf` to `{ id }` in `src/middlewares/strip-comment-author-email.ts`; every field is of an approved comment, already public |
+| `comments.flat`, `comments.tree`                   | `gotThread`, `threadFirstItemId`, `locale`, `publishedAt`; `pagination` is read as `meta.pagination` and is never there                                                                                                                                | None needed; plugin internals                                                                                                                |
+| `site-setting.find`                                | `tagline`, `securityContact`, `timezone`, `addressLocality`: public identity the frontend schema does not read yet                                                                                                                                     | micelio: read them (`security.txt` needs `securityContact`) or stop populating                                                               |
+| `articles.popular`, `authors.find`, `global.find`  | Everything: no frontend caller                                                                                                                                                                                                                         | Keep for integrators, or revoke `find` where an operator granted it                                                                          |
+| `articles.search`                                  | `locale`, `meta.query`, `meta.count`                                                                                                                                                                                                                   | None needed                                                                                                                                  |
+| `users.me`, `auth.login`, `auth.register`          | `id`, `documentId`, `provider`, `confirmed`, `blocked`, timestamps, `role` details; on login the whole `user`                                                                                                                                          | The caller's own account; none needed                                                                                                        |
+| `subscribers.*`                                    | `id`, timestamps and, on `create` and `update`, the stored row the frontend does not read. The tokens come back as stored: the frontend stores SHA-256 hashes, but rows written before it did keep the token in clear, and the token holder reads them | None needed here: token only. V14.2.1 in [asvs.md](asvs.md) covers the tokens stored in clear                                                |
 
 ## Not covered
 
@@ -369,6 +374,96 @@ These fields are public content, the caller's own data, or file metadata includi
 | `data.theme.accentOverrides` | `mode`, `color` | `id` |
 | `data.homePage` | as shared `relation-slug` | as shared `relation-slug` |
 | `meta` | as shared `meta-single` | as shared `meta-single` |
+
+### Comments, sign in, the signed-in user and subscribers
+
+| Route | Method and path | Auth | Required | Surplus | Read by | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `comments.flat` | `GET /api/comments/:relation/flat` | public role or API token with `findAllFlat` | 21 | 26 | server/api/comments/*.get.ts, server/api/comments/index.post.ts (`toPublicComment`) | Only approved comments. `reports`, the author email and the author of a hidden parent never appear (PR #207). The frontend allow-lists `authorUser`, which the plugin does not return, and reads `related` as an object although the plugin returns a string. `fediverseUri` and `fediverseActorHandle` are added by `src/middlewares/fediverse-comment-fields.ts`. `gotThread` and `threadFirstItemId` are plugin internals the frontend does not read. |
+| `comments.tree` | `GET /api/comments/:relation` | public role or API token with `findAllInHierarchy` | 18 | 4 | server/api/comments/*.get.ts, server/api/comments/index.post.ts (`toPublicComment`) | A bare list of top-level comments with their `children`, which have the same keys. The hierarchy carries no `related` and no `threadOf`. Same rules as `comments.flat`. |
+| `comments.post` | `POST /api/comments/:relation` | API token with `post` | 18 | 19 | server/api/comments/index.post.ts (`toPublicComment`) | The comment just stored, without the email that was sent. It has no fediverse fields and no `gotThread`. |
+| `auth.login` | `POST /api/auth/local` | none (the public role has `auth.callback`) | 1 | 11 | server/api/auth/login.post.ts | The frontend keeps the `jwt` and reads the user again from `/api/users/me`, so the `user` that comes with it is surplus. Password hash, reset and confirmation tokens are private and never appear. |
+| `auth.register` | `POST /api/auth/local/register` | none (the public role has `auth.register`) | 4 | 7 | server/api/auth/register.post.ts (`toPublicUser`) | The new account, with no `jwt` and no `role`: the frontend shows it as a reader until the person confirms the address and signs in. |
+| `users.me` | `GET /api/users/me?populate=role` | JWT of the signed-in user | 5 | 10 | server/utils/auth.ts, app/helpers/auth.ts (`toPublicUser`) | The caller's own account: a JWT is needed and nobody else's row is returned. `role` is added by `src/extensions/users-permissions/strapi-server.ts`. Password hash, reset and confirmation tokens are private and never appear. |
+| `subscribers.find` | `GET /api/subscribers` | API token with `find`; no role | 7 | 10 | server/utils/subscribers.ts (`findSubscriber`) | Token only. The CMS stores the tokens as the frontend sends them: the frontend stores SHA-256 hashes (`hashToken` in micelio), but rows written before it did keep the token in clear, and `find`, `create` and `update` return the stored values to the token holder. The frontend reads `documentId`, `email`, `confirmed`, `language` and both tokens. |
+| `subscribers.create` | `POST /api/subscribers` | API token with `create`; no role | 2 | 10 | server/utils/subscribers.ts (`createSubscriber`) | Token only. The frontend reads `documentId` of the answer; the rest is the stored row, with the `confirmationToken` the frontend sent (as stored, see `subscribers.find`) and a null `unsubscribeToken`, which `createSubscriber` never sends. |
+| `subscribers.update` | `PUT /api/subscribers/:documentId` | API token with `update`; no role | 0 | 12 | server/utils/subscribers.ts (`updateSubscriber`) | Token only. The frontend ignores the body, so every field is surplus. It returns the stored row, tokens as stored (see `subscribers.find`). |
+
+#### `comments.flat`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `pagination` |
+| `data` | `id`, `documentId`, `content`, `blocked`, `blockedThread`, `blockReason`, `isAdminComment`, `removed`, `approvalStatus`, `createdAt`, `updatedAt`, `author`, `related`, `threadOf`, `fediverseUri`, `fediverseActorHandle` | `publishedAt`, `locale`, `gotThread`, `threadFirstItemId` |
+| `data.author` | `id`, `name`, `avatar` | none |
+| `data.threadOf` | `id` | `documentId`, `content`, `blocked`, `blockedThread`, `blockReason`, `isAdminComment`, `removed`, `approvalStatus`, `related`, `createdAt`, `updatedAt`, `publishedAt`, `locale`, `author` |
+| `data.threadOf.author` | none | `id`, `name`, `avatar` |
+| `pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
+
+#### `comments.tree`
+
+The body is a list; each item has the keys of `(body)`.
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `id`, `documentId`, `content`, `blocked`, `blockedThread`, `blockReason`, `isAdminComment`, `removed`, `approvalStatus`, `createdAt`, `updatedAt`, `author`, `children`, `fediverseUri`, `fediverseActorHandle` | `publishedAt`, `locale`, `gotThread`, `threadFirstItemId` |
+| `author` | `id`, `name`, `avatar` | none |
+| `children` | as the enclosing object | as the enclosing object |
+
+#### `comments.post`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `id`, `documentId`, `content`, `blocked`, `blockedThread`, `blockReason`, `isAdminComment`, `removed`, `approvalStatus`, `createdAt`, `updatedAt`, `author`, `related`, `threadOf` | `publishedAt`, `locale` |
+| `author` | `id`, `name`, `avatar` | none |
+| `threadOf` | `id` | `documentId`, `content`, `blocked`, `blockedThread`, `blockReason`, `isAdminComment`, `removed`, `approvalStatus`, `related`, `createdAt`, `updatedAt`, `publishedAt`, `locale`, `author` |
+| `threadOf.author` | none | `id`, `name`, `avatar` |
+
+#### `auth.login`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `jwt` | `user` |
+| `user` | none | `id`, `documentId`, `username`, `email`, `provider`, `confirmed`, `blocked`, `createdAt`, `updatedAt`, `publishedAt` |
+
+#### `auth.register`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `user` | none |
+| `user` | `username`, `email`, `createdAt` | `id`, `documentId`, `provider`, `confirmed`, `blocked`, `updatedAt`, `publishedAt` |
+
+#### `users.me`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `username`, `email`, `createdAt`, `role` | `id`, `documentId`, `provider`, `confirmed`, `blocked`, `updatedAt`, `publishedAt` |
+| `role` | `type` | `id`, `documentId`, `name` |
+
+#### `subscribers.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `documentId`, `email`, `confirmationToken`, `unsubscribeToken`, `confirmed`, `language` | `id`, `createdAt`, `updatedAt`, `publishedAt` |
+| `meta` | none | `pagination` |
+| `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
+
+#### `subscribers.create`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `documentId` | `id`, `email`, `confirmationToken`, `unsubscribeToken`, `confirmed`, `language`, `createdAt`, `updatedAt`, `publishedAt` |
+| `meta` | none | none |
+
+#### `subscribers.update`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | none | `data`, `meta` |
+| `data` | none | `id`, `documentId`, `email`, `confirmationToken`, `unsubscribeToken`, `confirmed`, `language`, `createdAt`, `updatedAt`, `publishedAt` |
+| `meta` | none | none |
 
 ### Fediverse counters
 
