@@ -21,6 +21,14 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   mcp: {
     enabled: env.bool('STRAPI_MCP_ENABLED', true),
   },
+  // Strapi's remote data transfer (`strapi transfer` between instances, through
+  // admin-created transfer tokens). Off unless an operator asks for it; Strapi's own
+  // default is on. Local `strapi export` and `import` are not affected.
+  transfer: {
+    remote: {
+      enabled: env.bool('STRAPI_REMOTE_TRANSFER_ENABLED', false),
+    },
+  },
   // Tasks are added in bootstrap (src/index.ts), each gated by its own config.
   cron: {
     enabled: !env.bool('STRAPI_DISABLE_CRON', false),

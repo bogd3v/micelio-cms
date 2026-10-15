@@ -45,7 +45,10 @@ COPY --from=build /app/src/plugins/fediverse/dist ./src/plugins/fediverse/dist
 COPY --from=build /app/dist/build ./build
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/database ./database
-COPY --from=build /app/scripts ./scripts
+# Only what runs from the image: the demo Compose `init` service and the key
+# generator the install guide names. Seed, media repair, backup and CI scripts
+# stay in the repository.
+COPY --from=build /app/scripts/demo-secrets.js /app/scripts/generate-keys.js ./scripts/
 COPY --from=build /app/server.js ./server.js
 COPY --from=build /app/public ./public
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

@@ -33,7 +33,8 @@ The multi-stage `Dockerfile` copies **compiled JavaScript** from `dist/`, not Ty
 
 - `dist/config` and `dist/src` → runtime code
 - `dist/build` → admin panel build
-- `database/` and `scripts/` → already JavaScript
+- `database/` → already JavaScript
+- `scripts/demo-secrets.js` and `scripts/generate-keys.js` only: the demo Compose `init` service and the install guide run them from the image. Add a script to the `COPY` line in the `Dockerfile` only when something runs it inside the container (`tests/image-contents.test.ts` checks the Compose files)
 
 Run `npm run build` before you build the image. The health check uses busybox `wget`: the image has no `curl`.
 
