@@ -1,5 +1,6 @@
 import { SEEDED, createImages } from './response-fields-seed-base';
 import { seedArticles, type SeededArticles } from './response-fields-seed-articles';
+import { seedSite } from './response-fields-seed-site';
 
 // One fully populated record per content type, private attributes filled with
 // neutral data, for the response field suites (ASVS V15.3.1,
@@ -14,7 +15,9 @@ export const FRONTEND_KEY = 'fields-frontend-token-0123456789abcdef0123';
 export const BUILD_KEY = 'fields-build-token-0123456789abcdef012345';
 
 /** Ids of what `seedContent` created. */
-export type SeededContent = SeededArticles;
+export interface SeededContent extends SeededArticles {
+  pageDocumentId: string;
+}
 
 /** Creates one fully populated record of every content type and publishes the ones with a draft state. */
 export async function seedContent(): Promise<SeededContent> {
@@ -24,7 +27,8 @@ export async function seedContent(): Promise<SeededContent> {
   }
   const images = await createImages();
   const articles = await seedArticles(images);
-  return articles;
+  const site = await seedSite(images, articles);
+  return { ...articles, ...site };
 }
 
 /** Creates a confirmed user with the role of `roleType` and returns its id and a JWT. */

@@ -39,6 +39,9 @@ describeWithMicelio('tests/helpers/frontend-queries.ts against the micelio check
   it.each([
     ['POST_CARD_POPULATE', 'server/lib/constants.ts', copied.POST_CARD_POPULATE],
     ['ARTICLE_POPULATE', 'server/lib/constants.ts', copied.ARTICLE_POPULATE],
+    ['ABOUT_POPULATE', 'server/lib/constants.ts', copied.ABOUT_POPULATE],
+    ['PAGE_POPULATE', 'server/utils/pageSections.ts', copied.PAGE_POPULATE],
+    ['SITE_POPULATE', 'server/utils/site.ts', copied.SITE_POPULATE],
   ])('%s is the constant of micelio', (name, file, copy) => {
     // Read inside the test: the body of a skipped `describe` still runs, and the files may not exist.
     const image = constantOf('server/lib/constants.ts', 'IMAGE');
