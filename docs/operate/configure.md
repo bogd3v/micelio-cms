@@ -63,6 +63,10 @@ Every response carries HSTS (one year, subdomains included), `nosniff` and a fra
 
 A content API request whose `populate` nests deeper than `POPULATE_MAX_DEPTH` levels (default 3, the deepest the Micelio frontend asks for) is answered with 400: Strapi has no limit of its own, and articles, categories and tags relate back to each other. A custom frontend that needs more raises the value.
 
+## Telemetry and the admin survey
+
+Micelio makes no request to Strapi's analytics host unless you opt in. Strapi telemetry is off through `"telemetryDisabled": true` under `strapi` in `package.json`, and the admin satisfaction survey is off (`FLAG_NPS=false`). To turn the survey on, set `FLAG_NPS=true`. To turn telemetry on, remove `telemetryDisabled` from `package.json` before building the image (`STRAPI_TELEMETRY_DISABLED=true` can only switch it off, never on). Upgrading needs no action; a site that relied on the old defaults loses only those two reports.
+
 ## Rate limiting
 
 <a id="rate-limiting"></a>

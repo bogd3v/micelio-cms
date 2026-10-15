@@ -77,6 +77,7 @@
     "npm": ">=6.0.0"
   },
   "strapi": {
+    "telemetryDisabled": true,
     "uuid": "c8f9eb3b-3208-4a3d-b35a-944b4dde5743",
     "installId": "964b072232ae06acbf76e84e14c792edb72cb22d44ea04c713df924ad2c47907"
   },
