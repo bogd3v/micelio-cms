@@ -31,3 +31,51 @@ export function populateDepth(populate: unknown): number {
   if (!isObject(populate)) return 0;
   return Math.max(0, ...Object.values(populate).map((options) => 1 + optionsDepth(options)));
 }
+
+/** Operators that combine conditions without adding a relation level. */
+const LOGICAL_OPERATORS = new Set(['$and', '$or', '$not']);
+
+/**
+ * How many relation levels a `filters` query parameter walks.
+ *
+ * @remarks
+ * Every key that is not an operator is a level (`category.slug` is 2). `$and`,
+ * `$or` and `$not` add none and their conditions are walked; comparison
+ * operators (`$eq`, `$in`, `$containsi`) end the walk. An array under a
+ * relation (`filters[a][0][b]`) adds none. Strapi applies no depth limit of its own.
+ *
+ * @param filters - The parsed `filters` value of a query.
+ */
+export function filtersDepth(filters: unknown): number {
+  if (Array.isArray(filters)) return Math.max(0, ...filters.map(filtersDepth));
+  if (!isObject(filters)) return 0;
+  return Math.max(
+    0,
+    ...Object.entries(filters).map(([key, value]) => {
+      if (LOGICAL_OPERATORS.has(key)) return filtersDepth(value);
+      if (key.startsWith('$')) return 0;
+      return 1 + filtersDepth(value);
+    })
+  );
+}
+
+/**
+ * How many relation levels a `sort` query parameter walks.
+ *
+ * @remarks
+ * Counts the dotted segments of a path, ignoring the `:asc` or `:desc`
+ * suffix (`category.articles.name:asc` is 3), and the nested keys of the object form.
+ *
+ * @param sort - The parsed `sort` value of a query: a string, an array or an object.
+ */
+export function sortDepth(sort: unknown): number {
+  if (typeof sort === 'string') {
+    return Math.max(0, ...sort.split(',').map((item) => item.split(':')[0].split('.').length));
+  }
+  if (Array.isArray(sort)) return Math.max(0, ...sort.map(sortDepth));
+  if (!isObject(sort)) return 0;
+  return Math.max(
+    0,
+    ...Object.values(sort).map((value) => 1 + (isObject(value) ? sortDepth(value) : 0))
+  );
+}
