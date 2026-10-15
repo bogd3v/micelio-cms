@@ -24,17 +24,59 @@ function decodeEntities(text: string): string {
   });
 }
 
+/** An HTML comment. */
+const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+
+/**
+ * Something that reads as an HTML tag: a name followed by whitespace, `/` or
+ * `>`, or a `<!` declaration. A `<` followed by anything else (`1 < 2`,
+ * `Map<K, V>`) is text.
+ */
+const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g;
+
+/** A tag start with no `>` left to close it, removed when stripping keeps rebuilding tags. */
+const TAG_START = /<(?=[A-Za-z/!])/g;
+
+/** A comment opener with no `-->` after it, which no other pattern removes. */
+const COMMENT_OPEN = /<!--/g;
+
+/** Passes of tag stripping before the tag starts that remain are dropped. */
+const MAX_STRIP_PASSES = 4;
+
+/** One pass: complete comments, tags, then a comment opener that was never closed. */
+function removeMarkup(text: string): string {
+  return text.replace(HTML_COMMENT, '').replace(HTML_TAG, '').replace(COMMENT_OPEN, '');
+}
+
+/**
+ * Removes the tags and comments of an HTML text and keeps every other `<`.
+ * Stripping can bring the pieces of a tag together (`<scr<b>ipt>`), so it
+ * repeats until nothing is left to strip. A few passes bound the work on
+ * hostile nesting; what then remains of a tag start is dropped.
+ */
+function stripTags(text: string): string {
+  let current = text;
+  for (let pass = 0; pass < MAX_STRIP_PASSES; pass++) {
+    const next = removeMarkup(current);
+    if (next === current) return next;
+    current = next;
+  }
+  return removeMarkup(current.replace(TAG_START, ''));
+}
+
 /**
  * Remote Note content is HTML from an untrusted server. Comments are stored as
  * plain text, so strip every tag (keeping paragraph and line breaks) and decode
  * entities *after* stripping — an encoded `&lt;script&gt;` must end up as
- * harmless literal text, never as markup.
+ * harmless literal text, never as markup. A `<` that does not start a tag
+ * (`1 < 2`) stays.
  */
 export function htmlToPlainText(html: string): string {
-  const text = html
-    .replace(/<\s*br\s*\/?\s*>/gi, '\n')
-    .replace(/<\/\s*(?:p|div|li|blockquote|h[1-6])\s*>/gi, '\n\n')
-    .replace(/<[^>]*>/g, '');
+  const text = stripTags(
+    html
+      .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/\s*(?:p|div|li|blockquote|h[1-6])\s*>/gi, '\n\n')
+  );
 
   return decodeEntities(text)
     .replace(/\r\n?/g, '\n')

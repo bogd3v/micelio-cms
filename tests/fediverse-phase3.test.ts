@@ -460,6 +460,21 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
       }
     });
 
+    it('htmlToPlainText keeps a < that does not start a tag', () => {
+      expect(htmlToPlainText('<p>1 < 2 and 3 > 2</p>')).toBe('1 < 2 and 3 > 2');
+      expect(htmlToPlainText('Map<K, V> and a<=b, c>=d, x <3')).toBe(
+        'Map<K, V> and a<=b, c>=d, x <3'
+      );
+      expect(htmlToPlainText('1 &lt; 2 &amp;&amp; 3 &gt; 2')).toBe('1 < 2 && 3 > 2');
+    });
+
+    it('htmlToPlainText strips a comment that holds a >, and bounds hostile nesting', () => {
+      expect(htmlToPlainText('a<!-- x > y -->b')).toBe('ab');
+      expect(htmlToPlainText('a <!-- never closed')).toBe('a  never closed');
+      const nested = `${'<a'.repeat(5_000)}>${'>'.repeat(5_000)}text`;
+      expect(htmlToPlainText(nested)).not.toMatch(/<\/?[a-z!]/i);
+    });
+
     it('stripLeadingMentions removes only our own leading mentions', () => {
       expect(stripLeadingMentions('@devbog@blog.example @devbog hi @devbog', 'devbog')).toBe(
         'hi @devbog'
