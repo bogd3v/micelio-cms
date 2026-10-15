@@ -59,6 +59,26 @@ export const SHARED_SHAPES: Record<string, Shape> = {
     canonicalURL: 'required',
     metaViewport: 'surplus',
   },
+  'seo-page': {
+    metaTitle: 'required',
+    metaDescription: 'required',
+    metaImage: { use: 'required', of: 'media-file' },
+    keywords: 'required',
+    metaRobots: 'required',
+    canonicalURL: 'required',
+    id: 'surplus',
+    structuredData: 'surplus',
+    metaViewport: 'surplus',
+    metaSocial: {
+      use: 'surplus',
+      of: {
+        id: 'surplus',
+        socialNetwork: 'surplus',
+        title: 'surplus',
+        description: 'surplus',
+      },
+    },
+  },
   reference: {
     id: 'required',
     key: 'required',
@@ -81,6 +101,12 @@ export const SHARED_SHAPES: Record<string, Shape> = {
     slug: 'required',
     locale: 'required',
     publishedAt: 'required',
+  },
+  'localization-page': {
+    slug: 'required',
+    locale: 'required',
+    id: 'surplus',
+    documentId: 'surplus',
   },
   'category-card': { id: 'required', documentId: 'required', name: 'required', slug: 'required' },
   'tag-card': { id: 'required', documentId: 'required', name: 'required', slug: 'required' },
@@ -108,6 +134,11 @@ export const SHARED_SHAPES: Record<string, Shape> = {
     pageCount: 'surplus',
     total: 'surplus',
   },
+  'meta-single': {},
+  'pagination-offset': { start: 'surplus', limit: 'surplus', total: 'surplus' },
+  'link-about': { id: 'required', label: 'required', url: 'required', variant: 'required' },
+  'link-section': { label: 'required', url: 'required', id: 'surplus' },
+  'relation-slug': { slug: 'required', id: 'surplus', documentId: 'surplus' },
 };
 
 /** The blocks that articles and the About page share, by `__component`. */

@@ -1,5 +1,8 @@
 import { ARTICLE_ROUTES } from './articles';
 import { FEDIVERSE_ROUTES } from './fediverse';
+import { PAGE_ROUTES } from './pages';
+import { SITE_ROUTES } from './site';
+import { TAXONOMY_ROUTES } from './taxonomy';
 import type { ResponseRoute, ResponseSurface } from './types';
 
 export { SHARED_SHAPES } from './shared';
@@ -8,6 +11,9 @@ export type { Caller, FieldSpec, NestedField, ResponseRoute, Shape } from './typ
 /** The routes grouped by surface, in the order of the documentation. */
 export const RESPONSE_SURFACES: readonly ResponseSurface[] = [
   { title: 'Articles', routes: ARTICLE_ROUTES },
+  { title: 'Categories and tags', routes: TAXONOMY_ROUTES },
+  { title: 'About and pages', routes: PAGE_ROUTES },
+  { title: 'Authors, global and site settings', routes: SITE_ROUTES },
   { title: 'Fediverse counters', routes: FEDIVERSE_ROUTES },
 ];
 

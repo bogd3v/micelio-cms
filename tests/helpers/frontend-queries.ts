@@ -35,3 +35,65 @@ export const ARTICLE_POPULATE = {
   references: true,
   localizations: { fields: ['slug', 'locale', 'publishedAt'] },
 };
+
+/** `ABOUT_POPULATE`: the About page and its blocks. */
+export const ABOUT_POPULATE = {
+  blocks: {
+    on: {
+      'about.profile': { populate: { facts: true, links: true, photo: IMAGE } },
+      'about.statement': true,
+      'about.topics': { populate: { topics: true } },
+      'about.projects': {
+        populate: { projects: { populate: { facts: true, stack: true, links: true } } },
+      },
+      'about.principles': { populate: { principles: true } },
+      'about.open-source': { populate: { guide: true } },
+      'about.contact': { populate: { fediverseLink: true, extraLink: true, socials: true } },
+      'shared.rich-text': true,
+      'shared.quote': true,
+      'shared.media': { populate: { file: IMAGE, credit: true } },
+      'shared.slider': {
+        populate: { items: { populate: { file: IMAGE, credit: true } }, files: IMAGE },
+      },
+    },
+  },
+  seo: { populate: { metaImage: IMAGE } },
+};
+
+/** `PAGE_POPULATE`: a page and its sections. */
+export const PAGE_POPULATE = {
+  seo: { populate: '*' },
+  localizations: { fields: ['slug', 'locale'] },
+  sections: {
+    on: {
+      'section.hero': { populate: { primaryLink: true, secondaryLink: true, media: true } },
+      'section.feature-grid': { populate: { items: { populate: { icon: true } } } },
+      'section.media-showcase': { populate: { media: true, link: true } },
+      'section.stats': { populate: { items: true } },
+      'section.logo-cloud': { populate: { logos: { populate: { image: true } } } },
+      'section.testimonials': { populate: { items: { populate: { avatar: true } } } },
+      'section.pricing': { populate: { plans: { populate: { link: true } } } },
+      'section.faq': { populate: { items: true } },
+      'section.cta': { populate: { primaryLink: true, secondaryLink: true } },
+      'section.post-list': {
+        populate: { category: { fields: ['slug'] }, tag: { fields: ['slug'] } },
+      },
+      'section.newsletter': { populate: '*' },
+      'section.rich-text': { populate: '*' },
+      'section.gallery': { populate: { images: true } },
+      'section.scene': { populate: { model: true, poster: true } },
+    },
+  },
+};
+
+/** `SITE_POPULATE`: the site settings. */
+export const SITE_POPULATE = {
+  author: true,
+  logo: true,
+  favicon: true,
+  defaultOgImage: true,
+  socialLinks: true,
+  modules: true,
+  theme: { populate: '*' },
+  homePage: { fields: ['slug'] },
+};

@@ -19,14 +19,15 @@ The suites seed one fully populated record of each content type, private attribu
 - the constants list an object that no response returns, so a stale entry cannot linger;
 - a caller the constants list for a route is never exercised by its suite.
 
-| Suite                                     | Covers                                                                                                     |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `tests/response-fields-fediverse.test.ts` | The fediverse counters                                                                                     |
-| `tests/response-fields-articles.test.ts`  | Articles, and the 400 for a query that names `plainText` or the author email                               |
-| `tests/response-fields-checker.test.ts`   | The checker itself, on made-up and on real shapes                                                          |
-| `tests/response-fields-rules.test.ts`     | The rules the constants must keep, such as no private attribute and no required key under a surplus object |
-| `tests/response-fields-docs.test.ts`      | That this document renders the constants                                                                   |
-| `tests/frontend-queries.test.ts`          | That the copied populates equal micelio's, when `../micelio` exists                                        |
+| Suite                                      | Covers                                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `tests/response-fields-fediverse.test.ts`  | The fediverse counters                                                                                     |
+| `tests/response-fields-articles.test.ts`   | Articles, and the 400 for a query that names `plainText` or the author email                               |
+| `tests/response-fields-pages-site.test.ts` | Categories, tags, About, pages, authors, global, site settings, and who cannot read them                   |
+| `tests/response-fields-checker.test.ts`    | The checker itself, on made-up and on real shapes                                                          |
+| `tests/response-fields-rules.test.ts`      | The rules the constants must keep, such as no private attribute and no required key under a surplus object |
+| `tests/response-fields-docs.test.ts`       | That this document renders the constants                                                                   |
+| `tests/frontend-queries.test.ts`           | That the copied populates equal micelio's, when `../micelio` exists                                        |
 
 The suites send the queries the frontend sends (`tests/helpers/frontend-queries.ts`, copied from micelio) and, for list routes, an unpopulated call too. The constants cover those queries. A caller who asks for another `populate` or `fields` can get relations or attributes that are not listed here; which relations a role may populate is access control, covered by [asvs.md](asvs.md) V8.
 
@@ -41,7 +42,7 @@ Each surface has a summary table, then one table per route with one row per obje
 | Auth     | What the route asks of the caller. Token routes have no role permission at all (`src/migrations/page-permissions.ts`, `site-settings.ts` and `subscriber-permissions.ts` remove them on every boot), so the public role gets 403. |
 | Counts   | The summary counts the keys of the whole response, shared objects included, once per place they appear.                                                                                                                           |
 
-Callers in the tests: the **public role** (with `find` granted where the route is not public by default), the **frontend token** and the **build token** (`FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS` in `src/migrations/api-tokens.ts`), an **editor** and a signed-in **reader** (a JWT). The suites also check who cannot read: the draft list answers the public role, a reader, the frontend token and the build token with 403.
+Callers in the tests: the **public role** (with `find` granted where the route is not public by default), the **frontend token** and the **build token** (`FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS` in `src/migrations/api-tokens.ts`), an **editor** and a signed-in **reader** (a JWT). The suites also check who cannot read: the draft list answers the public role, a reader, the frontend token and the build token with 403; the page and site settings routes answer the public role, a reader and an editor with 403, and `global` answers the frontend token and the build token with 403.
 
 ## What every response adds and cannot lose
 
@@ -51,12 +52,13 @@ Strapi adds `id` and `documentId` to every document whatever `fields` says, adds
 
 These fields are public content, the caller's own data, or file metadata including the original file name and provider metadata. They are listed so a later change can decide.
 
-| Where              | Surplus                                                                                                                                                                                                                                 | Follow-up                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `articles.feed`    | The whole file row of every image: `name`, `hash`, `ext`, `size`, `formats`, `provider`, `provider_metadata`, `previewUrl`, timestamps. `name` is the original file name and `provider_metadata` is whatever the upload provider stores | micelio: name the fields of each media in the populate, as `POST_CARD_POPULATE` does                                            |
-| `articles.feed`    | The whole `category` and `author` (`bio`, `description`, `key`, `bird`, `pillar`, `order`)                                                                                                                                              | micelio: name the fields the feed reads (`title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url`, `category.name`) |
-| `articles.popular` | Everything: no frontend caller                                                                                                                                                                                                          | Keep for integrators, or revoke `find` where an operator granted it                                                             |
-| `articles.search`  | `locale`, `meta.query`, `meta.count`                                                                                                                                                                                                    | None needed                                                                                                                     |
+| Where                                              | Surplus                                                                                                                                                                                                                                 | Follow-up                                                                                                                       |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `pages.find`, `site-setting.find`, `articles.feed` | The whole file row of every image: `name`, `hash`, `ext`, `size`, `formats`, `provider`, `provider_metadata`, `previewUrl`, timestamps. `name` is the original file name and `provider_metadata` is whatever the upload provider stores | micelio: name the fields of each media in the populate, as `POST_CARD_POPULATE` does                                            |
+| `articles.feed`                                    | The whole `category` and `author` (`bio`, `description`, `key`, `bird`, `pillar`, `order`)                                                                                                                                              | micelio: name the fields the feed reads (`title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url`, `category.name`) |
+| `site-setting.find`                                | `tagline`, `securityContact`, `timezone`, `addressLocality`: public identity the frontend schema does not read yet                                                                                                                      | micelio: read them (`security.txt` needs `securityContact`) or stop populating                                                  |
+| `articles.popular`, `authors.find`, `global.find`  | Everything: no frontend caller                                                                                                                                                                                                          | Keep for integrators, or revoke `find` where an operator granted it                                                             |
+| `articles.search`                                  | `locale`, `meta.query`, `meta.count`                                                                                                                                                                                                    | None needed                                                                                                                     |
 
 ## Not covered
 
@@ -196,6 +198,178 @@ These fields are public content, the caller's own data, or file metadata includi
 | `data.author` | `name` | none |
 | `meta` | none | `count` |
 
+### Categories and tags
+
+| Route | Method and path | Auth | Required | Surplus | Read by | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `categories.find` | `GET /api/categories` | public role with `find`, or an API token with `find` | 6 | 17 | server/api/categories.get.ts | The frontend asks for `name`, `slug` and the ids of `articles`. An unrestricted call also returns `description`, `key`, `bird`, `pillar` and `order`, which the frontend does not read. Strapi adds `documentId` whatever `fields` says. |
+| `tags.find` | `GET /api/tags` | public role (granted by default), or an API token with `find` | 4 | 14 | server/api/tags.get.ts | Public by default. The frontend reads `name`, `slug` and the number of `articles`; `id` and `documentId` are added by Strapi whatever `fields` says. |
+
+#### `categories.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `id`, `name`, `slug`, `articles` | `documentId`, `description`, `key`, `bird`, `pillar`, `order`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
+| `data.articles` | `id` | `documentId` |
+| `meta` | none | `pagination` |
+| `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
+
+#### `tags.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `name`, `slug`, `articles` | `id`, `documentId`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
+| `data.articles` | none | `id`, `documentId` |
+| `meta` | none | `pagination` |
+| `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
+
+### About and pages
+
+| Route | Method and path | Auth | Required | Surplus | Read by | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `about.find` | `GET /api/about` | public role with `find`, or an API token with `find` | 191 | 5 | server/api/about.get.ts (`publicAbout`) | Single type; the query is `ABOUT_POPULATE`. The frontend re-filters the body with its own allow-list, which this shape mirrors. |
+| `pages.find` | `GET /api/pages` | API token with `find`; no role | 164 | 184 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which populates media whole, so every file attribute of a section image comes back; `parsePage` keeps `url`, `alternativeText`, `width`, `height` and `mime`. Follow-up in micelio: name the fields of each media. |
+| `pages.slugs` | `GET /api/pages?fields[]=slug` | API token with `find`; no role | 5 | 5 | modules/static-routes.ts | Token only. Strapi adds `id` and `documentId` whatever `fields` says. |
+
+#### `about.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `id`, `documentId`, `title`, `locale`, `seo`, `blocks` | `createdAt`, `updatedAt`, `publishedAt` |
+| `data.seo` | as shared `seo-card` | as shared `seo-card` |
+| `data.blocks[shared.rich-text]` | `id`, `__component`, `body` | none |
+| `data.blocks[shared.quote]` | `id`, `__component`, `body`, `title` | none |
+| `data.blocks[shared.media]` | `id`, `__component`, `file`, `caption`, `credit` | none |
+| `data.blocks[shared.media].file` | as shared `media-card` | as shared `media-card` |
+| `data.blocks[shared.media].credit` | as shared `image-credit` | as shared `image-credit` |
+| `data.blocks[shared.slider]` | `id`, `__component`, `items`, `files` | none |
+| `data.blocks[shared.slider].items` | `id`, `file`, `caption`, `credit` | none |
+| `data.blocks[shared.slider].items.file` | as shared `media-card` | as shared `media-card` |
+| `data.blocks[shared.slider].items.credit` | as shared `image-credit` | as shared `image-credit` |
+| `data.blocks[shared.slider].files` | as shared `media-card` | as shared `media-card` |
+| `data.blocks[about.profile]` | `id`, `__component`, `eyebrow`, `title`, `lead`, `facts`, `links`, `photo`, `plateLabel`, `plateCoordinates`, `caption` | none |
+| `data.blocks[about.profile].facts` | `id`, `label`, `value`, `mono` | none |
+| `data.blocks[about.profile].links` | as shared `link-about` | as shared `link-about` |
+| `data.blocks[about.profile].photo` | as shared `media-card` | as shared `media-card` |
+| `data.blocks[about.statement]` | `id`, `__component`, `eyebrow`, `statement`, `body` | none |
+| `data.blocks[about.topics]` | `id`, `__component`, `eyebrow`, `title`, `intro`, `topics`, `footnoteLabel`, `footnote` | none |
+| `data.blocks[about.topics].topics` | `id`, `category`, `title`, `description` | none |
+| `data.blocks[about.projects]` | `id`, `__component`, `anchor`, `eyebrow`, `title`, `intro`, `projects` | none |
+| `data.blocks[about.projects].projects` | `id`, `eyebrow`, `meta`, `title`, `description`, `facts`, `stack`, `links`, `featured`, `visual`, `visualCaption` | none |
+| `data.blocks[about.projects].projects.facts` | `id`, `label`, `value`, `mono` | none |
+| `data.blocks[about.projects].projects.stack` | `id`, `name` | none |
+| `data.blocks[about.projects].projects.links` | as shared `link-about` | as shared `link-about` |
+| `data.blocks[about.principles]` | `id`, `__component`, `eyebrow`, `title`, `principles` | none |
+| `data.blocks[about.principles].principles` | `id`, `title`, `text` | none |
+| `data.blocks[about.open-source]` | `id`, `__component`, `eyebrow`, `text`, `code`, `guideTitle`, `guide` | none |
+| `data.blocks[about.open-source].guide` | `id`, `title`, `text` | none |
+| `data.blocks[about.contact]` | `id`, `__component`, `eyebrow`, `title`, `fediverseLabel`, `fediverseHandle`, `fediverseLink`, `extraLink`, `socials` | none |
+| `data.blocks[about.contact].fediverseLink` | as shared `link-about` | as shared `link-about` |
+| `data.blocks[about.contact].extraLink` | as shared `link-about` | as shared `link-about` |
+| `data.blocks[about.contact].socials` | `id`, `network`, `handle`, `url` | none |
+| `meta` | as shared `meta-single` | as shared `meta-single` |
+
+#### `pages.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `documentId`, `title`, `slug`, `locale`, `seo`, `sections`, `localizations` | `id`, `createdAt`, `updatedAt`, `publishedAt` |
+| `data.seo` | as shared `seo-page` | as shared `seo-page` |
+| `data.sections[section.hero]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink`, `media` | `id` |
+| `data.sections[section.hero].primaryLink` | as shared `link-section` | as shared `link-section` |
+| `data.sections[section.hero].secondaryLink` | as shared `link-section` | as shared `link-section` |
+| `data.sections[section.hero].media` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.feature-grid]` | `__component`, `variant`, `title`, `text`, `items` | `id` |
+| `data.sections[section.feature-grid].items` | `icon`, `title`, `text` | `id` |
+| `data.sections[section.feature-grid].items.icon` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.media-showcase]` | `__component`, `variant`, `title`, `text`, `media`, `link` | `id` |
+| `data.sections[section.media-showcase].media` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.media-showcase].link` | as shared `link-section` | as shared `link-section` |
+| `data.sections[section.stats]` | `__component`, `variant`, `title`, `items` | `id` |
+| `data.sections[section.stats].items` | `value`, `label` | `id` |
+| `data.sections[section.logo-cloud]` | `__component`, `variant`, `title`, `logos` | `id` |
+| `data.sections[section.logo-cloud].logos` | `image`, `name`, `url` | `id` |
+| `data.sections[section.logo-cloud].logos.image` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.testimonials]` | `__component`, `variant`, `title`, `items` | `id` |
+| `data.sections[section.testimonials].items` | `quote`, `author`, `role`, `avatar` | `id` |
+| `data.sections[section.testimonials].items.avatar` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.pricing]` | `__component`, `variant`, `title`, `text`, `plans` | `id` |
+| `data.sections[section.pricing].plans` | `name`, `price`, `period`, `features`, `link`, `recommended` | `id` |
+| `data.sections[section.pricing].plans.link` | as shared `link-section` | as shared `link-section` |
+| `data.sections[section.faq]` | `__component`, `variant`, `title`, `items` | `id` |
+| `data.sections[section.faq].items` | `question`, `answer` | `id` |
+| `data.sections[section.cta]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink` | `id` |
+| `data.sections[section.cta].primaryLink` | as shared `link-section` | as shared `link-section` |
+| `data.sections[section.cta].secondaryLink` | as shared `link-section` | as shared `link-section` |
+| `data.sections[section.post-list]` | `__component`, `variant`, `title`, `count`, `category`, `tag` | `id` |
+| `data.sections[section.post-list].category` | as shared `relation-slug` | as shared `relation-slug` |
+| `data.sections[section.post-list].tag` | as shared `relation-slug` | as shared `relation-slug` |
+| `data.sections[section.newsletter]` | `__component`, `variant`, `title`, `text`, `buttonLabel` | `id` |
+| `data.sections[section.rich-text]` | `__component`, `body` | `id` |
+| `data.sections[section.gallery]` | `__component`, `variant`, `title`, `images` | `id` |
+| `data.sections[section.gallery].images` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.scene]` | `__component`, `variant`, `model`, `poster`, `alt`, `title`, `text` | `id` |
+| `data.sections[section.scene].model` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.scene].poster` | as shared `media-file` | as shared `media-file` |
+| `data.localizations` | as shared `localization-page` | as shared `localization-page` |
+| `meta` | none | `pagination` |
+| `meta.pagination` | as shared `pagination-offset` | as shared `pagination-offset` |
+
+#### `pages.slugs`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data`, `meta` | none |
+| `data` | `slug` | `id`, `documentId` |
+| `meta` | `pagination` | none |
+| `meta.pagination` | as shared `pagination-pages` | as shared `pagination-pages` |
+
+### Authors, global and site settings
+
+| Route | Method and path | Auth | Required | Surplus | Read by | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `authors.find` | `GET /api/authors` | public role with `find`, or an API token with `find` | 0 | 15 | none found | The frontend token has `find` only so that `article.author` survives the relation sanitizer; no frontend caller reads this route, so every field is surplus. `email` is private and never appears; `bio` is public content, returned only here and in the feed. |
+| `global.find` | `GET /api/global` | public role with `find` | 0 | 9 | none found | Open only when an operator grants `find` to the public role: the frontend does not call it (the fediverse actor profile reads it inside the CMS). Every field is surplus. Relations (`favicon`, `fediverseHeader`, `defaultSeo`) come back only when a caller populates them and are not covered. |
+| `site-setting.find` | `GET /api/site-setting` | API token with `find`; no role | 50 | 63 | server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts | Token only. The query is `SITE_POPULATE`, which populates media whole. `tagline`, `securityContact`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`) that the frontend schema does not read yet. `mime` is read for pages, not for the site images. |
+
+#### `authors.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | none | `data`, `meta` |
+| `data` | none | `id`, `documentId`, `name`, `bio`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
+| `meta` | none | `pagination` |
+| `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
+
+#### `global.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | none | `data`, `meta` |
+| `data` | none | `id`, `documentId`, `siteName`, `siteDescription`, `createdAt`, `updatedAt`, `publishedAt` |
+| `meta` | as shared `meta-single` | as shared `meta-single` |
+
+#### `site-setting.find`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | `meta` |
+| `data` | `name`, `description`, `url`, `defaultLocale`, `contactEmail`, `privacyContactEmail`, `privacyUpdatedAt`, `supportHandle`, `author`, `logo`, `favicon`, `defaultOgImage`, `socialLinks`, `modules`, `theme`, `homePage` | `id`, `documentId`, `tagline`, `securityContact`, `timezone`, `addressLocality`, `locale`, `createdAt`, `updatedAt`, `publishedAt` |
+| `data.author` | `name`, `url` | `id` |
+| `data.logo` | as shared `media-file` | as shared `media-file` |
+| `data.favicon` | as shared `media-file` | as shared `media-file` |
+| `data.defaultOgImage` | as shared `media-file` | as shared `media-file` |
+| `data.socialLinks` | `network`, `url` | `id` |
+| `data.modules` | `newsletter`, `comments`, `accounts`, `drafts`, `fediverse`, `search`, `support` | `id` |
+| `data.theme` | `themeId`, `defaultMode`, `displayFont`, `accentOverrides` | `id` |
+| `data.theme.accentOverrides` | `mode`, `color` | `id` |
+| `data.homePage` | as shared `relation-slug` | as shared `relation-slug` |
+| `meta` | as shared `meta-single` | as shared `meta-single` |
+
 ### Fediverse counters
 
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
@@ -254,6 +428,14 @@ The body is a map from a document id; each value has the keys of `(body)`.
 | `(body)` | `id`, `metaTitle`, `metaDescription`, `metaImage`, `keywords`, `metaRobots`, `structuredData`, `canonicalURL` | `metaViewport` |
 | `metaImage` | as shared `media-card` | as shared `media-card` |
 
+#### `seo-page`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `metaTitle`, `metaDescription`, `metaImage`, `keywords`, `metaRobots`, `canonicalURL` | `id`, `structuredData`, `metaViewport`, `metaSocial` |
+| `metaImage` | as shared `media-file` | as shared `media-file` |
+| `metaSocial` | none | `id`, `socialNetwork`, `title`, `description` |
+
 #### `reference`
 
 | Object | Required | Surplus |
@@ -265,6 +447,12 @@ The body is a map from a document id; each value has the keys of `(body)`.
 | Object | Required | Surplus |
 | --- | --- | --- |
 | `(body)` | `id`, `documentId`, `slug`, `locale`, `publishedAt` | none |
+
+#### `localization-page`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `slug`, `locale` | `id`, `documentId` |
 
 #### `category-card`
 
@@ -302,5 +490,35 @@ The body is a map from a document id; each value has the keys of `(body)`.
 | Object | Required | Surplus |
 | --- | --- | --- |
 | `(body)` | none | `page`, `pageSize`, `pageCount`, `total` |
+
+#### `meta-single`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | none | none |
+
+#### `pagination-offset`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | none | `start`, `limit`, `total` |
+
+#### `link-about`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `id`, `label`, `url`, `variant` | none |
+
+#### `link-section`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `label`, `url` | `id` |
+
+#### `relation-slug`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `slug` | `id`, `documentId` |
 <!-- END GENERATED -->
 <!-- prettier-ignore-end -->
