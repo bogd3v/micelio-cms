@@ -10,13 +10,23 @@ import { isCommentsApiPath } from '../utils/comments-path';
  * name an author attribute (`AUTHOR_FILTER_KEYS`) at any depth. The response
  * hides those attributes, and a filter would otherwise confirm them by
  * matching. A `filters` or `where` key anywhere inside `populate` is refused
- * too, since the plugin applies it to the populated author relation. Requests
- * without either pass unchanged.
+ * too, since the plugin applies it to the populated author relation.
+ *
+ * @remarks
+ * A top-level `fields` key is refused as well, whatever its value: the plugin's
+ * response schema needs every attribute, so any list makes it fail with a 500
+ * and an error-level log of the whole validation error. The refusal is logged
+ * as one `warn` line without the query values. Requests without these pass
+ * unchanged.
  */
-export default (_config: unknown, _: { strapi: Core.Strapi }) =>
+export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
     if (isCommentsApiPath(ctx.path)) {
       const query = ctx.query as Record<string, unknown>;
+      if ('fields' in query) {
+        strapi.log.warn('[comments] refused a "fields" query parameter on the comments API');
+        throw new errors.ValidationError('"fields" is not allowed in this query');
+      }
       const key =
         findBlockedFilterKey(query.filters, AUTHOR_FILTER_KEYS) ??
         findBlockedFilterKey(query.populate, POPULATE_FILTER_KEYS);
