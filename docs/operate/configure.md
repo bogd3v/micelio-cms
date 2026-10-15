@@ -54,7 +54,10 @@ CORS_ORIGINS=https://example.com   # browser origins allowed by CORS, comma sepa
 STRAPI_MCP_ENABLED=true            # /mcp (admin API tokens); false where no agent needs it
 POPULATE_MAX_DEPTH=3               # relation levels a content API `populate`, `filters` or `sort` may nest
 STRAPI_REMOTE_TRANSFER_ENABLED=false   # Strapi's remote data transfer; off by default
+# PASSWORD_BANNED_WORDS=my-site,my-org   # words no reader password may contain
 ```
+
+Reader passwords need 8 or more characters, may not be one of the 3000 most common passwords and may not contain `micelio`, `strapi` or a word of `PASSWORD_BANNED_WORDS` (comma separated, 4 or more characters each: set the site and organisation names). The check runs on sign-up, reset and change; an existing password is not re-checked. Admin passwords follow Strapi's own rules. Details in `docs/security/authentication.md`.
 
 Without `CORS_ORIGINS` only the origin of `FRONTEND_URL` is allowed (browsers fetch 3D scene models from the CMS, and that is the one page that needs it). List more origins, comma separated, when the site is also served from another one, such as `www` and the bare domain. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed. Credentials (cookies, `Authorization`) are allowed only to listed origins: `CORS_ORIGINS=*` still reflects any origin, without credentials.
 
