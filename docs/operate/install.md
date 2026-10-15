@@ -26,7 +26,7 @@ A node is the CMS image, a PostgreSQL database and a place for the uploads. Any 
 2. **Create the database.** PostgreSQL 18, with a database and a user the CMS can own. SQLite is for development and tests only.
 3. **Generate the secrets.** `node scripts/generate-keys.js` prints the six Strapi values; keep them in your secret store, not in the repository.
 4. **Set the environment.** The required variables are in [Configure](configure.md#required). A production boot stops with a message that names a missing required value.
-5. **Mount the uploads.** Give the container a persistent volume at `/app/public/uploads` (the default `UPLOAD_PATH`), or set the `R2_*` variables to use an S3-compatible bucket instead. Without either, uploaded files disappear when the container is replaced.
+5. **Mount the uploads.** Give the container a persistent volume at `/app/public/uploads` (the default `UPLOAD_PATH`), or set the `R2_*` variables to use an S3-compatible bucket instead. Without either, uploaded files disappear when the container is replaced. The local volume serves files from the same origin as the admin panel, which suits development and small setups; in production prefer the bucket (or another hostname), and see the Media section of `configure.md`. The CMS logs a warning at boot when production uses the local volume.
 6. **Start the container** and wait for `GET /_health` to answer `204`. The image's `HEALTHCHECK` probes the same route, and its start period covers a slow first boot.
 7. **Create the first administrator** at `/admin`, then turn on only the modules whose services you have set up, in the site settings.
 
