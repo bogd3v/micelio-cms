@@ -47,7 +47,8 @@ async function resetPostgresDatabase() {
 function setupEnvironment() {
   process.env.NODE_ENV = 'test';
   process.env.PORT = process.env.PORT || '0';
-  process.env.STRAPI_TELEMETRY_DISABLED = 'true';
+  // Telemetry is off through package.json; tests/telemetry-default.test.ts guards it.
+  delete process.env.STRAPI_TELEMETRY_DISABLED;
   process.env.STRAPI_DISABLE_CRON = 'true';
 
   // Required Strapi security values (dummy values are fine for tests)

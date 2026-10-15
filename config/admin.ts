@@ -21,7 +21,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Admin => 
     encryptionKey: env('ENCRYPTION_KEY'),
   },
   flags: {
-    nps: env.bool('FLAG_NPS', true),
+    // Opt-in: the survey posts the admin's answer to Strapi's servers. Telemetry is off
+    // through `strapi.telemetryDisabled` in package.json (docs/operate/configure.md).
+    nps: env.bool('FLAG_NPS', false),
     promoteEE: env.bool('FLAG_PROMOTE_EE', true),
   },
 });
