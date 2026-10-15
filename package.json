@@ -29,6 +29,7 @@
     "lint:licenses": "node scripts/check-licenses.mjs",
     "lint:ee": "node scripts/check-no-ee.mjs",
     "lint:fix": "eslint . --fix",
+    "docs:response-fields": "UPDATE_RESPONSE_FIELDS_DOC=1 jest tests/response-fields-docs.test.ts",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "test": "jest --forceExit",
