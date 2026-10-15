@@ -116,6 +116,43 @@ describe('Accounts (users-permissions)', () => {
     });
   });
 
+  describe('password rules', () => {
+    const register = (username: string, password: string) =>
+      http()
+        .post('/api/auth/local/register')
+        .send({ username, email: `${username}@example.com`, password });
+
+    it.each([
+      ['a short password', 'Ab1-xyz', 'at least 8 characters'],
+      ['a common password', 'password', 'too common'],
+      ['a password with the software name', 'my-micelio-1', 'tied to this site'],
+    ])('refuses %s on sign-up', async (_label, password, message) => {
+      const res = await register('rule-signup', password).expect(400);
+      expect(res.body.error.message).toContain(message);
+    });
+
+    it('refuses a weak new password on change and on reset', async () => {
+      const user = await createUser('rule-change');
+      const change = await http()
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${jwtFor(user)}`)
+        .send({ currentPassword: PASSWORD, password: 'Ab1-xyz', passwordConfirmation: 'Ab1-xyz' })
+        .expect(400);
+      expect(change.body.error.message).toContain('at least 8 characters');
+
+      await http()
+        .post('/api/auth/forgot-password')
+        .send({ email: 'rule-change@example.com' })
+        .expect(200);
+      const code = new URL(linkIn(sent[sent.length - 1])).searchParams.get('code');
+      const reset = await http()
+        .post('/api/auth/reset-password')
+        .send({ code, password: 'password', passwordConfirmation: 'password' })
+        .expect(400);
+      expect(reset.body.error.message).toContain('too common');
+    });
+  });
+
   describe('sign-up', () => {
     it('confirms the email before the account can sign in', async () => {
       sent.length = 0;

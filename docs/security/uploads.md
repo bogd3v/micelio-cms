@@ -8,14 +8,14 @@ Only administrators, through the admin panel or the admin API. The editor role g
 
 ## Accepted types
 
-- **Deny list only.** `config/plugins.ts:71-73` sets `security.deniedTypes` to `text/html` and `application/xhtml+xml`. No `allowedTypes` is set, so every other type is accepted: images (SVG included), video, audio, PDF, archives and text.
+- **Deny list only.** `config/plugins.ts:72-74` sets `security.deniedTypes` to `text/html` and `application/xhtml+xml`. No `allowedTypes` is set, so every other type is accepted: images (SVG included), video, audio, PDF, archives and text.
 - **How the type is decided.** The check reads three things: the declared type, the type of the extension and the type detected from the first 4100 bytes (`node_modules/@strapi/upload/dist/server/utils/mime-validation.js:8-24`, `:141-176`). A file is refused when one of them is denied. Detection recognises binary formats only, so HTML is caught by its declared type or its extension.
 - **Consequence.** A file with an HTML extension or declared type is refused. A file that holds HTML but is stored as `text/plain` or as an image is accepted under that type. The next section says why that stays inert.
 
 ## Sizes
 
 - **Per file: 200 MB.** The multipart parser caps each file at 200 MB (formidable 2.1.5, `node_modules/formidable/src/Formidable.js:26`), and `strapi::body` uses it with no other limit (`node_modules/@strapi/core/dist/middlewares/body.js:13-16`).
-- **The plugin's limit comes after parsing.** `config/plugins.ts:36` sets `sizeLimit` to 250 MB for the local disk; the bucket branch keeps the plugin default of 1 GB (`node_modules/@strapi/upload/dist/server/config.js:7`). Both are checked after the parser has accepted the file, so **200 MB is the effective limit on both**.
+- **The plugin's limit comes after parsing.** `config/plugins.ts:37` sets `sizeLimit` to 250 MB for the local disk; the bucket branch keeps the plugin default of 1 GB (`node_modules/@strapi/upload/dist/server/config.js:7`). Both are checked after the parser has accepted the file, so **200 MB is the effective limit on both**.
 - **Other request bodies.** JSON is limited to 1 MB and form or text bodies to 56 kB (koa-body 6.0.1 defaults, `node_modules/koa-body/lib/types.js:31-39`; `config/middlewares.ts` sets no other limit).
 - **Archives** are stored as received and never unpacked (`@strapi/upload` 5.56.0), so no archive limit applies.
 - **Images** are processed one at a time (`sharp.concurrency: 1`, `node_modules/@strapi/upload/dist/server/config.js:8-11`).
@@ -24,7 +24,7 @@ Only administrators, through the admin panel or the admin API. The editor role g
 
 The local provider writes each file under a generated name, not the one the browser sent (`node_modules/@strapi/provider-upload-local/dist/index.js:64`, `:80`). The original name stays in the database as metadata; no response header or email carries it.
 
-The bucket provider (`config/plugins.ts:8-31`) uploads with `ACL` unset; the public read comes from `R2_BASE_URL`, which the CMS does not serve.
+The bucket provider (`config/plugins.ts:9-32`) uploads with `ACL` unset; the public read comes from `R2_BASE_URL`, which the CMS does not serve.
 
 ## Safe delivery
 

@@ -65,3 +65,12 @@ path = [
 ]
 SPDX-FileCopyrightText = "2015-present Strapi Solutions SAS"
 SPDX-License-Identifier = "MIT"
+
+# SecLists' common passwords list, converted to a module by Micelio
+[[annotations]]
+path = [
+  "src/constants/common-passwords.ts",
+  "src/constants/common-passwords.LICENSE.txt",
+]
+SPDX-FileCopyrightText = ["2018 Daniel Miessler", "2026 Alejandro Ramirez Garcia and the Micelio contributors"]
+SPDX-License-Identifier = "AGPL-3.0-only AND MIT"

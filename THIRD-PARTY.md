@@ -24,6 +24,10 @@ The project started from the example template of `create-strapi-app` (`templates
 - **Unmodified**: `data/uploads/` (the example images), `favicon.png` (Strapi's default favicon), `public/robots.txt`, `src/admin/tsconfig.json`, `src/admin/vite.config.example.ts`, and the generated controllers, routes and services of `about`, `author`, `category` and `global`, plus the `shared.quote` and `shared.rich-text` components. MIT only.
 - **Modified by Micelio**: `data/data.json`, `scripts/seed.js`, `src/admin/app.example.tsx`, the `config/` files, `src/index.ts`, `tsconfig.json`, the schemas of the template's content types (`about`, `article`, `author`, `category`, `global`), the `article` controller, route and service, and the `shared.media`, `shared.seo` and `shared.slider` components. Strapi's part stays MIT and Micelio's changes are under the AGPL (`AGPL-3.0-only AND MIT` in `REUSE.toml`).
 
+## Common passwords list
+
+`src/constants/common-passwords.ts` holds the 498 passwords of 8 or more characters among the 3000 most frequent of `Passwords/Common-Credentials/10k-most-common.txt` in [SecLists](https://github.com/danielmiessler/SecLists) (MIT, Copyright (c) 2018 Daniel Miessler). Its license is in `src/constants/common-passwords.LICENSE.txt`. It is used only to refuse those passwords at sign-up, reset and change.
+
 ## Example data
 
 `data/data.json` and `data/uploads/` are the template's example blog, used only by `npm run seed:example`. They are not Micelio's (see above). The demo blog of `compose.demo.yml` (`src/migrations/demo/`) is Micelio's own work, with generated covers, and carries no third-party material.

@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { limitsAuth } from '../src/utils/rate-limit/rule';
+import { createPasswordValidator, parseBannedWords } from '../src/utils/password-rules';
 import { smtpTlsOptions } from '../src/utils/smtp';
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => {
@@ -83,6 +84,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     'users-permissions': {
       config: {
         jwt: { expiresIn: '7d' },
+        // Read by sign-up, reset and change: `validationRules`, not a top-level key.
+        validationRules: {
+          validatePassword: createPasswordValidator(parseBannedWords(env('PASSWORD_BANNED_WORDS'))),
+        },
         // Left unset, the plugin keeps its own limiter.
         ...(ownAuthLimit ? { ratelimit: { enabled: false } } : {}),
       },
