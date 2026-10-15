@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole, getRole } from './helpers/permissions';
@@ -233,6 +233,42 @@ describe('Public comments API: fields and filters', () => {
       );
       expect(answers).toHaveLength(2);
       for (const answer of answers) expect(answer.threadOf ?? null).toBeNull();
+    });
+
+    it.each([
+      ['a list of names', 'fields[0]=content'],
+      ['the id and the relation', 'fields[0]=id&fields[1]=related&fields[2]=content'],
+      ['an empty name', 'fields[0]='],
+      ['an unknown name', 'fields[0]=nope'],
+      ['an empty brackets list', 'fields[]=content'],
+      ['an encoded list', 'fields%5B0%5D=content'],
+      ['a string', 'fields=content'],
+    ])('answers 400, not 500, to fields as %s, with one warn line', async (_name, query) => {
+      const warn = jest.spyOn(strapi.log, 'warn');
+      const error = jest.spyOn(strapi.log, 'error');
+      try {
+        for (const path of [FLAT(relation), TREE(relation)]) {
+          warn.mockClear();
+          const res = await get(`${path}?${query}`);
+          expect(res.status).toBe(400);
+          expect(res.body.data ?? null).toBeNull();
+          expect(warn).toHaveBeenCalledTimes(1);
+          expect(String(warn.mock.calls[0][0])).not.toContain('content');
+        }
+        expect(error).not.toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+        error.mockRestore();
+      }
+    });
+
+    it('leaves a fields key inside populate and omit alone', async () => {
+      for (const path of [FLAT(relation), TREE(relation)]) {
+        for (const query of ['populate[threadOf][fields][0]=content', 'omit[0]=content']) {
+          const res = await get(`${path}?${query}`);
+          expect(res.status).toBe(200);
+        }
+      }
     });
 
     it('still accepts a normal filter', async () => {
