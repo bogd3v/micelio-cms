@@ -34,7 +34,7 @@ The CMS sees the proxy's address instead of the client's. Set `TRUST_PROXY` to t
 
 ## Federation links use `http`
 
-The CMS does not follow `X-Forwarded-Proto`. Keep `TRUST_PROXY_PROTOCOL` at its default `true` behind a TLS-terminating proxy, and check `URL` is the real public origin.
+The CMS does not follow `X-Forwarded-Proto`. Keep `TRUST_PROXY_PROTOCOL` at its default `true` behind a TLS-terminating proxy, check `URL` is the real public origin, and check the proxy's address is trusted by `TRUST_PROXY` (private ranges by default).
 
 ## Confirmation or reset emails fail after an upgrade
 
