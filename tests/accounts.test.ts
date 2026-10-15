@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import jwt from 'jsonwebtoken';
+import { createHmac } from 'node:crypto';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole, getRole } from './helpers/permissions';
@@ -122,7 +122,11 @@ describe('Accounts (users-permissions)', () => {
     it('refuses a JWT signed with the same secret but without the claims, or for another audience', async () => {
       const user = await createUser('claims-refused');
       const secret = strapi.config.get('plugin::users-permissions.jwtSecret') as string;
-      const sign = (payload: object) => jwt.sign(payload, secret, { expiresIn: '1h' });
+      const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+      const sign = (payload: object) => {
+        const body = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ ...payload, exp: Math.floor(Date.now() / 1000) + 3600 })}`;
+        return `${body}.${createHmac('sha256', secret).update(body).digest('base64url')}`;
+      };
       const me = (token: string) =>
         http().get('/api/users/me').set('Authorization', `Bearer ${token}`);
 
@@ -205,6 +209,8 @@ describe('Accounts (users-permissions)', () => {
       const res = await login();
       expect(res.status).toBe(200);
       expect(res.body.jwt).toEqual(expect.any(String));
+      // The JWT sign-in returns carries the reader claims, so the next request accepts it.
+      await http().get('/api/users/me').set('Authorization', `Bearer ${res.body.jwt}`).expect(200);
     });
 
     it('rejects a role in the registration body', async () => {

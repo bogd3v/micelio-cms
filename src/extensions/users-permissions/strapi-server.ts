@@ -49,7 +49,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
   // Reset codes expire and a password change revokes older JWTs (GHSA-xfrm-8c63-m3cj).
   Object.assign(plugin.contentTypes.user.schema.attributes, SECURITY_ATTRIBUTES);
   plugin.services.user = wrapUserService(plugin.services.user as never) as never;
-  plugin.services.jwt = wrapJwtClaims(wrapJwtService(plugin.services.jwt as never)) as never;
+  plugin.services.jwt = wrapJwtService(wrapJwtClaims(plugin.services.jwt as never)) as never;
   const authFactory = plugin.controllers.auth;
   plugin.controllers.auth = (args) => {
     const auth = authFactory(args);
