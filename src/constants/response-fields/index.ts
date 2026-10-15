@@ -1,3 +1,4 @@
+import { ARTICLE_ROUTES } from './articles';
 import { FEDIVERSE_ROUTES } from './fediverse';
 import type { ResponseRoute, ResponseSurface } from './types';
 
@@ -6,6 +7,7 @@ export type { Caller, FieldSpec, NestedField, ResponseRoute, Shape } from './typ
 
 /** The routes grouped by surface, in the order of the documentation. */
 export const RESPONSE_SURFACES: readonly ResponseSurface[] = [
+  { title: 'Articles', routes: ARTICLE_ROUTES },
   { title: 'Fediverse counters', routes: FEDIVERSE_ROUTES },
 ];
 
