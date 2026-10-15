@@ -2,6 +2,8 @@
 
 Strapi 5 (TypeScript) headless CMS of [Micelio](https://github.com/bogd3v/micelio), a site engine. The CMS provides articles, categories, tags, comments, reader accounts, newsletter subscribers, visitor stats from Umami and optional ActivityPub federation.
 
+> **Micelio is pre-1.0 and not stable.** Any `0.y` release may break contracts (content types, the API, the theme contract, environment variables, image names) without a deprecation period. Read the upgrade notes of every release you cross and pin an exact version (`X.Y.Z`) for anything you keep running. See ["Before 1.0.0"](https://github.com/bogd3v/micelio/blob/main/docs/adr/0010-semantic-versioning.md#4-before-100) in ADR 0010.
+
 ## Run your own site
 
 Try Micelio on your machine with Docker only: Postgres, this CMS and the [frontend](https://github.com/bogd3v/micelio), with a small bilingual demo blog.
@@ -93,7 +95,7 @@ The documentation is organised by reader; start at [`docs/README.md`](docs/READM
 
 ## Releases
 
-Releases follow [Semantic Versioning](https://github.com/bogd3v/micelio/blob/main/docs/adr/0010-semantic-versioning.md) and share one release line with the [frontend](https://github.com/bogd3v/micelio): the CMS of a line also serves the frontend of the previous MINOR. Each release `vX.Y.Z` publishes the image `ghcr.io/bogd3v/micelio-cms` as `X.Y.Z`, `X.Y` and `latest`; builds of `main` are `edge`. The demo Compose files follow `latest`, the newest stable release. Pin `X.Y.Z` for anything you keep running. The notes of each release state the frontend line it was tested with and the minimum Node and PostgreSQL versions; [Upgrade](docs/operate/upgrade.md) explains the tags and the steps. How a release is cut is in [the CI and image pipeline](docs/architecture/ci-pipeline.md).
+Releases follow [Semantic Versioning](https://github.com/bogd3v/micelio/blob/main/docs/adr/0010-semantic-versioning.md) and share one release line with the [frontend](https://github.com/bogd3v/micelio): the CMS of a line also serves the frontend of the previous MINOR. Each release `vX.Y.Z` publishes the image `ghcr.io/bogd3v/micelio-cms` as `X.Y.Z`, `X.Y` and `latest`; builds of `main` are `edge`. The demo Compose files follow `latest`, the newest release: a newer `latest` can break your setup before 1.0.0, it is not a stability promise. Pin `X.Y.Z` for anything you keep running. The notes of each release state the frontend line it was tested with and the minimum Node and PostgreSQL versions; [Upgrade](docs/operate/upgrade.md) explains the tags and the steps. How a release is cut is in [the CI and image pipeline](docs/architecture/ci-pipeline.md).
 
 ## License
 
