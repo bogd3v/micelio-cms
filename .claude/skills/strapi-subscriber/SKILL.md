@@ -14,6 +14,8 @@ The `subscriber` content type stores newsletter subscriptions. The whole flow (s
 
 ## Schema
 
+The frontend stores the SHA-256 (64 hex characters) of each token the emails carry and looks subscribers up by that hash (bogd3v/micelio#540); rows stored before it hold the token itself until used. The CMS stores whatever string it is given.
+
 `src/api/subscriber/content-types/subscriber/schema.json`, without draft and publish (every entry is published, so `GET /api/subscribers` finds it):
 
 | Field               | Type                                | Notes                                                                                                                                          |
@@ -36,9 +38,9 @@ No users-permissions role may touch subscribers: a public `create` would let any
 
 ```http
 POST /api/subscribers
-{ "data": { "email": "ana@example.com", "confirmationToken": "<uuid>", "unsubscribeToken": "<token>", "confirmed": false, "language": "es" } }
+{ "data": { "email": "ana@example.com", "confirmationToken": "<sha256 hex>", "unsubscribeToken": "<sha256 hex>", "confirmed": false, "language": "es" } }
 
-GET /api/subscribers?filters[unsubscribeToken][$eq]=<token>
+GET /api/subscribers?filters[unsubscribeToken][$eq]=<sha256 of the token>
 PUT /api/subscribers/:documentId    { "data": { "confirmed": true, "confirmationToken": null } }
 DELETE /api/subscribers/:documentId
 ```
