@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { createHmac } from 'node:crypto';
 import request from 'supertest';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { getPublicRole, getRole } from './helpers/permissions';
@@ -108,6 +109,35 @@ describe('Accounts (users-permissions)', () => {
       await pluginStore().set({ key: 'advanced', value: advanced });
     });
 
+    it('issues JWTs with the reader type and audience', async () => {
+      const user = await createUser('claims-reader');
+      const [, payload] = jwtFor(user).split('.');
+      expect(JSON.parse(Buffer.from(payload, 'base64url').toString())).toMatchObject({
+        id: user.id,
+        type: 'reader',
+        aud: 'micelio:reader',
+      });
+    });
+
+    it('refuses a JWT signed with the same secret but without the claims, or for another audience', async () => {
+      const user = await createUser('claims-refused');
+      const secret = strapi.config.get('plugin::users-permissions.jwtSecret') as string;
+      const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+      const sign = (payload: object) => {
+        const body = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ ...payload, exp: Math.floor(Date.now() / 1000) + 3600 })}`;
+        return `${body}.${createHmac('sha256', secret).update(body).digest('base64url')}`;
+      };
+      const me = (token: string) =>
+        http().get('/api/users/me').set('Authorization', `Bearer ${token}`);
+
+      await me(sign({ id: user.id })).expect(401);
+      await me(sign({ id: user.id, type: 'reader' })).expect(401);
+      await me(sign({ id: user.id, aud: 'micelio:reader' })).expect(401);
+      await me(sign({ id: user.id, type: 'access', aud: 'micelio:reader' })).expect(401);
+      await me(sign({ id: user.id, type: 'reader', aud: 'other' })).expect(401);
+      await me(sign({ id: user.id, type: 'reader', aud: 'micelio:reader' })).expect(200);
+    });
+
     it('issues JWTs that last 7 days', async () => {
       const user = await createUser('jwt-reader');
       const [, payload] = jwtFor(user).split('.');
@@ -179,6 +209,8 @@ describe('Accounts (users-permissions)', () => {
       const res = await login();
       expect(res.status).toBe(200);
       expect(res.body.jwt).toEqual(expect.any(String));
+      // The JWT sign-in returns carries the reader claims, so the next request accepts it.
+      await http().get('/api/users/me').set('Authorization', `Bearer ${res.body.jwt}`).expect(200);
     });
 
     it('rejects a role in the registration body', async () => {

@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { READER_JWT_AUDIENCE } from '../src/constants/jwt';
 import { limitsAuth } from '../src/utils/rate-limit/rule';
 import { createPasswordValidator, parseBannedWords } from '../src/utils/password-rules';
 import { smtpTlsOptions } from '../src/utils/smtp';
@@ -83,7 +84,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     // plugin store (src/migrations/account-settings.ts).
     'users-permissions': {
       config: {
-        jwt: { expiresIn: '7d' },
+        jwt: { expiresIn: '7d', audience: READER_JWT_AUDIENCE },
         // Read by sign-up, reset and change: `validationRules`, not a top-level key.
         validationRules: {
           validatePassword: createPasswordValidator(parseBannedWords(env('PASSWORD_BANNED_WORDS'))),
