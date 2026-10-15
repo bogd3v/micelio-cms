@@ -9,11 +9,60 @@ import { CITATION_PATTERN } from './citations';
 /** Hard cap so a huge article can't bloat every row it is copied into. */
 export const MAX_PLAIN_TEXT_LENGTH = 100_000;
 
-/** Strips Markdown and HTML syntax from an article body, keeping the text a reader sees. */
+/** An HTML comment. */
+const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+
+/**
+ * Something that reads as an HTML tag: a name followed by whitespace, `/` or
+ * `>`, or a `<!` declaration. A `<` followed by anything else (`1 < 2`,
+ * `Map<K, V>`) is text.
+ */
+const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g;
+
+/** A tag start with no `>` left to close it, removed when stripping keeps rebuilding tags. */
+const TAG_START = /<(?=[A-Za-z/!])/g;
+
+/** Passes of tag stripping before the tag starts that remain are dropped. */
+const MAX_STRIP_PASSES = 4;
+
+/** A fenced code block (to the end of the text when it is not closed) or an inline code span. */
+const CODE =
+  /^[ \t]*(?:```|~~~)[^\n]*\n[\s\S]*?(?:^[ \t]*(?:```|~~~)[^\n]*$|(?![\s\S]))|`+[^`\n]+`+/gm;
+
+/**
+ * Removes the HTML tags and comments of a text and keeps every other `<`.
+ * Stripping can bring the pieces of a tag together (`<scr<b>ipt>`), so it
+ * repeats until nothing is left to strip. A few passes bound the work on
+ * hostile nesting; what then remains of a tag start is dropped.
+ */
+function stripHtml(text: string): string {
+  let current = text;
+  for (let pass = 0; pass < MAX_STRIP_PASSES; pass++) {
+    const next = current.replace(HTML_COMMENT, '').replace(HTML_TAG, '');
+    if (next === current) return next;
+    current = next;
+  }
+  return current.replace(HTML_COMMENT, '').replace(TAG_START, '');
+}
+
+/** Strips the HTML of a Markdown text but leaves code, where `<` is what the author wrote. */
+function stripHtmlOutsideCode(markdown: string): string {
+  let result = '';
+  let last = 0;
+  for (const match of markdown.matchAll(CODE)) {
+    result += stripHtml(markdown.slice(last, match.index)) + match[0];
+    last = match.index + match[0].length;
+  }
+  return result + stripHtml(markdown.slice(last));
+}
+
+/**
+ * Strips Markdown and HTML syntax from an article body, keeping the text a
+ * reader sees: code as written, and a `<` that does not start a tag.
+ */
 export function markdownToPlainText(markdown: string): string {
   return (
-    markdown
-      .replace(/\r\n?/g, '\n')
+    stripHtmlOutsideCode(markdown.replace(/\r\n?/g, '\n'))
       // Code fences: keep the code, drop the fences and their language tag.
       .replace(/^[ \t]*(```|~~~)[^\n]*$/gm, '')
       // Citation markers (`[@key]`), with the space before them.
@@ -22,9 +71,6 @@ export function markdownToPlainText(markdown: string): string {
       .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
       .replace(/^[ \t]*\[[^\]]+\]:\s*\S+.*$/gm, '')
-      // HTML tags and comments.
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/<[^>]+>/g, '')
       // Block markers: headings, quotes, list bullets and numbers, rules, tables.
       .replace(/^[ \t]{0,3}#{1,6}\s+/gm, '')
       .replace(/^[ \t]*>+\s?/gm, '')

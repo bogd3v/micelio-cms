@@ -54,6 +54,25 @@ describe('Article plain text and content search', () => {
       }
     });
 
+    it('keeps a < that does not start a tag, and code as written', () => {
+      expect(markdownToPlainText('1 < 2 and 3 > 2')).toBe('1 < 2 and 3 > 2');
+      expect(markdownToPlainText('Map<K, V> and a<=b, c>=d')).toBe('Map<K, V> and a<=b, c>=d');
+      expect(markdownToPlainText('Use `Array<string>` or <b>bold</b> text')).toBe(
+        'Use Array<string> or bold text'
+      );
+      expect(markdownToPlainText('```ts\nconst xs: Array<string> = []\n```\n\n<i>after</i>')).toBe(
+        'const xs: Array<string> = []\n\nafter'
+      );
+      expect(markdownToPlainText('a<!-- x > y -->b')).toBe('ab');
+    });
+
+    it('bounds the work on hostile nesting and leaves no tag', () => {
+      const nested = `${'<a'.repeat(20_000)}>${'>'.repeat(20_000)}text`;
+      const started = Date.now();
+      expect(markdownToPlainText(nested)).not.toMatch(/<\/?[a-z!]/i);
+      expect(Date.now() - started).toBeLessThan(2_000);
+    });
+
     it('drops Markdown and HTML syntax but keeps the words and the code', () => {
       const markdown = [
         '## Un **título** con `código`',
