@@ -5,7 +5,8 @@
 // functions and classes are logic and are not checked.
 // Known limits: an import through a barrel (`export { X } from`, `export *`) is credited to the
 // barrel, not to the file that declares `X`; `import * as ns` and `import('./x').T` are not
-// followed. `src/` has none of these today; a barrel would need this script to follow it.
+// followed. Barrels exist only inside the shared folders (`src/constants/response-fields/index.ts`,
+// which only the tests import); a barrel that `src/` imports would need this script to follow it.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import ts from 'typescript';
