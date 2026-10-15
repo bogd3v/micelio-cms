@@ -70,6 +70,7 @@ SPDX-License-Identifier = "MIT"
 [[annotations]]
 path = [
   "src/constants/common-passwords.ts",
+  "src/constants/breached-passwords.ts",
   "src/constants/common-passwords.LICENSE.txt",
 ]
 SPDX-FileCopyrightText = ["2018 Daniel Miessler", "2026 Alejandro Ramirez Garcia and the Micelio contributors"]

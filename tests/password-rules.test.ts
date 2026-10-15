@@ -22,6 +22,11 @@ describe('password rules', () => {
     expect(() => validate('ＰＡＳＳＷＯＲＤ')).toThrow('too common');
   });
 
+  it('refuses a password from the breached list, not only the 3000 most common', () => {
+    expect(() => validate('Mercedes1')).toThrow('known data breaches');
+    expect(() => validate('abcdefgh1')).toThrow('known data breaches');
+  });
+
   it('refuses a password that contains a built-in or configured word', () => {
     expect(() => validate('my-Micelio-site-1')).toThrow('tied to this site');
     expect(() => validate('ilove-STRAPI-cms')).toThrow('tied to this site');
