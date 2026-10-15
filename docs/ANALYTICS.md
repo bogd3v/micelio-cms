@@ -53,6 +53,8 @@ Articles with 0 visitors in the period are left out, and so are articles unpubli
 
 Its data comes from `GET /article-stats/summary` on the **admin** API (admin session required, `admin::isAuthenticatedAdmin`). Routes under `src/api` are always registered as content API, so this one is added with `strapi.server.routes({ type: 'admin' })` in `register()` (`src/index.ts`). The top list comes from `article_stats`; the totals are read live from Umami (`/api/websites/:id/stats`) and, if Umami fails, the widget still shows the list. The API key never reaches the browser.
 
+The requests the sync makes, and the key it sends, are listed with the other outbound connections in [security/outbound.md](security/outbound.md).
+
 ## Configuration
 
 | Variable           | Meaning                                                                                                                                                                                            |

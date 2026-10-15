@@ -21,7 +21,7 @@ npm run format / format:check
 npm run test             # jest --forceExit (parallel workers)
 npm run test:handles     # same, serial, with --detectOpenHandles to find leaks
 npm run test:watch
-npm run generate:keys    # generate Strapi secrets into .env
+npm run generate:keys    # print Strapi secrets to stdout; writes no file
 npm run seed:example     # run scripts/seed.js
 ```
 
@@ -36,29 +36,31 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 - Drafts are served to any `find` caller with `?status=draft`, populated relations included; `src/utils/drafts-access.ts` closes it. See `docs/architecture/drafts.md`.
 - `strapi-plugin-comments` responses pass through a fixed zod schema that drops unknown attributes; add fields through `src/extensions/comments/strapi-server.ts` (never a `schema.json`) and re-attach them in a middleware like `src/middlewares/fediverse-comment-fields.ts`; its public endpoints also return pending comments (`hide-unapproved-comments.ts`). See `docs/architecture/comments.md`.
 - `populate=*` does not reach nested components (`site.theme.accentOverrides`) and a fragment populate (`blocks.on`) drops components it does not name. See `docs/architecture/site-settings.md` and `docs/architecture/playground-blocks.md`.
+- Strapi's telemetry (`analytics.strapi.io`) and the admin survey are off by default (`strapi.telemetryDisabled` in `package.json`, `FLAG_NPS=false`); turning them on is the operator's choice. See `docs/security/outbound.md`.
 
 ## Before you touch X, read Y
 
-| Area                                     | Read                                                          |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| Content types, controllers, services     | `docs/architecture/overview.md`, `AGENTS.md`                  |
-| Fediverse plugin, federation             | `docs/FEDIVERSE.md`, skill `strapi-fediverse`                 |
-| Comments                                 | `docs/architecture/comments.md`, skill `strapi-comments`      |
-| Drafts, editor role                      | `docs/architecture/drafts.md`                                 |
-| Accounts, users-permissions              | `docs/ACCOUNTS.md`                                            |
-| Security review, any requirement         | `docs/security/asvs.md`, agent `security`                     |
-| Subscribers                              | `docs/architecture/subscribers.md`, skill `strapi-subscriber` |
-| Site settings, theme, modules            | `docs/architecture/site-settings.md`                          |
-| Authors                                  | `docs/architecture/authors.md`                                |
-| Pages, sections, rebuild hook            | `docs/architecture/pages.md`                                  |
-| Demo instance, new instances, API tokens | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`   |
-| Playground blocks                        | `docs/architecture/playground-blocks.md`                      |
-| Analytics                                | `docs/ANALYTICS.md`                                           |
-| Rate limiting, client IP                 | `docs/RATE_LIMITING.md`                                       |
-| Tests                                    | `docs/architecture/testing.md`                                |
-| Install, configure, upgrade, back up     | `docs/operate/`, skill `strapi-deployment`                    |
-| CI and the image pipeline                | `docs/architecture/ci-pipeline.md`                            |
-| Where each document lives                | `docs/README.md`                                              |
+| Area                                               | Read                                                                               |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`                                       |
+| Fediverse plugin, federation                       | `docs/FEDIVERSE.md`, skill `strapi-fediverse`                                      |
+| Comments                                           | `docs/architecture/comments.md`, skill `strapi-comments`                           |
+| Drafts, editor role                                | `docs/architecture/drafts.md`                                                      |
+| Accounts, users-permissions                        | `docs/ACCOUNTS.md`                                                                 |
+| Security review, any requirement                   | `docs/security/asvs.md`, agent `security`                                          |
+| Subscribers                                        | `docs/architecture/subscribers.md`, skill `strapi-subscriber`                      |
+| Site settings, theme, modules                      | `docs/architecture/site-settings.md`                                               |
+| Authors                                            | `docs/architecture/authors.md`                                                     |
+| Pages, sections, rebuild hook                      | `docs/architecture/pages.md`                                                       |
+| Demo instance, new instances, API tokens           | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`                        |
+| Playground blocks                                  | `docs/architecture/playground-blocks.md`                                           |
+| Analytics                                          | `docs/ANALYTICS.md`                                                                |
+| Rate limiting, client IP                           | `docs/RATE_LIMITING.md`                                                            |
+| Keys, personal data, outbound calls, uploads, logs | `docs/security/` (`keys.md`, `data.md`, `outbound.md`, `uploads.md`, `logging.md`) |
+| Tests                                              | `docs/architecture/testing.md`                                                     |
+| Install, configure, upgrade, back up               | `docs/operate/`, skill `strapi-deployment`                                         |
+| CI and the image pipeline                          | `docs/architecture/ci-pipeline.md`                                                 |
+| Where each document lives                          | `docs/README.md`                                                                   |
 
 Subsystem knowledge lives in these files, not here (standard, section 1). Add a new subsystem's notes to `docs/architecture/` and a row to this table.
 

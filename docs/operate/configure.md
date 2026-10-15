@@ -70,6 +70,8 @@ A content API request whose `populate`, `filters` or `sort` nests deeper than `P
 
 Micelio makes no request to Strapi's analytics host unless you opt in. Strapi telemetry is off through `"telemetryDisabled": true` under `strapi` in `package.json`, and the admin satisfaction survey is off (`FLAG_NPS=false`). To turn the survey on, set `FLAG_NPS=true`. To turn telemetry on, remove `telemetryDisabled` from `package.json` before building the image (`STRAPI_TELEMETRY_DISABLED=true` can only switch it off, never on). Upgrading needs no action; a site that relied on the old defaults loses only those two reports.
 
+Outbound connections, telemetry and the admin survey are listed in [outbound.md](../security/outbound.md). Strapi's telemetry and the survey are off by default (see above), and the update check is turned off in `config/server.ts` (`logger.updates.enabled`).
+
 ## Rate limiting
 
 <a id="rate-limiting"></a>
@@ -124,6 +126,8 @@ R2_BASE_URL=https://media.example.com   # public URL of the bucket; also allowed
 With the local disk the files are served from the CMS origin, the one the admin panel runs on, so the CMS treats an upload as untrusted: HTML and XHTML uploads are refused, and everything under `/uploads` is sent with `X-Content-Type-Options: nosniff`. Anything that is not a raster image, video, audio or PDF (an SVG, a text file) also gets `Content-Security-Policy: … sandbox` and `Content-Disposition: attachment`, so opened on its own it runs no script; as an `<img>` it renders as usual. A bucket on its own origin avoids the question, and is the better choice when editors are not all trusted.
 
 The local provider is meant for development and small setups. A file that a browser renders inline runs with the privileges of the admin origin, which is why `global::upload-headers` serves only raster images, video, audio and PDF inline and everything else as an attachment under a sandbox policy. In production, serve uploads from object storage (the `R2_*` variables above) or from another hostname. With `NODE_ENV=production` and the local provider, the CMS logs one `[uploads]` warning at boot and keeps starting; there is no setting to silence it. Setting `R2_BUCKET` removes it.
+
+Accepted types, the size limit and the headers that keep an upload inert when opened are in [uploads.md](../security/uploads.md).
 
 ## Analytics (Umami)
 
@@ -200,11 +204,17 @@ MICELIO_DEMO=false   # seeds a bilingual demo site once on an empty database (co
 
 ## Generate the Strapi keys
 
+What each key signs or encrypts, and what a rotation breaks, is in [keys.md](../security/keys.md).
+
 ```bash
 node scripts/generate-keys.js
 ```
 
 Copy the output into the environment of your container, or over the empty values of a local `.env` (`npm run generate:keys` prints the same). In production the CMS refuses to start when `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `JWT_SECRET` or `ENCRYPTION_KEY` is empty, a placeholder (`tobemodified`, `changeme`) or shorter than 32 characters, and the message names each one. With `DATABASE_CLIENT=postgres` and no `DATABASE_URL`, `DATABASE_PASSWORD` must be set and must not be `strapi`; `docker-compose.yml` refuses to start without it.
+
+## Logs
+
+The CMS writes its logs to standard output and nowhere else; retention and access are the platform's. The events, the format and what is not logged are in [logging.md](../security/logging.md).
 
 ## Docker and backup variables
 
