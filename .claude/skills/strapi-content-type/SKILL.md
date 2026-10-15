@@ -123,6 +123,8 @@ Example dynamic zone on a new content type:
 6. **Private fields**: mark fields with `"private": true` if they should never reach the content API (e.g., `author.email`); Strapi 5 strips them from responses, and filtering/sorting on them returns 400.
 7. **Expose to the public**: after creating a content type, grant `find`/`findOne` permissions to the public role. Prefer doing this in `scripts/seed.js` (see `strapi-seeding` skill) so the front-end can read it immediately.
 
+8. **Response fields**: when a route returns the type to the frontend (or a field is added to a type it already returns), list its keys in `src/constants/response-fields/` as `required` (the frontend reads it) or `surplus`, add the field to the seed in `tests/helpers/response-fields-seed*.ts`, and regenerate `docs/security/response-fields.md` with `npm run docs:response-fields`. A response field suite fails on a key that is not listed.
+
 ## Pages and the section catalog
 
 `page` builds landing pages from `section.*` components (`src/components/section/`); the catalog is a contract with every theme (micelio ADR 0005 §11). To add a section or a variant: add the component (semantic fields only; `variant` as an `enumeration` with a `default` and `required`), add it to `page.sections`, and the frontend component, `/_theme` and every installed theme must follow in micelio. Give repeatable item components their own `collectionName` when it would collide with a section's (`components_section_testimonial_items`). Drafts may be incomplete: Strapi applies `required`, `min`/`max` and `regex` on publish.
