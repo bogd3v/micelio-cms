@@ -42,7 +42,7 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 
 | Area                                               | Read                                                                               |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`                                       |
+| Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`, `docs/security/response-fields.md`   |
 | Fediverse plugin, federation                       | `docs/FEDIVERSE.md`, skill `strapi-fediverse`                                      |
 | Comments                                           | `docs/architecture/comments.md`, skill `strapi-comments`                           |
 | Drafts, editor role                                | `docs/architecture/drafts.md`                                                      |

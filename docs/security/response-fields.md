@@ -51,7 +51,7 @@ Strapi adds `id` and `documentId` to every document whatever `fields` says, adds
 
 ## Surplus worth a follow-up
 
-These fields are public content, the caller's own data, or file metadata including the original file name and provider metadata. They are listed so a later change can decide.
+V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothing here removes them. They are public content, the caller's own data, or file metadata including the original file name and provider metadata. The follow-ups that would narrow them are: in micelio, name the `fields` of the feed and media populates; in the CMS, reduce `threadOf` to `{ id }`.
 
 | Where                                              | Surplus                                                                                                                                                                                                                                                | Follow-up                                                                                                                                    |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
