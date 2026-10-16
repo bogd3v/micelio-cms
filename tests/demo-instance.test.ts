@@ -167,6 +167,16 @@ describe('Demo instance', () => {
     });
   });
 
+  describe('token lifetime', () => {
+    // Pins the decision of docs/API_TOKENS.md ("Lifetime and rotation"): env tokens never expire.
+    it('creates the frontend and build tokens with no lifespan and no expiry', async () => {
+      for (const name of [FRONTEND_TOKEN_NAME, BUILD_TOKEN_NAME]) {
+        const token = await strapi.db.query(TOKEN_UID).findOne({ where: { name } });
+        expect([name, token.lifespan, token.expiresAt]).toEqual([name, null, null]);
+      }
+    });
+  });
+
   describe('build token', () => {
     it('is created read-only from BUILD_API_TOKEN and reads pages', async () => {
       const token = await strapi.db.query(TOKEN_UID).findOne({
