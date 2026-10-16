@@ -13,8 +13,8 @@ const HASH_LENGTH = 16;
 const MAX_TEXT = 200;
 /** Label that makes this key differ from the rate-limit key derived from the same app key. */
 const HASH_CONTEXT = 'micelio:security-log:v1';
-/** Control characters and the Unicode line and paragraph separators. */
-const CONTROL_CHARACTERS = /[\p{Cc}\p{Zl}\p{Zp}]+/gu;
+/** Control and format characters (bidi overrides, zero-width) and the Unicode line and paragraph separators. */
+const CONTROL_CHARACTERS = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+/gu;
 const HASH_PATTERN = new RegExp(`^[0-9a-f]{${HASH_LENGTH}}$`);
 const USER_ID_PATTERN = /^\d{1,18}$/;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;

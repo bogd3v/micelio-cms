@@ -1,6 +1,9 @@
 import type { Core } from '@strapi/strapi';
 import { errors } from '@strapi/utils';
 import { EDITOR_ROLE_TYPE } from '../constants/roles';
+import { SECURITY_EVENTS } from '../constants/security-events';
+import type { AccessLogContext } from '../types/security-events';
+import { logAccessRefusal } from './access-log';
 
 /** Document Service actions that return documents to the caller. */
 const READ_ACTIONS = new Set(['findMany', 'findOne', 'findFirst', 'count']);
@@ -43,6 +46,12 @@ export function restrictDraftsToEditors(strapi: Core.Strapi): void {
 
     const state = strapi.requestContext.get()?.state as RequestState | undefined;
     if (state?.route?.info?.type === 'content-api' && !canReadDrafts(state)) {
+      logAccessRefusal(
+        strapi,
+        strapi.requestContext.get() as AccessLogContext | undefined,
+        SECURITY_EVENTS.accessDraftRefused,
+        'draft-requested'
+      );
       throw new errors.ForbiddenError('Drafts are only available to editors');
     }
     return next();

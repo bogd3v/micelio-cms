@@ -77,31 +77,33 @@ The actor key pair is generated on the first boot that finds none (`src/plugins/
 - `reason`: one of the closed set `SECURITY_REASONS`.
 - `path`: query string and fragment dropped, percent-escapes decoded, then emails, IPv4 and IPv6 literals and token-like runs (16 or more characters with a digit) replaced by `[redacted]`.
 
+Strapi checks the route permission before the policy, so a user without the `drafts` permission gets `access.forbidden`, and `access.editor.refused` appears for a caller that has it but is not an editor (an API token, another role). `access.forbidden` is not sampled or throttled, on purpose: ASVS V16.3.2 asks for each refusal. Its volume is at most one line per refused request, and a client is capped by the `api` rate-limit group, whose 429s are not logged. It has no `reason`, because controller and plugin 403s are not all missing permissions. A request refused for a draft or by `is-editor` writes one line, not two: `logAccessRefusal` (`src/utils/access-log.ts`) marks it and `global::forbidden-log`, which sits just inside the request logger, skips marked requests. The actor is the numeric id of a signed-in user (none for the public or an API token). Logging never changes the answer and never throws.
+
 The metadata reaches stdout only with the JSON log format (production, PR A1 of #180). The development format (Strapi's `prettyPrint`) prints only `level: message`.
 
 The fediverse plugin is a self-contained unit and does not import `security-log.ts`: it keeps its own small copy, using the same event string and field names (`fediverse.inbox.signature-refused`). That copy is not part of this change.
 
-| Event                                 | Level  | Emitted by           |
-| ------------------------------------- | ------ | -------------------- |
-| `auth.login.success`                  | `info` | Not wired yet (#180) |
-| `auth.login.failure`                  | `warn` | Not wired yet (#180) |
-| `auth.register`                       | `info` | Not wired yet (#180) |
-| `auth.password-reset.requested`       | `info` | Not wired yet (#180) |
-| `auth.password-reset.completed`       | `info` | Not wired yet (#180) |
-| `auth.email-confirmation.confirmed`   | `info` | Not wired yet (#180) |
-| `access.draft.refused`                | `warn` | Not wired yet (#180) |
-| `access.editor.refused`               | `warn` | Not wired yet (#180) |
-| `access.forbidden`                    | `warn` | Not wired yet (#180) |
-| `rate-limit.rejected`                 | `warn` | Not wired yet (#180) |
-| `rate-limit.forwarder-secret.invalid` | `warn` | Not wired yet (#180) |
-| `fediverse.inbox.signature-refused`   | `warn` | Not wired yet (#180) |
+| Event                                 | Level  | Emitted by                                                                                              |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
+| `auth.login.success`                  | `info` | Not wired yet (#180)                                                                                    |
+| `auth.login.failure`                  | `warn` | Not wired yet (#180)                                                                                    |
+| `auth.register`                       | `info` | Not wired yet (#180)                                                                                    |
+| `auth.password-reset.requested`       | `info` | Not wired yet (#180)                                                                                    |
+| `auth.password-reset.completed`       | `info` | Not wired yet (#180)                                                                                    |
+| `auth.email-confirmation.confirmed`   | `info` | Not wired yet (#180)                                                                                    |
+| `access.draft.refused`                | `warn` | `src/utils/drafts-access.ts` (Document Service middleware)                                              |
+| `access.editor.refused`               | `warn` | `src/policies/is-editor.ts`                                                                             |
+| `access.forbidden`                    | `warn` | `src/middlewares/forbidden-log.ts`: every other final 403, content API, admin panel and admin API alike |
+| `rate-limit.rejected`                 | `warn` | Not wired yet (#180)                                                                                    |
+| `rate-limit.forwarder-secret.invalid` | `warn` | Not wired yet (#180)                                                                                    |
+| `fediverse.inbox.signature-refused`   | `warn` | Not wired yet (#180)                                                                                    |
 
 ## What is not logged
 
 These are not written, so they cannot be read from the logs. They are the open rows of #180 and are not accepted risks yet:
 
 - Successful and failed sign-ins, password resets and confirmations, beyond the request line with its status.
-- Refused drafts, the `is-editor` policy refusals and other 403s, beyond the status in the request line.
+- Nothing is hidden among 403s: every final 403 is logged, on any route. What stays out of the log is the reason for an unclassified 403 (the line has no `reason`), and the rejected value, which is never written.
 - Rate-limit rejections (the `429` is answered, not logged), and inbox requests whose signature is refused. Fedify reports these through LogTape, which is not configured.
 - Admin actions. Admin audit logs are an Enterprise feature, and this repository does not ship Enterprise code.
 

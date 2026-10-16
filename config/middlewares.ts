@@ -17,6 +17,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
   return [
     // Not strapi::logger: it logs the query string (emails, tokens).
     'global::request-logger',
+    // Outside strapi::errors, so it sees the final 403; it reads the address after next(),
+    // once client-ip has set it (forbidden-log.ts).
+    'global::forbidden-log',
     'strapi::errors',
     // Sets the client address for everything below (TRUST_PROXY).
     'global::client-ip',
