@@ -271,6 +271,22 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
     });
   });
 
+  describe('Outbox cursor bounds', () => {
+    it('never answers 500 for a huge, negative or non-numeric cursor', async () => {
+      const cursors = ['99999999999999999999', '9007199254740993', '-7', 'abc', '1e309'];
+      for (const cursor of cursors) {
+        const res = await getJson(`/fediverse/user/devbog/outbox?cursor=${cursor}`);
+        expect(res.status).toBe(200);
+      }
+    });
+
+    it('caps the cursor so the next one stays within bounds', async () => {
+      const res = await getJson('/fediverse/user/devbog/outbox?cursor=99999999999999999999');
+      expect(asArray(res.body.orderedItems)).toEqual([]);
+      expect(res.body.next).toBeUndefined();
+    });
+  });
+
   describe('publish fan-out', () => {
     it('sends a publicly-addressed Create(Article) to followers on publish', async () => {
       const draft = await createArticle();

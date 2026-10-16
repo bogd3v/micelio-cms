@@ -9,6 +9,8 @@ import type { DraftSummary } from '../../../types/article-drafts';
 
 /** Shortest query, in characters, that the search accepts. */
 export const SEARCH_MIN_LENGTH = 3;
+/** Longest query the search accepts, in UTF-16 code units (`String.length`); a longer one is a 400. */
+export const SEARCH_MAX_LENGTH = 200;
 /** Number of results `search` returns when the caller gives no usable limit. */
 export const SEARCH_DEFAULT_LIMIT = 10;
 /** Largest number of results `search` returns; a higher limit is clamped to it. */

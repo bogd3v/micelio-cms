@@ -1,11 +1,14 @@
 import type { Core } from '@strapi/strapi';
 
 import { findPublishedArticle } from '../services/articles';
+import { isConfiguredLocale } from '../utils/configured-locale';
 import { countInteractions } from '../services/interactions';
 import {
   BATCH_MAX_IDS,
   RANKING_DEFAULT_PAGE_SIZE,
+  RANKING_MAX_PAGE,
   RANKING_MAX_PAGE_SIZE,
+  RANKING_TEXT_MAX_LENGTH,
   RANKING_SEARCH_MIN_LENGTH,
   rankArticles,
   statsForArticles,
@@ -77,11 +80,25 @@ export default ({
 
   /** GET /articles/ranking?page=1&pageSize=6&locale=es&category=ia&tag=vue&search=rag */
   async ranking(ctx: Context) {
-    const locale = typeof ctx.query.locale === 'string' ? ctx.query.locale : undefined;
+    const locale = textParam(ctx.query.locale);
+    if (locale !== undefined && !(await isConfiguredLocale(strapi, locale))) {
+      ctx.badRequest('locale is not a configured locale');
+      return;
+    }
     const category = textParam(ctx.query.category);
     const tag = textParam(ctx.query.tag);
     const search = textParam(ctx.query.search);
-    const page = positiveInt(ctx.query.page, 1);
+    for (const [name, value] of [
+      ['category', category],
+      ['tag', tag],
+      ['search', search],
+    ] as const) {
+      if (value && value.length > RANKING_TEXT_MAX_LENGTH) {
+        ctx.badRequest(`${name} must be at most ${RANKING_TEXT_MAX_LENGTH} characters long`);
+        return;
+      }
+    }
+    const page = Math.min(positiveInt(ctx.query.page, 1), RANKING_MAX_PAGE);
     const pageSize = Math.min(
       positiveInt(ctx.query.pageSize, RANKING_DEFAULT_PAGE_SIZE),
       RANKING_MAX_PAGE_SIZE

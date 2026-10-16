@@ -70,6 +70,8 @@ import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
 import { cleanRemoteText } from './utils/remote-text';
 
 const OUTBOX_PAGE_SIZE = 20;
+/** Largest outbox cursor (an offset) served; a larger one is clamped, never sent to the database. */
+const OUTBOX_MAX_CURSOR = 100_000;
 
 /**
  * Extracts the avatar image URL from a remote actor's icon (Mastodon sends
@@ -294,7 +296,10 @@ export function createFediverseFederation(
     .setOutboxDispatcher(OUTBOX_PATH, async (ctx, identifier, cursor) => {
       if (identifier !== ACTOR_IDENTIFIER) return null;
 
-      const start = Math.max(0, Number.parseInt(cursor ?? '0', 10) || 0);
+      const start = Math.min(
+        Math.max(0, Number.parseInt(cursor ?? '0', 10) || 0),
+        OUTBOX_MAX_CURSOR
+      );
       const { items, total } = await listPublishedArticles(ctx.data.strapi, {
         start,
         limit: OUTBOX_PAGE_SIZE,

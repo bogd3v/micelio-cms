@@ -4,7 +4,8 @@
 
 import { factories } from '@strapi/strapi';
 import { ARTICLE_UID } from '../../../constants/uids';
-import { SEARCH_DEFAULT_LIMIT, SEARCH_MIN_LENGTH } from '../services/article';
+import { configuredLocales } from '../../../utils/author-locales';
+import { SEARCH_DEFAULT_LIMIT, SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH } from '../services/article';
 
 const TRUE_VALUES = new Set(['1', 'true', 'yes']);
 
@@ -17,9 +18,17 @@ export default factories.createCoreController(ARTICLE_UID, ({ strapi }) => ({
       return ctx.badRequest(`q must be at least ${SEARCH_MIN_LENGTH} characters long`);
     }
 
+    if (query.length > SEARCH_MAX_LENGTH) {
+      return ctx.badRequest(`q must be at most ${SEARCH_MAX_LENGTH} characters long`);
+    }
+    const localeCode = typeof locale === 'string' && locale ? locale : undefined;
+    if (localeCode && !(await configuredLocales(strapi)).includes(localeCode)) {
+      return ctx.badRequest('locale is not a configured locale');
+    }
+
     const data = await strapi.service(ARTICLE_UID).search({
       query,
-      locale: typeof locale === 'string' && locale ? locale : undefined,
+      locale: localeCode,
       content: typeof content === 'string' && TRUE_VALUES.has(content.toLowerCase()),
       limit: Number.parseInt(String(limit ?? ''), 10) || SEARCH_DEFAULT_LIMIT,
     });

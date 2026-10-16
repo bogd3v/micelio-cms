@@ -17,6 +17,11 @@ export const RANKING_MAX_PAGE_SIZE = 50;
 /** Shortest ranking `search` that filters; a shorter one is ignored. */
 export const RANKING_SEARCH_MIN_LENGTH = 3;
 
+/** Largest ranking `page`; a larger one is clamped to it, so the offset stays small. */
+export const RANKING_MAX_PAGE = 10_000;
+/** Longest ranking `search`, `category` or `tag` in UTF-16 code units (`String.length`); a longer one is a 400. */
+export const RANKING_TEXT_MAX_LENGTH = 200;
+
 type Knex = Core.Strapi['db']['connection'];
 type QueryBuilder = ReturnType<Knex>;
 
