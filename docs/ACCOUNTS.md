@@ -47,6 +47,10 @@ Permissions: the action `plugin::users-permissions.user.destroyMe` is granted to
 
 DELETE requests have their JSON body parsed (`strapi::body` → `parsedMethods` in `config/middlewares.ts`); Koa's default parses only POST, PUT and PATCH.
 
+## Unconfirmed accounts
+
+A daily job (03:17 server time, only when cron is enabled) deletes reader accounts that signed up and never confirmed their email: `confirmed` is false, a confirmation token is still stored, `blocked` is false and `createdAt` is more than `UNCONFIRMED_RETENTION_DAYS` days old (default 30, `0` turns the job off). Confirming clears the token, so a confirmed account is never purged; an account created in the admin panel or by a provider has no token and is never purged; a blocked account stays without a time limit, as that is a moderator's decision and deleting it would free the address to register again. If the `email_confirmation` setting is off, unconfirmed users can sign in, so the job skips accounts altogether. One account that cannot be deleted is counted as failed and does not stop the run. Resending the confirmation email does not extend the wait: only `createdAt` counts. Deletion goes through the same code as `DELETE /api/users/me`, so any comment is kept as «Anónimo» and sessions are revoked. The log line has counts only. Code: `src/utils/unconfirmed-purge.ts`.
+
 ## Sessions
 
 Reader sessions are JWTs that last 7 days from sign-in and cannot be listed or revoked one by one. Sign-ins from several devices are allowed. The full rules, admin sessions included, are in [`security/authentication.md`](security/authentication.md).

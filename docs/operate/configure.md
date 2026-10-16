@@ -151,6 +151,14 @@ In production the CMS refuses to boot, naming the variable, when `UMAMI_URL` is 
 
 Check that the container reaches Umami before you deploy: the first sync runs right after boot and logs `[umami] synced article visitors: {...}`, or `[umami] sync failed` with the reason.
 
+### Unconfirmed accounts and subscriptions
+
+```bash
+UNCONFIRMED_RETENTION_DAYS=30    # optional, default shown; 0 disables the purge
+```
+
+A daily job (cron must be enabled) deletes reader accounts that never confirmed their email and newsletter subscriptions that were never confirmed, once they are older than this many days. The value is a whole number of days from 0 to 36500; anything else (negative, decimal, text, above 36500) stops the boot naming the variable. Accounts are purged only while the users-permissions `email_confirmation` setting is on (it is by default): with it off, unconfirmed users can sign in, so the job leaves accounts alone and still purges subscriptions. Blocked unconfirmed accounts are kept without a time limit. Deletion is permanent: see [Upgrade](upgrade.md) before the first run.
+
 ## Static and landing sites (rebuild hook)
 
 Static and landing sites are rebuilt when content changes: on publish, unpublish or delete of an article or a page, and on every save of the site settings, the CMS calls `REBUILD_HOOK_URL` once per debounce window, with retries, without ever blocking the publish (`src/utils/rebuild-hook.ts`). The body is `{"event_type": "micelio-content", "client_payload": {...}}`, what GitHub's `repository_dispatch` requires; plain deploy hooks ignore it.

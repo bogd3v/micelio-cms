@@ -43,6 +43,8 @@ Use the same environment and volumes. Wait for `GET /_health` to answer `204`: t
 
 If it does not come up, read the logs, fix the missing variable or the database access, and start it again. Do not roll the image back across a MINOR: restore the backup of step 2 instead.
 
+**Purge of unconfirmed accounts and subscriptions.** From the release that adds `UNCONFIRMED_RETENTION_DAYS`, a daily job (not at boot) deletes reader accounts and newsletter subscriptions that were never confirmed and are older than that many days (default 30). The first run after the upgrade deletes everything already past the limit, and it cannot be undone: take the backup of step 2 first. Set `UNCONFIRMED_RETENTION_DAYS=0` before starting the new image to keep them. Confirmed accounts and subscribers, admin-created users and blocked users are never touched. Accounts are skipped too while the `email_confirmation` setting of users-permissions is off.
+
 ## 4. Upgrade the frontend
 
 Then upgrade the frontend as its own [upgrade guide](https://github.com/bogd3v/micelio/blob/main/docs/operate/upgrade.md) says.

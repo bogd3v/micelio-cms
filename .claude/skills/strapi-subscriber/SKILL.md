@@ -45,6 +45,10 @@ PUT /api/subscribers/:documentId    { "data": { "confirmed": true, "confirmation
 DELETE /api/subscribers/:documentId
 ```
 
+## Purge
+
+A daily job deletes unconfirmed subscribers older than `UNCONFIRMED_RETENTION_DAYS` days (default 30, `0` disables) by `createdAt`: `src/utils/unconfirmed-purge.ts`, see `docs/architecture/subscribers.md`.
+
 ## Do not
 
 - Grant any role permissions on subscribers.
