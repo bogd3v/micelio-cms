@@ -16,6 +16,8 @@ Inbound traffic (the content API, the admin panel, the fediverse inbox) is not l
 
 The CMS refuses no destination in this list. The operator chooses each one, and a wrong URL is the operator's to fix.
 
+The Umami sync (`src/api/article-stat/utils/umami-client.ts`) and the rebuild hook (`src/utils/rebuild-hook.ts`) call `fetch` with `redirect: 'error'` (ASVS V15.3.2): a 3xx answer is not followed, because undici resends a `POST` body on 307 and 308 and forwards every header except `Authorization` to another origin. The call fails instead. The Umami sync reports it like any failed sync (`Umami answered with a redirect for <path>, which is refused`). The rebuild hook logs one warning that names the redirect and does not retry, since a redirect means `REBUILD_HOOK_URL` is wrong and no retry fixes it. Neither log line carries the URL query, the token or the key. The operator sets the final address. Tests: `tests/outbound-redirects.test.ts`.
+
 ## Fediverse destinations (`FEDIVERSE_ENABLED=true`)
 
 The destinations here are chosen by other servers, so they are not in the operator's configuration. Details are in [FEDIVERSE.md](../FEDIVERSE.md).
