@@ -7,6 +7,20 @@
  * `docs/FEDIVERSE.md`, "Inbox digest algorithms".
  */
 
+import type { IncomingHttpHeaders } from 'node:http';
+import { isContentDigestCovered } from './inbox-signature-input';
+import type { InboxRefusalReason } from './utils/security-log';
+
+/** Why the inbox middleware answers `401` to a delivery before Fedify reads it. */
+export interface InboxDigestRefusal {
+  /** The `reason` of the `fediverse.inbox.signature-refused` security event. */
+  reason: Extract<InboxRefusalReason, 'digest-algorithm' | 'content-digest-not-covered'>;
+  /** The `text/plain` response body. */
+  message: string;
+  /** The rate-limited `[fediverse]` warning, with no header value in it. */
+  warning: string;
+}
+
 /** One `algorithm=value` entry of a `Digest` header (RFC 3230). */
 export interface DigestEntry {
   /** The algorithm name, lower case (`sha-256`). */
@@ -61,4 +75,40 @@ export function isInboxDigestAccepted(header: string): boolean {
   return parseDigestHeader(header).some(
     (entry) => APPROVED_ALGORITHMS.has(entry.algorithm) && entry.value !== ''
   );
+}
+
+/**
+ * Why an inbox `POST` must be refused before Fedify reads it, or `null` to hand
+ * it to Fedify.
+ *
+ * @remarks
+ * An RFC 9421 delivery (any `Signature-Input` header, which is how Fedify
+ * picks RFC 9421) is refused unless every signature covers `content-digest`
+ * (`inbox-signature-input.ts`). A `Digest` header is refused unless it has a
+ * SHA-256 or SHA-512 entry. Without either header, Fedify decides alone.
+ * Repeated headers are joined with `, `, as Fedify's `Headers.get` does.
+ */
+export function inboxDigestRefusal(headers: IncomingHttpHeaders): InboxDigestRefusal | null {
+  const signatureInput = joinHeader(headers['signature-input']);
+  if (signatureInput !== undefined && !isContentDigestCovered(signatureInput)) {
+    return {
+      reason: 'content-digest-not-covered',
+      message: 'The signature must cover the Content-Digest header.',
+      warning:
+        '[fediverse] refused an RFC 9421 inbox delivery whose signature skips content-digest',
+    };
+  }
+  const digest = joinHeader(headers.digest);
+  if (digest !== undefined && !isInboxDigestAccepted(digest)) {
+    return {
+      reason: 'digest-algorithm',
+      message: 'The Digest header must use SHA-256 or SHA-512.',
+      warning: '[fediverse] refused an inbox delivery whose Digest has no SHA-256 or SHA-512 entry',
+    };
+  }
+  return null;
+}
+
+function joinHeader(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value.join(', ') : value;
 }

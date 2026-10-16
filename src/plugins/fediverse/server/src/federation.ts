@@ -68,7 +68,7 @@ import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
 import { publicOrigin } from './utils/public-origin';
 import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
-import { isInboxDigestAccepted } from './inbox-digest';
+import { inboxDigestRefusal } from './inbox-digest';
 import { cleanRemoteText } from './utils/remote-text';
 import { safeRemoteUrl } from './utils/remote-url';
 
@@ -640,7 +640,7 @@ export function mountFediverseMiddleware(
     strapi,
   }));
   let lastGuardWarning = -Infinity;
-  let lastDigestWarning = -Infinity;
+  const lastRefusalWarning = new Map<string, number>();
 
   /**
    * Runs the host app's guard (registered as `plugin::fediverse.requestGuard`,
@@ -679,15 +679,16 @@ export function mountFediverseMiddleware(
     for (const [name, value] of Object.entries(FEDERATION_SECURITY_HEADERS)) ctx.set(name, value);
     if (await guardHandled(ctx)) return;
     const isInbox = requestGuardKind(ctx.method, routedPath(ctx)) === 'inbox';
-    if (isInbox && hasUnapprovedDigest(ctx)) {
-      refuseDigest(ctx);
-      logInboxSignatureRefused(strapi.log, routedPath(ctx), 'digest-algorithm');
+    const refusal = isInbox ? inboxDigestRefusal(ctx.req.headers) : null;
+    if (refusal) {
+      ctx.status = 401;
+      ctx.type = 'text/plain';
+      ctx.body = refusal.message;
+      logInboxSignatureRefused(strapi.log, routedPath(ctx), refusal.reason);
       const now = Date.now();
-      if (now - lastDigestWarning >= WARNING_INTERVAL_MS) {
-        lastDigestWarning = now;
-        strapi.log.warn(
-          '[fediverse] refused an inbox delivery whose Digest has no SHA-256 or SHA-512 entry'
-        );
+      if (now - (lastRefusalWarning.get(refusal.reason) ?? -Infinity) >= WARNING_INTERVAL_MS) {
+        lastRefusalWarning.set(refusal.reason, now);
+        strapi.log.warn(refusal.warning);
       }
       return;
     }
@@ -699,23 +700,4 @@ export function mountFediverseMiddleware(
       logInboxSignatureRefused(strapi.log, routedPath(ctx), 'invalid-signature');
     }
   };
-}
-
-/**
- * Whether the `Digest` header has no SHA-256 or SHA-512 entry: Fedify's
- * draft-cavage verifier would accept a SHA-1-only one and has no switch for it
- * (`inbox-digest.ts`). Without the header, Fedify decides: it refuses a
- * draft-cavage POST that lacks one, and RFC 9421 uses `Content-Digest`.
- */
-function hasUnapprovedDigest(ctx: KoaContext): boolean {
-  const header = ctx.req.headers.digest;
-  if (header === undefined) return false;
-  return !isInboxDigestAccepted(Array.isArray(header) ? header.join(', ') : header);
-}
-
-/** Answers like Fedify's own signature refusal, with the body unread. */
-function refuseDigest(ctx: KoaContext): void {
-  ctx.status = 401;
-  ctx.type = 'text/plain';
-  ctx.body = 'The Digest header must use SHA-256 or SHA-512.';
 }

@@ -5,9 +5,11 @@ type StrapiLog = Pick<Core.Strapi['log'], 'warn'>;
 /**
  * Why an inbox delivery was refused, from the app's `SECURITY_REASONS`:
  * `digest-algorithm` when its `Digest` header has no SHA-256 or SHA-512 entry,
- * `invalid-signature` for every `401` Fedify gives.
+ * `content-digest-not-covered` when an RFC 9421 signature skips
+ * `content-digest`, `invalid-signature` for every `401` Fedify gives.
  */
-type InboxRefusalReason = 'invalid-signature' | 'digest-algorithm';
+export type InboxRefusalReason =
+  'invalid-signature' | 'digest-algorithm' | 'content-digest-not-covered';
 
 /**
  * Event name, message and field names of the app's `logSecurityEvent`

@@ -37,6 +37,19 @@ interface SignOptions {
    * the body. Unset, `signRequest` adds `SHA-256` as a real server would.
    */
   digest?: readonly DigestAlgorithm[];
+  /**
+   * Signs with RFC 9421 (`Signature-Input`, `Content-Digest`) instead of
+   * draft-cavage. Fedify's signer covers `content-digest` whenever there is a
+   * body; `coverContentDigest: false` signs without it and then adds a correct
+   * but unsigned `Content-Digest`, as a captured delivery replayed with a new
+   * body would carry.
+   */
+  rfc9421?: { coverContentDigest?: boolean };
+}
+
+/** An RFC 9421 `Content-Digest` header (`sha-256=:…:`) of `body`. */
+function contentDigestHeader(body: string): string {
+  return `sha-256=:${createHash('sha256').update(body).digest('base64')}:`;
 }
 
 /** A `Digest` header (`SHA=…, SHA-256=…`) with the correct value of each algorithm for `body`. */
@@ -117,14 +130,25 @@ async function createRemoteActor({
   async function signActivity(
     url: string,
     activity: unknown,
-    { digest }: SignOptions = {}
+    { digest, rfc9421 }: SignOptions = {}
   ): Promise<Request> {
     const body = JSON.stringify(activity);
     const headers: Record<string, string> = { 'content-type': ACTIVITY_JSON };
     // `signRequest` signs a `Digest` already set and adds `SHA-256` only when there is none.
     if (digest) headers.digest = digestHeader(body, digest);
     const request = new Request(url, { method: 'POST', headers, body });
-    return signRequest(request, keyPair.privateKey, keyId);
+    if (!rfc9421) return signRequest(request, keyPair.privateKey, keyId);
+    if (rfc9421.coverContentDigest !== false) {
+      return signRequest(request, keyPair.privateKey, keyId, { spec: 'rfc9421' });
+    }
+    // With `body: null` the signer sees no body, so it neither adds nor covers `content-digest`.
+    const signed = await signRequest(request, keyPair.privateKey, keyId, {
+      spec: 'rfc9421',
+      body: null,
+    });
+    const unsignedHeaders = new Headers(signed.headers);
+    unsignedHeaders.set('content-digest', contentDigestHeader(body));
+    return new Request(url, { method: 'POST', headers: unsignedHeaders, body });
   }
 
   return {
