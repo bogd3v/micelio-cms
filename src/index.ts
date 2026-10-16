@@ -15,6 +15,7 @@ import { seedDemoContent } from './migrations/demo-seed';
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens';
 import { revokePagePermissions } from './migrations/page-permissions';
 import { ensureRateLimitTable } from './migrations/rate-limit-table';
+import { hashUserTokens } from './migrations/hash-user-tokens';
 import {
   ABOUT_UID,
   ARTICLE_STAT_UID,
@@ -252,6 +253,9 @@ export default {
     if (await ensureRateLimitTable(strapi)) {
       strapi.log.info('[rate-limit] created the table of the database store');
     }
+
+    const hashedTokens = await hashUserTokens(strapi);
+    if (hashedTokens > 0) strapi.log.info(`[accounts] hashed ${hashedTokens} reader tokens`);
 
     scheduleUmamiSync(strapi);
 

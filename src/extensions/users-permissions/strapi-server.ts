@@ -13,7 +13,7 @@ import {
   wrapResetPasswordEvents,
 } from './auth-events';
 import { checkPassword, deleteAccount } from './delete-account';
-import { onlyConfirmation, wrapEmailConfirmation } from './email-confirmation';
+import { handleEmailConfirmation, onlyConfirmation } from './email-confirmation';
 import { wrapJwtClaims } from './jwt-claims';
 import {
   SECURITY_ATTRIBUTES,
@@ -65,10 +65,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
     const auth = authFactory(args);
     // The event wrappers are outermost, so they see the final outcome (ASVS V16.3.1).
     auth.resetPassword = wrapResetPasswordEvents(strapi, wrapResetPassword(auth.resetPassword));
-    auth.emailConfirmation = wrapEmailConfirmationEvents(
-      strapi,
-      wrapEmailConfirmation(auth.emailConfirmation)
-    );
+    auth.emailConfirmation = wrapEmailConfirmationEvents(strapi, handleEmailConfirmation);
     auth.callback = wrapLoginEvents(strapi, auth.callback);
     auth.register = wrapRegisterEvents(strapi, auth.register);
     auth.forgotPassword = wrapForgotPasswordEvents(strapi, auth.forgotPassword);

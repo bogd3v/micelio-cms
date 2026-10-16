@@ -27,6 +27,10 @@ Use the same environment and volumes. Wait for `GET /_health` to answer `204`: t
 
 If it does not come up, read the logs, fix the missing variable or the database access, and start it again. Do not roll the image back across a MINOR: restore the backup of step 2 instead.
 
+### Migrations that rewrite data
+
+Some boot migrations change stored data in place and cannot be undone. Back up first (step 2). The reader token migration (`src/migrations/hash-user-tokens.ts`) replaces the confirmation tokens and password reset codes in `up_users` with their SHA-256: links sent before the upgrade keep working, because lookups hash what they receive. Going back to the previous image runs, but the older code looks tokens up in plain text, so only the links pending at that moment stop working and their owners ask for a new one; restore the backup to keep them. In a rolling deploy, stop the old instances first: an old image keeps writing and looking up plain tokens until the new image has booted.
+
 ## 4. Upgrade the frontend
 
 Then upgrade the frontend as its own [upgrade guide](https://github.com/bogd3v/micelio/blob/main/docs/operate/upgrade.md) says.

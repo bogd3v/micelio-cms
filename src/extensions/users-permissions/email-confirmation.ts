@@ -3,15 +3,13 @@
 // opens the link cannot spend the token.
 import type { Context, Next } from 'koa';
 import { errors } from '@strapi/utils';
-import { normalizePath } from '../../utils/rate-limit/groups';
+import { hashUserToken } from '../../utils/user-token';
 
-const CONFIRM_PATH = '/api/auth/email-confirmation';
 const USER_UID = 'plugin::users-permissions.user';
 
 /** What Strapi's `generateConfirmationToken` produces: 20 random bytes, hex. */
 const TOKEN_PATTERN = /^[0-9a-f]{40}$/;
 
-type Action = (ctx: Context, ...rest: unknown[]) => Promise<unknown>;
 type ConfirmationBody = { confirmation?: unknown };
 
 /**
@@ -29,7 +27,7 @@ export async function onlyConfirmation(ctx: Context, next: Next): Promise<void> 
  * Confirms the account that owns the emailed token and answers 204.
  *
  * @remarks
- * Reads the token from the body only, never the query, and clears it so a
+ * Reads the token from the body only, never the query, looks it up by its SHA-256 (the stored form) and clears it so a
  * later request gets 400. Strapi's `update` finds the row and then writes it,
  * so two concurrent requests can both answer 204; both write the same
  * state, so nothing is lost. It issues no JWT: the person signs in afterwards.
@@ -47,7 +45,7 @@ export async function confirmEmailByPost(ctx: Context): Promise<void> {
   }
 
   const updated = await strapi.db.query(USER_UID).update({
-    where: { confirmationToken: confirmation },
+    where: { confirmationToken: hashUserToken(confirmation) },
     data: { confirmed: true, confirmationToken: null },
   });
   if (!updated) throw new errors.ValidationError('Invalid token');
@@ -94,13 +92,18 @@ export async function redirectToConfirmation(ctx: Context): Promise<void> {
   ctx.status = 303;
 }
 
-/** Serves the POST with `confirmEmailByPost` and the GET and HEAD with `redirectToConfirmation`; GraphQL and anything else go to the plugin's action. */
-export function wrapEmailConfirmation(original: Action): Action {
-  return async (ctx, ...rest) => {
-    if (normalizePath(ctx.path) === CONFIRM_PATH) {
-      if (ctx.method === 'POST') return confirmEmailByPost(ctx);
-      if (ctx.method === 'GET' || ctx.method === 'HEAD') return redirectToConfirmation(ctx);
-    }
-    return original(ctx, ...rest);
-  };
+/**
+ * Serves `/api/auth/email-confirmation`: the POST with `confirmEmailByPost`, the GET and HEAD with
+ * `redirectToConfirmation`, and anything else with 405.
+ *
+ * @remarks
+ * It replaces the plugin's handler instead of wrapping it. The plugin's own lookup compares the
+ * stored hash with the raw value it receives, so reaching it would make the stored hash usable as
+ * a token. Only the two routes of this file reach the action (`@strapi/plugin-graphql`, the one
+ * other caller, is not installed), so nothing else can.
+ */
+export async function handleEmailConfirmation(ctx: Context): Promise<unknown> {
+  if (ctx.method === 'POST') return confirmEmailByPost(ctx);
+  if (ctx.method === 'GET' || ctx.method === 'HEAD') return redirectToConfirmation(ctx);
+  return ctx.methodNotAllowed();
 }

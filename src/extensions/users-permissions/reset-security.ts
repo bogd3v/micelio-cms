@@ -3,6 +3,7 @@
 // extension adds to the users-permissions user, so no plugin file is patched.
 import type { Context } from 'koa';
 import { errors } from '@strapi/utils';
+import { hashUserToken } from '../../utils/user-token';
 
 const USER_UID = 'plugin::users-permissions.user';
 
@@ -54,14 +55,30 @@ export function isIssuedBeforePasswordChange(iat: unknown, changedAt: unknown): 
 type Service = Record<string, (...args: never[]) => unknown>;
 type ServiceFactory = (args: { strapi: unknown }) => Service;
 
-/** Wraps `user.edit` so every write carries the stamps of `withSecurityStamps`. */
+/**
+ * Stores a new confirmation token or reset code as its SHA-256. The plugin
+ * emails the value from a local variable and only passes it to `user.edit`,
+ * so the link keeps the plain token while the database holds the hash.
+ * Clearing (`null`) passes through.
+ */
+export function withHashedTokens(params: Params): Params {
+  const hashed: Params = { ...params };
+  for (const key of ['confirmationToken', 'resetPasswordToken']) {
+    const value = params[key];
+    if (typeof value === 'string' && value !== '') hashed[key] = hashUserToken(value);
+  }
+  return hashed;
+}
+
+/** Wraps `user.edit` so every write carries the stamps of `withSecurityStamps` and stores tokens hashed. */
 export function wrapUserService(factory: ServiceFactory): ServiceFactory {
   return (args) => {
     const service = factory(args) as Record<string, unknown> & {
       edit: (id: number, params?: Params) => Promise<unknown>;
     };
     const edit = service.edit;
-    service.edit = (id, params = {}) => edit.call(service, id, withSecurityStamps(params));
+    service.edit = (id, params = {}) =>
+      edit.call(service, id, withHashedTokens(withSecurityStamps(params)));
     return service as unknown as Service;
   };
 }
@@ -102,11 +119,15 @@ export function wrapResetPassword(
   resetPassword: (ctx: Context) => Promise<unknown>
 ): (ctx: Context) => Promise<unknown> {
   return async (ctx) => {
-    const code = (ctx.request as unknown as { body?: { code?: unknown } }).body?.code;
-    if (typeof code === 'string' && code !== '') {
+    const body = (ctx.request as unknown as { body?: { code?: unknown } }).body;
+    const code = body?.code;
+    if (body && typeof code === 'string' && code !== '') {
+      // The database holds the hash; the plugin's own lookup below gets it too.
+      const hashed = hashUserToken(code);
+      body.code = hashed;
       const user = (await strapi.db.query(USER_UID).findOne({
         select: ['id', 'resetPasswordIssuedAt'],
-        where: { resetPasswordToken: code },
+        where: { resetPasswordToken: hashed },
       })) as {
         id: number;
         resetPasswordIssuedAt?: string | null;
