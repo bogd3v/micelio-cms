@@ -33,6 +33,7 @@ export function createRequestGuard(runtime: RateLimitRuntime): RequestGuard {
         setRateLimitHeaders(ctx, decision);
         return false;
       }
+      runtime.events.rejected(ip, group, ctx.path);
       writeTooManyRequests(ctx, decision);
       return true;
     } catch {

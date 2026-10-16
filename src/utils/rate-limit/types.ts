@@ -1,6 +1,7 @@
 import type { TrustProxy, RateLimitConfig } from '../../types/rate-limit';
 import type { TokenResolver } from './api-token';
 import type { Forwarder } from './forwarder';
+import type { RateLimitLogger } from './log';
 import type { Limiters } from './stores';
 
 /** What a forwarder decided about one request. */
@@ -30,6 +31,8 @@ export interface RateLimitRuntime extends ClientIpSettings {
   limiters: Limiters;
   tokens: TokenResolver;
   forwarder: Forwarder;
+  /** Security events of the limiter (rejections, wrong forwarder secret). */
+  events: RateLimitLogger;
 }
 
 /** Outcome of counting one request. */

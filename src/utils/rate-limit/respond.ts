@@ -1,7 +1,7 @@
 import { errors } from '@strapi/utils';
 import type { Context } from 'koa';
 import { RATE_LIMIT_MESSAGE } from '../../constants/rate-limit';
-import type { RateLimitDecision } from './types';
+import type { RateLimitDecision, RateLimitRuntime } from './types';
 
 /** `RateLimit-*` headers of the group's current window. */
 export function setRateLimitHeaders(ctx: Context, decision: RateLimitDecision): void {
@@ -21,6 +21,30 @@ function setRejectionHeaders(ctx: Context, decision: RateLimitDecision): void {
 export function rejectTooManyRequests(ctx: Context, decision: RateLimitDecision): never {
   setRejectionHeaders(ctx, decision);
   throw new errors.RateLimitError();
+}
+
+/** Who a logged rejection names, when it is not the resolved client. */
+export interface RejectionLogAs {
+  /** The address to hash: the peer for the forwarder ceiling, not the claimed visitor. */
+  ip?: string;
+  /** The limiter's own opaque bucket key, for groups counted by account. */
+  bucket?: string;
+}
+
+/**
+ * Logs the rejection as a security event (throttled, see `log.ts`), then
+ * rejects as {@link rejectTooManyRequests} does. `group` names the limiter
+ * that said no; it only keys the throttle and is not written.
+ */
+export function rejectLogged(
+  ctx: Context,
+  runtime: RateLimitRuntime,
+  group: string,
+  decision: RateLimitDecision,
+  logAs: RejectionLogAs = {}
+): never {
+  runtime.events.rejected(logAs.ip ?? ctx.request.ip, group, ctx.path, logAs.bucket);
+  return rejectTooManyRequests(ctx, decision);
 }
 
 /**

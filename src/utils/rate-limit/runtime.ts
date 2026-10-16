@@ -4,8 +4,9 @@ import { MIN_FORWARDER_SECRET_LENGTH } from '../../constants/rate-limit';
 import type { RateLimitConfig, TrustProxy } from '../../types/rate-limit';
 import { parseTrustProxy } from '../client-ip';
 import { createTokenResolver } from './api-token';
-import { createForwarder } from './forwarder';
+import { createForwarder, FORWARDER_SECRET_WARN_KEY } from './forwarder';
 import { createRequestGuard } from './guard';
+import { createRateLimitLogger } from './log';
 import { createLimiters } from './stores';
 import type { ClientIpSettings, RateLimitRuntime } from './types';
 
@@ -53,8 +54,11 @@ export function registerRateLimit(strapi: Core.Strapi): void {
   if (!config) return;
   const trustSetting = config.trustProxy || 'private';
 
+  const events = createRateLimitLogger(strapi);
   const lastWarned = new Map<string, number>();
   const warn = (key: string, message: string) => {
+    // The wrong-secret warning is a security event; it keeps its own once-a-minute limit.
+    if (key === FORWARDER_SECRET_WARN_KEY) return events.forwarderSecretInvalid();
     const now = Date.now();
     if (now - (lastWarned.get(key) ?? 0) < WARN_EVERY_MS) return;
     lastWarned.set(key, now);
@@ -82,6 +86,7 @@ export function registerRateLimit(strapi: Core.Strapi): void {
     limiters: createLimiters(strapi, config, secret, warn),
     tokens: createTokenResolver(strapi),
     forwarder: createForwarder(config.forwarderSecret),
+    events,
     warn,
   };
   runtimes.set(strapi, runtime);
@@ -95,5 +100,6 @@ export async function destroyRateLimit(strapi: Core.Strapi): Promise<void> {
   const runtime = runtimes.get(strapi);
   runtimes.delete(strapi);
   clientIpSettings.delete(strapi);
+  runtime?.events.flush();
   await runtime?.limiters.destroy();
 }
