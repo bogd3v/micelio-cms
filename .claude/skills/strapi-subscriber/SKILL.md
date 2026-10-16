@@ -14,7 +14,7 @@ The `subscriber` content type stores newsletter subscriptions. The whole flow (s
 
 ## Schema
 
-The frontend stores the SHA-256 (64 hex characters) of each token the emails carry and looks subscribers up by that hash (bogd3v/micelio#540); rows stored before it hold the token itself until used. The CMS stores whatever string it is given.
+The frontend stores the SHA-256 (64 hex characters) of each token the emails carry and looks subscribers up by that hash (bogd3v/micelio#540); rows stored before it were hashed by `src/migrations/hash-subscriber-tokens.ts` on every boot. Frontend 0.1.x links break (it looks tokens up in the clear), so the frontend is upgraded to 0.2.0 or later before the CMS (`docs/operate/upgrade.md`). The CMS generates no token and stores whatever string it is given.
 
 `src/api/subscriber/content-types/subscriber/schema.json`, without draft and publish (every entry is published, so `GET /api/subscribers` finds it):
 
