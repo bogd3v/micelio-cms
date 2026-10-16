@@ -17,6 +17,7 @@
     },
     "url": {
       "type": "string",
+      "regex": "^[hH][tT][tT][pP][sS]?://[^\\s\\u0000-\\u001f\\u007f]+$",
       "required": true
     }
   }

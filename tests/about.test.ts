@@ -98,10 +98,10 @@ const BLOCKS: AboutBlocks = [
     fediverseLink: { label: 'Cómo seguirlo', url: '/#fediverso', variant: 'text' },
     extraLink: {
       label: 'Invitarme un café',
-      url: 'https://www.buymeacoffee.com/ale9420',
+      url: 'https://example.com/support',
       variant: 'text',
     },
-    socials: [{ network: 'GitHub', handle: '@ale9420', url: 'https://github.com/ale9420' }],
+    socials: [{ network: 'GitHub', handle: '@someone', url: 'https://example.com/someone' }],
   },
 ];
 
@@ -168,5 +168,80 @@ describe('About field card', () => {
         },
       })
     ).rejects.toThrow();
+  });
+
+  describe('link URL schemes', () => {
+    const saveProfileLink = async (url: string) => {
+      const about = await strapi.documents(ABOUT).findFirst();
+      return strapi.documents(ABOUT).update({
+        documentId: about!.documentId,
+        data: {
+          blocks: [
+            {
+              __component: 'about.profile',
+              title: 'Profile',
+              links: [{ label: 'Link', url, variant: 'text' }],
+            },
+          ],
+        },
+      });
+    };
+    const saveSocialUrl = async (url: string) => {
+      const about = await strapi.documents(ABOUT).findFirst();
+      return strapi.documents(ABOUT).update({
+        documentId: about!.documentId,
+        data: {
+          blocks: [
+            {
+              __component: 'about.contact',
+              socials: [{ network: 'GitHub', handle: '@x', url }],
+            },
+          ],
+        },
+      });
+    };
+
+    it.each([
+      'https://example.com/a?b=1',
+      'http://example.com',
+      'mailto:hi@example.com',
+      '/blog',
+      '/#fediverso',
+      '#proyectos',
+      '/',
+      'HTTPS://example.com',
+      'Mailto:hi@example.com',
+    ])('accepts %s in a link', async (url) => {
+      await expect(saveProfileLink(url)).resolves.toBeDefined();
+    });
+
+    it.each([
+      'javascript:alert(1)',
+      'JavaScript:alert(1)',
+      'data:text/html,<b>x</b>',
+      'tel:+5712345678',
+      '//example.com/x',
+      '/\\example.com',
+      'https://example.com/a b',
+      'example.com',
+      '',
+      '/\t//example.com',
+      '\njavascript:alert(1)',
+      'https://example.com\n',
+      'https://x\u0001',
+    ])('rejects %j in a link', async (url) => {
+      await expect(saveProfileLink(url)).rejects.toThrow();
+    });
+
+    it('accepts an https URL in a contact link', async () => {
+      await expect(saveSocialUrl('https://example.com/someone')).resolves.toBeDefined();
+    });
+
+    it.each(['mailto:hi@example.com', '/blog', '#x', 'javascript:alert(1)', '//example.com'])(
+      'rejects %s in a contact link',
+      async (url) => {
+        await expect(saveSocialUrl(url)).rejects.toThrow();
+      }
+    );
   });
 });
