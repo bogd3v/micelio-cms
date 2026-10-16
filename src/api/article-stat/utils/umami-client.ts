@@ -1,4 +1,5 @@
 import type { UmamiConfig, WebsiteTotals } from '../../../types/article-stat';
+import { isRefusedRedirect } from '../../../utils/refused-redirect';
 
 /** Umami's own default page size for metrics. */
 const PAGE_SIZE = 500;
@@ -18,10 +19,21 @@ export function isUmamiConfigured(config: UmamiConfig | undefined): config is Um
 }
 
 async function getJson<T>(config: UmamiConfig, url: URL): Promise<T> {
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${config.apiKey}`, Accept: 'application/json' },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { Authorization: `Bearer ${config.apiKey}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      redirect: 'error',
+    });
+  } catch (error) {
+    if (isRefusedRedirect(error)) {
+      throw new Error(
+        `Umami answered with a redirect for ${url.pathname}, which is refused; set UMAMI_URL to the final address`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     throw new Error(`Umami answered ${response.status} for ${url.pathname}`);
   }

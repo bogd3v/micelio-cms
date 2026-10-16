@@ -147,6 +147,8 @@ STRAPI_DISABLE_CRON=false        # true disables every cron task, this one inclu
 
 In production the CMS refuses to boot, naming the variable, when `UMAMI_URL` is `http://` and its host is public. `https://` is always accepted, and so is `http://` on a private network: a loopback or private address, `localhost`, a service name without a dot, or a name ending in `.internal`, `.local` or `.localhost`. There is no setting to switch the check off. The API key would otherwise cross the network in the clear.
 
+`UMAMI_URL` must be the final address: the CMS does not follow redirects (such as `http` to `https` or a missing trailing slash). A redirect is refused, the sync fails and the error is logged.
+
 Check that the container reaches Umami before you deploy: the first sync runs right after boot and logs `[umami] synced article visitors: {...}`, or `[umami] sync failed` with the reason.
 
 ## Static and landing sites (rebuild hook)
@@ -159,7 +161,7 @@ REBUILD_HOOK_TOKEN=<fine-grained token with Contents: read and write on that rep
 REBUILD_HOOK_DEBOUNCE_MS=60000   # changes within the window produce one call
 ```
 
-`REBUILD_HOOK_URL` follows the same rule as `UMAMI_URL`: in production a public `http://` URL stops the boot, because the bearer token would travel in the clear.
+`REBUILD_HOOK_URL` follows the same rule as `UMAMI_URL`: in production a public `http://` URL stops the boot, because the bearer token would travel in the clear. It must also be the final address: a redirect is refused and logged as one warning, without retries.
 
 A site in dynamic mode sets none of them.
 

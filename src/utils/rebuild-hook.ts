@@ -7,6 +7,7 @@
 
 import type { Core } from '@strapi/strapi';
 import { ARTICLE_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
+import { isRefusedRedirect } from './refused-redirect';
 
 /** The `event_type` sent in the `repository_dispatch` body of every rebuild call. */
 export const REBUILD_EVENT_TYPE = 'micelio-content';
@@ -86,14 +87,32 @@ export function createRebuildHook(strapi: Core.Strapi, config: RebuildHookConfig
     for (let attempt = 0; attempt <= config.retries; attempt += 1) {
       if (stopped) return;
       try {
-        const response = await fetch(config.url, { method: 'POST', headers, body });
+        const response = await fetch(config.url, {
+          method: 'POST',
+          headers,
+          body,
+          redirect: 'error',
+        });
         if (response.ok) {
           strapi.log.info(`[rebuild] requested a rebuild for ${changes.length} change(s)`);
           return;
         }
         strapi.log.warn(`[rebuild] the hook answered ${response.status}`);
       } catch (error) {
-        strapi.log.warn(`[rebuild] the hook failed: ${error}`);
+        if (isRefusedRedirect(error)) {
+          // A redirect is a wrong REBUILD_HOOK_URL, not a transient failure: retrying cannot fix it.
+          strapi.log.warn(
+            '[rebuild] the hook answered with a redirect, which is refused; ' +
+              'set REBUILD_HOOK_URL to the final address. Not retrying.'
+          );
+          return;
+        }
+        // Only the message and the cause's code (e.g. ECONNREFUSED) are logged: the URL, query,
+        // token and the cause's message (which can hold a hostname) are not.
+        const reason = error instanceof Error ? error.message : 'unknown error';
+        const code = (error as { cause?: { code?: unknown } } | null)?.cause?.code;
+        const suffix = typeof code === 'string' ? ` (${code})` : '';
+        strapi.log.warn(`[rebuild] the hook failed: ${reason}${suffix}`);
       }
       if (attempt < config.retries) await sleep(config.retryDelayMs * 2 ** attempt);
     }
