@@ -38,6 +38,7 @@ import { assertFrontendUrlConfigured } from './utils/frontend-url';
 import { assertSecretsConfigured } from './utils/secrets';
 import { assertUpstreamsUseTls } from './utils/plain-http';
 import { installForwardedTrust } from './utils/forwarded-trust';
+import { parseRetentionDays, scheduleUnconfirmedPurge } from './utils/unconfirmed-purge';
 import { warnLocalUploadsInProduction } from './utils/upload-provider';
 import {
   destroyRateLimit,
@@ -60,6 +61,8 @@ export default {
     assertSecretsConfigured();
     // Umami and the rebuild hook receive a credential: no plain http to a public host.
     assertUpstreamsUseTls();
+    // A bad retention would silently keep or purge personal data: stop the boot.
+    parseRetentionDays(process.env.UNCONFIRMED_RETENTION_DAYS);
     // Production should not serve uploads from the admin origin (local provider).
     warnLocalUploadsInProduction(strapi);
     if (process.env.SMTP_HOST && !process.env.EMAIL_FROM) {
@@ -262,6 +265,8 @@ export default {
     if (hashedTokens > 0) strapi.log.info(`[accounts] hashed ${hashedTokens} reader tokens`);
 
     scheduleUmamiSync(strapi);
+    // Daily only, not at boot: a deploy never deletes data before the operator can look.
+    scheduleUnconfirmedPurge(strapi, parseRetentionDays(process.env.UNCONFIRMED_RETENTION_DAYS));
 
     // Static and landing sites rebuild when published content changes.
     stopRebuildHook = registerRebuildHook(strapi);

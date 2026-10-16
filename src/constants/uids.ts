@@ -14,3 +14,5 @@ export const SITE_SETTING_UID = 'api::site-setting.site-setting';
 export const PAGE_UID = 'api::page.page';
 /** Article authors, localized only for `bio`. */
 export const AUTHOR_UID = 'api::author.author';
+/** Newsletter subscriptions, written by the frontend server. */
+export const SUBSCRIBER_UID = 'api::subscriber.subscriber';
