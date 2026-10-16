@@ -195,8 +195,8 @@ describe('Rate limiting (application level)', () => {
           ? http().get(`/api/auth/email-confirmation?confirmation=${token}`).set(client)
           : http().post('/api/auth/email-confirmation').set(client).send({ confirmation: token })
       );
-      // 400 (invalid token), not 405: the POST route exists.
-      expect(results.slice(0, 5)).toEqual([400, 400, 400, 400, 400]);
+      // The GET redirects (303); the POST refuses the unknown token (400). Both count.
+      expect(results.slice(0, 5)).toEqual([303, 400, 303, 400, 303]);
       expect(results.slice(5)).toEqual([429, 429]);
     });
 

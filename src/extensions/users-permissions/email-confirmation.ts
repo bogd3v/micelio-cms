@@ -1,6 +1,6 @@
-// POST /api/auth/email-confirmation (issue #178, ASVS V3.5.3): confirms an
-// account without a GET, so a mail scanner that opens the link cannot spend
-// the token. The GET stays as the plugin has it.
+// /api/auth/email-confirmation (issue #178, ASVS V3.5.3): the POST confirms an
+// account; the GET only redirects to the frontend, so a mail scanner that
+// opens the link cannot spend the token.
 import type { Context, Next } from 'koa';
 import { errors } from '@strapi/utils';
 import { normalizePath } from '../../utils/rate-limit/groups';
@@ -55,11 +55,51 @@ export async function confirmEmailByPost(ctx: Context): Promise<void> {
   ctx.status = 204;
 }
 
-/** Serves `POST /api/auth/email-confirmation` with `confirmEmailByPost` and leaves every other call to the plugin's action. */
+/**
+ * Answers `GET` and `HEAD /api/auth/email-confirmation` with a 303 to the configured
+ * `email_confirmation_redirection`.
+ *
+ * @remarks
+ * Never confirms, never reads the user table and never clears the token, so a link
+ * previewer cannot use it up and the answer does not tell whether the token exists;
+ * the frontend confirms with the POST. A redirection that is empty, unparseable or not
+ * an absolute `http(s)` URL sends to `/` with no token, whatever the query. Otherwise
+ * the target keeps its own query and gets `confirmation=<token>` when the request holds
+ * a 40-character lowercase hex token, or an empty `confirmation=` when the token is
+ * missing or malformed, which the frontend reads as an invalid token.
+ */
+export async function redirectToConfirmation(ctx: Context): Promise<void> {
+  const settings = (await strapi
+    .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
+    .get()) as { email_confirmation_redirection?: unknown } | null;
+  const target = settings?.email_confirmation_redirection;
+
+  let location = '/';
+  try {
+    if (typeof target === 'string') {
+      const url = new URL(target);
+      if (url.protocol === 'http:' || url.protocol === 'https:') {
+        const token = ctx.query.confirmation;
+        url.searchParams.set(
+          'confirmation',
+          typeof token === 'string' && TOKEN_PATTERN.test(token) ? token : ''
+        );
+        location = url.toString();
+      }
+    }
+  } catch {
+    // Empty or relative target: there is no frontend to send the visitor to.
+  }
+  ctx.redirect(location);
+  ctx.status = 303;
+}
+
+/** Serves the POST with `confirmEmailByPost` and the GET and HEAD with `redirectToConfirmation`; GraphQL and anything else go to the plugin's action. */
 export function wrapEmailConfirmation(original: Action): Action {
   return async (ctx, ...rest) => {
-    if (ctx.method === 'POST' && normalizePath(ctx.path) === CONFIRM_PATH) {
-      return confirmEmailByPost(ctx);
+    if (normalizePath(ctx.path) === CONFIRM_PATH) {
+      if (ctx.method === 'POST') return confirmEmailByPost(ctx);
+      if (ctx.method === 'GET' || ctx.method === 'HEAD') return redirectToConfirmation(ctx);
     }
     return original(ctx, ...rest);
   };

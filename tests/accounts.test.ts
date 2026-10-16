@@ -216,8 +216,14 @@ describe('Accounts (users-permissions)', () => {
       const link = new URL(linkIn(sent[0]));
       expect(link.pathname).toBe('/api/auth/email-confirmation');
 
-      const confirm = await http().get(`${link.pathname}${link.search}`).expect(302);
-      expect(confirm.headers.location).toBe('https://bogdev.test/account/confirmed');
+      // The link opens the frontend, which confirms with a POST (issue #178).
+      const token = link.searchParams.get('confirmation');
+      const visit = await http().get(`${link.pathname}${link.search}`).expect(303);
+      expect(visit.headers.location).toBe(
+        `https://bogdev.test/account/confirmed?confirmation=${token}`
+      );
+      expect((await login()).status).toBe(400);
+      await http().post(link.pathname).send({ confirmation: token }).expect(204);
 
       const res = await login();
       expect(res.status).toBe(200);
@@ -296,6 +302,114 @@ describe('Accounts (users-permissions)', () => {
       await http().post(`${CONFIRM_PATH}?confirmation=${token}`).send({}).expect(400);
       expect(await isConfirmed('post-query')).toBe(false);
     });
+
+    it('GET does not confirm and redirects with the token', async () => {
+      const token = await signUp('get-redirect');
+
+      const res = await http().get(`${CONFIRM_PATH}?confirmation=${token}`).expect(303);
+      expect(res.headers.location).toBe(
+        `https://bogdev.test/account/confirmed?confirmation=${token}`
+      );
+      expect(res.headers['cache-control']).toBe(NO_STORE);
+      expect(await isConfirmed('get-redirect')).toBe(false);
+      await http()
+        .post('/api/auth/local')
+        .send({ identifier: 'get-redirect@example.com', password: PASSWORD })
+        .expect(400);
+    });
+
+    it('a GET does not use up the token', async () => {
+      const token = await signUp('get-twice');
+
+      await http().get(`${CONFIRM_PATH}?confirmation=${token}`).expect(303);
+      await http().get(`${CONFIRM_PATH}?confirmation=${token}`).expect(303);
+      await http().post(CONFIRM_PATH).send({ confirmation: token }).expect(204);
+      await http()
+        .post('/api/auth/local')
+        .send({ identifier: 'get-twice@example.com', password: PASSWORD })
+        .expect(200);
+    });
+
+    it('GET with a malformed or missing token redirects with an empty confirmation', async () => {
+      const token = await signUp('get-malformed');
+      const bare = 'https://bogdev.test/account/confirmed';
+
+      for (const query of [
+        `confirmation=${token.toUpperCase()}`,
+        `confirmation=${token.slice(1)}`,
+        'confirmation[$ne]=',
+        'confirmation=a&confirmation=b',
+        '',
+      ]) {
+        const res = await http().get(`${CONFIRM_PATH}?${query}`).expect(303);
+        expect(res.headers.location).toBe(`${bare}?confirmation=`);
+      }
+      // A well-formed token nobody holds is indistinguishable from a real one.
+      const unknown = await http()
+        .get(`${CONFIRM_PATH}?confirmation=${'a'.repeat(40)}`)
+        .expect(303);
+      expect(unknown.headers.location).toBe(`${bare}?confirmation=${'a'.repeat(40)}`);
+      expect(await isConfirmed('get-malformed')).toBe(false);
+    });
+
+    it('HEAD redirects like GET and does not confirm', async () => {
+      const token = await signUp('head-redirect');
+
+      const res = await http().head(`${CONFIRM_PATH}?confirmation=${token}`).expect(303);
+      expect(res.headers.location).toBe(
+        `https://bogdev.test/account/confirmed?confirmation=${token}`
+      );
+      expect(await isConfirmed('head-redirect')).toBe(false);
+    });
+
+    it('the 303 carries the security headers', async () => {
+      const res = await http()
+        .get(`${CONFIRM_PATH}?confirmation=${'a'.repeat(40)}`)
+        .expect(303);
+      expect(res.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains');
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
+      expect(res.headers['content-security-policy']).toContain("frame-ancestors 'self'");
+    });
+
+    it('GET keeps the query of the configured redirection', async () => {
+      const token = await signUp('get-query');
+      const advanced = (await pluginStore().get({ key: 'advanced' })) as Record<string, unknown>;
+      await pluginStore().set({
+        key: 'advanced',
+        value: { ...advanced, email_confirmation_redirection: 'https://bogdev.test/c?lang=es' },
+      });
+      try {
+        const res = await http().get(`${CONFIRM_PATH}?confirmation=${token}`).expect(303);
+        expect(res.headers.location).toBe(`https://bogdev.test/c?lang=es&confirmation=${token}`);
+      } finally {
+        await pluginStore().set({ key: 'advanced', value: advanced });
+      }
+    });
+
+    it.each([
+      ['empty', ''],
+      ['relative', '/account/confirmed'],
+      ['not an http(s) URL', 'ftp://bogdev.test/c'],
+    ])(
+      'GET redirects to the root, without the token, when the redirection is %s',
+      async (_n, value) => {
+        const token = await signUp(`get-no-redirect-${_n.replace(/\W/g, '')}`);
+        const advanced = (await pluginStore().get({ key: 'advanced' })) as Record<string, unknown>;
+        await pluginStore().set({
+          key: 'advanced',
+          value: { ...advanced, email_confirmation_redirection: value },
+        });
+        try {
+          const res = await http().get(`${CONFIRM_PATH}?confirmation=${token}`).expect(303);
+          expect(res.headers.location).toBe('/');
+          const bad = await http().get(`${CONFIRM_PATH}?confirmation=x`).expect(303);
+          expect(bad.headers.location).toBe('/');
+        } finally {
+          await pluginStore().set({ key: 'advanced', value: advanced });
+        }
+      }
+    );
 
     it('does not issue a JWT', async () => {
       const token = await signUp('post-no-jwt');
