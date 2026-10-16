@@ -130,6 +130,12 @@ describe('logSecurityEvent', () => {
     expect(lines[0].meta?.path).toBe('/api/articles');
   });
 
+  it('drops format characters such as a bidi override from a decoded path', () => {
+    const { host, lines } = fakeStrapi();
+    logSecurityEvent(host, SECURITY_EVENTS.accessForbidden, { path: '/a%E2%80%AEb%E2%80%8Bc' });
+    expect(lines[0].meta?.path).toBe('/a b c');
+  });
+
   it('removes control characters and caps the length of the path', () => {
     const { host, lines } = fakeStrapi();
     logSecurityEvent(host, SECURITY_EVENTS.accessForbidden, { path: '/a\r\nwarn: forged\u0000b' });
