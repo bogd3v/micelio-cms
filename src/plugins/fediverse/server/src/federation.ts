@@ -68,14 +68,21 @@ import { escapeHtml } from './utils/html';
 import { publicOrigin } from './utils/public-origin';
 import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
 import { cleanRemoteText } from './utils/remote-text';
+import { safeRemoteUrl } from './utils/remote-url';
 
 const OUTBOX_PAGE_SIZE = 20;
 /** Largest outbox cursor (an offset) served; a larger one is clamped, never sent to the database. */
 const OUTBOX_MAX_CURSOR = 100_000;
+/**
+ * Longest avatar URL stored. Both columns that hold it (`follower.avatar`, `comment.authorAvatar`) are
+ * Strapi `string`s, 255 characters: a longer value would make the comment write fail and lose the reply.
+ */
+const AVATAR_MAX_LENGTH = 255;
 
 /**
  * Extracts the avatar image URL from a remote actor's icon (Mastodon sends
- * an embedded Image with a url).
+ * an embedded Image with a url). Anything but an absolute http(s) URL of at
+ * most `AVATAR_MAX_LENGTH` characters gives `null`, see `safeRemoteUrl`.
  */
 async function extractAvatarUrl(
   strapi: Core.Strapi,
@@ -86,10 +93,8 @@ async function extractAvatarUrl(
   try {
     const icon = await actor.getIcon({ documentLoader, suppressError: true });
     if (icon == null) return null;
-    const url = icon.url;
-    if (url instanceof URL) return url.href;
-    if (url instanceof Link) return url.href?.href ?? null;
-    return null;
+    const url = icon.url instanceof Link ? icon.url.href : icon.url;
+    return safeRemoteUrl(url, AVATAR_MAX_LENGTH);
   } catch (error) {
     strapi.log.warn('[fediverse] failed to extract follower avatar', { error });
     return null;

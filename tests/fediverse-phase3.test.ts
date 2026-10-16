@@ -8,7 +8,10 @@ import {
   htmlToPlainText,
   stripLeadingMentions,
 } from '../src/plugins/fediverse/server/src/services/replies';
-import { parseFrontendArticleUrl } from '../src/plugins/fediverse/server/src/services/articles';
+import {
+  getFrontendArticleUrl,
+  parseFrontendArticleUrl,
+} from '../src/plugins/fediverse/server/src/services/articles';
 import { pruneHiddenComments } from '../src/middlewares/hide-unapproved-comments';
 
 const ARTICLE_UID = 'api::article.article';
@@ -184,6 +187,52 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
       expect(comment.authorEmail ?? null).toBeNull();
       expect(comment.fediverseActorHandle).toMatch(/^@reader\d+@/);
       expect(comment.isAdminComment).toBeFalsy();
+    });
+
+    it.each([
+      ['a javascript: URL', 'javascript:alert(1)'],
+      ['a data: URL', 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='],
+      ['a URL longer than the 255-character column', `https://cdn.example.test/${'a'.repeat(300)}`],
+      ['a URL with credentials', 'https://user:secret@cdn.example.test/avatar.png'],
+    ])('stores no author avatar when the remote icon is %s', async (_label, rawIconUrl) => {
+      const article = await publishedArticle();
+      const remote = await newRemote({ rawIconUrl });
+
+      const noteId = await reply(remote, {
+        inReplyTo: articleUri(article.documentId),
+        content: '<p>Avatar check</p>',
+      });
+      const comment = await waitUntil(() => findComment(noteId));
+
+      expect(comment.authorName).toBe('Remote Reader');
+      expect(comment.authorAvatar ?? null).toBeNull();
+    });
+
+    it('resolves a relative icon against the remote actor, never storing it relative', async () => {
+      const article = await publishedArticle();
+      const remote = await newRemote({ rawIconUrl: '/avatar.png' });
+
+      const noteId = await reply(remote, {
+        inReplyTo: articleUri(article.documentId),
+        content: '<p>Relative avatar</p>',
+      });
+      const comment = await waitUntil(() => findComment(noteId));
+
+      // Fedify expands the actor document against its own URL before the plugin sees it.
+      expect(comment.authorAvatar).toBe(new URL('/avatar.png', remote.actorUrl).href);
+    });
+
+    it('keeps a valid https author avatar sent as raw JSON', async () => {
+      const article = await publishedArticle();
+      const remote = await newRemote({ rawIconUrl: 'https://cdn.example.test/raw.png' });
+
+      const noteId = await reply(remote, {
+        inReplyTo: articleUri(article.documentId),
+        content: '<p>Avatar kept</p>',
+      });
+      const comment = await waitUntil(() => findComment(noteId));
+
+      expect(comment.authorAvatar).toBe('https://cdn.example.test/raw.png');
     });
 
     it('stores replies in the federated (default) locale, where the frontend asks for them', async () => {
@@ -483,6 +532,15 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
       expect(
         stripLeadingMentions('@bogdev@blog.example @devbog hola @bogdev', ['bogdev', 'devbog'])
       ).toBe('hola @bogdev');
+    });
+
+    it('getFrontendArticleUrl encodes the slug as one path segment', () => {
+      const url = getFrontendArticleUrl('a/b?c#d e%');
+      expect(url.href).toBe('https://blog.example.test/blog/a%2Fb%3Fc%23d%20e%25');
+      expect(parseFrontendArticleUrl(url.href)).toEqual({ slug: 'a/b?c#d e%', locale: 'en' });
+      expect(getFrontendArticleUrl('mi-post', 'es').href).toBe(
+        'https://blog.example.test/es/blog/mi-post'
+      );
     });
 
     it('parseFrontendArticleUrl understands default and prefixed locales', () => {

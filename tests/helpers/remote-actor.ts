@@ -18,12 +18,18 @@ interface RemoteActorOptions {
   preferredUsername?: string;
   name?: string;
   iconUrl?: string;
+  /**
+   * The icon's `url` exactly as the remote server would write it, unparsed, so a
+   * test can send a value `new URL()` would reject (a relative path). Wins over `iconUrl`.
+   */
+  rawIconUrl?: string;
 }
 
 async function createRemoteActor({
   preferredUsername = 'remote-test',
   name,
   iconUrl,
+  rawIconUrl,
 }: RemoteActorOptions = {}) {
   const keyPair = await generateCryptoKeyPair();
   // Parsed JSON bodies, as remote servers would receive them.
@@ -83,7 +89,8 @@ async function createRemoteActor({
       inbox: new URL(inboxUrl),
       publicKey: key,
     });
-    return person.toJsonLd({ format: 'compact' });
+    const doc = (await person.toJsonLd({ format: 'compact' })) as Record<string, unknown>;
+    return rawIconUrl === undefined ? doc : { ...doc, icon: { type: 'Image', url: rawIconUrl } };
   }
 
   return {
