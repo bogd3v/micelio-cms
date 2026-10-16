@@ -4,7 +4,7 @@
 
 ## Who uploads
 
-Only administrators, through the admin panel or the admin API. The editor role gets only the read actions of the upload plugin's content API (`src/migrations/editor-role.ts:26-27`), and no role of this repository is granted an upload create permission ([ACCOUNTS.md](../ACCOUNTS.md)). `POST /api/upload` is rate limited per client in the `upload` group, 30 requests per 600 seconds by default (`config/rate-limit.ts:27`, [RATE_LIMITING.md](../RATE_LIMITING.md)). An admin can also import a file from an `http` or `https` URL; the CMS refuses hosts that resolve to blocked address ranges (`node_modules/@strapi/upload/dist/server/services/file.js:92-108`).
+Only administrators, through the admin panel or the admin API. The editor role gets only the read actions of the upload plugin's content API (`src/migrations/editor-role.ts:26-27`), and no role of this repository is granted an upload create permission. `POST /api/upload` is rate limited per client in the `upload` group, 30 requests per 600 seconds by default (`config/rate-limit.ts:27`, [RATE_LIMITING.md](../RATE_LIMITING.md)). An admin can also import a file from an `http` or `https` URL; the CMS refuses hosts that resolve to blocked address ranges (`node_modules/@strapi/upload/dist/server/services/file.js:92-108`).
 
 ## Accepted types
 
@@ -43,8 +43,18 @@ The headers replace the page-wide policy of `strapi::security` for these respons
 
 **Bucket.** When `R2_BASE_URL` is set, the files are served by the bucket's own host. The CMS sends none of these headers for them, so the protection depends on the bucket or its CDN. This was not verified. A bucket on its own origin keeps any file away from the admin origin; set the bucket's responses to the same headers if the site serves untrusted files from it.
 
+## Malware scanning
+
+**Accepted risk (ASVS V5.4.3).** Uploaded files are not scanned for malware before they are stored or served. The reasons:
+
+- Only administrators upload ([Who uploads](#who-uploads)); no reader or editor permission can create an upload.
+- HTML and XHTML are refused, and a file that is not a raster image, video, audio or PDF is served inert ([Safe delivery](#safe-delivery)).
+- Archives are never unpacked, so no archive content is extracted and needs scanning.
+- No scanner is added to the image: an engine such as ClamAV would add infrastructure and a dependency.
+
+Operators who need scanning use their storage provider's scanning or a scanning proxy in front of the upload route. This is revisited if uploads ever open to content-API roles.
+
 ## Not done
 
-- No malware scan before storage or delivery (V5.4.3, open in #179).
 - The CMS does not remove metadata from a file (EXIF, for example) before storing it. Whether Strapi's resized copies drop it was not verified.
 - The allow list is empty by design: adding one is a decision for the site owner, because it changes what editors can upload.
