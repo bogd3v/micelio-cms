@@ -13,6 +13,7 @@
     },
     "url": {
       "type": "string",
+      "regex": "^([hH][tT][tT][pP][sS]?://[^\\s\\u0000-\\u001f\\u007f]+|[mM][aA][iI][lL][tT][oO]:[^\\s\\u0000-\\u001f\\u007f]+|/(?![/\\\\])[^\\s\\u0000-\\u001f\\u007f]*|#[^\\s\\u0000-\\u001f\\u007f]*)$",
       "required": true
     },
     "variant": {
