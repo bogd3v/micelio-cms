@@ -42,6 +42,7 @@ import {
 } from './constants/paths';
 import { ARTICLE_UID } from './constants/uids';
 import type { RequestGuard, RequestGuardKind } from './types/request-guard';
+import { logInboxSignatureRefused } from './utils/security-log';
 import {
   buildArticle,
   buildArticleActivity,
@@ -232,8 +233,8 @@ export async function buildActor(
  * Its key-value store is in memory: durable state lives in the plugin's
  * content types. `getFederation` keeps one per Strapi instance.
  *
- * @param log - Receives failed outbox deliveries, which Fedify would otherwise
- * report only through LogTape.
+ * @param log - Receives failed outbox deliveries with the activity id, which
+ * Fedify's own LogTape line leaves out.
  * @param origin - Fixed public origin for every id Fedify builds; without it the
  * origin comes from the request (see `publicOrigin`).
  */
@@ -244,9 +245,9 @@ export function createFediverseFederation(
   const federation = createFederation<FediverseContextData>({
     kv: new MemoryKvStore(),
     ...(origin ? { origin } : {}),
-    // Fedify reports delivery failures through LogTape, which isn't configured
-    // here, so without this hook a rejected delivery (e.g. Mastodon answering
-    // 401/422) would leave no trace in Strapi's logs.
+    // Fedify's own LogTape line for a failed delivery (see utils/fedify-logging)
+    // does not name the activity; this one does, so a rejected delivery (e.g.
+    // Mastodon answering 401/422) can be traced to the article.
     onOutboxError: (error, activity) => {
       log?.error(
         `[fediverse] delivery failed for ${activity?.id?.href ?? '(unknown activity)'}: ${error.message}`
@@ -674,6 +675,12 @@ export function mountFediverseMiddleware(
     // Before the guard and Fedify, so a refusal or an error carries them too.
     for (const [name, value] of Object.entries(FEDERATION_SECURITY_HEADERS)) ctx.set(name, value);
     if (await guardHandled(ctx)) return;
-    return fedify(ctx, next);
+    await fedify(ctx, next);
+    // Fedify answers 401 on an inbox only when it refuses the authentication
+    // (HTTP signature, signer and actor mismatch, integrity proofs); the
+    // response is left as it is.
+    if (ctx.status === 401 && requestGuardKind(ctx.method, routedPath(ctx)) === 'inbox') {
+      logInboxSignatureRefused(strapi.log, routedPath(ctx));
+    }
   };
 }
