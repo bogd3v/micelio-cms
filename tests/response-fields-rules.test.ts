@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { RESPONSE_ROUTES, SHARED_SHAPES, type Shape } from '../src/constants/response-fields';
-import { levelsOf } from './helpers/response-fields';
+import { levelsOf, listedKeys } from './helpers/response-fields';
 
 // Rules that `src/constants/response-fields` keeps whatever routes it lists, so
 // adding a route needs no change here.
@@ -24,25 +24,7 @@ const useOf = (spec: Shape[string]) => (typeof spec === 'string' ? spec : spec.u
 const startsWithAny = (id: string, prefixes: string[]) =>
   prefixes.some((prefix) => id.startsWith(prefix));
 
-/** Every `[where, key]` of a route or shared shape, with its `required` or `surplus` use. */
-function keysOf(label: string, root: Shape): { where: string; key: string; use: string }[] {
-  return levelsOf(root, true).flatMap((level) =>
-    Object.entries(level.shape).map(([key, spec]) => ({
-      where: `${label} ${level.path}`,
-      key,
-      use: useOf(spec),
-    }))
-  );
-}
-
-const everyKey = [
-  ...RESPONSE_ROUTES.flatMap((route) =>
-    keysOf(route.id, route.body).map((k) => ({ ...k, id: route.id }))
-  ),
-  ...Object.entries(SHARED_SHAPES).flatMap(([name, shape]) =>
-    keysOf(`shared ${name}`, shape).map((k) => ({ ...k, id: `shared.${name}` }))
-  ),
-];
+const everyKey = listedKeys();
 
 describe('src/constants/response-fields', () => {
   it('gives every route a unique id', () => {
@@ -81,8 +63,8 @@ describe('src/constants/response-fields', () => {
 
   it('lists no required key on a route that no frontend file reads', () => {
     const unread = RESPONSE_ROUTES.filter((route) => route.reader === '');
-    const required = unread.flatMap((route) =>
-      keysOf(route.id, route.body).filter((entry) => entry.use === 'required')
+    const required = everyKey.filter(
+      (entry) => entry.use === 'required' && unread.some((route) => route.id === entry.id)
     );
     expect(required).toEqual([]);
   });
