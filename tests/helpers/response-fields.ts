@@ -206,3 +206,32 @@ export function unexercisedCallers(routeIds: readonly string[]): string[] {
       .filter((pair) => !exercised.has(pair))
   );
 }
+
+/** One key of a route or shared shape: where it is, its name and whether the frontend reads it. */
+export interface ListedKey {
+  /** Route id, or `shared.<name>` for a shared shape. */
+  id: string;
+  /** Route id or shared name followed by the path of the object. */
+  where: string;
+  key: string;
+  use: 'required' | 'surplus';
+}
+
+/** Every key every route and shared shape of `src/constants/response-fields` lists. */
+export function listedKeys(): ListedKey[] {
+  const keysOf = (id: string, label: string, root: Shape): ListedKey[] =>
+    levelsOf(root, true).flatMap((level) =>
+      Object.entries(level.shape).map(([key, spec]) => ({
+        id,
+        where: `${label} ${level.path}`,
+        key,
+        use: typeof spec === 'string' ? spec : spec.use,
+      }))
+    );
+  return [
+    ...RESPONSE_ROUTES.flatMap((route) => keysOf(route.id, route.id, route.body)),
+    ...Object.entries(SHARED_SHAPES).flatMap(([name, shape]) =>
+      keysOf(`shared.${name}`, `shared ${name}`, shape)
+    ),
+  ];
+}
