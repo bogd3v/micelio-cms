@@ -16,6 +16,7 @@ import {
   subscribe as subscribePublisher,
   unsubscribe as unsubscribePublisher,
 } from './services/publisher';
+import { configureFedifyLogging, resetFedifyLogging } from './utils/fedify-logging';
 import { frontendBaseUrl } from './utils/frontend-url';
 
 const plugin = {
@@ -31,6 +32,8 @@ const plugin = {
     // sees the raw request stream (needed for HTTP signature verification on
     // inbox POSTs) and intercepts fediverse paths before they can 404.
     strapi.server.use(mountFediverseMiddleware(strapi));
+    // Fedify reports refused signatures and failed fetches only through LogTape.
+    configureFedifyLogging(strapi.log);
   },
 
   bootstrap({ strapi }: { strapi: Core.Strapi }): void {
@@ -38,9 +41,10 @@ const plugin = {
     subscribePublisher(strapi);
   },
 
-  destroy(): void {
+  destroy({ strapi }: { strapi: Core.Strapi }): void {
     unsubscribe();
     unsubscribePublisher();
+    resetFedifyLogging(strapi.log);
   },
 
   contentTypes: {

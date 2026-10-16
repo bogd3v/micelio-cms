@@ -93,20 +93,25 @@ async function createRemoteActor({
     return rawIconUrl === undefined ? doc : { ...doc, icon: { type: 'Image', url: rawIconUrl } };
   }
 
+  async function signActivity(url: string, activity: unknown): Promise<Request> {
+    const request = new Request(url, {
+      method: 'POST',
+      headers: { 'content-type': ACTIVITY_JSON },
+      body: JSON.stringify(activity),
+    });
+    return signRequest(request, keyPair.privateKey, keyId);
+  }
+
   return {
     actorUrl,
     inboxUrl,
     keyId,
     inboxDeliveries,
+    /** Builds an HTTP-signed POST of `activity` to `url` as this remote actor, without sending it. */
+    signActivity,
     /** Builds and HTTP-signs a POST of `activity` to `url` as this remote actor. */
     async postSignedActivity(url: string, activity: unknown) {
-      const request = new Request(url, {
-        method: 'POST',
-        headers: { 'content-type': ACTIVITY_JSON },
-        body: JSON.stringify(activity),
-      });
-      const signed = await signRequest(request, keyPair.privateKey, keyId);
-      return fetch(signed);
+      return fetch(await signActivity(url, activity));
     },
     async close() {
       await new Promise<void>((resolve, reject) =>
