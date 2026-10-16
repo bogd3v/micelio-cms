@@ -3,6 +3,13 @@
 // to a role would let it delete anyone.
 import type { Context, Next } from 'koa';
 import { errors } from '@strapi/utils';
+import {
+  wrapEmailConfirmationEvents,
+  wrapForgotPasswordEvents,
+  wrapLoginEvents,
+  wrapRegisterEvents,
+  wrapResetPasswordEvents,
+} from './auth-events';
 import { checkPassword, deleteAccount } from './delete-account';
 import { onlyConfirmation, wrapEmailConfirmation } from './email-confirmation';
 import { wrapJwtClaims } from './jwt-claims';
@@ -54,8 +61,15 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
   const authFactory = plugin.controllers.auth;
   plugin.controllers.auth = (args) => {
     const auth = authFactory(args);
-    auth.resetPassword = wrapResetPassword(auth.resetPassword);
-    auth.emailConfirmation = wrapEmailConfirmation(auth.emailConfirmation);
+    // The event wrappers are outermost, so they see the final outcome (ASVS V16.3.1).
+    auth.resetPassword = wrapResetPasswordEvents(strapi, wrapResetPassword(auth.resetPassword));
+    auth.emailConfirmation = wrapEmailConfirmationEvents(
+      strapi,
+      wrapEmailConfirmation(auth.emailConfirmation)
+    );
+    auth.callback = wrapLoginEvents(strapi, auth.callback);
+    auth.register = wrapRegisterEvents(strapi, auth.register);
+    auth.forgotPassword = wrapForgotPasswordEvents(strapi, auth.forgotPassword);
     return auth;
   };
 

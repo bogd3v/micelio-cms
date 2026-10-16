@@ -12,12 +12,18 @@ export const SECURITY_EVENTS = {
   authLoginFailure: 'auth.login.failure',
   /** A reader account was registered. */
   authRegister: 'auth.register',
+  /** A registration was refused (invalid data, a taken name or email, sign-up closed). */
+  authRegisterFailure: 'auth.register.failure',
   /** A password reset email was requested. */
   authPasswordResetRequested: 'auth.password-reset.requested',
   /** A password was reset with a valid code. */
   authPasswordResetCompleted: 'auth.password-reset.completed',
+  /** A password reset was refused: unknown or expired code, or a rejected new password. */
+  authPasswordResetFailure: 'auth.password-reset.failure',
   /** An email address was confirmed with a valid token. */
   authEmailConfirmed: 'auth.email-confirmation.confirmed',
+  /** An email confirmation was refused: the token is malformed, unknown or already used. */
+  authEmailConfirmationFailure: 'auth.email-confirmation.failure',
   /** A request for draft content was refused. */
   accessDraftRefused: 'access.draft.refused',
   /** The `is-editor` policy refused a request. */
@@ -43,7 +49,9 @@ export const SECURITY_REASONS = [
   'invalid-credentials',
   'unknown-account',
   'blocked-account',
+  'unconfirmed-account',
   'invalid-code',
+  'invalid-token',
   'invalid-signature',
   'invalid-secret',
   'not-editor',
@@ -57,9 +65,12 @@ export const SECURITY_EVENT_OUTCOMES: Readonly<Record<SecurityEvent, SecurityOut
   'auth.login.success': 'success',
   'auth.login.failure': 'failure',
   'auth.register': 'success',
+  'auth.register.failure': 'failure',
   'auth.password-reset.requested': 'success',
   'auth.password-reset.completed': 'success',
+  'auth.password-reset.failure': 'failure',
   'auth.email-confirmation.confirmed': 'success',
+  'auth.email-confirmation.failure': 'failure',
   'access.draft.refused': 'failure',
   'access.editor.refused': 'failure',
   'access.forbidden': 'failure',

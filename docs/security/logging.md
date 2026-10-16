@@ -83,29 +83,32 @@ The metadata reaches stdout only with the JSON log format (production, PR A1 of 
 
 The fediverse plugin is a self-contained unit and does not import `security-log.ts`: it keeps its own small copy, using the same event string and field names (`fediverse.inbox.signature-refused`). That copy is not part of this change.
 
-| Event                                 | Level  | Emitted by                                                                                              |
-| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| `auth.login.success`                  | `info` | Not wired yet (#180)                                                                                    |
-| `auth.login.failure`                  | `warn` | Not wired yet (#180)                                                                                    |
-| `auth.register`                       | `info` | Not wired yet (#180)                                                                                    |
-| `auth.password-reset.requested`       | `info` | Not wired yet (#180)                                                                                    |
-| `auth.password-reset.completed`       | `info` | Not wired yet (#180)                                                                                    |
-| `auth.email-confirmation.confirmed`   | `info` | Not wired yet (#180)                                                                                    |
-| `access.draft.refused`                | `warn` | `src/utils/drafts-access.ts` (Document Service middleware)                                              |
-| `access.editor.refused`               | `warn` | `src/policies/is-editor.ts`                                                                             |
-| `access.forbidden`                    | `warn` | `src/middlewares/forbidden-log.ts`: every other final 403, content API, admin panel and admin API alike |
-| `rate-limit.rejected`                 | `warn` | Not wired yet (#180)                                                                                    |
-| `rate-limit.forwarder-secret.invalid` | `warn` | Not wired yet (#180)                                                                                    |
-| `fediverse.inbox.signature-refused`   | `warn` | Not wired yet (#180)                                                                                    |
+| Event                                 | Level  | Emitted by                                                                                                                                                                                                    |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth.login.success`                  | `info` | `src/extensions/users-permissions/auth-events.ts` (`callback`), `src/middlewares/admin-login-log.ts` (`POST /admin/login`)                                                                                    |
+| `auth.login.failure`                  | `warn` | the same two; `reason` is `invalid-credentials`, `blocked-account` or `unconfirmed-account`                                                                                                                   |
+| `auth.register`                       | `info` | `auth-events.ts` (`register`)                                                                                                                                                                                 |
+| `auth.password-reset.requested`       | `info` | `auth-events.ts` (`forgotPassword`), for every request, with no `actor`: the answer does not say whether the account exists                                                                                   |
+| `auth.password-reset.completed`       | `info` | `auth-events.ts` (`resetPassword`)                                                                                                                                                                            |
+| `auth.email-confirmation.confirmed`   | `info` | `auth-events.ts` (`POST /api/auth/email-confirmation` answering 204; the `GET` redirect is not an event)                                                                                                      |
+| `auth.register.failure`               | `warn` | `auth-events.ts` (`register`), one identical line for every refusal, with no `reason`; also when the account was created but the confirmation email failed (the plugin answers 400 then, and the user exists) |
+| `auth.password-reset.failure`         | `warn` | `auth-events.ts` (`resetPassword`); `reason` is `invalid-code` for an unknown or expired code, none for a rejected new password                                                                               |
+| `auth.email-confirmation.failure`     | `warn` | `auth-events.ts` (`POST /api/auth/email-confirmation`); `reason` is `invalid-token`                                                                                                                           |
+| `access.draft.refused`                | `warn` | `src/utils/drafts-access.ts` (Document Service middleware)                                                                                                                                                    |
+| `access.editor.refused`               | `warn` | `src/policies/is-editor.ts`                                                                                                                                                                                   |
+| `access.forbidden`                    | `warn` | `src/middlewares/forbidden-log.ts`: every other final 403, content API, admin panel and admin API alike                                                                                                       |
+| `rate-limit.rejected`                 | `warn` | Not wired yet (#180)                                                                                                                                                                                          |
+| `rate-limit.forwarder-secret.invalid` | `warn` | Not wired yet (#180)                                                                                                                                                                                          |
+| `fediverse.inbox.signature-refused`   | `warn` | Not wired yet (#180)                                                                                                                                                                                          |
 
 ## What is not logged
 
 These are not written, so they cannot be read from the logs. They are the open rows of #180 and are not accepted risks yet:
 
-- Successful and failed sign-ins, password resets and confirmations, beyond the request line with its status.
 - Nothing is hidden among 403s: every final 403 is logged, on any route. What stays out of the log is the reason for an unclassified 403 (the line has no `reason`), and the rejected value, which is never written.
+- Authentication attempts not covered yet (follow-up of #180): change-password and the `DELETE /api/users/me` password check; the admin `forgot-password`, `reset-password`, `register`, `register-admin` and `access-token` routes; an admin login answered 500; the 401s of invalid or expired sessions and tokens.
 - Rate-limit rejections (the `429` is answered, not logged), and inbox requests whose signature is refused. Fedify reports these through LogTape, which is not configured.
-- Admin actions. Admin audit logs are an Enterprise feature, and this repository does not ship Enterprise code.
+- Admin actions other than signing in. Admin audit logs are an Enterprise feature, and this repository does not ship Enterprise code. Admin sign-ins are logged by `global::admin-login-log`, which needs none: a refusal logs `invalid-credentials` for a wrong password or unknown account, `blocked-account` for an inactive user and no reason for a malformed body; a `429` and a `500` are not logged there. Attempts the limiter rejects are left to `rate-limit.rejected`, not wired yet (#180).
 
 ## Access and retention
 
