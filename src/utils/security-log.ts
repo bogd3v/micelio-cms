@@ -4,8 +4,8 @@ import {
   SECURITY_REASONS,
   type SecurityEvent,
 } from '../constants/security-events';
-import type { SecurityOutcome } from '../types/security-events';
-import { appKeySecret, type AppKeyHost } from './app-key-secret';
+import type { SecurityLogHost, SecurityOutcome } from '../types/security-events';
+import { appKeySecret } from './app-key-secret';
 
 /** Hex characters kept of a keyed hash: enough to correlate, too short to look up. */
 const HASH_LENGTH = 16;
@@ -27,16 +27,6 @@ const PATH_REDACTIONS: readonly RegExp[] = [
 ];
 const secrets = new WeakMap<object, Buffer>();
 
-interface SecurityLogger {
-  info(message: string, meta?: Record<string, unknown>): void;
-  warn(message: string, meta?: Record<string, unknown>): void;
-}
-
-/** The part of Strapi this module reads: the logger and the app keys. */
-export interface SecurityLogHost extends AppKeyHost {
-  log: SecurityLogger;
-}
-
 /**
  * Fields of a security event. There is deliberately no field for an address,
  * an email, a token or a password: an identifier that is none of those goes
@@ -53,6 +43,8 @@ export interface SecurityEventFields {
   path?: string;
   /** One of `SECURITY_REASONS`; anything else is dropped. */
   reason?: string;
+  /** Count of events of this kind left unwritten by a flood limit; a non-negative safe integer, else dropped. */
+  suppressed?: number;
 }
 
 interface SecurityLogMeta {
@@ -63,6 +55,7 @@ interface SecurityLogMeta {
   client?: string;
   path?: string;
   reason?: string;
+  suppressed?: number;
 }
 
 /**
@@ -146,5 +139,8 @@ function buildMeta(event: SecurityEvent, fields: SecurityEventFields): SecurityL
   if (path) meta.path = path;
   const reason = (SECURITY_REASONS as readonly string[]).find((r) => r === fields.reason);
   if (reason) meta.reason = reason;
+  if (Number.isSafeInteger(fields.suppressed) && (fields.suppressed as number) >= 0) {
+    meta.suppressed = fields.suppressed;
+  }
   return meta;
 }

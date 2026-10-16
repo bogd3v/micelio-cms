@@ -1,11 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { SECURITY_EVENTS, SECURITY_EVENT_OUTCOMES } from '../src/constants/security-events';
-import {
-  hashIdentifier,
-  logSecurityEvent,
-  securityLogSecret,
-  type SecurityLogHost,
-} from '../src/utils/security-log';
+import type { SecurityLogHost } from '../src/types/security-events';
+import { hashIdentifier, logSecurityEvent, securityLogSecret } from '../src/utils/security-log';
 
 type Line = { level: 'info' | 'warn'; message: string; meta: Record<string, unknown> | undefined };
 
@@ -104,6 +100,21 @@ describe('logSecurityEvent', () => {
     logSecurityEvent(host, SECURITY_EVENTS.authLoginFailure, { reason: 'made-up-reason' });
     logSecurityEvent(host, SECURITY_EVENTS.authLoginFailure, { reason: 'invalid-signature' });
     expect(lines.map((l) => l.meta?.reason)).toEqual([undefined, 'invalid-signature']);
+  });
+
+  it('keeps suppressed only as a non-negative safe integer', () => {
+    const { host, lines } = fakeStrapi();
+    for (const suppressed of [-1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1, 0, 7]) {
+      logSecurityEvent(host, SECURITY_EVENTS.rateLimitRejected, { suppressed });
+    }
+    expect(lines.map((l) => l.meta?.suppressed)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      0,
+      7,
+    ]);
   });
 
   it('keeps a client only if it is exactly a 16-character hex hash', () => {

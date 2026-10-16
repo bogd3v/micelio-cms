@@ -1,11 +1,6 @@
 import type { SECURITY_REASONS, SecurityEvent } from '../constants/security-events';
-import type { AccessLogContext } from '../types/security-events';
-import {
-  hashIdentifier,
-  logSecurityEvent,
-  securityLogSecret,
-  type SecurityLogHost,
-} from './security-log';
+import type { AccessLogContext, SecurityLogHost } from '../types/security-events';
+import { hashIdentifier, logSecurityEvent, securityLogSecret } from './security-log';
 
 /** Key in `ctx.state` that marks a refusal already written, so the generic 403 log skips it. */
 const LOGGED_KEY = 'securityRefusalLogged';

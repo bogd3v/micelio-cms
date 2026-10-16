@@ -132,11 +132,15 @@ Behaviour (`src/utils/rate-limit/forwarder.ts`):
 
 - Only honoured on `/api/*` paths and only when limiting is on. The secret is compared as SHA-256 digests with `timingSafeEqual`.
 - Both headers are always deleted from the request when limiting is on, and never logged. With limiting off nothing is read or deleted.
-- Wrong secret: the request counts against the peer and a warning is logged. Valid secret with a missing or invalid IP: counts against the peer (a warning is logged for an invalid one).
+- Wrong secret: the request counts against the peer and a `rate-limit.forwarder-secret.invalid` security event is logged, at most once a minute (no client, no secret). Valid secret with a missing or invalid IP: counts against the peer (a warning is logged for an invalid one).
 - Valid secret and IP: the visitor's IP counts in every group, and a token is ignored.
 - **Forwarder ceiling:** every forwarded request also counts in a bucket keyed by the peer and the group, with 20 times that group's own rule (for `api`, 12,000 / 60 s with the defaults; `comments`, 200 / 600 s). It applies whenever the group is limited and always lives in memory, so with several replicas the ceiling is per replica. It stops a compromised frontend from claiming unlimited fake client IPs.
 
 The frontend must resolve the visitor IP with a trust model matching its own proxy chain, or visitors are throttled inconsistently.
+
+## Logging
+
+Every 429 (through `strapi::errors` and the fediverse guard), and the silent `auth-email` answers, write a `rate-limit.rejected` security event: the client as a keyed hash, the path without its query, never the address. At most one line a minute per client and group (per account bucket for the account groups, per peer for the forwarder ceiling), 20 lines a minute for each group, and one summary line with the `suppressed` count per group when the window ends. The limits are per process: with several replicas each writes its own lines. See [docs/security/logging.md](security/logging.md#rate-limit-events-and-the-flood-limit).
 
 ## Stores
 
