@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import type { Context } from 'koa';
-import type { SecurityEvent } from '../constants/security-events';
+import { AUTH_EVENT_LOGGED_STATE, type SecurityEvent } from '../constants/security-events';
 import {
   hashIdentifier,
   logSecurityEvent,
@@ -13,7 +13,8 @@ export type AuthEventFields = Pick<SecurityEventFields, 'actor' | 'reason'>;
 
 /**
  * Writes one authentication security event for a request, with the keyed hash
- * of its client address and its path.
+ * of its client address and its path, and marks the request as logged
+ * (`AUTH_EVENT_LOGGED_STATE`) so the 401 log does not add a second line.
  *
  * @remarks
  * Never throws: a log that cannot be written (for example no `APP_KEYS`) must
@@ -26,6 +27,7 @@ export function logAuthEvent(
   event: SecurityEvent,
   fields: AuthEventFields = {}
 ): void {
+  ctx.state[AUTH_EVENT_LOGGED_STATE] = true;
   try {
     logSecurityEvent(strapi, event, {
       ...fields,
@@ -45,5 +47,11 @@ export function userIdFromBody(body: unknown): number | undefined {
   const record = body as { user?: unknown; data?: unknown };
   const holder = record.user ?? (record.data as { user?: unknown } | null | undefined)?.user;
   const id = (holder as { id?: unknown } | null | undefined)?.id;
+  return typeof id === 'number' && Number.isInteger(id) ? id : undefined;
+}
+
+/** The numeric id of the user in `ctx.state.user`, or `undefined` when nobody is signed in. */
+export function userIdFromState(user: unknown): number | undefined {
+  const id = (user as { id?: unknown } | null | undefined)?.id;
   return typeof id === 'number' && Number.isInteger(id) ? id : undefined;
 }

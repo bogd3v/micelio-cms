@@ -4,6 +4,8 @@
 import type { Context, Next } from 'koa';
 import { errors } from '@strapi/utils';
 import {
+  wrapChangePasswordEvents,
+  wrapDestroyMeEvents,
   wrapEmailConfirmationEvents,
   wrapForgotPasswordEvents,
   wrapLoginEvents,
@@ -70,6 +72,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
     auth.callback = wrapLoginEvents(strapi, auth.callback);
     auth.register = wrapRegisterEvents(strapi, auth.register);
     auth.forgotPassword = wrapForgotPasswordEvents(strapi, auth.forgotPassword);
+    auth.changePassword = wrapChangePasswordEvents(strapi, auth.changePassword);
     return auth;
   };
 
@@ -88,7 +91,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
     }
   };
 
-  plugin.controllers.user.destroyMe = async (ctx: Context) => {
+  plugin.controllers.user.destroyMe = wrapDestroyMeEvents(strapi, async (ctx: Context) => {
     // Only the user of the JWT, never an id from the request. The Public role
     // has this action only so a request without a JWT gets here and answers
     // 401, as /users/me does, instead of Strapi's 403.
@@ -102,7 +105,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
 
     await deleteAccount(strapi, user.id);
     ctx.status = 204;
-  };
+  });
 
   // First, so `/users/:id` doesn't take `me` as an id.
   plugin.routes['content-api'].routes.unshift({

@@ -1,93 +1,87 @@
 import type { Core } from '@strapi/strapi';
 import type { Context, Next } from 'koa';
-import { ADMIN_LOGIN_PATH } from '../constants/rate-limit';
-import { SECURITY_EVENTS } from '../constants/security-events';
-import { logAuthEvent, userIdFromBody } from '../utils/auth-events';
+import type { SecurityEvent } from '../constants/security-events';
+import type { SecurityReason } from '../types/security-events';
+import { logAuthEvent, userIdFromBody, userIdFromState } from '../utils/auth-events';
 import { normalizePath } from '../utils/rate-limit/groups';
+import {
+  ADMIN_AUTH_ROUTES,
+  adminLoginRefusal,
+  isRefusedStatus,
+  type AdminAnswer,
+  type AdminAuthRoute,
+} from '../utils/admin-auth-routes';
 
-/** A refused admin sign-in, with the reason when the error tells it. */
-export interface AdminLoginRefusal {
-  reason?: 'invalid-credentials' | 'blocked-account';
-}
-
-/** Strapi answers `501` when the login strategy itself failed unexpectedly. */
-const NOT_IMPLEMENTED = 501;
-const TOO_MANY_REQUESTS = 429;
-/** Names of the errors Strapi throws for a refused request; `strapi::errors` answers them 4xx. */
-const REFUSAL_ERRORS = new Set([
-  'ApplicationError',
-  'ValidationError',
-  'UnauthorizedError',
-  'ForbiddenError',
-]);
-const INVALID_CREDENTIALS_MESSAGE = 'Invalid credentials';
-const INACTIVE_MESSAGE = 'User not active';
+const INTERNAL_ERROR = 500;
 
 /**
- * Logs `POST /admin/login` as `auth.login.success` (with the admin user id) or
- * `auth.login.failure`, without Enterprise code and without changing the answer.
+ * Logs the admin routes that take or issue credentials (`ADMIN_AUTH_ROUTES`:
+ * sign-in, registration, password reset, session renewal and the profile
+ * password change) as authentication events, without Enterprise code and
+ * without changing the answer.
  *
  * @remarks
- * Wraps the route from outside, so it sees the final status. Strapi's own
+ * Wraps the routes from outside, so it sees the final status. Strapi's own
  * `admin.auth.success` and `admin.auth.error` events carry no client address,
- * which is why this is a middleware. A 429 is the rate limiter's, not a
- * sign-in result, and an unexpected error (500) is not a refusal; neither is logged here.
+ * which is why this is a middleware. A 429 is the rate limiter's, not an
+ * authentication result, and is not logged here. A thrown or answered 5xx (or an error with no status) on
+ * a route that issues credentials is logged as a failure without a reason: the
+ * attempt did not complete. Other statuses that are no refusal (a body-parser 400 or 413, a 404)
+ * are not authentication failures and are not logged. The request body is read only after the route ran,
+ * and only to tell whether a password was sent, never to log a value.
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
-    if (ctx.method.toUpperCase() !== 'POST' || normalizePath(ctx.path) !== ADMIN_LOGIN_PATH) {
-      return next();
-    }
+    const route = ADMIN_AUTH_ROUTES.find(
+      (candidate) =>
+        candidate.method === ctx.method.toUpperCase() && candidate.path === normalizePath(ctx.path)
+    );
+    if (!route) return next();
+
     try {
       await next();
     } catch (error) {
-      const refusal = adminLoginRefusal(error);
-      if (refusal) logAuthEvent(strapi, ctx, SECURITY_EVENTS.authLoginFailure, refusal);
+      if (adminLoginRefusal(error)) {
+        logFailure(strapi, route, { ctx, error });
+      } else if (route.logUnexpected && isServerError(error)) {
+        logFailure(strapi, route, { ctx, error }, false);
+      }
       throw error;
     }
-    if (ctx.status === 200) {
-      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authLoginSuccess, {
-        actor: userIdFromBody(ctx.body),
+    if (ctx.status === route.successStatus) {
+      if (!route.success || (route.isAttempt && !route.isAttempt({ ctx }))) return;
+      logAuthEvent(strapi, ctx, route.success, {
+        actor: route.actor === 'state' ? userIdFromState(ctx.state.user) : userIdFromBody(ctx.body),
       });
     } else if (isRefusedStatus(ctx.status)) {
-      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authLoginFailure);
+      logFailure(strapi, route, { ctx });
+    } else if (route.logUnexpected && ctx.status >= INTERNAL_ERROR) {
+      logFailure(strapi, route, { ctx }, false);
     }
   };
 
-/**
- * Classifies an error thrown by the admin login route: the refusal to log, or
- * `null` when it is not a refused sign-in (the rate limiter's
- * `RateLimitError`, or an unexpected error).
- *
- * @remarks
- * `reason` is set only for the two messages Strapi's login gives for a wrong
- * password or unknown account (`invalid-credentials`) and an inactive user
- * (`blocked-account`); a malformed body has none.
- *
- * @internal
- */
-export function adminLoginRefusal(error: unknown): AdminLoginRefusal | null {
-  const { name, message } = (error ?? {}) as { name?: unknown; message?: unknown };
-  if (name === 'RateLimitError' || typeof name !== 'string' || !REFUSAL_ERRORS.has(name)) {
-    return null;
-  }
-  if (name === 'ApplicationError' && message === INVALID_CREDENTIALS_MESSAGE) {
-    return { reason: 'invalid-credentials' };
-  }
-  if (name === 'ApplicationError' && message === INACTIVE_MESSAGE) {
-    return { reason: 'blocked-account' };
-  }
-  return {};
+/** Writes the route's failure event; `withReason` is off for an unexpected error, which tells nothing. */
+function logFailure(
+  strapi: Core.Strapi,
+  route: AdminAuthRoute,
+  answer: AdminAnswer,
+  withReason = true
+): void {
+  const event: SecurityEvent | null = route.failure;
+  if (!event || (route.isAttempt && !route.isAttempt(answer))) return;
+  const reason: SecurityReason | undefined = withReason ? route.reason?.(answer) : undefined;
+  logAuthEvent(strapi, answer.ctx, event, {
+    reason,
+    actor: route.actor === 'state' ? userIdFromState(answer.ctx.state.user) : undefined,
+  });
 }
 
 /**
- * Whether a response status is a refused sign-in: a 4xx other than 429 (the
- * limiter's event), or 501.
- *
- * @internal
+ * Whether an error that is no refusal is an unexpected failure of the route:
+ * its status is 5xx, or it has none (a plain `Error`). A body-parser 400 or
+ * 413, a 404 or the limiter's `RateLimitError` (429) are not.
  */
-export function isRefusedStatus(status: number): boolean {
-  return (
-    (status >= 400 && status < 500 && status !== TOO_MANY_REQUESTS) || status === NOT_IMPLEMENTED
-  );
+function isServerError(error: unknown): boolean {
+  const status = (error as { status?: unknown } | null | undefined)?.status;
+  return (typeof status === 'number' ? status : INTERNAL_ERROR) >= INTERNAL_ERROR;
 }

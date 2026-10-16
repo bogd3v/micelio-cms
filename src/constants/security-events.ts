@@ -24,6 +24,20 @@ export const SECURITY_EVENTS = {
   authEmailConfirmed: 'auth.email-confirmation.confirmed',
   /** An email confirmation was refused: the token is malformed, unknown or already used. */
   authEmailConfirmationFailure: 'auth.email-confirmation.failure',
+  /** A signed-in person changed their password after re-entering the current one (reader or admin). */
+  authPasswordChangeSuccess: 'auth.password-change.success',
+  /** A password change was refused: wrong current password, or a rejected new password. */
+  authPasswordChangeFailure: 'auth.password-change.failure',
+  /** A signed-in reader deleted their own account after re-entering the password. */
+  authAccountDeletionSuccess: 'auth.account-deletion.success',
+  /** An account deletion was refused: the password did not match. */
+  authAccountDeletionFailure: 'auth.account-deletion.failure',
+  /** An admin session was renewed from its refresh cookie. */
+  authSessionRefreshCompleted: 'auth.session-refresh.completed',
+  /** A refresh cookie was presented and refused (unknown, expired or already used). */
+  authSessionRefreshFailure: 'auth.session-refresh.failure',
+  /** A request carried an `Authorization` token that was refused with 401 (invalid, expired or revoked). */
+  authTokenInvalid: 'auth.token.invalid',
   /** A request for draft content was refused. */
   accessDraftRefused: 'access.draft.refused',
   /** The `is-editor` policy refused a request. */
@@ -60,6 +74,9 @@ export const SECURITY_REASONS = [
   'rate-limited',
 ] as const;
 
+/** `ctx.state` key set once a request has written an authentication event, so no later layer logs it again. */
+export const AUTH_EVENT_LOGGED_STATE = 'authEventLogged';
+
 /** Outcome of each event, which also decides the log level (`info` or `warn`). */
 export const SECURITY_EVENT_OUTCOMES: Readonly<Record<SecurityEvent, SecurityOutcome>> = {
   'auth.login.success': 'success',
@@ -71,6 +88,13 @@ export const SECURITY_EVENT_OUTCOMES: Readonly<Record<SecurityEvent, SecurityOut
   'auth.password-reset.failure': 'failure',
   'auth.email-confirmation.confirmed': 'success',
   'auth.email-confirmation.failure': 'failure',
+  'auth.password-change.success': 'success',
+  'auth.password-change.failure': 'failure',
+  'auth.account-deletion.success': 'success',
+  'auth.account-deletion.failure': 'failure',
+  'auth.session-refresh.completed': 'success',
+  'auth.session-refresh.failure': 'failure',
+  'auth.token.invalid': 'failure',
   'access.draft.refused': 'failure',
   'access.editor.refused': 'failure',
   'access.forbidden': 'failure',
