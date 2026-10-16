@@ -57,6 +57,35 @@ The actor key pair is generated on the first boot that finds none (`src/plugins/
 - Remote text is cleaned before it is written (`src/plugins/fediverse/server/src/utils/remote-text.ts`, [ASVS V16.4.1](asvs.md)).
 - Error messages are written as the library produced them. Whether a database or validation error repeats a submitted value was not verified.
 
+## Security events
+
+`logSecurityEvent` (`src/utils/security-log.ts`) writes one line per event of the catalogue in `src/constants/security-events.ts`: the message is `security: <event>`, and the metadata holds `event`, `outcome` (`success` or `failure`) and, when given, `requestId`, `actor`, `client`, `path` and `reason`. `info` for a success, `warn` for a failure or refusal. The function has no field for an address, email, token or password, and a value that does not fit its field is dropped, not written:
+
+- `requestId`: letters, digits and hyphens, up to 64. Pass only a server-generated id.
+- `actor`: a numeric user id.
+- `client`: exactly the 16 hex characters of `hashIdentifier`, a truncated HMAC keyed from the first `APP_KEYS` entry. It correlates lines, and as long as `APP_KEYS` is secret it cannot be checked against a list of addresses. Without an app key the key derivation throws and names `APP_KEYS`.
+- `reason`: one of the closed set `SECURITY_REASONS`.
+- `path`: query string and fragment dropped, percent-escapes decoded, then emails, IPv4 and IPv6 literals and token-like runs (16 or more characters with a digit) replaced by `[redacted]`.
+
+The metadata reaches stdout only with the JSON log format (production, PR A1 of #180). The development format (Strapi's `prettyPrint`) prints only `level: message`.
+
+The fediverse plugin is a self-contained unit and does not import `security-log.ts`: it keeps its own small copy, using the same event string and field names (`fediverse.inbox.signature-refused`). That copy is not part of this change.
+
+| Event                                 | Level  | Emitted by           |
+| ------------------------------------- | ------ | -------------------- |
+| `auth.login.success`                  | `info` | Not wired yet (#180) |
+| `auth.login.failure`                  | `warn` | Not wired yet (#180) |
+| `auth.register`                       | `info` | Not wired yet (#180) |
+| `auth.password-reset.requested`       | `info` | Not wired yet (#180) |
+| `auth.password-reset.completed`       | `info` | Not wired yet (#180) |
+| `auth.email-confirmation.confirmed`   | `info` | Not wired yet (#180) |
+| `access.draft.refused`                | `warn` | Not wired yet (#180) |
+| `access.editor.refused`               | `warn` | Not wired yet (#180) |
+| `access.forbidden`                    | `warn` | Not wired yet (#180) |
+| `rate-limit.rejected`                 | `warn` | Not wired yet (#180) |
+| `rate-limit.forwarder-secret.invalid` | `warn` | Not wired yet (#180) |
+| `fediverse.inbox.signature-refused`   | `warn` | Not wired yet (#180) |
+
 ## What is not logged
 
 These are not written, so they cannot be read from the logs. They are the open rows of #180 and are not accepted risks yet:
