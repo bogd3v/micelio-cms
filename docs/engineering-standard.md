@@ -1,6 +1,6 @@
 # Micelio engineering standard
 
-Version 1.1 (2026-10-12). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
+Version 1.2 (2026-10-15). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
 
 These are the rules shared by every Micelio repository: the frontend (`micelio`), the CMS (`micelio-cms`), theme packages, the theme registry and whatever comes next. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`.
 
@@ -192,7 +192,7 @@ export function readingMinutes(markdown: string, wordsPerMinute = 230): number
 | Stored data: database schema and boot migrations | `src/migrations/` | A migration that the previous release's code cannot run against, or that cannot run twice |
 
 - Adding is free when it is optional and has a default that keeps existing consumers working. Removing, renaming or changing a meaning is a breaking change.
-- A breaking change **must** have an ADR, a migration path for whoever depends on it, and upgrade notes in the release (section 7).
+- A breaking change **must** have an ADR, a migration path for whoever depends on it, and upgrade notes in the release (section 7). Before 1.0.0 only the upgrade notes are required (section 7, "Before 1.0.0").
 - A change that crosses both repositories goes CMS first (behind a default that keeps the current frontend working), frontend second, each in its own pull request that references the same issue.
 - Generated artifacts (theme schema, theme reference) are regenerated in the pull request that changes their source. Lint fails on drift.
 - Boot migrations are idempotent, self-contained (they keep their own constants) and tested.
@@ -217,7 +217,7 @@ The public interface of a repository is the set of contracts of section 6 that i
 
 ### Before 1.0.0
 
-While the version is `0.y.z`, a breaking change raises `y` and everything else raises `z`. Breaking changes still need their ADR and upgrade notes. `1.0.0` is cut by an ADR, when the registry accepts third-party themes or the first site outside bogd3v runs in production, whichever comes first.
+While the version is `0.y.z` the project is alpha: nothing is stable and any `0.y` release may break a contract of section 6. A breaking change raises `y` and everything else raises `z`. It needs no deprecation period and no ADR (an expensive decision still gets one, section 12), only the `!` in the pull request title, a `BREAKING CHANGE:` paragraph in its description and upgrade notes in the release. Never describe a `0.y` release as stable. `1.0.0` is cut by an ADR, when the registry accepts third-party themes or the first site outside bogd3v runs in production, whichever comes first.
 
 ### The release line
 
@@ -428,3 +428,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | --- | --- | --- |
 | 1.0 | 2026-10-08 | First version, written from the conventions of `micelio` and `micelio-cms` |
 | 1.1 | 2026-10-09 | Contract tests between repositories, OWASP ASVS, problem details and OpenAPI, SBOM and provenance, `security.txt`, WCAG 2.2 with a manual check, sustainability, and the community documents |
+| 1.2 | 2026-10-15 | Before 1.0.0 the project is alpha: breaking changes need no deprecation period and no ADR, only the `!`, a `BREAKING CHANGE:` paragraph and upgrade notes |
