@@ -6,6 +6,7 @@ import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
 import { revokeSubscriberPermissions } from './migrations/subscriber-permissions';
+import { hashSubscriberTokens } from './migrations/hash-subscriber-tokens';
 import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
@@ -208,6 +209,9 @@ export default {
     if (subscriberPermissions > 0) {
       strapi.log.info(`[subscribers] revoked ${subscriberPermissions} role permissions`);
     }
+
+    const subscriberTokens = await hashSubscriberTokens(strapi);
+    if (subscriberTokens > 0) strapi.log.info(`[subscribers] hashed ${subscriberTokens} tokens`);
 
     const siteLocales = await seedSiteSettings(strapi);
     if (siteLocales.length > 0) {
