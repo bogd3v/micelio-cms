@@ -263,8 +263,38 @@ describe('Article plain text and content search', () => {
     });
 
     it('filters by locale', async () => {
-      const res = await search({ q: 'nextcloud', content: '1', locale: 'fr' }).expect(200);
-      expect(res.body.data).toEqual([]);
+      const locales = strapi.plugin('i18n').service('locales');
+      await locales.create({ code: 'fr', name: 'French (fr)' });
+      try {
+        const res = await search({ q: 'nextcloud', content: '1', locale: 'fr' }).expect(200);
+        expect(res.body.data).toEqual([]);
+      } finally {
+        const french = await locales.findByCode('fr');
+        await locales.delete({ id: french.id });
+      }
+      const configured = await search({ q: 'nextcloud', content: '1', locale: 'en' }).expect(200);
+      expect(configured.body.data).toHaveLength(1);
+    });
+
+    it('accepts a query of exactly the maximum length', async () => {
+      await search({ q: 'a'.repeat(200) }).expect(200);
+    });
+
+    it('rejects a query longer than the maximum with a 400', async () => {
+      await search({ q: 'a'.repeat(201) }).expect(400);
+      await search({ q: 'a'.repeat(5000) }).expect(400);
+    });
+
+    it('rejects a locale that the i18n plugin does not configure with a 400', async () => {
+      await search({ q: 'nextcloud', locale: 'de' }).expect(400);
+      await search({ q: 'nextcloud', locale: "es' OR 1=1" }).expect(400);
+      await search({ q: 'nextcloud', locale: '9'.repeat(5000) }).expect(400);
+    });
+
+    it('answers a limit that is huge, negative or not a number without an error', async () => {
+      for (const limit of ['99999999999999999999', '-5', 'abc', '0']) {
+        await search({ q: 'autoaloja', limit }).expect(200);
+      }
     });
 
     it('rejects queries shorter than three characters', async () => {

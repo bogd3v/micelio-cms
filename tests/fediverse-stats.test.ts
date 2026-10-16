@@ -384,5 +384,37 @@ describe('Fediverse batch stats and ranking', () => {
       expect(res.body.data).toEqual([{ documentId: articles.e, likes: 1, boosts: 0, replies: 0 }]);
       expect(res.body.meta.pagination.total).toBe(1);
     });
+
+    it('clamps a page above the maximum instead of failing in the database', async () => {
+      for (const page of ['99999999999999999999', '10001', '9007199254740993']) {
+        const res = await get('/api/fediverse/articles/ranking', { page }).expect(200);
+        expect(res.body.meta.pagination.page).toBe(10_000);
+        expect(res.body.data).toEqual([]);
+      }
+    });
+
+    it('falls back to the first page for a negative or non-numeric page', async () => {
+      for (const page of ['-3', '0', 'abc']) {
+        const res = await get('/api/fediverse/articles/ranking', { page }).expect(200);
+        expect(res.body.meta.pagination.page).toBe(1);
+      }
+    });
+
+    it('rejects a search, category or tag longer than the maximum with a 400', async () => {
+      for (const name of ['search', 'category', 'tag']) {
+        await get('/api/fediverse/articles/ranking', { [name]: 'a'.repeat(200) }).expect(200);
+        await get('/api/fediverse/articles/ranking', { [name]: 'a'.repeat(201) }).expect(400);
+      }
+    });
+
+    it('treats an empty locale as absent', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { locale: '' }).expect(200);
+      expect(res.body.meta.pagination.total).toBe(4);
+    });
+
+    it('rejects a locale that the i18n plugin does not configure with a 400', async () => {
+      await get('/api/fediverse/articles/ranking', { locale: 'fr' }).expect(400);
+      await get('/api/fediverse/articles/ranking', { locale: 'x'.repeat(5000) }).expect(400);
+    });
   });
 });
