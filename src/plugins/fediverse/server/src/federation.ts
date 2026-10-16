@@ -68,6 +68,7 @@ import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
 import { publicOrigin } from './utils/public-origin';
 import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
+import { isInboxDigestAccepted } from './inbox-digest';
 import { cleanRemoteText } from './utils/remote-text';
 import { safeRemoteUrl } from './utils/remote-url';
 
@@ -619,7 +620,8 @@ function requestGuardKind(method: string, path: string): RequestGuardKind {
     : 'read';
 }
 
-const GUARD_WARNING_INTERVAL_MS = 60_000;
+/** Shortest gap between two repeats of the guard and digest warnings. */
+const WARNING_INTERVAL_MS = 60_000;
 
 /**
  * Koa middleware that hands federation paths to Fedify and passes every other
@@ -638,6 +640,7 @@ export function mountFediverseMiddleware(
     strapi,
   }));
   let lastGuardWarning = -Infinity;
+  let lastDigestWarning = -Infinity;
 
   /**
    * Runs the host app's guard (registered as `plugin::fediverse.requestGuard`,
@@ -652,7 +655,7 @@ export function mountFediverseMiddleware(
       return (await guard(ctx, requestGuardKind(ctx.method, routedPath(ctx)))) === true;
     } catch {
       const now = Date.now();
-      if (now - lastGuardWarning >= GUARD_WARNING_INTERVAL_MS) {
+      if (now - lastGuardWarning >= WARNING_INTERVAL_MS) {
         lastGuardWarning = now;
         strapi.log.warn('[fediverse] request guard failed; letting federation requests through');
       }
@@ -668,19 +671,51 @@ export function mountFediverseMiddleware(
   // article in the admin) then hangs until the client gives up. Requests that
   // are not federation paths must therefore never reach it.
   //
-  // The guard runs before Fedify touches the request stream, so a request it
-  // rejects is answered with its body unread.
+  // The guard and the digest check run before Fedify touches the request
+  // stream, so a request they reject is answered with its body unread.
   return async (ctx: KoaContext, next: () => Promise<void>): Promise<void> => {
     if (!isFederationPath(routedPath(ctx))) return next();
     // Before the guard and Fedify, so a refusal or an error carries them too.
     for (const [name, value] of Object.entries(FEDERATION_SECURITY_HEADERS)) ctx.set(name, value);
     if (await guardHandled(ctx)) return;
+    const isInbox = requestGuardKind(ctx.method, routedPath(ctx)) === 'inbox';
+    if (isInbox && hasUnapprovedDigest(ctx)) {
+      refuseDigest(ctx);
+      logInboxSignatureRefused(strapi.log, routedPath(ctx), 'digest-algorithm');
+      const now = Date.now();
+      if (now - lastDigestWarning >= WARNING_INTERVAL_MS) {
+        lastDigestWarning = now;
+        strapi.log.warn(
+          '[fediverse] refused an inbox delivery whose Digest has no SHA-256 or SHA-512 entry'
+        );
+      }
+      return;
+    }
     await fedify(ctx, next);
-    // Fedify answers 401 on an inbox only when it refuses the authentication
-    // (HTTP signature, signer and actor mismatch, integrity proofs); the
+    // An inbox answers 401 only when the authentication is refused (HTTP
+    // signature, digest, signer and actor mismatch, integrity proofs); the
     // response is left as it is.
-    if (ctx.status === 401 && requestGuardKind(ctx.method, routedPath(ctx)) === 'inbox') {
-      logInboxSignatureRefused(strapi.log, routedPath(ctx));
+    if (ctx.status === 401 && isInbox) {
+      logInboxSignatureRefused(strapi.log, routedPath(ctx), 'invalid-signature');
     }
   };
+}
+
+/**
+ * Whether the `Digest` header has no SHA-256 or SHA-512 entry: Fedify's
+ * draft-cavage verifier would accept a SHA-1-only one and has no switch for it
+ * (`inbox-digest.ts`). Without the header, Fedify decides: it refuses a
+ * draft-cavage POST that lacks one, and RFC 9421 uses `Content-Digest`.
+ */
+function hasUnapprovedDigest(ctx: KoaContext): boolean {
+  const header = ctx.req.headers.digest;
+  if (header === undefined) return false;
+  return !isInboxDigestAccepted(Array.isArray(header) ? header.join(', ') : header);
+}
+
+/** Answers like Fedify's own signature refusal, with the body unread. */
+function refuseDigest(ctx: KoaContext): void {
+  ctx.status = 401;
+  ctx.type = 'text/plain';
+  ctx.body = 'The Digest header must use SHA-256 or SHA-512.';
 }

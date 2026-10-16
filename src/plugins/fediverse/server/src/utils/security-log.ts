@@ -3,12 +3,18 @@ import type { Core } from '@strapi/strapi';
 type StrapiLog = Pick<Core.Strapi['log'], 'warn'>;
 
 /**
+ * Why an inbox delivery was refused, from the app's `SECURITY_REASONS`:
+ * `digest-algorithm` when its `Digest` header has no SHA-256 or SHA-512 entry,
+ * `invalid-signature` for every `401` Fedify gives.
+ */
+type InboxRefusalReason = 'invalid-signature' | 'digest-algorithm';
+
+/**
  * Event name, message and field names of the app's `logSecurityEvent`
  * (`src/utils/security-log.ts`). The plugin is self-contained, so it keeps its
  * own copy; the two must stay identical because operators alert on them.
  */
 const SIGNATURE_REFUSED_EVENT = 'fediverse.inbox.signature-refused';
-const INVALID_SIGNATURE_REASON = 'invalid-signature';
 /** Longest `path` written. */
 const MAX_PATH_LENGTH = 200;
 const CONTROL_CHARACTERS = /[\p{Cc}\p{Zl}\p{Zp}]+/gu;
@@ -27,7 +33,7 @@ const PATH_REDACTIONS: readonly RegExp[] = [
 /**
  * Writes the `fediverse.inbox.signature-refused` security event: a `warn` line
  * `security: fediverse.inbox.signature-refused` with `event`, `outcome`
- * (`failure`), `path` and `reason` (`invalid-signature`) as metadata.
+ * (`failure`), `path` and `reason` as metadata.
  *
  * @remarks
  * Takes only the request path: no address, header, key id or signature is
@@ -36,14 +42,18 @@ const PATH_REDACTIONS: readonly RegExp[] = [
  *
  * @param path - The request path as received; the query string is dropped here.
  */
-export function logInboxSignatureRefused(log: StrapiLog, path: string): void {
+export function logInboxSignatureRefused(
+  log: StrapiLog,
+  path: string,
+  reason: InboxRefusalReason
+): void {
   const meta: Record<string, string> = {
     event: SIGNATURE_REFUSED_EVENT,
     outcome: 'failure',
   };
   const cleanPath = sanitizePath(path);
   if (cleanPath) meta.path = cleanPath;
-  meta.reason = INVALID_SIGNATURE_REASON;
+  meta.reason = reason;
   log.warn(`security: ${SIGNATURE_REFUSED_EVENT}`, meta);
 }
 

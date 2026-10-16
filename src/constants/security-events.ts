@@ -48,7 +48,7 @@ export const SECURITY_EVENTS = {
   rateLimitRejected: 'rate-limit.rejected',
   /** A request carried a wrong forwarder secret. */
   rateLimitForwarderSecretInvalid: 'rate-limit.forwarder-secret.invalid',
-  /** A fediverse inbox request was refused because its signature did not verify. */
+  /** A fediverse inbox request was refused: its signature did not verify, or its `Digest` named no approved algorithm. */
   fediverseInboxSignatureRefused: 'fediverse.inbox.signature-refused',
 } as const;
 
@@ -67,6 +67,7 @@ export const SECURITY_REASONS = [
   'invalid-code',
   'invalid-token',
   'invalid-signature',
+  'digest-algorithm',
   'invalid-secret',
   'not-editor',
   'draft-requested',

@@ -111,7 +111,7 @@ describe('logInboxSignatureRefused', () => {
     const log = fakeLog();
     const longPath = `/fediverse/user/${'a'.repeat(50_000)}${'b@'.repeat(25_000)}/inbox?x=1`;
     const started = performance.now();
-    logInboxSignatureRefused(log as never, longPath);
+    logInboxSignatureRefused(log as never, longPath, 'invalid-signature');
     expect(performance.now() - started).toBeLessThan(MAX_MS_PER_CALL);
 
     const meta = log.lines[0]?.meta as { path: string };
