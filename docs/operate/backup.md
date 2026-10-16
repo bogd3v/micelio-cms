@@ -12,6 +12,10 @@
 
 Without the same keys a restored database may not open, so keep them with the database backup. Never put them in the repository, a log or an issue.
 
+With the fediverse on, the database holds the actor's private key encrypted with `ENCRYPTION_KEY`, so a database backup taken after the upgrade that added the encryption does not contain a usable key on its own. Restored with a different `ENCRYPTION_KEY`, the blog stops federating until the original value is back; the CMS never replaces the stored key ([keys.md](../security/keys.md#rotating-encryption_key)).
+
+Backups taken before that upgrade hold the private key in plain text, and so do the database's free pages until they are reused or vacuumed. Destroy those backups, or treat the actor key as exposed. Rotating the key gives the blog a new federated identity that followers' servers must fetch again; the CMS does not rotate it on its own, so the decision is yours ([keys.md](../security/keys.md#the-actor-key-written-before-encryption)).
+
 ## The scripts
 
 `scripts/backup-volumes.sh` and `scripts/restore-volumes.sh` back up a Docker Compose deployment: a `pg_dump` of the database, compressed, and a tarball of the uploads volume. They look for a service named `db`, a service named `strapi` and a volume named `<COMPOSE_PROJECT>_strapi-uploads`; if your Compose file names them differently, the script skips that part and prints a warning, so read its output.

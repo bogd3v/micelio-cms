@@ -15,7 +15,7 @@ The rules come from [ADR 0010](https://github.com/bogd3v/micelio/blob/main/docs/
 
 ## Migrations that rewrite data
 
-Some boot migrations rewrite stored data in place. They run on every boot, are idempotent (a second run changes nothing), and cannot be undone, so back up first (step 2). Two releases add one each: the reader token migration and the subscriber token migration.
+Some boot migrations rewrite stored data in place. They run on every boot, are idempotent (a second run changes nothing), and cannot be undone, so back up first (step 2). Three releases add one each: the reader token migration, the subscriber token migration and the encryption of the fediverse actor key.
 
 **Exception: frontend first.** The usual order is CMS first, but the release that adds `hash-subscriber-tokens` reverses it. Upgrade the frontend to 0.2.0 or later, then back up (step 2), then upgrade the CMS (step 3). Frontend 0.1.x generates UUID tokens and stores them in the clear, so with this migration:
 
@@ -26,6 +26,9 @@ Frontend 0.2.0 or later looks a token up by its hash first and falls back to the
 
 - **Reader tokens** (`src/migrations/hash-user-tokens.ts`) replace the email confirmation tokens and password reset codes in `up_users` with their SHA-256 hex. Links and reset codes sent before the upgrade keep working, because lookups hash what they receive. Going back to the previous image runs, but the older code looks tokens up in plain text, so only the links pending at that moment stop working and their owners ask for a new one; restore the backup to keep them.
 - **Subscriber tokens** (`src/migrations/hash-subscriber-tokens.ts`) replace the confirmation and unsubscribe tokens in the subscriber table the same way. Going back to the previous CMS image runs fine, because the old CMS never reads token values, but the links of frontend 0.1.x stay broken.
+- **Fediverse actor key** (`encryptStoredActorKeys` in `src/plugins/fediverse/server/src/services/keys.ts`), in the release that contains this change. With `FEDIVERSE_ENABLED=true`, the first boot encrypts the stored actor private key with `ENCRYPTION_KEY`. The key material, the key id and the actor id stay the same, so followers notice nothing, and there is nothing to do by hand. From then on keep `ENCRYPTION_KEY` unchanged ([Rotating `ENCRYPTION_KEY`](../security/keys.md#rotating-encryption_key)). The key is not rotated: backups taken before the upgrade, and the database's free pages, still hold it in plain text; destroy them or treat the key as exposed ([keys.md](../security/keys.md#the-actor-key-written-before-encryption)).
+
+  **Rolling back.** The previous release cannot read the encrypted key. It fails closed as well: it serves the actor without a key and signs nothing, so the blog does not federate while it runs, but it never generates a new key pair, and the stored encrypted key stays intact. Starting this release again, with the same `ENCRYPTION_KEY`, restores federation as it was. To federate on the previous release you need the previous key material: restore the backup of step 2, which holds the plain key. Stop the old instances before you start the new ones, so no old instance runs against the encrypted key.
 
 In a rolling deploy, stop the old CMS instances first: an old image keeps writing and looking up plain tokens until the new image has booted, and none of them should run next to a migrated database. The rewrites are irreversible; a rollback restores the code, not the plain values.
 

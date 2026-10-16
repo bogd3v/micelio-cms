@@ -66,6 +66,7 @@ import type { FediverseContextData } from './types/federation';
 import type { InteractionType } from './types/interactions';
 import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
+import { ActorKeyDecryptionError } from './utils/key-encryption';
 import { publicOrigin } from './utils/public-origin';
 import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
 import { inboxDigestRefusal } from './inbox-digest';
@@ -80,6 +81,51 @@ const OUTBOX_MAX_CURSOR = 100_000;
  * Strapi `string`s, 255 characters: a longer value would make the comment write fail and lose the reply.
  */
 const AVATAR_MAX_LENGTH = 255;
+/** Shortest gap between two repeats of the guard, digest and key pairs warnings. */
+const WARNING_INTERVAL_MS = 60_000;
+/**
+ * Distinct key pairs failure lines kept for throttling. The lines come from a
+ * fixed set (decryption messages and error names), so this only guards memory.
+ */
+const KEY_PAIRS_FAILURE_LINES_MAX = 32;
+/**
+ * When each key pairs failure line was last logged by this process. Every actor,
+ * WebFinger and signed request fails the same way until the key is fixed, so a
+ * line is repeated at most once per `WARNING_INTERVAL_MS`, not once per request;
+ * a failure that clears (a database outage) and comes back is logged again.
+ */
+const lastKeyPairsFailureLog = new Map<string, number>();
+
+/**
+ * Logs why the actor key pairs could not be loaded, each distinct line at most
+ * once per `WARNING_INTERVAL_MS`. Only `ActorKeyDecryptionError` messages are
+ * logged in full: any other error is reduced to its name, with no stack, so
+ * nothing read from the stored key can reach the log.
+ */
+function logKeyPairsFailure(strapi: Core.Strapi, error: unknown): void {
+  const line =
+    error instanceof ActorKeyDecryptionError
+      ? error.message
+      : `[fediverse] the actor key pairs could not be loaded (${error instanceof Error ? error.name : 'unknown error'})`;
+  const now = Date.now();
+  if (now - (lastKeyPairsFailureLog.get(line) ?? -Infinity) < WARNING_INTERVAL_MS) return;
+  if (lastKeyPairsFailureLog.size >= KEY_PAIRS_FAILURE_LINES_MAX) lastKeyPairsFailureLog.clear();
+  lastKeyPairsFailureLog.set(line, now);
+  strapi.log.error(`${line} Repeats are held back for a minute.`);
+}
+
+/** The actor has no usable key pair; the cause is logged by `logKeyPairsFailure`. */
+class ActorKeyUnavailableError extends Error {
+  constructor() {
+    super('[fediverse] the actor has no usable key pair');
+    this.name = 'ActorKeyUnavailableError';
+  }
+}
+
+/** Whether `error` comes from an actor key that cannot be loaded; the cause is logged by `logKeyPairsFailure`. */
+function isActorKeyFailure(error: unknown): boolean {
+  return error instanceof ActorKeyUnavailableError || error instanceof ActorKeyDecryptionError;
+}
 
 /**
  * Extracts the avatar image URL from a remote actor's icon (Mastodon sends
@@ -206,6 +252,9 @@ export async function buildActor(
   const actorUri = ctx.getActorUri(identifier);
   const profile = await getActorProfile(ctx.data.strapi, actorUri.href);
   const keyPairs = await ctx.getActorKeyPairs(identifier);
+  // Fedify turns a failing key pairs dispatcher into no keys; an actor served
+  // without its key would look like a new identity to remote servers.
+  if (keyPairs.length === 0) throw new ActorKeyUnavailableError();
 
   return new Person({
     id: actorUri,
@@ -270,8 +319,14 @@ export function createFediverseFederation(
     .setKeyPairsDispatcher(async (context, identifier) => {
       if (identifier !== ACTOR_IDENTIFIER) return [];
       // Keys are persisted as JWKs in the plugin store; Fedify derives the
-      // key ids (`#main-key`) from the current request origin.
-      return await getActorKeyPairs(context.data.strapi);
+      // key ids (`#main-key`) from the current request origin. Fedify logs a
+      // dispatcher error only as "no dispatcher registered", so log the cause.
+      try {
+        return await getActorKeyPairs(context.data.strapi);
+      } catch (error) {
+        logKeyPairsFailure(context.data.strapi, error);
+        throw error;
+      }
     });
 
   federation
@@ -620,9 +675,6 @@ function requestGuardKind(method: string, path: string): RequestGuardKind {
     : 'read';
 }
 
-/** Shortest gap between two repeats of the guard and digest warnings. */
-const WARNING_INTERVAL_MS = 60_000;
-
 /**
  * Koa middleware that hands federation paths to Fedify and passes every other
  * request on untouched.
@@ -692,7 +744,17 @@ export function mountFediverseMiddleware(
       }
       return;
     }
-    await fedify(ctx, next);
+    try {
+      await fedify(ctx, next);
+    } catch (error) {
+      // Koa would print every such 500 with its stack, and the cause is already
+      // in the log; the body stays generic for unauthenticated callers.
+      if (!isActorKeyFailure(error)) throw error;
+      ctx.status = 500;
+      ctx.type = 'text/plain';
+      ctx.body = 'Internal Server Error';
+      return;
+    }
     // An inbox answers 401 only when the authentication is refused (HTTP
     // signature, digest, signer and actor mismatch, integrity proofs); the
     // response is left as it is.

@@ -28,11 +28,11 @@ The destinations here are chosen by other servers, so they are not in the operat
 | Document loading  | Any public host that a remote activity, a WebFinger lookup or an actor's icon names | A `GET` with Fedify's headers; the answers are parsed as ActivityPub                                |
 | WebFinger lookups | The domain of a handle that an admin or a remote server names                       | `GET /.well-known/webfinger`                                                                        |
 
-Private and loopback addresses are refused: Fedify's loader and delivery reject them, and the plugin enables them only under `NODE_ENV=test` (`src/plugins/fediverse/server/src/federation.ts:247-249`, `allowPrivateAddress`). The plugin's avatar lookup goes through the same loader (`federation.ts:80-90`).
+Private and loopback addresses are refused: Fedify's loader and delivery reject them, and the plugin enables them only under `NODE_ENV=test` (`src/plugins/fediverse/server/src/federation.ts:306-308`, `allowPrivateAddress`). The plugin's avatar lookup goes through the same loader (`federation.ts:130-150`, `extractAvatarUrl`).
 
 ### Why there is no allowlist
 
-An allowlist would name the servers a site may talk to. Federation works with any server that a reader follows, so a site would have to know every server on the network in advance. The controls that exist are the ones that do not need that list: refused private addresses, signatures checked before any listener runs, the author check on each activity (`federation.ts:416-427`, `:486-489`), a rate limit on the inbox (`fediverse-inbox`, `docs/RATE_LIMITING.md`), and a block that removes a follower. A host-based allowlist mode would be a new decision with a cost for federation, so it is recorded here as an open question for the owner of the decision, not as a default. ASVS V13.2.4 stays open until that decision is taken.
+An allowlist would name the servers a site may talk to. Federation works with any server that a reader follows, so a site would have to know every server on the network in advance. The controls that exist are the ones that do not need that list: refused private addresses, signatures checked before any listener runs, the author check on each activity (`federation.ts:482-496`, `:553-558`), a rate limit on the inbox (`fediverse-inbox`, `docs/RATE_LIMITING.md`), and a block that removes a follower. A host-based allowlist mode would be a new decision with a cost for federation, so it is recorded here as an open question for the owner of the decision, not as a default. ASVS V13.2.4 stays open until that decision is taken.
 
 ## Strapi's own connections
 
