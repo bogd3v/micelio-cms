@@ -415,6 +415,34 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       }
     });
 
+    it.each([
+      ['javascript:alert(1)', null],
+      ['data:image/png;base64,iVBORw0KGgo=', null],
+      [`https://cdn.example.test/${'a'.repeat(300)}`, null],
+      ['https://cdn.example.test/follower.png', 'https://cdn.example.test/follower.png'],
+    ])('stores a follower avatar of %s as %s', async (rawIconUrl, expected) => {
+      const remote = await createRemoteActor({ preferredUsername: 'avatar-follow', rawIconUrl });
+      try {
+        const res = await remote.postSignedActivity(`${actorUrl}/inbox`, {
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          id: `${remote.actorUrl}/follows/avatar`,
+          type: 'Follow',
+          actor: remote.actorUrl,
+          object: actorUrl,
+        });
+        expect(res.ok).toBe(true);
+
+        const row = await waitUntil(() =>
+          strapi.db
+            .query('plugin::fediverse.follower')
+            .findOne({ where: { actorId: remote.actorUrl } })
+        );
+        expect(row.avatar ?? null).toBe(expected);
+      } finally {
+        await remote.close();
+      }
+    });
+
     it('sends no Accept to a blocked actor that follows', async () => {
       const blocked = await createRemoteActor({ preferredUsername: 'blocked-follow' });
       const sentinel = await createRemoteActor({ preferredUsername: 'sentinel-follow' });

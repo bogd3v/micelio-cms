@@ -100,7 +100,7 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 
 | Content type                    | Fields                                                                                                                                                                            |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plugin::fediverse.follower`    | `actorId` (string, AP actor URI), `handle` (`@user@host`), `name`, `inbox`, `avatar`, `blocked` (boolean)                                                                         |
+| `plugin::fediverse.follower`    | `actorId` (string, AP actor URI), `handle` (`@user@host`), `name`, `inbox`, `avatar` (same rule as `authorAvatar`), `blocked` (boolean)                                           |
 | `plugin::fediverse.interaction` | `type` (enum `like`/`boost`), `actorId`, `handle`, `articleDocumentId` (string, not a relation — see Phase 4 findings), `interactionKey` (`type\|actor\|article`, used to dedupe) |
 
 ### Comment schema extension
@@ -177,17 +177,17 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
    - another note's URI matching a stored comment's `fediverseUri` → `threadOf` = that comment (one hop). Anything that doesn't resolve to one of our published articles is ignored: it is not our conversation.
 2. Create `plugin::comments.comment` via `strapi.documents()`:
 
-| Comment field          | Source                                                                                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `content`              | Remote Note content, sanitized to plain text (strip HTML)                                                                     |
-| `authorName`           | Actor `name` or `preferredUsername@host`                                                                                      |
-| `authorAvatar`         | Actor `icon.url`                                                                                                              |
-| `authorId`             | Remote actor URI (stable identity). `authorEmail` is never set: the plugin exposes it publicly                                |
-| `threadOf`             | Resolved parent (see above), else `null`                                                                                      |
-| `approvalStatus`       | `PENDING` — set explicitly; the plugin's public API would show it, so a global middleware hides it until a moderator approves |
-| `locale`               | The default (federated) locale; the frontend reads comments per locale (`?locale=`), and only that version federates          |
-| `fediverseUri`         | Note object id (dedupe key)                                                                                                   |
-| `fediverseActorHandle` | `@user@host`, or `null` when it could not be resolved                                                                         |
+| Comment field          | Source                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`              | Remote Note content, sanitized to plain text (strip HTML)                                                                                 |
+| `authorName`           | Actor `name` or `preferredUsername@host`                                                                                                  |
+| `authorAvatar`         | Actor `icon.url`, kept only as an absolute `http(s)` URL without credentials, at most 255 characters (`utils/remote-url.ts`), else `null` |
+| `authorId`             | Remote actor URI (stable identity). `authorEmail` is never set: the plugin exposes it publicly                                            |
+| `threadOf`             | Resolved parent (see above), else `null`                                                                                                  |
+| `approvalStatus`       | `PENDING` — set explicitly; the plugin's public API would show it, so a global middleware hides it until a moderator approves             |
+| `locale`               | The default (federated) locale; the frontend reads comments per locale (`?locale=`), and only that version federates                      |
+| `fediverseUri`         | Note object id (dedupe key)                                                                                                               |
+| `fediverseActorHandle` | `@user@host`, or `null` when it could not be resolved                                                                                     |
 
 3. Dedupe: skip if a comment with the same `fediverseUri` exists.
 4. `Update(Note)` → edit the content **and send the comment back to `PENDING`** (an approved comment must not be swappable for spam); `Delete(Note)` → set `removed`. Both are only honoured from the original author.
@@ -313,7 +313,7 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **The comments plugin does not hide pending comments.** Its public `GET /api/comments/:relation` (hierarchy) and `/flat` only filter by what the caller passes, and the frontend passes nothing. Storing replies as `PENDING` alone would have published remote spam instantly. The `hide-unapproved-comments` middleware fixes this in the backend; a mutation check (removing it) makes the visibility test fail.
 - **Approval config in `config/plugins.ts` is inert.** See Moderation & Security above. Note that comments left through the site's own form are therefore approved immediately today; enabling the plugin's real `approvalFlow: ['api::article.article']` would put those in `PENDING` too (a product decision, not made here).
 - **Comment `related` is `api::article.article:<documentId>`** (not the numeric id), and `threadOf` is set through the document service by the parent's `documentId`.
-- **Author mapping:** `authorId` = remote actor URI (stable identity), `authorName` = actor name or `preferredUsername`, `authorAvatar` = actor icon, `fediverseActorHandle` = `@user@host`. `authorEmail` is deliberately never set: the plugin exposes it publicly.
+- **Author mapping:** `authorId` = remote actor URI (stable identity), `authorName` = actor name or `preferredUsername`, `authorAvatar` = actor icon (absolute `http(s)` URL without credentials and of at most 255 characters, else `null`; any other scheme such as `javascript:` or `data:` is dropped). The 255 is the size of a Strapi `string` column: the comment is written through the Document Service, whose validation rejects a longer `authorAvatar` on any database (seen on SQLite: the whole reply was lost), and `follower.avatar` is written through `db.query`, with no Strapi validation, so SQLite stores a longer value while PostgreSQL's `varchar(255)` rejects the write, `fediverseActorHandle` = `@user@host`. `authorEmail` is deliberately never set: the plugin exposes it publicly.
 - **Threading is one hop.** A reply to a stored fediverse reply attaches to it via `threadOf`; a reply to something we don't know is ignored (not our conversation), not attached as top-level.
 - **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading mention of the actor (the handle, or a former one) is stripped; content is capped at 5000 characters.
 - **Authorship is checked.** A `Note` whose `attributedTo` differs from the signature-verified activity actor is dropped, and edits/deletes are only honoured from the original author.
