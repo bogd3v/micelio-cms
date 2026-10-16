@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import http from 'http';
 import type { AddressInfo } from 'net';
 import { generateCryptoKeyPair, signRequest } from '@fedify/fedify';
@@ -23,6 +24,26 @@ interface RemoteActorOptions {
    * test can send a value `new URL()` would reject (a relative path). Wins over `iconUrl`.
    */
   rawIconUrl?: string;
+}
+
+/** RFC 3230 algorithm names a test may put in the `Digest` header, mapped to `node:crypto` hashes. */
+const DIGEST_HASHES = { SHA: 'sha1', 'SHA-256': 'sha256', 'SHA-512': 'sha512' } as const;
+
+type DigestAlgorithm = keyof typeof DIGEST_HASHES;
+
+interface SignOptions {
+  /**
+   * Algorithms of the `Digest` header, in order, each with the correct digest of
+   * the body. Unset, `signRequest` adds `SHA-256` as a real server would.
+   */
+  digest?: readonly DigestAlgorithm[];
+}
+
+/** A `Digest` header (`SHA=…, SHA-256=…`) with the correct value of each algorithm for `body`. */
+function digestHeader(body: string, algorithms: readonly DigestAlgorithm[]): string {
+  return algorithms
+    .map((name) => `${name}=${createHash(DIGEST_HASHES[name]).update(body).digest('base64')}`)
+    .join(', ');
 }
 
 async function createRemoteActor({
@@ -93,12 +114,16 @@ async function createRemoteActor({
     return rawIconUrl === undefined ? doc : { ...doc, icon: { type: 'Image', url: rawIconUrl } };
   }
 
-  async function signActivity(url: string, activity: unknown): Promise<Request> {
-    const request = new Request(url, {
-      method: 'POST',
-      headers: { 'content-type': ACTIVITY_JSON },
-      body: JSON.stringify(activity),
-    });
+  async function signActivity(
+    url: string,
+    activity: unknown,
+    { digest }: SignOptions = {}
+  ): Promise<Request> {
+    const body = JSON.stringify(activity);
+    const headers: Record<string, string> = { 'content-type': ACTIVITY_JSON };
+    // `signRequest` signs a `Digest` already set and adds `SHA-256` only when there is none.
+    if (digest) headers.digest = digestHeader(body, digest);
+    const request = new Request(url, { method: 'POST', headers, body });
     return signRequest(request, keyPair.privateKey, keyId);
   }
 
@@ -110,8 +135,8 @@ async function createRemoteActor({
     /** Builds an HTTP-signed POST of `activity` to `url` as this remote actor, without sending it. */
     signActivity,
     /** Builds and HTTP-signs a POST of `activity` to `url` as this remote actor. */
-    async postSignedActivity(url: string, activity: unknown) {
-      return fetch(await signActivity(url, activity));
+    async postSignedActivity(url: string, activity: unknown, options?: SignOptions) {
+      return fetch(await signActivity(url, activity, options));
     },
     async close() {
       await new Promise<void>((resolve, reject) =>
