@@ -23,7 +23,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     'strapi::errors',
     // Sets the client address for everything below (TRUST_PROXY).
     'global::client-ip',
-    // Logs admin sign-ins (auth.login.*); needs the client address above.
+    // Logs a 401 for a token that was sent (auth.token.invalid). Outside the
+    // admin log, which runs first on the way out and marks what it logged.
+    'global::token-invalid-log',
+    // Logs admin auth routes (auth.*); needs the client address above.
     'global::admin-login-log',
     {
       name: 'strapi::security',

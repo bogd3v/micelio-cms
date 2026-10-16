@@ -1,3 +1,4 @@
+import type { SECURITY_REASONS } from '../constants/security-events';
 import type { AppKeyHost } from '../utils/app-key-secret';
 
 /** Whether a security event happened (`success`) or was refused or failed (`failure`). */
@@ -18,3 +19,6 @@ interface SecurityLogger {
 export interface SecurityLogHost extends AppKeyHost {
   log: SecurityLogger;
 }
+
+/** A value of the closed `reason` set of a security event. */
+export type SecurityReason = (typeof SECURITY_REASONS)[number];

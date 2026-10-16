@@ -5,7 +5,7 @@
 import type { Context } from 'koa';
 import type { Core } from '@strapi/strapi';
 import { SECURITY_EVENTS } from '../../constants/security-events';
-import { logAuthEvent, userIdFromBody } from '../../utils/auth-events';
+import { logAuthEvent, userIdFromBody, userIdFromState } from '../../utils/auth-events';
 
 type Action = (ctx: Context, ...rest: unknown[]) => Promise<unknown>;
 
@@ -15,6 +15,8 @@ const INVALID_MESSAGE = 'Invalid identifier or password';
 const UNCONFIRMED_MESSAGE = 'Your account email is not confirmed';
 const INVALID_CODE_MESSAGE = 'Incorrect code provided';
 const INVALID_TOKEN_MESSAGE = 'Invalid token';
+const WRONG_CURRENT_PASSWORD_MESSAGE = 'The provided current password is invalid';
+const WRONG_DELETION_PASSWORD_MESSAGE = 'Invalid password';
 
 /**
  * Wraps `callback` (sign-in) to log `auth.login.success` with the user id, or
@@ -122,6 +124,71 @@ export function wrapEmailConfirmationEvents(strapi: Core.Strapi, confirm: Action
     }
     if (ctx.method === 'POST' && ctx.status === 204) {
       logAuthEvent(strapi, ctx, SECURITY_EVENTS.authEmailConfirmed);
+    }
+    return result;
+  };
+}
+
+/**
+ * Wraps `changePassword` to log `auth.password-change.success` with the user id,
+ * or `auth.password-change.failure` (`reason` `invalid-credentials` for a wrong
+ * current password, none for a rejected new password), then rethrow the error.
+ *
+ * @remarks
+ * Nothing is logged when nobody is signed in: there is no password to check.
+ */
+export function wrapChangePasswordEvents(strapi: Core.Strapi, changePassword: Action): Action {
+  return async (ctx, ...rest) => {
+    const actor = userIdFromState(ctx.state.user);
+    let result: unknown;
+    try {
+      result = await changePassword(ctx, ...rest);
+    } catch (error) {
+      if (actor !== undefined) {
+        logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordChangeFailure, {
+          actor,
+          reason:
+            messageOf(error) === WRONG_CURRENT_PASSWORD_MESSAGE ? 'invalid-credentials' : undefined,
+        });
+      }
+      throw error;
+    }
+    if (actor !== undefined) {
+      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordChangeSuccess, { actor });
+    }
+    return result;
+  };
+}
+
+/**
+ * Wraps `DELETE /api/users/me` to log `auth.account-deletion.success` with the
+ * user id once the account is gone (204), or `auth.account-deletion.failure`
+ * (`reason` `invalid-credentials` for a wrong or missing password, none for
+ * any other error), then rethrow the error.
+ *
+ * @remarks
+ * A request without a signed-in user answers 401 and logs nothing here.
+ */
+export function wrapDestroyMeEvents(strapi: Core.Strapi, destroyMe: Action): Action {
+  return async (ctx, ...rest) => {
+    const actor = userIdFromState(ctx.state.user);
+    let result: unknown;
+    try {
+      result = await destroyMe(ctx, ...rest);
+    } catch (error) {
+      if (actor !== undefined) {
+        logAuthEvent(strapi, ctx, SECURITY_EVENTS.authAccountDeletionFailure, {
+          actor,
+          reason:
+            messageOf(error) === WRONG_DELETION_PASSWORD_MESSAGE
+              ? 'invalid-credentials'
+              : undefined,
+        });
+      }
+      throw error;
+    }
+    if (actor !== undefined && ctx.status === 204) {
+      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authAccountDeletionSuccess, { actor });
     }
     return result;
   };
