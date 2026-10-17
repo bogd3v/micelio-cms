@@ -89,6 +89,16 @@ So either destroy those copies (old backups, WAL archives, and a `VACUUM FULL` o
 
 Rotating the actor key is the only way to make an exposed one worthless, and it means a new federated identity: the actor id stays, but remote servers verify the blog's signatures with the copy of the old public key they cached until they fetch the actor again, so deliveries can be refused meanwhile and some servers may need followers to follow again. How each server reacts was not verified. The CMS does not rotate the key on upgrade; the operator decides, weighing who could have read the old copies against the cost to followers. To rotate, delete the core store row `plugin_fediverse_keyPairs`; the next request generates and encrypts a new pair.
 
+## Crypto agility: accepted risk
+
+ASVS V11.2.2 asks that algorithms and keys can be swapped. What the CMS does: stored actor keys are imported by their JWK type (RSA and Ed25519), the actor's `publicKey` is the first RSA pair, and the encrypted envelope carries a version and an algorithm (`v`, `alg`). What it does not do, on purpose:
+
+- **Re-encrypt under a new `ENCRYPTION_KEY`.** There is no command; the choices are in [Rotating `ENCRYPTION_KEY`](#rotating-encryption_key).
+- **Rotate the actor key and keep followers.** A new key is a new federated identity: remote servers verify with the key they cached until they fetch the actor again.
+- **Choose the algorithm of a new pair by configuration.** It is the constant `NEW_KEY_ALGORITHM` in `services/keys.ts`; another type is a code change.
+
+The risk is accepted because each of these changes the identity or the data of a live blog, which an operator should decide, and because no second key type is needed today. Revisit it when one is, or when a re-encryption command is written. The row is [V11.2.2](asvs.md).
+
 ## Not in this document
 
 - TLS certificates and their keys belong to the operator's reverse proxy; the CMS holds none (see `docs/operate/install.md`). The database client can pin a CA (`config/database.ts:17-24`).
