@@ -30,9 +30,26 @@ The destinations here are chosen by other servers, so they are not in the operat
 
 Private and loopback addresses are refused: Fedify's loader and delivery reject them, and the plugin enables them only under `NODE_ENV=test` (`src/plugins/fediverse/server/src/federation.ts:306-308`, `allowPrivateAddress`). The plugin's avatar lookup goes through the same loader (`federation.ts:130-150`, `extractAvatarUrl`).
 
-### Why there is no allowlist
+## Accepted risk: no host allowlist (V13.2.4)
 
-An allowlist would name the servers a site may talk to. Federation works with any server that a reader follows, so a site would have to know every server on the network in advance. The controls that exist are the ones that do not need that list: refused private addresses, signatures checked before any listener runs, the author check on each activity (`federation.ts:482-496`, `:553-558`), a rate limit on the inbox (`fediverse-inbox`, `docs/RATE_LIMITING.md`), and a block that removes a follower. A host-based allowlist mode would be a new decision with a cost for federation, so it is recorded here as an open question for the owner of the decision, not as a default. ASVS V13.2.4 stays open until that decision is taken.
+The CMS has no list of hosts it may contact. The owner accepted this risk in issue #181 instead of adding an allowlist mode. The ASVS row stays Open, as an accepted risk, in [asvs.md](asvs.md).
+
+**Fixed by the environment.** The operator-configured destinations in the first table. Each address is read from an environment variable; no request data chooses one.
+
+**Chosen by an admin, only if the operator opts in.** Uploads by URL: with `UPLOAD_FROM_URL_ENABLED=true`, the admin panel names the host (see [Uploads by URL](#uploads-by-url)). The feature is off by default.
+
+**Chosen by a remote server.** The fediverse destinations: the inbox of each follower, the documents a remote activity, a WebFinger lookup or an actor's icon names, and the domain of a handle that an admin or a remote server names. These are public hosts that federation needs, and they cannot be listed in advance.
+
+**Enforced in code.**
+
+- Private, loopback and link-local addresses are refused for document loading, WebFinger and delivery, by Fedify's `validatePublicUrl` (`validatePublicIpAddress` in `@fedify/vocab-runtime`, which covers 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 169.254.0.0/16 and the IPv6 loopback, unique-local and link-local ranges). The plugin turns the check off only under `NODE_ENV=test` (the `allowPrivateAddress` option of `createFediverseFederation`). The check looks up the host and tests every address it returns, then the request resolves the host again. An address that changes between the two lookups is not covered. The check narrows the exposure and does not close it.
+- Document loading follows a redirect one hop at a time, and each hop goes through the same check, with the same limit. Fedify stops after 20 redirections, and when a redirect returns to a URL it already visited (`@fedify/vocab-runtime`, `getDocumentLoader`). The Umami sync and the rebuild hook refuse every redirect (see above).
+- Timeouts: the Umami sync aborts after 15 s (`src/api/article-stat/utils/umami-client.ts:6`). Document loading aborts after 10 s: the plugin sets no `documentLoaderTimeout`, so Fedify's default applies. Uploads by URL, when enabled, abort after 60 s (`node_modules/@strapi/upload/dist/server/services/file.js:24`). The rebuild hook sets no timeout.
+- Size limits for remote documents (`@fedify/vocab-runtime`, `MAX_BODY_SIZE`, `MAX_HTML_SIZE`, `MAX_ERROR_BODY_SIZE`): a JSON document is read up to 16 MiB; an HTML document up to 1 MiB, and a larger one is refused. An error response's body is kept up to 1 MiB, and a larger one is dropped, keeping only its status and headers. Umami answers are parsed with no size limit (`umami-client.ts:40`). The rebuild hook does not read the response body. Uploads by URL are limited in the next section.
+
+**Why there is no allowlist.** An allowlist would name the servers a site may talk to. Federation works with any server that a reader follows, so a site would have to know every server on the network in advance. The controls that exist are the ones that do not need that list: refused private addresses (with the limit above), signatures checked before any listener runs, the author check on each activity (`federation.ts:482-496`, `:553-558`), a rate limit on the inbox (`fediverse-inbox`, `docs/RATE_LIMITING.md`), and a block that removes a follower. A host-based allowlist mode would be a new decision with a cost for federation.
+
+**Egress filtering is the operator's job.** This repository configures no firewall, proxy or outbound rule, and the hosting platform decides what the container may reach (ASVS V13.2.5, not applicable here). The tables above list every host the CMS calls by design. With `FEDIVERSE_ENABLED=true` the fediverse hosts cannot be listed in advance, so a rule that allows only a fixed list would stop federation.
 
 ## Strapi's own connections
 
@@ -78,7 +95,13 @@ Used only with an Enterprise licence that includes the AI feature (`node_modules
 
 ## Uploads by URL
 
-The admin panel can import a file from an `http` or `https` URL, but only when the operator sets `UPLOAD_FROM_URL_ENABLED=true`; it is off by default and the CMS answers `403` otherwise ([uploads.md](uploads.md#import-from-a-url)). When it is on, the CMS fetches the address (`node_modules/@strapi/upload/dist/server/services/file.js:92-108`). The address is chosen by the admin, so this is a user-supplied destination. The frontend's own requests and the CMS's other calls are listed above.
+An opt-in feature, **off by default**. The admin panel can import a file from an `http` or `https` URL only when the operator sets `UPLOAD_FROM_URL_ENABLED=true`; otherwise the CMS answers `403` (`src/middlewares/upload-from-url.ts`, test `tests/upload-from-url.test.ts`; see [uploads.md](uploads.md#import-from-a-url)). When it is on, Strapi's own import code does the fetch (`fetchUrlToInputFile` in `node_modules/@strapi/upload/dist/server/services/file.js`):
+
+- the protocol must be `http:` or `https:`;
+- the download aborts after 60 s (`file.js:24`);
+- the download is read up to the upload size limit. The limit is `sizeLimit` in `config/plugins.ts`: 250 MiB for the local provider. With the R2 provider (`R2_BUCKET` set) that file sets no `sizeLimit`, so Strapi's default applies, 1,000,000,000 bytes (`node_modules/@strapi/upload/dist/server/config.js:7`). A `Content-Length` above the limit is refused before the download, and the bytes read are counted (`file.js:129`, `:167`).
+
+The address is chosen by an admin, so this is a user-supplied destination. The frontend's own requests and the CMS's other calls are listed above.
 
 ## Summary for the operator
 
