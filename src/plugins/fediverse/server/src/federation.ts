@@ -254,7 +254,12 @@ export async function buildActor(
   const keyPairs = await ctx.getActorKeyPairs(identifier);
   // Fedify turns a failing key pairs dispatcher into no keys; an actor served
   // without its key would look like a new identity to remote servers.
-  if (keyPairs.length === 0) throw new ActorKeyUnavailableError();
+  // Fedify signs HTTP requests with the first RSASSA-PKCS1-v1_5 pair, so
+  // `publicKey` must be that one whatever the order of the stored pairs.
+  const httpSignatureKey = keyPairs.find(
+    (keyPair) => keyPair.privateKey.algorithm.name === 'RSASSA-PKCS1-v1_5'
+  );
+  if (httpSignatureKey == null) throw new ActorKeyUnavailableError();
 
   return new Person({
     id: actorUri,
@@ -270,7 +275,7 @@ export async function buildActor(
     icon: profile.iconUrl ? new Image({ url: new URL(profile.iconUrl) }) : undefined,
     image: profile.headerUrl ? new Image({ url: new URL(profile.headerUrl) }) : undefined,
     attachments: profile.fields.map(profileField),
-    publicKey: keyPairs[0]?.cryptographicKey,
+    publicKey: httpSignatureKey.cryptographicKey,
     assertionMethods: keyPairs.map((keyPair) => keyPair.multikey),
   });
 }

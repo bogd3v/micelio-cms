@@ -60,7 +60,7 @@ The logger runs first and reads `client`, `actor` and `actorKind` after `next()`
 
 `info` lines for accepted and removed followers, unfollows, blocks, replies that were edited or deleted remotely, and the publication of an article or the profile (`federation.ts:476`, `:501`, `:542`, `:609`, `:621`; `services/publisher.ts:79`, `:98`, `:119`). `warn` lines for an ignored `Follow` or `Note` and a request guard that failed open (`federation.ts:418`, `:556`, `:712`). A `debug` line for an ignored reply (`federation.ts:588`) is not written at the default level.
 
-The actor key pair is generated on the first boot that finds none (`src/plugins/fediverse/server/src/services/keys.ts:163`); the key material itself is never logged.
+The actor key pair is generated on the first boot that finds none (`src/plugins/fediverse/server/src/services/keys.ts:174`); the key material itself is never logged.
 
 ### Personal data in these lines
 
