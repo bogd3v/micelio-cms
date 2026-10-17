@@ -48,6 +48,8 @@ If it does not come up, read the logs, fix the missing variable or the database 
 
 **Purge of unconfirmed accounts and subscriptions.** From the release that adds `UNCONFIRMED_RETENTION_DAYS`, a daily job (not at boot) deletes reader accounts and newsletter subscriptions that were never confirmed and are older than that many days (default 30). The first run after the upgrade deletes everything already past the limit, and it cannot be undone: take the backup of step 2 first. Set `UNCONFIRMED_RETENTION_DAYS=0` before starting the new image to keep them. Confirmed accounts and subscribers, admin-created users and blocked users are never touched. Accounts are skipped too while the `email_confirmation` setting of users-permissions is off.
 
+**Media Library import from a URL.** From the release that adds `UPLOAD_FROM_URL_ENABLED`, the "From URL" tab of the Media Library is off by default, and the CMS answers `403` to that import. Who is affected: admins who import files from an address. What to do: set `UPLOAD_FROM_URL_ENABLED=true` in the environment before starting the new image to keep it working. Uploading from the computer is not affected ([uploads.md](../security/uploads.md#import-from-a-url)).
+
 ## 4. Upgrade the frontend
 
 Then upgrade the frontend as its own [upgrade guide](https://github.com/bogd3v/micelio/blob/main/docs/operate/upgrade.md) says.
