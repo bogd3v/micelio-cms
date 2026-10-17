@@ -47,7 +47,7 @@ Backups hold every row above, and the secrets with them ([backup.md](../operate/
 
 The third check reads the table. In a "Where" cell, a content type is written as its UID in a code span (`plugin::comments.comment`), and the attributes that follow it, in code spans, up to the next UID, belong to it. A name under another type, or in prose or another column, does not count. This is the convention to keep when adding a row.
 
-It is a floor, not a review. It does not check that a row's level or protection text is right, and it does not read attributes written outside a code span. Whether the stated protection holds is for [asvs.md](asvs.md) V14.2.4 to track.
+It is a floor, not a review. It does not check that a row's level or protection text is right, and it does not read attributes written outside a code span. Whether the stated protection holds is tracked in [asvs.md](asvs.md) V14.2.4.
 
 ## Where each level's requirement is met
 
@@ -65,6 +65,6 @@ It is a floor, not a review. It does not check that a row's level or protection 
 
 ## Gaps
 
-This requirement of the levels is not met yet. It is why V14.2.4 stays open ([mapping](asvs.md)); it is tracked in #181.
+The exceptions below are accepted and documented. ASVS V14.2.4 ([mapping](asvs.md)) is Met with them.
 
 - Blocked unconfirmed accounts are kept without a time limit, on purpose: deleting one would free its address and let it register again, escaping the block. The purge also does nothing for accounts when `email_confirmation` is off, because unconfirmed users can then sign in. An operator who wants them gone deletes them in the admin panel.
