@@ -78,7 +78,7 @@ Used only with an Enterprise licence that includes the AI feature (`node_modules
 
 ## Uploads by URL
 
-The admin panel can import a file from an `http` or `https` URL. The CMS fetches it, after resolving the host and refusing blocked address ranges (`node_modules/@strapi/upload/dist/server/services/file.js:92-108`). The address is chosen by the admin, so this is a user-supplied destination. The frontend's own requests and the CMS's other calls are listed above.
+The admin panel can import a file from an `http` or `https` URL, but only when the operator sets `UPLOAD_FROM_URL_ENABLED=true`; it is off by default and the CMS answers `403` otherwise ([uploads.md](uploads.md#import-from-a-url)). When it is on, the CMS fetches the address (`node_modules/@strapi/upload/dist/server/services/file.js:92-108`). The address is chosen by the admin, so this is a user-supplied destination. The frontend's own requests and the CMS's other calls are listed above.
 
 ## Summary for the operator
 

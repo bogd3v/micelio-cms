@@ -130,6 +130,8 @@ With the local disk the files are served from the CMS origin, the one the admin 
 
 The local provider is meant for development and small setups. A file that a browser renders inline runs with the privileges of the admin origin, which is why `global::upload-headers` serves only raster images, video, audio and PDF inline and everything else as an attachment under a sandbox policy. In production, serve uploads from object storage (the `R2_*` variables above) or from another hostname. With `NODE_ENV=production` and the local provider, the CMS logs one `[uploads]` warning at boot and keeps starting; there is no setting to silence it. Setting `R2_BUCKET` removes it.
 
+**Import from a URL.** The Media Library "From URL" tab is off by default: the CMS answers `403` to that import. Set `UPLOAD_FROM_URL_ENABLED=true` (exactly `true`; `TRUE`, `1` and `yes` leave it off) to let admins import files from an `http` or `https` address. Uploading from the computer is not affected.
+
 Accepted types, the size limit and the headers that keep an upload inert when opened are in [uploads.md](../security/uploads.md).
 
 ## Analytics (Umami)

@@ -4,7 +4,17 @@
 
 ## Who uploads
 
-Only administrators, through the admin panel or the admin API. The editor role gets only the read actions of the upload plugin's content API (`src/migrations/editor-role.ts:26-27`), and no role of this repository is granted an upload create permission. `POST /api/upload` is rate limited per client in the `upload` group, 30 requests per 600 seconds by default (`config/rate-limit.ts:27`, [RATE_LIMITING.md](../RATE_LIMITING.md)). An admin can also import a file from an `http` or `https` URL; the CMS refuses hosts that resolve to blocked address ranges (`node_modules/@strapi/upload/dist/server/services/file.js:92-108`).
+Only administrators, through the admin panel or the admin API. The editor role gets only the read actions of the upload plugin's content API (`src/migrations/editor-role.ts:26-27`), and no role of this repository is granted an upload create permission. `POST /api/upload` is rate limited per client in the `upload` group, 30 requests per 600 seconds by default (`config/rate-limit.ts:27`, [RATE_LIMITING.md](../RATE_LIMITING.md)). An admin can also import a file from an `http` or `https` URL, but only when the operator has opted in ([Import from a URL](#import-from-a-url)).
+
+## Import from a URL
+
+The Media Library "From URL" import (`POST /upload/actions/upload-from-urls`, `node_modules/@strapi/upload/dist/server/routes/admin.js:57`) is **off by default**. Set `UPLOAD_FROM_URL_ENABLED=true` to turn it on; any other value, `TRUE`, `1` and `yes` included, leaves it off.
+
+- `global::upload-from-url` (`src/middlewares/upload-from-url.ts`, registered in `config/middlewares.ts` before the upload routes) answers that one route `403` with Strapi's error body while the feature is off. The variable is read on each request. The helpers are in `src/utils/upload-from-url.ts`.
+- The refusal is written as an `access.forbidden` event by `global::forbidden-log` ([logging.md](logging.md)); it has no event of its own.
+- Every other upload route, including the upload from the computer, is unaffected.
+- With the feature on, the admin chooses the address that the CMS fetches; the destinations are listed in [outbound.md](outbound.md).
+- Tests: `tests/upload-from-url.test.ts`.
 
 ## Accepted types
 

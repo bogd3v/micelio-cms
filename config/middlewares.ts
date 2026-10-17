@@ -28,6 +28,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     'global::token-invalid-log',
     // Logs admin auth routes (auth.*); needs the client address above.
     'global::admin-login-log',
+    // Refuses the Media Library import from a URL unless UPLOAD_FROM_URL_ENABLED=true.
+    'global::upload-from-url',
     {
       name: 'strapi::security',
       config: {
