@@ -468,4 +468,12 @@ The private JWK of the actor key pair is stored encrypted (`services/keys.ts`, `
 - **Rolling back.** The code of an earlier release cannot read the envelope: it serves the actor without a key and signs nothing until this release runs again, and it does not regenerate the key either (its `isStoredKeyPairs` only checks that `privateJwk` is present, and the import then throws). Federating on the earlier release needs the previous key material, from a backup taken before the upgrade ([operate/upgrade.md](operate/upgrade.md#migrations-that-rewrite-data)).
 - **Copies written before the upgrade.** Old backups and free database pages keep the plain JWK; the key is not rotated by default, because rotating means a new federated identity ([security/keys.md](security/keys.md#the-actor-key-written-before-encryption)).
 
+### Key types and which key signs
+
+Stored keys are imported by their JWK type (`importStoredJwk` in `services/keys.ts`, through Fedify `importJwk`); new pairs are RSA (`NEW_KEY_ALGORITHM`, `RSASSA-PKCS1-v1_5`). Three facts from Fedify 2.4.2 constrain it (`tests/fediverse-actor-key-agility.test.ts`):
+
+- **`alg` is required for RSA.** `importJwk` rejects an RSA JWK unless `alg` is `RS256`. WebCrypto always writes it on export, but a JWK edited by hand or restored without it would fail, so `importStoredJwk` fills in `RS256` when it is missing.
+- **`publicKey` must be the signing key.** Fedify signs outgoing HTTP requests and Linked Data signatures with the first `RSASSA-PKCS1-v1_5` pair it finds, so `buildActor` publishes that same pair as `publicKey` (not `keyPairs[0]`). With no RSA pair the actor fails closed with the generic `500`. `assertionMethods` lists every pair.
+- **Key ids follow the order of the pairs.** `#main-key`, `#key-2` and so on come from the position in the stored array. Moving the RSA pair first would change the ids remote servers have cached, which is why the code selects the RSA pair instead of sorting.
+
 Rotation of `ENCRYPTION_KEY` and backups: [security/keys.md](security/keys.md#rotating-encryption_key), [operate/backup.md](operate/backup.md). Tests: `tests/fediverse-actor-key-encryption.test.ts`. A WebFinger request in a test must name the test server's own host (`acct:bogdev@<serverHost()>`): Fedify answers `404` for another domain whatever the key state, which once made a fail-closed assertion on WebFinger pass for the wrong reason.
