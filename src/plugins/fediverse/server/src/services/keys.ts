@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-import { generateCryptoKeyPair } from '@fedify/fedify';
+import { generateCryptoKeyPair, importJwk } from '@fedify/fedify';
 
 import {
   decryptText,
@@ -32,10 +32,11 @@ interface ActorKeyPairResult {
   privateKey: CryptoKey;
 }
 
-const RSA_IMPORT_PARAMS: RsaHashedImportParams = {
-  name: 'RSASSA-PKCS1-v1_5',
-  hash: 'SHA-256',
-};
+/**
+ * Algorithm of a newly generated pair. RSA is what HTTP signatures need: Fedify
+ * signs requests with the first RSASSA-PKCS1-v1_5 key (`docs/security/keys.md`).
+ */
+const NEW_KEY_ALGORITHM = 'RSASSA-PKCS1-v1_5';
 
 function isStoredKeyPairs(value: unknown): value is StoredKeyPair[] {
   return (
@@ -50,6 +51,21 @@ function isStoredKeyPairs(value: unknown): value is StoredKeyPair[] {
         entry.privateJwk != null
     )
   );
+}
+
+/**
+ * Imports a stored JWK with the algorithm its own `kty` (and `crv`) names,
+ * through Fedify's `importJwk`, so a stored Ed25519 pair loads like an RSA one.
+ *
+ * @remarks
+ * Fedify takes an RSA JWK only with `alg: "RS256"`, which WebCrypto always
+ * writes on export. A stored RSA JWK without `alg` was accepted when the import
+ * hard-coded RSASSA-PKCS1-v1_5 with SHA-256, so it keeps loading as `RS256`.
+ *
+ * @throws `TypeError` for a key type Fedify does not support.
+ */
+async function importStoredJwk(jwk: JsonWebKey, type: 'public' | 'private'): Promise<CryptoKey> {
+  return importJwk(jwk.kty === 'RSA' && jwk.alg == null ? { ...jwk, alg: 'RS256' } : jwk, type);
 }
 
 async function getStore(strapi: Core.Strapi): Promise<PluginStore> {
@@ -130,17 +146,12 @@ export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPai
     const key = configuredEncryptionKey(strapi);
     const pairs = await Promise.all(
       stored.map(async (entry) => ({
-        publicKey: await crypto.subtle.importKey('jwk', entry.publicJwk, RSA_IMPORT_PARAMS, true, [
-          'verify',
-        ]),
-        privateKey: await crypto.subtle.importKey(
-          'jwk',
+        publicKey: await importStoredJwk(entry.publicJwk, 'public'),
+        privateKey: await importStoredJwk(
           isEncryptedEnvelope(entry.privateJwk)
             ? (JSON.parse(decryptText(entry.privateJwk, key)) as JsonWebKey)
             : entry.privateJwk,
-          RSA_IMPORT_PARAMS,
-          true,
-          ['sign']
+          'private'
         ),
       }))
     );
@@ -150,7 +161,7 @@ export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPai
   }
 
   // No persisted key pairs (first boot, or store wiped): generate one.
-  const generated = await generateCryptoKeyPair();
+  const generated = await generateCryptoKeyPair(NEW_KEY_ALGORITHM);
   const privateJwk = await crypto.subtle.exportKey('jwk', generated.privateKey);
   const entry: StoredKeyPair = {
     name: 'main-key',
@@ -164,12 +175,8 @@ export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPai
 
   return [
     {
-      publicKey: await crypto.subtle.importKey('jwk', entry.publicJwk, RSA_IMPORT_PARAMS, true, [
-        'verify',
-      ]),
-      privateKey: await crypto.subtle.importKey('jwk', privateJwk, RSA_IMPORT_PARAMS, true, [
-        'sign',
-      ]),
+      publicKey: await importStoredJwk(entry.publicJwk, 'public'),
+      privateKey: await importStoredJwk(privateJwk, 'private'),
     },
   ];
 }
