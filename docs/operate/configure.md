@@ -223,7 +223,7 @@ What each key signs or encrypts, and what a rotation breaks, is in [keys.md](../
 node scripts/generate-keys.js
 ```
 
-Copy the output into the environment of your container, or over the empty values of a local `.env` (`npm run generate:keys` prints the same). In production the CMS refuses to start when `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `JWT_SECRET` or `ENCRYPTION_KEY` is empty, a placeholder (`tobemodified`, `changeme`) or shorter than 32 characters, and the message names each one. With `DATABASE_CLIENT=postgres` and no `DATABASE_URL`, `DATABASE_PASSWORD` must be set and must not be `strapi`; `docker-compose.yml` refuses to start without it.
+Copy the output into the environment of your container, or over the empty values of a local `.env` (`npm run generate:keys` prints the same). In production the CMS refuses to start when `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `JWT_SECRET` or `ENCRYPTION_KEY` is empty, a placeholder (`tobemodified`, `changeme`) or shorter than 32 characters, and the message names each one. The check is on length only: `ENCRYPTION_KEY` must be random, such as the 32 random bytes (256 bits) `npm run generate:keys` prints, never a password or a phrase. Its SHA-256 is used directly as an AES key with no key-derivation function, which is only safe for a high-entropy value ([keys.md](../security/keys.md#rotating-encryption_key)). With `DATABASE_CLIENT=postgres` and no `DATABASE_URL`, `DATABASE_PASSWORD` must be set and must not be `strapi`; `docker-compose.yml` refuses to start without it.
 
 ## Logs
 

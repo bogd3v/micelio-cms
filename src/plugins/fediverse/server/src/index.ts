@@ -9,7 +9,7 @@ import { mountFediverseMiddleware } from './federation';
 import actorProfile from './services/actor-profile';
 import followers from './services/followers';
 import interactions from './services/interactions';
-import keys from './services/keys';
+import keys, { encryptStoredActorKeys } from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
 import statsService from './services/stats';
 import {
@@ -36,9 +36,11 @@ const plugin = {
     configureFedifyLogging(strapi.log);
   },
 
-  bootstrap({ strapi }: { strapi: Core.Strapi }): void {
+  async bootstrap({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     subscribe(strapi);
     subscribePublisher(strapi);
+    // A key pair stored before encryption at rest is encrypted now, not at first use.
+    await encryptStoredActorKeys(strapi);
   },
 
   destroy({ strapi }: { strapi: Core.Strapi }): void {

@@ -68,6 +68,8 @@ async function createRemoteActor({
   const keyPair = await generateCryptoKeyPair();
   // Parsed JSON bodies, as remote servers would receive them.
   const inboxDeliveries: ActivityJson[] = [];
+  // The same deliveries as received, so a test can verify their HTTP signatures.
+  const inboxRequests: { headers: Headers; body: string }[] = [];
 
   const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/actor') {
@@ -88,8 +90,14 @@ async function createRemoteActor({
       const chunks: Buffer[] = [];
       req.on('data', (chunk) => chunks.push(chunk));
       req.on('end', () => {
+        const body = Buffer.concat(chunks).toString('utf8');
+        const headers = new Headers();
+        for (const [name, value] of Object.entries(req.headers)) {
+          if (typeof value === 'string') headers.set(name, value);
+        }
+        inboxRequests.push({ headers, body });
         try {
-          inboxDeliveries.push(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+          inboxDeliveries.push(JSON.parse(body));
         } catch {
           // Malformed body: nothing to record, still ack the delivery below.
         }
@@ -156,6 +164,7 @@ async function createRemoteActor({
     inboxUrl,
     keyId,
     inboxDeliveries,
+    inboxRequests,
     /** Builds an HTTP-signed POST of `activity` to `url` as this remote actor, without sending it. */
     signActivity,
     /** Builds and HTTP-signs a POST of `activity` to `url` as this remote actor. */
