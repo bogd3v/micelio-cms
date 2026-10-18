@@ -202,6 +202,29 @@ export const ACCOUNT_ROUTES: readonly ResponseRoute[] = [
     },
   },
   {
+    id: 'subscribers.lookup',
+    auth: 'API token with `lookup`; no role',
+    method: 'POST',
+    path: '/api/subscribers/lookup',
+    callers: ['frontend'],
+    reader: 'server/utils/subscribers.ts (`findSubscriber`, `findSubscriberByToken`)',
+    note: 'Token only. Takes `{ field, value }` in the body, so an email or a token never travels in a URL; the answer is one subscriber or `null`. Same row and fields as `subscribers.find`; the frontend reads `documentId`, `email`, `confirmed`, `language` and both tokens. The frontend switches to it in bogd3v/micelio#542.',
+    body: {
+      data: {
+        use: 'required',
+        of: {
+          ...SUBSCRIBER_FIELDS,
+          documentId: 'required',
+          email: 'required',
+          confirmationToken: 'required',
+          unsubscribeToken: 'required',
+          confirmed: 'required',
+          language: 'required',
+        },
+      },
+    },
+  },
+  {
     id: 'subscribers.create',
     auth: 'API token with `create`; no role',
     method: 'POST',

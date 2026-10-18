@@ -6,7 +6,7 @@ Moved from `CLAUDE.md` (#113); the text is unchanged. The procedure is the `stra
 
 ## Field rules
 
-No users-permissions role reads or writes subscribers: `src/migrations/subscriber-permissions.ts` removes their permissions on every boot. The frontend's API token (`FRONTEND_API_TOKEN`) is the only API caller, with `find`, `create`, `update` and `delete` (`src/migrations/api-tokens.ts:32-35`). The token can read every attribute, and it can filter by any of them, the tokens included (`strapi-subscriber` skill).
+No users-permissions role reads or writes subscribers: `src/migrations/subscriber-permissions.ts` removes their permissions on every boot. The frontend's API token (`FRONTEND_API_TOKEN`) is the only API caller, with `find`, `lookup`, `create`, `update` and `delete` (`FRONTEND_TOKEN_PERMISSIONS` in `src/migrations/api-tokens.ts`). The token can read every attribute, and it can filter by any of them, the tokens included (`strapi-subscriber` skill).
 
 | Attribute           | Type and constraints                           | Frontend token | Notes                                                                           |
 | ------------------- | ---------------------------------------------- | -------------- | ------------------------------------------------------------------------------- |
@@ -17,6 +17,12 @@ No users-permissions role reads or writes subscribers: `src/migrations/subscribe
 | `language`          | enumeration `en`, `es`, required, default `en` | read, write    | The language of the emails. `locale` is reserved by i18n                        |
 
 The tokens are not `private` in the schema (`src/api/subscriber/content-types/subscriber/schema.json`), so they are returned to the frontend's token. The frontend generates the tokens, emails them and stores their SHA-256 hex digest (bogd3v/micelio#540, frontend 0.2.0); the CMS generates and returns none and stores what it is given. Rows written before that held the token itself, so `src/migrations/hash-subscriber-tokens.ts` hashes, on every boot, each token that is not already 64 lowercase hex characters (the same SHA-256 hex as the frontend's `hashToken`). It is idempotent, rewrites in place and cannot be undone. The emailed links keep working with frontend 0.2.0 or later, which looks a token up by its hash and falls back to the plain value; frontend 0.1.x looks up the plain value, so its links break, and each boot also hashes the plain tokens 0.1.x keeps writing. That is why the frontend is upgraded first ([upgrade.md](../operate/upgrade.md)). The migration reads only rows with a token and updates a token only if it still holds the value read, so it never overwrites a concurrent write. See [data.md](../security/data.md).
+
+## Lookup by request body
+
+`POST /api/subscribers/lookup` with `{ "field": "email" | "confirmationToken" | "unsubscribeToken", "value": "…" }` answers `{ "data": subscriber }` or `{ "data": null }` when nothing matches (bogd3v/micelio#542). It exists so the frontend does not put an email or a token in the query string of `GET /api/subscribers`, where the CMS's and its proxy's access logs can keep it (ASVS V14.2.1). Any other `field`, or a `value` that is not a string of 1 to 254 characters, is a 400. The service (`findOneBy`) compares with `strapi.db.query` and an exact `where`, never the REST filter syntax, and logs neither the email nor the token. The answer is `Cache-Control: private, no-store`.
+
+The route has no `auth: false`: only an API token holding `api::subscriber.subscriber.lookup` reaches it, and that is `frontend` alone (not `build`, no role: `subscriber-permissions.ts` removes it if someone grants it). It is additive, so the frontend of the previous MINOR keeps using `GET /api/subscribers` and `find` stays on the token. The route is in `src/api/subscriber/routes/01-lookup.ts`, ahead of the core router. Tests: `tests/subscriber-lookup.test.ts`, which also checks that a row hashed by `hash-subscriber-tokens.ts` is found by its hash.
 
 ## Purge of unconfirmed subscriptions
 

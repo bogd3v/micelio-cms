@@ -30,6 +30,7 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'plugin::comments.client.findAllFlat',
   'plugin::comments.client.post',
   'api::subscriber.subscriber.find',
+  'api::subscriber.subscriber.lookup',
   'api::subscriber.subscriber.create',
   'api::subscriber.subscriber.update',
   'api::subscriber.subscriber.delete',

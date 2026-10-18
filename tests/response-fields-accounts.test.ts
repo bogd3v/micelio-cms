@@ -260,6 +260,14 @@ describe('Response fields of comments, the signed-in user and subscribers (ASVS 
       expect(found.body.data).toHaveLength(1);
       assertShape(route('subscribers.find'), 'frontend', [found.body]);
 
+      const looked = await http()
+        .post('/api/subscribers/lookup')
+        .send({ field: 'email', value: SEEDED.subscriberEmail })
+        .set(frontend);
+      expect(looked.status).toBe(200);
+      expect(looked.body.data).not.toBeNull();
+      assertShape(route('subscribers.lookup'), 'frontend', [looked.body]);
+
       const created = await http()
         .post('/api/subscribers')
         .set(frontend)

@@ -31,7 +31,7 @@ What this repository does with the tokens:
 
 Compensating controls:
 
-- Custom tokens with only the listed permissions, reset on every boot. `build` can only `find`; `frontend` also creates, updates and deletes subscribers and posts comments (`FRONTEND_TOKEN_PERMISSIONS`). Neither reads drafts (`src/utils/drafts-access.ts`).
+- Custom tokens with only the listed permissions, reset on every boot. `build` can only `find`; `frontend` also looks subscribers up (`find`, and `lookup` for `POST /api/subscribers/lookup`), creates, updates and deletes them and posts comments (`FRONTEND_TOKEN_PERMISSIONS`). Neither reads drafts (`src/utils/drafts-access.ts`).
 - Server-to-server only. The frontend sends its copy from its server code, never from the browser, and the build uses its copy in the generate step (`bogd3v/micelio` `docs/security/keys.md`).
 - Each key is stored as an HMAC-SHA512 keyed by `API_TOKEN_SALT` (`api-token.js`, `hash`). The encrypted copy the admin panel can show is not sent anywhere.
 - Each token has its own rate limit, `RATE_LIMIT_TOKEN` (6000 requests per 60 seconds by default). See [RATE_LIMITING.md](RATE_LIMITING.md).
