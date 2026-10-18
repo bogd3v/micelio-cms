@@ -9,7 +9,7 @@ export const TAXONOMY_ROUTES: readonly ResponseRoute[] = [
     path: '/api/categories',
     callers: ['public', 'frontend', 'build'],
     reader: 'server/api/categories.get.ts',
-    note: 'The frontend asks for `name`, `slug` and the ids of `articles`. An unrestricted call also returns `description`, `key`, `bird`, `pillar` and `order`, which the frontend does not read. Strapi adds `documentId` whatever `fields` says.',
+    note: 'The frontend asks for `name`, `slug` and the ids of `articles`. An unrestricted call also returns `description`, `key`, `bird`, `pillar`, `featured`, `color` and `order`, which the frontend does not read. Strapi adds `documentId` whatever `fields` says.',
     body: {
       data: {
         use: 'required',
@@ -23,6 +23,8 @@ export const TAXONOMY_ROUTES: readonly ResponseRoute[] = [
           key: 'surplus',
           bird: 'surplus',
           pillar: 'surplus',
+          featured: 'surplus',
+          color: 'surplus',
           order: 'surplus',
           createdAt: 'surplus',
           updatedAt: 'surplus',

@@ -653,6 +653,19 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
           localized: false;
         };
       }>;
+    color: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+          min: 1;
+        },
+        number
+      >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private;
     description: Schema.Attribute.Text &
@@ -661,6 +674,13 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
+    featured: Schema.Attribute.Boolean &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<false>;
     key: Schema.Attribute.Enumeration<['privacidad', 'diy', 'ia', 'software', 'linux']> &
       Schema.Attribute.Unique &
       Schema.Attribute.SetPluginOptions<{
