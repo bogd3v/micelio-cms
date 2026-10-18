@@ -135,11 +135,16 @@ jobs:
     steps:
       - name: Select Dokploy application
         id: app
+        # Values go through `env:`, not into the script text (GitHub's script-injection hardening).
+        env:
+          REF: ${{ github.ref }}
+          PRODUCTION_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+          STAGING_APPLICATION_ID: ${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "application_id=${{ secrets.DOKPLOY_APPLICATION_ID }}" >> "$GITHUB_OUTPUT"
+          if [ "${REF}" = "refs/heads/main" ]; then
+            echo "application_id=${PRODUCTION_APPLICATION_ID}" >> "$GITHUB_OUTPUT"
           else
-            echo "application_id=${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}" >> "$GITHUB_OUTPUT"
+            echo "application_id=${STAGING_APPLICATION_ID}" >> "$GITHUB_OUTPUT"
           fi
 
       # -f fails the job when Dokploy rejects the call; without it a 401/404/5xx still passed.
