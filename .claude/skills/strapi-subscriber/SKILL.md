@@ -26,7 +26,7 @@ The frontend stores the SHA-256 (64 hex characters) of each token the emails car
 | `confirmed`         | boolean, default `false`            |                                                                                                                                                |
 | `language`          | enumeration `en`/`es`, default `en` | Email language. `locale` is reserved by Strapi i18n                                                                                            |
 
-Controller, service and router are the core factories: no custom logic.
+Controller, service and router are the core factories, plus `POST /api/subscribers/lookup` (`routes/01-lookup.ts`, controller `lookup`, service `findOneBy`): it finds a subscriber by `email`, `confirmationToken` or `unsubscribeToken` sent in the body, so none travels in a URL. It needs the `lookup` permission, which only the frontend token has.
 
 `unique: true` is only Document Service validation (no database index), which is enough here because only the frontend writes.
 
@@ -41,6 +41,7 @@ POST /api/subscribers
 { "data": { "email": "ana@example.com", "confirmationToken": "<sha256 hex>", "unsubscribeToken": "<sha256 hex>", "confirmed": false, "language": "es" } }
 
 GET /api/subscribers?filters[unsubscribeToken][$eq]=<sha256 of the token>
+POST /api/subscribers/lookup        { "field": "unsubscribeToken", "value": "<sha256 of the token>" }   -> { "data": subscriber | null }
 PUT /api/subscribers/:documentId    { "data": { "confirmed": true, "confirmationToken": null } }
 DELETE /api/subscribers/:documentId
 ```

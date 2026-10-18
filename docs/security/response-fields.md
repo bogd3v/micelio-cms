@@ -382,6 +382,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `auth.register` | `POST /api/auth/local/register` | none (the public role has `auth.register`) | 4 | 7 | server/api/auth/register.post.ts (`toPublicUser`) | The new account, with no `jwt` and no `role`: the frontend shows it as a reader until the person confirms the address and signs in. |
 | `users.me` | `GET /api/users/me?populate=role` | JWT of the signed-in user | 5 | 10 | server/utils/auth.ts, app/helpers/auth.ts (`toPublicUser`) | The caller's own account: a JWT is needed and nobody else's row is returned. `role` is added by `src/extensions/users-permissions/strapi-server.ts`. Password hash, reset and confirmation tokens are private and never appear. |
 | `subscribers.find` | `GET /api/subscribers` | API token with `find`; no role | 7 | 10 | server/utils/subscribers.ts (`findSubscriber`) | Token only. The CMS stores the tokens as the frontend sends them: the frontend stores SHA-256 hashes (`hashToken` in micelio), but rows written before it did keep the token in clear, and `find`, `create` and `update` return the stored values to the token holder. The frontend reads `documentId`, `email`, `confirmed`, `language` and both tokens. |
+| `subscribers.lookup` | `POST /api/subscribers/lookup` | API token with `lookup`; no role | 7 | 4 | server/utils/subscribers.ts (`findSubscriber`, `findSubscriberByToken`) | Token only. Takes `{ field, value }` in the body, so an email or a token never travels in a URL; the answer is one subscriber or `null`. Same row and fields as `subscribers.find`; the frontend reads `documentId`, `email`, `confirmed`, `language` and both tokens. The frontend switches to it in bogd3v/micelio#542. |
 | `subscribers.create` | `POST /api/subscribers` | API token with `create`; no role | 2 | 10 | server/utils/subscribers.ts (`createSubscriber`) | Token only. The frontend reads `documentId` of the answer; the rest is the stored row, with the `confirmationToken` the frontend sent (as stored, see `subscribers.find`) and a null `unsubscribeToken`, which `createSubscriber` never sends. |
 | `subscribers.update` | `PUT /api/subscribers/:documentId` | API token with `update`; no role | 0 | 12 | server/utils/subscribers.ts (`updateSubscriber`) | Token only. The frontend ignores the body, so every field is surplus. It returns the stored row, tokens as stored (see `subscribers.find`). |
 
@@ -442,6 +443,13 @@ The body is a list; each item has the keys of `(body)`.
 | `data` | `documentId`, `email`, `confirmationToken`, `unsubscribeToken`, `confirmed`, `language` | `id`, `createdAt`, `updatedAt`, `publishedAt` |
 | `meta` | none | `pagination` |
 | `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
+
+#### `subscribers.lookup`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `data` | none |
+| `data` | `documentId`, `email`, `confirmationToken`, `unsubscribeToken`, `confirmed`, `language` | `id`, `createdAt`, `updatedAt`, `publishedAt` |
 
 #### `subscribers.create`
 
