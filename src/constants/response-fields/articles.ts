@@ -77,10 +77,10 @@ export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
     id: 'articles.feed',
     auth: 'public role with `find`, or an API token with `find`',
     method: 'GET',
-    path: '/api/articles?populate[]=cover&populate[]=category&populate[]=author',
+    path: '/api/articles?populate[cover][fields][0]=url&populate[category][fields][0]=name',
     callers: ['public', 'frontend', 'build'],
     reader: 'server/utils/feed.ts',
-    note: 'The RSS feed populates whole relations, so the whole file row, category and author come back; it reads `title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url` and `category.name`. Follow-up in micelio: name the fields of each relation, as `POST_CARD_POPULATE` does.',
+    note: 'The query is `FEED_POPULATE`: the cover returns `url` and the category `name`, and the feed no longer asks for the author. It reads `title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url` and `category.name`.',
     body: {
       data: {
         use: 'required',
@@ -95,7 +95,7 @@ export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
           pathOrder: 'surplus',
           createdAt: 'surplus',
           updatedAt: 'surplus',
-          cover: { use: 'required', of: 'media-file' },
+          cover: { use: 'required', of: 'media-feed' },
           category: {
             use: 'required',
             of: {
@@ -103,24 +103,6 @@ export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
               id: 'surplus',
               documentId: 'surplus',
               slug: 'surplus',
-              description: 'surplus',
-              key: 'surplus',
-              bird: 'surplus',
-              pillar: 'surplus',
-              order: 'surplus',
-              createdAt: 'surplus',
-              updatedAt: 'surplus',
-              publishedAt: 'surplus',
-              locale: 'surplus',
-            },
-          },
-          author: {
-            use: 'surplus',
-            of: {
-              id: 'surplus',
-              documentId: 'surplus',
-              name: 'surplus',
-              bio: 'surplus',
               createdAt: 'surplus',
               updatedAt: 'surplus',
               publishedAt: 'surplus',

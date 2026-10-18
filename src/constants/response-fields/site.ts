@@ -58,7 +58,7 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
     path: '/api/site-setting',
     callers: ['frontend', 'build'],
     reader: 'server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts',
-    note: 'Token only. The query is `SITE_POPULATE`, which populates media whole. `tagline`, `securityContact`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`) that the frontend schema does not read yet. `mime` is read for pages, not for the site images.',
+    note: 'Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`) that the frontend schema does not read yet. `mime` is read for pages, not for the site images.',
     body: {
       data: {
         use: 'required',
@@ -72,9 +72,9 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
           privacyUpdatedAt: 'required',
           supportHandle: 'required',
           author: { use: 'required', of: { name: 'required', url: 'required', id: 'surplus' } },
-          logo: { use: 'required', of: 'media-file' },
-          favicon: { use: 'required', of: 'media-file' },
-          defaultOgImage: { use: 'required', of: 'media-file' },
+          logo: { use: 'required', of: 'media-site' },
+          favicon: { use: 'required', of: 'media-site' },
+          defaultOgImage: { use: 'required', of: 'media-site' },
           socialLinks: {
             use: 'required',
             of: { network: 'required', url: 'required', id: 'surplus' },

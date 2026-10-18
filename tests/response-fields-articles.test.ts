@@ -4,7 +4,7 @@ import { setupStrapi, cleanupStrapi } from './strapi';
 import { setPublicPermissions } from './helpers/permissions';
 import { assertShape, routeById, unexercisedCallers } from './helpers/response-fields';
 import { authorize, getAs, http, type Get, type Jwts } from './helpers/response-fields-callers';
-import { ARTICLE_POPULATE, POST_CARD_POPULATE } from './helpers/frontend-queries';
+import { ARTICLE_POPULATE, FEED_POPULATE, POST_CARD_POPULATE } from './helpers/frontend-queries';
 import {
   BUILD_KEY,
   FRONTEND_KEY,
@@ -39,7 +39,7 @@ const CALLS: Record<string, (get: Get) => Promise<unknown[]>> = {
   ],
   'articles.feed': async (get) => [
     await get('/api/articles', {
-      populate: ['cover', 'category', 'author'],
+      populate: FEED_POPULATE,
       sort: 'publishedAt:desc',
       locale: 'en',
     }),

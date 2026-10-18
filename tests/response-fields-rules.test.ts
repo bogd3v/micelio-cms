@@ -80,10 +80,7 @@ describe('src/constants/response-fields', () => {
     );
     expect(offenders.map((entry) => `${entry.where}.${entry.key}`)).toEqual([]);
     const authors = everyKey.filter(
-      (entry) =>
-        entry.id === 'shared.author-card' ||
-        entry.id === 'authors.find' ||
-        (entry.id === 'articles.feed' && entry.where.endsWith('data.author'))
+      (entry) => entry.id === 'shared.author-card' || entry.id === 'authors.find'
     );
     expect(authors.filter((entry) => entry.key === 'email')).toEqual([]);
   });

@@ -51,18 +51,16 @@ Strapi adds `id` and `documentId` to every document whatever `fields` says, adds
 
 ## Surplus worth a follow-up
 
-V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothing here removes them. They are public content, the caller's own data, or file metadata including the original file name and provider metadata. The follow-ups that would narrow them are: in micelio, name the `fields` of the feed and media populates. The CMS already reduces `threadOf` to `{ id }`.
+V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothing here removes them. They are public content or the caller's own data. The frontend names the `fields` of every media and relation it populates (`PAGE_POPULATE`, `SITE_POPULATE` and `FEED_POPULATE`), so the file row (original file name, provider metadata) no longer comes back. The CMS already reduces `threadOf` to `{ id }`.
 
-| Where                                              | Surplus                                                                                                                                                                                                                                                | Follow-up                                                                                                                       |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `pages.find`, `site-setting.find`, `articles.feed` | The whole file row of every image: `name`, `hash`, `ext`, `size`, `formats`, `provider`, `provider_metadata`, `previewUrl`, timestamps. `name` is the original file name and `provider_metadata` is whatever the upload provider stores                | micelio: name the fields of each media in the populate, as `POST_CARD_POPULATE` does                                            |
-| `articles.feed`                                    | The whole `category` and `author` (`bio`, `description`, `key`, `bird`, `pillar`, `order`)                                                                                                                                                             | micelio: name the fields the feed reads (`title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url`, `category.name`) |
-| `comments.flat`, `comments.tree`                   | `gotThread`, `threadFirstItemId`, `locale`, `publishedAt`; `pagination` is read as `meta.pagination` and is never there                                                                                                                                | None needed; plugin internals                                                                                                   |
-| `site-setting.find`                                | `tagline`, `securityContact`, `timezone`, `addressLocality`: public identity the frontend schema does not read yet                                                                                                                                     | micelio: read them (`security.txt` needs `securityContact`) or stop populating                                                  |
-| `articles.popular`, `authors.find`, `global.find`  | Everything: no frontend caller                                                                                                                                                                                                                         | Keep for integrators, or revoke `find` where an operator granted it                                                             |
-| `articles.search`                                  | `locale`, `meta.query`, `meta.count`                                                                                                                                                                                                                   | None needed                                                                                                                     |
-| `users.me`, `auth.login`, `auth.register`          | `id`, `documentId`, `provider`, `confirmed`, `blocked`, timestamps, `role` details; on login the whole `user`                                                                                                                                          | The caller's own account; none needed                                                                                           |
-| `subscribers.*`                                    | `id`, timestamps and, on `create` and `update`, the stored row the frontend does not read. The tokens come back as stored: the frontend stores SHA-256 hashes, but rows written before it did keep the token in clear, and the token holder reads them | None needed here: token only. V14.2.1 in [asvs.md](asvs.md) covers the tokens stored in clear                                   |
+| Where                                             | Surplus                                                                                                                                                                                                                                                | Follow-up                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `comments.flat`, `comments.tree`                  | `gotThread`, `threadFirstItemId`, `locale`, `publishedAt`; `pagination` is read as `meta.pagination` and is never there                                                                                                                                | None needed; plugin internals                                                                 |
+| `site-setting.find`                               | `tagline`, `securityContact`, `timezone`, `addressLocality`: public identity the frontend schema does not read yet                                                                                                                                     | micelio: read them (`security.txt` needs `securityContact`) or stop populating                |
+| `articles.popular`, `authors.find`, `global.find` | Everything: no frontend caller                                                                                                                                                                                                                         | Keep for integrators, or revoke `find` where an operator granted it                           |
+| `articles.search`                                 | `locale`, `meta.query`, `meta.count`                                                                                                                                                                                                                   | None needed                                                                                   |
+| `users.me`, `auth.login`, `auth.register`         | `id`, `documentId`, `provider`, `confirmed`, `blocked`, timestamps, `role` details; on login the whole `user`                                                                                                                                          | The caller's own account; none needed                                                         |
+| `subscribers.*`                                   | `id`, timestamps and, on `create` and `update`, the stored row the frontend does not read. The tokens come back as stored: the frontend stores SHA-256 hashes, but rows written before it did keep the token in clear, and the token holder reads them | None needed here: token only. V14.2.1 in [asvs.md](asvs.md) covers the tokens stored in clear |
 
 ## Not covered
 
@@ -84,7 +82,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | --- | --- | --- | --- | --- | --- | --- |
 | `articles.list` | `GET /api/articles` | public role with `find`, or an API token with `find` | 60 | 4 | server/api/posts/index.get.ts, server/utils/pageSections.ts | The query is the post card populate of `POST_CARD_POPULATE`; an unpopulated call returns the scalar fields only. `readTime` and `snippet` are added by the frontend, not by the CMS. |
 | `articles.detail` | `GET /api/articles?filters[slug]=:slug` | public role with `find`, an API token with `find`, or an editor JWT for drafts | 152 | 10 | server/api/posts/[slug].get.ts, server/api/drafts/[documentId].get.ts | The query is `ARTICLE_POPULATE`. An editor reads a draft the same way (`status=draft`, `GET /api/articles/:documentId`, a single object under `data`). `plainText` and `author.email` are private attributes and never appear. |
-| `articles.feed` | `GET /api/articles?populate[]=cover&populate[]=category&populate[]=author` | public role with `find`, or an API token with `find` | 14 | 47 | server/utils/feed.ts | The RSS feed populates whole relations, so the whole file row, category and author come back; it reads `title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url` and `category.name`. Follow-up in micelio: name the fields of each relation, as `POST_CARD_POPULATE` does. |
+| `articles.feed` | `GET /api/articles?populate[cover][fields][0]=url&populate[category][fields][0]=name` | public role with `find`, or an API token with `find` | 10 | 20 | server/utils/feed.ts | The query is `FEED_POPULATE`: the cover returns `url` and the category `name`, and the feed no longer asks for the author. It reads `title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url` and `category.name`. |
 | `articles.sitemap` | `GET /api/articles?fields[]=slug&fields[]=locale&fields[]=publishedAt&fields[]=updatedAt` | public role with `find`, or an API token with `find` | 11 | 8 | server/routes/sitemap.xml.ts | Strapi adds `id` and `documentId` to every document whatever `fields` says; they cannot be dropped without a custom controller. |
 | `articles.reading-path` | `GET /api/articles?fields[]=documentId&fields[]=slug&fields[]=title` | public role with `find`, or an API token with `find` | 4 | 7 | server/api/reading-path.get.ts | Strapi adds `id` to every document whatever `fields` says. |
 | `articles.slugs` | `GET /api/articles?fields[]=slug` | public role with `find`, or an API token with `find` | 5 | 5 | modules/static-routes.ts | The static build lists the slugs page by page and reads `pageCount`. |
@@ -139,10 +137,9 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Object | Required | Surplus |
 | --- | --- | --- |
 | `(body)` | `data` | `meta` |
-| `data` | `title`, `description`, `slug`, `publishedAt`, `locale`, `cover`, `category` | `id`, `documentId`, `pathOrder`, `createdAt`, `updatedAt`, `author` |
-| `data.cover` | as shared `media-file` | as shared `media-file` |
-| `data.category` | `name` | `id`, `documentId`, `slug`, `description`, `key`, `bird`, `pillar`, `order`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
-| `data.author` | none | `id`, `documentId`, `name`, `bio`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
+| `data` | `title`, `description`, `slug`, `publishedAt`, `locale`, `cover`, `category` | `id`, `documentId`, `pathOrder`, `createdAt`, `updatedAt` |
+| `data.cover` | as shared `media-feed` | as shared `media-feed` |
+| `data.category` | `name` | `id`, `documentId`, `slug`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
 | `meta` | none | `pagination` |
 | `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
 
@@ -234,7 +231,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | `about.find` | `GET /api/about` | public role with `find`, or an API token with `find` | 191 | 5 | server/api/about.get.ts (`publicAbout`) | Single type; the query is `ABOUT_POPULATE`. The frontend re-filters the body with its own allow-list, which this shape mirrors. |
-| `pages.find` | `GET /api/pages` | API token with `find`; no role | 164 | 184 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which populates media whole, so every file attribute of a section image comes back; `parsePage` keeps `url`, `alternativeText`, `width`, `height` and `mime`. Follow-up in micelio: name the fields of each media. |
+| `pages.find` | `GET /api/pages` | API token with `find`; no role | 164 | 62 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. |
 | `pages.slugs` | `GET /api/pages?fields[]=slug` | API token with `find`; no role | 5 | 5 | modules/static-routes.ts | Token only. Strapi adds `id` and `documentId` whatever `fields` says. |
 
 #### `about.find`
@@ -286,21 +283,21 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.sections[section.hero]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink`, `media` | `id` |
 | `data.sections[section.hero].primaryLink` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.hero].secondaryLink` | as shared `link-section` | as shared `link-section` |
-| `data.sections[section.hero].media` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.hero].media` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.feature-grid]` | `__component`, `variant`, `title`, `text`, `items` | `id` |
 | `data.sections[section.feature-grid].items` | `icon`, `title`, `text` | `id` |
-| `data.sections[section.feature-grid].items.icon` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.feature-grid].items.icon` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.media-showcase]` | `__component`, `variant`, `title`, `text`, `media`, `link` | `id` |
-| `data.sections[section.media-showcase].media` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.media-showcase].media` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.media-showcase].link` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.stats]` | `__component`, `variant`, `title`, `items` | `id` |
 | `data.sections[section.stats].items` | `value`, `label` | `id` |
 | `data.sections[section.logo-cloud]` | `__component`, `variant`, `title`, `logos` | `id` |
 | `data.sections[section.logo-cloud].logos` | `image`, `name`, `url` | `id` |
-| `data.sections[section.logo-cloud].logos.image` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.logo-cloud].logos.image` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.testimonials]` | `__component`, `variant`, `title`, `items` | `id` |
 | `data.sections[section.testimonials].items` | `quote`, `author`, `role`, `avatar` | `id` |
-| `data.sections[section.testimonials].items.avatar` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.testimonials].items.avatar` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.pricing]` | `__component`, `variant`, `title`, `text`, `plans` | `id` |
 | `data.sections[section.pricing].plans` | `name`, `price`, `period`, `features`, `link`, `recommended` | `id` |
 | `data.sections[section.pricing].plans.link` | as shared `link-section` | as shared `link-section` |
@@ -315,10 +312,10 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.sections[section.newsletter]` | `__component`, `variant`, `title`, `text`, `buttonLabel` | `id` |
 | `data.sections[section.rich-text]` | `__component`, `body` | `id` |
 | `data.sections[section.gallery]` | `__component`, `variant`, `title`, `images` | `id` |
-| `data.sections[section.gallery].images` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.gallery].images` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.scene]` | `__component`, `variant`, `model`, `poster`, `alt`, `title`, `text` | `id` |
-| `data.sections[section.scene].model` | as shared `media-file` | as shared `media-file` |
-| `data.sections[section.scene].poster` | as shared `media-file` | as shared `media-file` |
+| `data.sections[section.scene].model` | as shared `media-page` | as shared `media-page` |
+| `data.sections[section.scene].poster` | as shared `media-page` | as shared `media-page` |
 | `data.localizations` | as shared `localization-page` | as shared `localization-page` |
 | `meta` | none | `pagination` |
 | `meta.pagination` | as shared `pagination-offset` | as shared `pagination-offset` |
@@ -338,7 +335,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | --- | --- | --- | --- | --- | --- | --- |
 | `authors.find` | `GET /api/authors` | public role with `find`, or an API token with `find` | 0 | 15 | none found | The frontend token has `find` only so that `article.author` survives the relation sanitizer; no frontend caller reads this route, so every field is surplus. `email` is private and never appears; `bio` is public content, returned only here and in the feed. |
 | `global.find` | `GET /api/global` | public role with `find` | 0 | 9 | none found | Open only when an operator grants `find` to the public role: the frontend does not call it (the fediverse actor profile reads it inside the CMS). Every field is surplus. Relations (`favicon`, `fediverseHeader`, `defaultSeo`) come back only when a caller populates them and are not covered. |
-| `site-setting.find` | `GET /api/site-setting` | API token with `find`; no role | 50 | 63 | server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts | Token only. The query is `SITE_POPULATE`, which populates media whole. `tagline`, `securityContact`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`) that the frontend schema does not read yet. `mime` is read for pages, not for the site images. |
+| `site-setting.find` | `GET /api/site-setting` | API token with `find`; no role | 47 | 24 | server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts | Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`) that the frontend schema does not read yet. `mime` is read for pages, not for the site images. |
 
 #### `authors.find`
 
@@ -364,9 +361,9 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `(body)` | `data` | `meta` |
 | `data` | `name`, `description`, `url`, `defaultLocale`, `contactEmail`, `privacyContactEmail`, `privacyUpdatedAt`, `supportHandle`, `author`, `logo`, `favicon`, `defaultOgImage`, `socialLinks`, `modules`, `theme`, `homePage` | `id`, `documentId`, `tagline`, `securityContact`, `timezone`, `addressLocality`, `locale`, `createdAt`, `updatedAt`, `publishedAt` |
 | `data.author` | `name`, `url` | `id` |
-| `data.logo` | as shared `media-file` | as shared `media-file` |
-| `data.favicon` | as shared `media-file` | as shared `media-file` |
-| `data.defaultOgImage` | as shared `media-file` | as shared `media-file` |
+| `data.logo` | as shared `media-site` | as shared `media-site` |
+| `data.favicon` | as shared `media-site` | as shared `media-site` |
+| `data.defaultOgImage` | as shared `media-site` | as shared `media-site` |
 | `data.socialLinks` | `network`, `url` | `id` |
 | `data.modules` | `newsletter`, `comments`, `accounts`, `drafts`, `fediverse`, `search`, `support` | `id` |
 | `data.theme` | `themeId`, `defaultMode`, `displayFont`, `accentOverrides` | `id` |
@@ -501,11 +498,23 @@ The body is a map from a document id; each value has the keys of `(body)`.
 | --- | --- | --- |
 | `(body)` | `id`, `documentId`, `url`, `alternativeText`, `caption`, `width`, `height` | none |
 
-#### `media-file`
+#### `media-page`
 
 | Object | Required | Surplus |
 | --- | --- | --- |
-| `(body)` | `url`, `alternativeText`, `width`, `height`, `mime` | `id`, `documentId`, `name`, `caption`, `focalPoint`, `formats`, `hash`, `ext`, `size`, `previewUrl`, `provider`, `provider_metadata`, `createdAt`, `updatedAt`, `publishedAt` |
+| `(body)` | `url`, `alternativeText`, `width`, `height`, `mime` | `id`, `documentId` |
+
+#### `media-site`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `url`, `alternativeText`, `width`, `height` | `id`, `documentId` |
+
+#### `media-feed`
+
+| Object | Required | Surplus |
+| --- | --- | --- |
+| `(body)` | `url` | `id`, `documentId` |
 
 #### `image-credit`
 
@@ -524,9 +533,8 @@ The body is a map from a document id; each value has the keys of `(body)`.
 
 | Object | Required | Surplus |
 | --- | --- | --- |
-| `(body)` | `metaTitle`, `metaDescription`, `metaImage`, `keywords`, `metaRobots`, `canonicalURL` | `id`, `structuredData`, `metaViewport`, `metaSocial` |
-| `metaImage` | as shared `media-file` | as shared `media-file` |
-| `metaSocial` | none | `id`, `socialNetwork`, `title`, `description` |
+| `(body)` | `metaTitle`, `metaDescription`, `metaImage`, `keywords`, `metaRobots`, `canonicalURL` | `id`, `structuredData`, `metaViewport` |
+| `metaImage` | as shared `media-page` | as shared `media-page` |
 
 #### `reference`
 
