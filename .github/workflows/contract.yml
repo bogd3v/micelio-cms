@@ -18,11 +18,12 @@ on:
       - src/middlewares/**
       - src/utils/**
       - src/migrations/api-tokens.ts
+      - scripts/release/frontend-refs.mjs
       - .github/workflows/contract.yml
   workflow_dispatch:
     inputs:
       frontend_ref:
-        description: Branch, tag or commit of bogd3v/micelio to test against (default main)
+        description: Branch, tag or commit of bogd3v/micelio to test against, instead of the latest release and the previous MINOR
         required: false
         type: string
 
@@ -35,16 +36,50 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  # Until micelio-cms publishes `edge` and a release exists (S6, bogd3v/micelio#414), the frontend's current `main`, which is what
-  # its `latest` image is built from. Then this becomes the latest release and the previous MINOR.
-  FRONTEND_REF: ${{ inputs.frontend_ref || 'main' }}
   CMS_IMAGE: micelio-cms:contract
 
 jobs:
+  # The frontend refs under test: the latest release and the previous MINOR (standard, section 7), or the `frontend_ref` input alone.
+  refs:
+    name: Frontend refs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.refs.outputs.matrix }}
+    steps:
+      - name: Checkout the CMS
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Choose the frontend refs
+        id: refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OVERRIDE: ${{ inputs.frontend_ref }}
+        run: |
+          if [ -n "$OVERRIDE" ]; then
+            matrix=$(jq -cn --arg ref "$OVERRIDE" '{include: [{label: "override", ref: $ref}]}')
+          else
+            matrix=$(gh api --paginate repos/bogd3v/micelio/git/matching-refs/tags/v -q '.[].ref | ltrimstr("refs/tags/")' | node scripts/release/frontend-refs.mjs)
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
   contract:
-    name: Contract Tests
+    name: Contract Tests (${{ matrix.label }})
+    needs: refs
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.refs.outputs.matrix) }}
     # packages: write is for the Postgres copy in GHCR; a fork's token is read-only and the script falls back to Docker Hub.
     permissions:
       contents: read
@@ -76,16 +111,19 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: bogd3v/micelio
-          ref: ${{ env.FRONTEND_REF }}
+          ref: ${{ matrix.ref }}
           path: frontend
           persist-credentials: false
 
       - name: Print the frontend under test
         working-directory: frontend
+        env:
+          FRONTEND_REF: ${{ matrix.ref }}
+          LABEL: ${{ matrix.label }}
         run: |
           sha="$(git rev-parse HEAD)"
-          echo "Frontend bogd3v/micelio ${FRONTEND_REF} at ${sha}"
-          echo "Contract suite: frontend \`${FRONTEND_REF}\` at \`${sha}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Frontend bogd3v/micelio ${FRONTEND_REF} (${LABEL}) at ${sha}"
+          echo "Contract suite: frontend \`${FRONTEND_REF}\` (${LABEL}) at \`${sha}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
