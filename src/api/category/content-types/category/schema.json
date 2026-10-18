@@ -26,6 +26,7 @@
     },
     "slug": {
       "type": "uid",
+      "regex": "^(?!\\.{1,2}$)[A-Za-z0-9-_.~]*$",
       "pluginOptions": {
         "i18n": {
           "localized": false
