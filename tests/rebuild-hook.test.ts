@@ -16,6 +16,7 @@ import {
 const PAGE_UID = 'api::page.page';
 const ARTICLE_UID = 'api::article.article';
 const SITE_SETTING_UID = 'api::site-setting.site-setting';
+const ABOUT_UID = 'api::about.about';
 const DEBOUNCE_MS = 300;
 
 interface Received {
@@ -133,6 +134,21 @@ describe('Rebuild hook', () => {
       uid: SITE_SETTING_UID,
       event: 'entry.update',
     });
+  });
+
+  it('fires when the About page is saved, which has no drafts', async () => {
+    const about = await documents(ABOUT_UID).findFirst();
+    if (about) {
+      await documents(ABOUT_UID).update({
+        documentId: about.documentId,
+        locale: 'en',
+        data: { title: 'Changed' },
+      });
+    } else {
+      await documents(ABOUT_UID).create({ locale: 'en', data: { title: 'Created' } });
+    }
+    await waitUntil(() => received.length > 0);
+    expect(received[0].body.client_payload.changes[0]).toMatchObject({ uid: ABOUT_UID });
   });
 
   it('retries a failing hook and never fails the publish', async () => {
