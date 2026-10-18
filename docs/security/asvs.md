@@ -11,12 +11,12 @@ The mapping covers every level 1 and level 2 requirement of the 17 chapters, so 
 
 ## How to read it
 
-| Status   | Meaning                                                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Met      | Enforced here, with the file, document and test that show it. A row may say it is an accepted risk and name the document |
-| Upstream | A named dependency guarantees it at the version cited, with the configuration of this repository where it matters        |
-| N/A      | Does not apply to a headless CMS API like this one, with the reason                                                      |
-| Open     | Not met or not verifiable. The row names the issue (label `security`) that tracks it, or says "Private advisory"         |
+| Status   | Meaning                                                                                                                                                                                                                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Met      | Enforced here, with the file, document and test that show it. A row may say it is an accepted risk and name the document                                                                                                                                          |
+| Upstream | A named dependency guarantees it at the version cited, with the configuration of this repository where it matters                                                                                                                                                 |
+| N/A      | Does not apply to a headless CMS API like this one, with the reason                                                                                                                                                                                               |
+| Open     | Not met or not verifiable. The row names the issue (label `security`) that tracks it, or says "Private advisory". A requirement the project knowingly leaves unmet stays Open: its row starts with "Accepted risk" and names the document that records the reason |
 
 An open requirement that an attacker could exploit is **not** described here or in a public issue: it is reported through a private security advisory, as [`SECURITY.md`](../../SECURITY.md) says, and its row says only "Private advisory". Open items that are not exploitable are grouped in issue #181, listed below with #177, #178, #179 and #180, which no longer track an Open row:
 
@@ -24,7 +24,7 @@ An open requirement that an attacker could exploit is **not** described here or 
 - #178: Browser headers, cookies and HTTP details (all rows Met, Upstream or accepted risks; its last Open row, V3.5.4, is an accepted risk)
 - #179: Input limits and upload documentation (no Open row left)
 - #180: Security logging and log format (no Open row left)
-- #181: Keys, data classification, outbound traffic and supply chain
+- #181: Keys, data classification, outbound traffic and supply chain (all rows Met, Upstream or accepted risks)
 
 ## Totals
 
