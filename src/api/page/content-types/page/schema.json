@@ -27,6 +27,7 @@
     },
     "slug": {
       "type": "uid",
+      "regex": "^(?!\\.{1,2}$)[A-Za-z0-9-_.~]*$",
       "targetField": "title",
       "required": true,
       "pluginOptions": {
