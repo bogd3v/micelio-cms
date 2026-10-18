@@ -35,7 +35,9 @@ The static and landing profiles have their own project names (`micelio-demo-stat
 - Images and the newsletter form endpoint (`NUXT_PUBLIC_NEWSLETTER_FORM_ACTION`) go in an env file: `docker compose --env-file demo/<mode>.env.example -f compose.<mode>.yml up`. Tokens never go there.
 - Rebuilding on publish is not wired locally (`REBUILD_HOOK_URL` stays unset).
 
-**Make it yours** in the admin panel, _Content Manager → Site settings_:
+### Make it yours
+
+In the admin panel, _Content Manager → Site settings_:
 
 | What                                                                         | Where                                                                                                                                                        |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -44,7 +46,9 @@ The static and landing profiles have their own project names (`micelio-demo-stat
 | Theme, mode, accent per mode and display font                                | Site settings → Theme ([theme contract](https://github.com/bogd3v/micelio/blob/main/docs/adr/0005-theme-contract.md)); the demo image ships the Bogotá theme |
 | Content                                                                      | Articles, categories, tags and the About page; delete the demo ones when you are done                                                                        |
 
-**To run it for real**, the minimum on the CMS is a database, Strapi's keys (`npm run generate:keys`), `URL` (the CMS's public URL), `FRONTEND_URL` (required in production), `CORS_ORIGINS` and `FRONTEND_API_TOKEN` (any random string of 32+ characters, the same value as the frontend's `NUXT_STRAPI_API_TOKEN`; the CMS creates the token with the right permissions on boot). The frontend needs `NUXT_PUBLIC_STRAPI_URL`, `NUXT_STRAPI_API_TOKEN` and `NUXT_PUBLIC_SITE_URL` (its README lists the rest). Some modules need outside services:
+### To run it for real
+
+The minimum on the CMS is a database, Strapi's keys (`npm run generate:keys`), `URL` (the CMS's public URL), `FRONTEND_URL` (required in production), `CORS_ORIGINS` and `FRONTEND_API_TOKEN` (any random string of 32+ characters, the same value as the frontend's `NUXT_STRAPI_API_TOKEN`; the CMS creates the token with the right permissions on boot). The frontend needs `NUXT_PUBLIC_STRAPI_URL`, `NUXT_STRAPI_API_TOKEN` and `NUXT_PUBLIC_SITE_URL` (the rest are in the frontend's [configuration guide](https://github.com/bogd3v/micelio/blob/main/docs/operate/configure.md)). Some modules need outside services:
 
 | Module         | Needs                                                                                                                   |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------- |
