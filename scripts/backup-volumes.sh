@@ -1,16 +1,18 @@
 #!/bin/sh
 set -eu
 
-BACKUP_ROOT="${BACKUP_DIR:-/backups/devbog}"
+: "${BACKUP_DIR:?BACKUP_DIR is required: the directory backups are written to}"
+: "${COMPOSE_PROJECT:?COMPOSE_PROJECT is required: the Docker Compose project name}"
+BACKUP_ROOT="${BACKUP_DIR}"
+
 DATE="$(date +%Y%m%d-%H%M%S)"
-COMPOSE_PROJECT="${COMPOSE_PROJECT:-devbog-blog-backend}"
 
 BACKUP_DIR_DB="${BACKUP_ROOT}/db"
 BACKUP_DIR_UPLOADS="${BACKUP_ROOT}/uploads"
 
 mkdir -p "${BACKUP_DIR_DB}" "${BACKUP_DIR_UPLOADS}"
 
-echo "=== DevBog Backup — ${DATE} ==="
+echo "=== Micelio Backup — ${DATE} ==="
 
 DB_CONTAINER="$(docker compose -p "${COMPOSE_PROJECT}" ps -q db 2>/dev/null || true)"
 if [ -n "${DB_CONTAINER}" ]; then

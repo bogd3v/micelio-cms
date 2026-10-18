@@ -20,12 +20,12 @@ Backups taken before that upgrade hold the private key in plain text, and so do 
 
 `scripts/backup-volumes.sh` and `scripts/restore-volumes.sh` back up a Docker Compose deployment: a `pg_dump` of the database, compressed, and a tarball of the uploads volume. They look for a service named `db`, a service named `strapi` and a volume named `<COMPOSE_PROJECT>_strapi-uploads`; if your Compose file names them differently, the script skips that part and prints a warning, so read its output.
 
-| Variable                             | Meaning                                         | Default (in the script)                  |
-| ------------------------------------ | ----------------------------------------------- | ---------------------------------------- |
-| `COMPOSE_PROJECT`                    | The Compose project name                        | Set it: the default is a historical name |
-| `BACKUP_DIR`                         | Where backups are written                       | Set it: the default is a historical path |
-| `RETENTION_DAYS`                     | Backups older than this are deleted after a run | 14                                       |
-| `DATABASE_USERNAME`, `DATABASE_NAME` | The PostgreSQL user and database                | `strapi`                                 |
+| Variable                             | Meaning                                         | Default (in the script) |
+| ------------------------------------ | ----------------------------------------------- | ----------------------- |
+| `COMPOSE_PROJECT`                    | The Compose project name                        | Required, no default    |
+| `BACKUP_DIR`                         | Where backups are written                       | Required, no default    |
+| `RETENTION_DAYS`                     | Backups older than this are deleted after a run | 14                      |
+| `DATABASE_USERNAME`, `DATABASE_NAME` | The PostgreSQL user and database                | `strapi`                |
 
 ```bash
 COMPOSE_PROJECT=my-site BACKUP_DIR=/srv/backups/my-site ./scripts/backup-volumes.sh
