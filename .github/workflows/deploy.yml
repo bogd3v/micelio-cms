@@ -84,11 +84,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # A release only copies the manifest of this build (release.yml), so the version label is
+      # written here, from the `version` that `chore(release)` sets: `edge` is a tag, not a version.
+      - name: Read the package version
+        id: package
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.package.outputs.version }}
           tags: |
             type=sha,prefix=
             type=raw,value=edge,enable={{is_default_branch}}
