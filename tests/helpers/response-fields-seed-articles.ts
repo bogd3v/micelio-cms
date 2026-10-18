@@ -37,6 +37,8 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
       key: 'software',
       bird: 'Owl',
       pillar: true,
+      featured: true,
+      color: 2,
       order: 3,
     },
   });
