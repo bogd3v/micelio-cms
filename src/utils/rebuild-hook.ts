@@ -6,7 +6,7 @@
  */
 
 import type { Core } from '@strapi/strapi';
-import { ARTICLE_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
+import { ABOUT_UID, ARTICLE_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
 import { isRefusedRedirect } from './refused-redirect';
 
 /** The `event_type` sent in the `repository_dispatch` body of every rebuild call. */
@@ -155,14 +155,14 @@ export function createRebuildHook(strapi: Core.Strapi, config: RebuildHookConfig
 /**
  * The changes that rebuild a static site: publish, unpublish and delete of
  * articles and pages (saving a draft emits none of them), and every save of
- * the site settings, which have no drafts.
+ * the site settings and the About page, which have no drafts.
  */
 const TRIGGERS: [event: string, uids: string[]][] = [
   ['entry.publish', [ARTICLE_UID, PAGE_UID]],
   ['entry.unpublish', [ARTICLE_UID, PAGE_UID]],
-  ['entry.delete', [ARTICLE_UID, PAGE_UID, SITE_SETTING_UID]],
-  ['entry.create', [SITE_SETTING_UID]],
-  ['entry.update', [SITE_SETTING_UID]],
+  ['entry.delete', [ARTICLE_UID, PAGE_UID, SITE_SETTING_UID, ABOUT_UID]],
+  ['entry.create', [SITE_SETTING_UID, ABOUT_UID]],
+  ['entry.update', [SITE_SETTING_UID, ABOUT_UID]],
 ];
 
 /**
