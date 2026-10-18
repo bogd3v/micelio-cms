@@ -152,7 +152,16 @@ jobs:
           fi
           actual=$(node -p "require('./package.json').version")
           [ "$actual" = "$expected" ] || fail "package.json says $actual but this release is $expected. Merge a chore(release) pull request that sets it."
-          if gh api "repos/$REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then fail "The tag $TAG already exists. A published version never changes."; fi
+          # lookup.mjs: 0 found, 1 not found, 2 the check itself failed (never read as "free" or "missing")
+          lookup() {
+            local code=0
+            lookup_out=$(node scripts/release/lookup.mjs "$@" 2>&1) || code=$?
+            if [ "$code" = 2 ]; then fail "Could not check $1: $lookup_out"; fi
+            return "$code"
+          }
+          lookup_code=0
+          lookup tag -- gh api "repos/$REPO/git/ref/tags/$TAG" || lookup_code=$?
+          if [ "$lookup_code" = 0 ]; then fail "The tag $TAG already exists. A published version never changes."; fi
           # The image job decides, not the whole run: the last job calls the maintainers' own deployment hook
           run_id=$(gh run list --repo "$REPO" --workflow deploy.yml --branch main --commit "$GITHUB_SHA" --json databaseId,conclusion -q '[.[] | select(.conclusion == "success" or .conclusion == "failure")][0].databaseId // empty')
           built=0
@@ -162,12 +171,18 @@ jobs:
           [ "$built" -ge 1 ] || fail "Build and Deploy has not built the image on $GITHUB_SHA."
           short="${GITHUB_SHA::7}"
           for image in "$IMAGE"; do
-            if ! docker buildx imagetools inspect "$image:$short" >/dev/null 2>&1; then
+            code=0
+            lookup image -- docker buildx imagetools inspect "$image:$short" --format '{{json .Manifest.Digest}}' || code=$?
+            short_digest=$lookup_out
+            if [ "$code" = 1 ]; then
               fail "$image:$short does not exist. Wait for the pipeline of this commit, or run Build and Deploy by hand on main (a merge that touches only docs publishes no image)."
-            elif docker buildx imagetools inspect "$image:$VERSION" >/dev/null 2>&1; then
+            elif [ "$code" = 0 ]; then
+              code=0
+              lookup image -- docker buildx imagetools inspect "$image:$VERSION" --format '{{json .Manifest.Digest}}' || code=$?
               # Left by an earlier run that stopped before the release: fine only if it is this commit's image
-              [ "$(docker buildx imagetools inspect "$image:$VERSION" --format '{{json .Manifest.Digest}}')" = "$(docker buildx imagetools inspect "$image:$short" --format '{{json .Manifest.Digest}}')" ] \
-                || fail "$image:$VERSION already exists and is not this commit's image. A published version never changes."
+              if [ "$code" = 0 ] && [ "$lookup_out" != "$short_digest" ]; then
+                fail "$image:$VERSION already exists and is not this commit's image. A published version never changes."
+              fi
             fi
           done
           if [ "$failed" = 1 ] && [ "$DRY_RUN" != true ]; then exit 1; fi
