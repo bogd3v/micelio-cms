@@ -116,7 +116,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     text: 'required',
     primaryLink: { use: 'required', of: 'link-section' },
     secondaryLink: { use: 'required', of: 'link-section' },
-    media: { use: 'required', of: 'media-file' },
+    media: { use: 'required', of: 'media-page' },
     id: 'surplus',
   },
   'section.feature-grid': {
@@ -127,7 +127,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     items: {
       use: 'required',
       of: {
-        icon: { use: 'required', of: 'media-file' },
+        icon: { use: 'required', of: 'media-page' },
         title: 'required',
         text: 'required',
         id: 'surplus',
@@ -140,7 +140,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     variant: 'required',
     title: 'required',
     text: 'required',
-    media: { use: 'required', of: 'media-file' },
+    media: { use: 'required', of: 'media-page' },
     link: { use: 'required', of: 'link-section' },
     id: 'surplus',
   },
@@ -158,7 +158,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     logos: {
       use: 'required',
       of: {
-        image: { use: 'required', of: 'media-file' },
+        image: { use: 'required', of: 'media-page' },
         name: 'required',
         url: 'required',
         id: 'surplus',
@@ -176,7 +176,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
         quote: 'required',
         author: 'required',
         role: 'required',
-        avatar: { use: 'required', of: 'media-file' },
+        avatar: { use: 'required', of: 'media-page' },
         id: 'surplus',
       },
     },
@@ -239,14 +239,14 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     __component: 'required',
     variant: 'required',
     title: 'required',
-    images: { use: 'required', of: 'media-file' },
+    images: { use: 'required', of: 'media-page' },
     id: 'surplus',
   },
   'section.scene': {
     __component: 'required',
     variant: 'required',
-    model: { use: 'required', of: 'media-file' },
-    poster: { use: 'required', of: 'media-file' },
+    model: { use: 'required', of: 'media-page' },
+    poster: { use: 'required', of: 'media-page' },
     alt: 'required',
     title: 'required',
     text: 'required',
@@ -289,7 +289,7 @@ export const PAGE_ROUTES: readonly ResponseRoute[] = [
     path: '/api/pages',
     callers: ['frontend', 'build'],
     reader: 'server/utils/pageSections.ts (`parsePage`)',
-    note: 'Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which populates media whole, so every file attribute of a section image comes back; `parsePage` keeps `url`, `alternativeText`, `width`, `height` and `mime`. Follow-up in micelio: name the fields of each media.',
+    note: 'Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them.',
     body: {
       data: {
         use: 'required',

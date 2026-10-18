@@ -2,8 +2,8 @@ import type { Shape } from './types';
 
 /**
  * Objects that several routes return, by name. `media-card` is a file with
- * the fields the frontend asks for; `media-file` is a whole file row, as an
- * unrestricted populate returns it.
+ * the fields the frontend asks for; `media-page`, `media-site` and `media-feed`
+ * are the narrower files of the page, site and feed populates.
  */
 export const SHARED_SHAPES: Record<string, Shape> = {
   'media-card': {
@@ -15,7 +15,7 @@ export const SHARED_SHAPES: Record<string, Shape> = {
     width: 'required',
     height: 'required',
   },
-  'media-file': {
+  'media-page': {
     url: 'required',
     alternativeText: 'required',
     width: 'required',
@@ -23,20 +23,16 @@ export const SHARED_SHAPES: Record<string, Shape> = {
     mime: 'required',
     id: 'surplus',
     documentId: 'surplus',
-    name: 'surplus',
-    caption: 'surplus',
-    focalPoint: 'surplus',
-    formats: 'surplus',
-    hash: 'surplus',
-    ext: 'surplus',
-    size: 'surplus',
-    previewUrl: 'surplus',
-    provider: 'surplus',
-    provider_metadata: 'surplus',
-    createdAt: 'surplus',
-    updatedAt: 'surplus',
-    publishedAt: 'surplus',
   },
+  'media-site': {
+    url: 'required',
+    alternativeText: 'required',
+    width: 'required',
+    height: 'required',
+    id: 'surplus',
+    documentId: 'surplus',
+  },
+  'media-feed': { url: 'required', id: 'surplus', documentId: 'surplus' },
   'image-credit': {
     id: 'required',
     kind: 'required',
@@ -62,22 +58,13 @@ export const SHARED_SHAPES: Record<string, Shape> = {
   'seo-page': {
     metaTitle: 'required',
     metaDescription: 'required',
-    metaImage: { use: 'required', of: 'media-file' },
+    metaImage: { use: 'required', of: 'media-page' },
     keywords: 'required',
     metaRobots: 'required',
     canonicalURL: 'required',
     id: 'surplus',
     structuredData: 'surplus',
     metaViewport: 'surplus',
-    metaSocial: {
-      use: 'surplus',
-      of: {
-        id: 'surplus',
-        socialNetwork: 'surplus',
-        title: 'surplus',
-        description: 'surplus',
-      },
-    },
   },
   reference: {
     id: 'required',
