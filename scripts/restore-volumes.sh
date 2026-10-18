@@ -1,9 +1,6 @@
 #!/bin/sh
 set -eu
 
-BACKUP_ROOT="${BACKUP_DIR:-/backups/devbog}"
-COMPOSE_PROJECT="${COMPOSE_PROJECT:-devbog-blog-backend}"
-
 usage() {
   echo "Usage: $0 <backup-date>"
   echo ""
@@ -11,8 +8,8 @@ usage() {
   echo "               Use 'latest' to restore the most recent backup."
   echo ""
   echo "Environment variables:"
-  echo "  BACKUP_DIR        Backup root directory (default: /backups/devbog)"
-  echo "  COMPOSE_PROJECT   Docker Compose project name (default: devbog-blog-backend)"
+  echo "  BACKUP_DIR        Backup root directory (required)"
+  echo "  COMPOSE_PROJECT   Docker Compose project name (required)"
   echo "  DATABASE_USERNAME  Postgres user (default: strapi)"
   echo "  DATABASE_NAME     Postgres database (default: strapi)"
   exit 1
@@ -23,6 +20,10 @@ if [ $# -lt 1 ]; then
 fi
 
 INPUT="$1"
+
+: "${BACKUP_DIR:?BACKUP_DIR is required: the directory backups are written to}"
+: "${COMPOSE_PROJECT:?COMPOSE_PROJECT is required: the Docker Compose project name}"
+BACKUP_ROOT="${BACKUP_DIR}"
 
 if [ "${INPUT}" = "latest" ]; then
   DB_FILE="$(ls -t "${BACKUP_ROOT}/db"/strapi-*.sql.gz 2>/dev/null | head -1)"
