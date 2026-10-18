@@ -1,6 +1,6 @@
 # Micelio engineering standard
 
-Version 1.2 (2026-10-15). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
+Version 1.3 (2026-10-18). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
 
 These are the rules shared by every Micelio repository: the frontend (`micelio`), the CMS (`micelio-cms`), theme packages, the theme registry and whatever comes next. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`.
 
@@ -351,7 +351,7 @@ Documentation is source: Markdown in the repository, changed in the same pull re
 | Site operator | Install, configure, upgrade, back up, every variable | `docs/operate/`, `.env.example`, release notes |
 | Site editor | How to build pages and publish content in the CMS | `docs/guide/` |
 | Theme creator | The guide, the contract reference, the contract changelog | `docs/themes/` |
-| Integrator | Routes, inputs, outputs, errors | `docs/api.md` |
+| Integrator | Routes, inputs, outputs, errors; caching and behaviour | `docs/openapi.json` (generated), `docs/api.md` |
 | Contributor, human or agent | Rules, structure, procedures, how a subsystem works | This standard, `AGENTS.md`, skills, `docs/architecture/` |
 | Whoever asks "why is it like this?" | The decision, the options and the cost | `docs/adr/` |
 
@@ -429,3 +429,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | 1.0 | 2026-10-08 | First version, written from the conventions of `micelio` and `micelio-cms` |
 | 1.1 | 2026-10-09 | Contract tests between repositories, OWASP ASVS, problem details and OpenAPI, SBOM and provenance, `security.txt`, WCAG 2.2 with a manual check, sustainability, and the community documents |
 | 1.2 | 2026-10-15 | Before 1.0.0 the project is alpha: breaking changes need no deprecation period and no ADR, only the `!`, a `BREAKING CHANGE:` paragraph and upgrade notes |
+| 1.3 | 2026-10-18 | The Integrator row of section 12 names the generated OpenAPI document as the reference of routes, inputs, outputs and errors, and `docs/api.md` for caching and behaviour |
