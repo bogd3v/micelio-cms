@@ -104,6 +104,36 @@ async function setupStrapi() {
   return instance;
 }
 
+// A write that succeeds can leave work queued behind it (publish listeners, lifecycle hooks)
+// that still waits for a connection. Destroying the pool rejects those waiters with
+// `Error: aborted` as an unhandled rejection, which kills the Jest process before it prints
+// a summary. A test that expected the write to fail hits exactly that path, so cleanup waits
+// for the pool to go quiet first.
+const POOL_IDLE_TIMEOUT_MS = 5000;
+const POOL_IDLE_POLL_MS = 10;
+
+interface PoolStats {
+  numUsed(): number;
+  numPendingAcquires(): number;
+  numPendingCreates(): number;
+}
+
+/** Resolves once no query is running or waiting for a connection, or after the timeout. */
+async function waitForPoolIdle(connection: unknown): Promise<void> {
+  const pool = (connection as { client?: { pool?: PoolStats } } | undefined)?.client?.pool;
+  if (!pool) {
+    return;
+  }
+
+  const deadline = Date.now() + POOL_IDLE_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (pool.numUsed() + pool.numPendingAcquires() + pool.numPendingCreates() === 0) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, POOL_IDLE_POLL_MS));
+  }
+}
+
 async function cleanupStrapi() {
   if (!instance) {
     return;
@@ -112,6 +142,7 @@ async function cleanupStrapi() {
   await instance.server.httpServer.close();
 
   const dbConnection = instance.db?.connection;
+  await waitForPoolIdle(dbConnection);
   if (dbConnection?.destroy) {
     await dbConnection.destroy();
   }
