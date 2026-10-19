@@ -13,7 +13,7 @@ The CMS ships as a Docker image (`ghcr.io/bogd3v/micelio-cms`) that runs on any 
 - Adding or documenting environment variables.
 - Debugging a container that does not start or fails its health check.
 - Changing the CI or image workflows.
-- Tags, versions or releases of the image: `main` publishes `edge`, only the Release workflow publishes `X.Y.Z`, `X.Y` and `latest`, and the demo Compose files default to `latest` (a test checks it).
+- Tags, versions or releases of the image: `main` publishes `edge`, only the Release workflow publishes `X.Y.Z`, `X.Y` and `latest`, and the Compose files for trying Micelio default to the `X.Y` of `package.json` (`tests/compose-images.test.ts` fails when they drift, so the `chore(release)` PR updates them).
 
 ## Where the answer is
 

@@ -56,7 +56,7 @@ services:
   # the image links the pages carry. Only build.env is mounted: the rest of the
   # secrets volume holds the CMS's keys.
   build:
-    image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:latest}
+    image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:0.3}
     network_mode: service:cms
     entrypoint:
       - sh
@@ -82,7 +82,7 @@ services:
   # Serves the generated files with the `_headers` rules applied (the CSP of a
   # static host). Starts once the build has finished.
   site:
-    image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:latest}
+    image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:0.3}
     command: ['serve']
     ports:
       - '127.0.0.1:3000:8080'
