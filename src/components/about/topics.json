@@ -3,7 +3,7 @@
   "info": {
     "displayName": "Topics",
     "icon": "grid",
-    "description": "The five blog topics with a short description each"
+    "description": "The blog topics with a short description each"
   },
   "options": {},
   "attributes": {

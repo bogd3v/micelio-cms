@@ -3,13 +3,15 @@
   "info": {
     "displayName": "Topic",
     "icon": "layer",
-    "description": "One of the five blog topics with its own description"
+    "description": "A blog topic with its own description; category is the slug of a category of the site"
   },
   "options": {},
   "attributes": {
     "category": {
-      "type": "enumeration",
-      "enum": ["privacidad", "diy", "ia", "software", "linux"],
+      "type": "string",
+      "regex": "^[a-z0-9-]+$",
+      "minLength": 1,
+      "maxLength": 64,
       "required": true
     },
     "title": {
