@@ -41,7 +41,7 @@
     "@fedify/fedify": "2.4.2",
     "@fedify/koa": "2.4.2",
     "@js-temporal/polyfill": "^0.5.1",
-    "@logtape/logtape": "^2.4.0",
+    "@logtape/logtape": "^2.4.1",
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.56.0",
     "@strapi/plugin-users-permissions": "^5.56.0",
@@ -50,13 +50,13 @@
     "@strapi/strapi": "^5.56.0",
     "knex": "3.3.0",
     "pg": "^8.23.1",
-    "rate-limiter-flexible": "11.2.1",
+    "rate-limiter-flexible": "11.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.3",
     "strapi-plugin-comments": "^3.2.4",
     "structured-field-values": "2.0.4",
-    "styled-components": "^6.5.3"
+    "styled-components": "^6.6.0"
   },
   "devDependencies": {
     "@jest/globals": "^30.5.2",
