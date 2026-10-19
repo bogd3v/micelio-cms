@@ -6,7 +6,13 @@
  */
 
 import type { Core } from '@strapi/strapi';
-import { ABOUT_UID, ARTICLE_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids';
+import {
+  ABOUT_UID,
+  ARTICLE_UID,
+  CATEGORY_UID,
+  PAGE_UID,
+  SITE_SETTING_UID,
+} from '../constants/uids';
 import { isRefusedRedirect } from './refused-redirect';
 
 /** The `event_type` sent in the `repository_dispatch` body of every rebuild call. */
@@ -155,14 +161,16 @@ export function createRebuildHook(strapi: Core.Strapi, config: RebuildHookConfig
 /**
  * The changes that rebuild a static site: publish, unpublish and delete of
  * articles and pages (saving a draft emits none of them), and every save of
- * the site settings and the About page, which have no drafts.
+ * the site settings, the About page and the categories, which have no drafts.
+ * The static build lists the categories from the CMS to render their pages and
+ * feeds, so a category change alone must rebuild.
  */
 const TRIGGERS: [event: string, uids: string[]][] = [
   ['entry.publish', [ARTICLE_UID, PAGE_UID]],
   ['entry.unpublish', [ARTICLE_UID, PAGE_UID]],
-  ['entry.delete', [ARTICLE_UID, PAGE_UID, SITE_SETTING_UID, ABOUT_UID]],
-  ['entry.create', [SITE_SETTING_UID, ABOUT_UID]],
-  ['entry.update', [SITE_SETTING_UID, ABOUT_UID]],
+  ['entry.delete', [ARTICLE_UID, PAGE_UID, SITE_SETTING_UID, ABOUT_UID, CATEGORY_UID]],
+  ['entry.create', [SITE_SETTING_UID, ABOUT_UID, CATEGORY_UID]],
+  ['entry.update', [SITE_SETTING_UID, ABOUT_UID, CATEGORY_UID]],
 ];
 
 /**
