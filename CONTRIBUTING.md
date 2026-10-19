@@ -13,6 +13,8 @@ You keep your copyright; there is no CLA. The reasons are in [ADR 0007](https://
 
 Only contribute work you have the right to contribute. Third-party material (code, images, data) keeps its own license: add it only if that license allows it, keep its license file next to it, list it in [THIRD-PARTY.md](THIRD-PARTY.md) and annotate its path in [REUSE.toml](REUSE.toml) (`reuse lint` checks it in CI). New production dependencies must pass `npm run lint:licenses`, and Strapi Enterprise code must stay disabled (`npm run lint:ee`).
 
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). How decisions are made, and how someone becomes a maintainer, is in [GOVERNANCE.md](GOVERNANCE.md); what you may do with the Micelio name and logo is in [TRADEMARKS.md](TRADEMARKS.md).
+
 ## Developer Certificate of Origin
 
 Every commit must be signed off, certifying the [Developer Certificate of Origin 1.1](https://developercertificate.org/):

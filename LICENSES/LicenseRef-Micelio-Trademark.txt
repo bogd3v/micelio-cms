@@ -1,0 +1,6 @@
+Micelio and the Micelio logo are marks of Alejandro Ramirez Garcia.
+
+The logo files in brand/ are distributed with Micelio's source so that they can
+be used as TRADEMARKS.md allows. They are not covered by the GNU AGPL-3.0 or by
+the theme exception, and no copyright or trademark license is granted beyond
+what TRADEMARKS.md permits. Any other use needs written permission.
