@@ -88,23 +88,23 @@ Categories: the redesign has five, kept in sync on every boot by `src/migrations
 ```http
 GET /api/categories?sort=order&locale=es
 GET /api/categories?sort=order&locale=en
-GET /api/articles?locale=en&filters[category][key][$eq]=privacidad
+GET /api/articles?locale=en&filters[category][slug][$eq]=privacidad
 ```
 
-| `key` / `slug` | `name` (es)             | English name            | `bird`                                                 | `pillar` | `order` |
-| -------------- | ----------------------- | ----------------------- | ------------------------------------------------------ | -------- | ------- |
-| `privacidad`   | Privacidad              | Privacy                 | Pinchaflor (Diglossa cyanea)                           | true     | 1       |
-| `diy`          | DIY · Hazlo tú mismo    | DIY · Do it yourself    | Golondrina (Pygochelidon cyanoleuca)                   | true     | 2       |
-| `ia`           | Inteligencia artificial | Artificial intelligence | Colibrí chillón (Colibri coruscans)                    | false    | 3       |
-| `software`     | Desarrollo de software  | Software development    | Mirla patinaranja (Turdus fuscater)                    | false    | 4       |
-| `linux`        | Linux y código abierto  | Linux and open source   | Monjita bogotana (Chrysomus icterocephalus bogotensis) | false    | 5       |
+| `slug`       | `name` (es)             | English name            | `featured` | `order` |
+| ------------ | ----------------------- | ----------------------- | ---------- | ------- |
+| `privacidad` | Privacidad              | Privacy                 | true       | 1       |
+| `diy`        | DIY · Hazlo tú mismo    | DIY · Do it yourself    | true       | 2       |
+| `ia`         | Inteligencia artificial | Artificial intelligence | false      | 3       |
+| `software`   | Desarrollo de software  | Software development    | false      | 4       |
+| `linux`      | Linux y código abierto  | Linux and open source   | false      | 5       |
 
-Categories are localized: `name` and `description` change with `locale` (`es` is the default), while `slug`, `key`, `bird`, `pillar` and `order` are shared by every locale. An article populates the category row of its own locale. Categories outside the redesign have `key` and `order` set to `null` and may exist only in Spanish.
+Categories are localized: `name` and `description` change with `locale` (`es` is the default), while `slug`, `featured`, `color` and `order` are shared by every locale. An article populates the category row of its own locale. Categories outside the redesign have `order` set to `null` and may exist only in Spanish.
 
 Reading path: each category has an ordered list of articles, chosen by the editor rather than by date. An article's `pathOrder` (integer ≥ 1, shared by every locale) is its position on its category's path; articles with `pathOrder` set to `null` are not on it. Filter by the category and sort by the position:
 
 ```http
-GET /api/articles?locale=es&filters[category][key][$eq]=privacidad&filters[pathOrder][$notNull]=true&sort=pathOrder:asc
+GET /api/articles?locale=es&filters[category][slug][$eq]=privacidad&filters[pathOrder][$notNull]=true&sort=pathOrder:asc
 ```
 
 Tags: `api::tag.tag`, many-to-many with articles (`article.tags` ↔ `tag.articles`). Like categories, tags are localized: `name` changes with `locale` (`Privacidad` / `Privacy`), while `slug` is shared by every locale, so a `?tag=<slug>` filter survives a language switch. The public role gets `find`/`findOne` on tags at every boot (`src/migrations/public-tag-permissions.ts`), because `populate[tags]` fails the whole request without it.

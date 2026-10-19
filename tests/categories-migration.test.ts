@@ -165,12 +165,11 @@ describe('consolidateCategories', () => {
       CATEGORY_TARGETS.map((target) => target.slug)
     );
     for (const target of CATEGORY_TARGETS) {
-      const category = english.find((entry) => entry.key === target.key);
+      const category = english.find((entry) => entry.slug === target.slug);
       expect(category).toMatchObject({
         name: target.text.en.name,
         description: target.text.en.description,
-        bird: target.bird,
-        pillar: target.pillar,
+        featured: target.featured,
         order: target.order,
       });
     }
@@ -225,7 +224,7 @@ describe('consolidateCategories', () => {
     await strapi.db.query(CATEGORY).deleteMany({ where: { locale: 'en' } });
     await strapi.db.query(CATEGORY).updateMany({
       where: { slug: { $in: CATEGORY_TARGETS.map((target) => target.slug) } },
-      data: { key: null, bird: null, pillar: false, order: null },
+      data: { featured: false, order: null },
     });
 
     const refill = await consolidateCategories(strapi);
@@ -238,9 +237,9 @@ describe('consolidateCategories', () => {
     expect(hasChanges(await consolidateCategories(strapi))).toBe(false);
   });
 
-  it('GET /api/categories?sort=order returns the five keys with bird, pillar and order', async () => {
+  it('GET /api/categories?sort=order returns the five categories with featured and order', async () => {
     await setPublicPermissions('category', ['find', 'findOne']);
-    const query = { sort: 'order', filters: { key: { $notNull: true } } };
+    const query = { sort: 'order', filters: { order: { $notNull: true } } };
     const spanish = await request(strapi.server.httpServer)
       .get('/api/categories')
       .query(query)
@@ -250,27 +249,35 @@ describe('consolidateCategories', () => {
       .query({ ...query, locale: 'en' })
       .expect(200);
 
-    const fields = ({ key, bird, pillar, order }: Record<string, unknown>) => ({
-      key,
-      bird,
-      pillar,
+    const fields = ({ slug, featured, order }: Record<string, unknown>) => ({
+      slug,
+      featured,
       order,
     });
     const expected = [
-      { key: 'privacidad', bird: 'Pinchaflor (Diglossa cyanea)', pillar: true, order: 1 },
-      { key: 'diy', bird: 'Golondrina (Pygochelidon cyanoleuca)', pillar: true, order: 2 },
-      { key: 'ia', bird: 'Colibrí chillón (Colibri coruscans)', pillar: false, order: 3 },
-      { key: 'software', bird: 'Mirla patinaranja (Turdus fuscater)', pillar: false, order: 4 },
-      {
-        key: 'linux',
-        bird: 'Monjita bogotana (Chrysomus icterocephalus bogotensis)',
-        pillar: false,
-        order: 5,
-      },
+      { slug: 'privacidad', featured: true, order: 1 },
+      { slug: 'diy', featured: true, order: 2 },
+      { slug: 'ia', featured: false, order: 3 },
+      { slug: 'software', featured: false, order: 4 },
+      { slug: 'linux', featured: false, order: 5 },
     ];
     expect(spanish.body.data.map(fields)).toEqual(expected);
     expect(english.body.data.map(fields)).toEqual(expected);
     expect(spanish.body.data[0].name).toBe('Privacidad');
     expect(english.body.data[0].name).toBe('Privacy');
+  });
+
+  it('leaves featured to the editor once the categories exist', async () => {
+    const update = (slug: string, featured: boolean) =>
+      strapi.db.query(CATEGORY).updateMany({ where: { slug }, data: { featured } });
+    await update('ia', true);
+    await update('privacidad', false);
+
+    expect(hasChanges(await consolidateCategories(strapi))).toBe(false);
+
+    const featuredOf = async (slug: string) =>
+      (await strapi.db.query(CATEGORY).findMany({ where: { slug } })).map((row) => row.featured);
+    expect((await featuredOf('ia')).every((value) => value === true)).toBe(true);
+    expect((await featuredOf('privacidad')).every((value) => value === false)).toBe(true);
   });
 });
