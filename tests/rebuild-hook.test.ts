@@ -17,6 +17,7 @@ const PAGE_UID = 'api::page.page';
 const ARTICLE_UID = 'api::article.article';
 const SITE_SETTING_UID = 'api::site-setting.site-setting';
 const ABOUT_UID = 'api::about.about';
+const CATEGORY_UID = 'api::category.category';
 const DEBOUNCE_MS = 300;
 
 interface Received {
@@ -149,6 +150,40 @@ describe('Rebuild hook', () => {
     }
     await waitUntil(() => received.length > 0);
     expect(received[0].body.client_payload.changes[0]).toMatchObject({ uid: ABOUT_UID });
+  });
+
+  it('fires when a category is created, saved or deleted, which have no drafts', async () => {
+    const category = await documents(CATEGORY_UID).create({
+      locale: 'en',
+      data: { name: 'Rebuild probe', slug: 'rebuild-probe' },
+    });
+    await waitUntil(() => received.length > 0);
+    expect(received[0].body.client_payload.changes[0]).toMatchObject({
+      uid: CATEGORY_UID,
+      event: 'entry.create',
+    });
+
+    await quiet();
+    received.length = 0;
+    await documents(CATEGORY_UID).update({
+      documentId: category.documentId,
+      locale: 'en',
+      data: { featured: true },
+    });
+    await waitUntil(() => received.length > 0);
+    expect(received[0].body.client_payload.changes[0]).toMatchObject({
+      uid: CATEGORY_UID,
+      event: 'entry.update',
+    });
+
+    await quiet();
+    received.length = 0;
+    await documents(CATEGORY_UID).delete({ documentId: category.documentId, locale: 'en' });
+    await waitUntil(() => received.length > 0);
+    expect(received[0].body.client_payload.changes[0]).toMatchObject({
+      uid: CATEGORY_UID,
+      event: 'entry.delete',
+    });
   });
 
   it('retries a failing hook and never fails the publish', async () => {
