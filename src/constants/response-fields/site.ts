@@ -58,7 +58,7 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
     path: '/api/site-setting',
     callers: ['frontend', 'build'],
     reader: 'server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts',
-    note: 'Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`) that the frontend schema does not read yet. `mime` is read for pages, not for the site images.',
+    note: 'Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `privacyJurisdiction`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`, `privacyJurisdiction` picks the law the privacy page names) that the frontend schema does not read yet. `mime` is read for pages, not for the site images.',
     body: {
       data: {
         use: 'required',
@@ -110,6 +110,7 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
           documentId: 'surplus',
           tagline: 'surplus',
           securityContact: 'surplus',
+          privacyJurisdiction: 'surplus',
           timezone: 'surplus',
           addressLocality: 'surplus',
           locale: 'surplus',

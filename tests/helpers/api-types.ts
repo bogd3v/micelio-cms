@@ -67,6 +67,7 @@ export interface ApiSiteSetting {
   socialLinks: { network: string; url: string }[];
   contactEmail: string | null;
   securityContact?: string | null;
+  privacyJurisdiction?: 'colombia' | null;
   privacyContactEmail: string | null;
   privacyUpdatedAt: string | null;
   supportHandle: string | null;
