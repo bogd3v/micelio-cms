@@ -436,7 +436,9 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
         inReplyTo: 'https://ignored.example/x',
         content: '<p>hijacked</p>',
       });
-      expect((await send(stranger, activity)).ok).toBe(true);
+      // Fedify 2.4.3+ answers 401 when the activity id and its actor differ in origin;
+      // older versions accept it and our handler ignores it. Either way nothing changes.
+      await send(stranger, activity);
       await settle();
 
       const row = await strapi.documents(COMMENT_UID).findOne({ documentId });
