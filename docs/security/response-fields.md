@@ -203,7 +203,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
-| `categories.find` | `GET /api/categories` | public role with `find`, or an API token with `find` | 6 | 19 | server/api/categories.get.ts | The frontend asks for `name`, `slug` and the ids of `articles`. An unrestricted call also returns `description`, `key`, `bird`, `pillar`, `featured`, `color` and `order`, which the frontend does not read. Strapi adds `documentId` whatever `fields` says. |
+| `categories.find` | `GET /api/categories` | public role with `find`, or an API token with `find` | 6 | 16 | server/api/categories.get.ts | The frontend asks for `name`, `slug` and the ids of `articles`. An unrestricted call also returns `description`, `featured`, `color` and `order`, which the frontend does not read. Strapi adds `documentId` whatever `fields` says. |
 | `tags.find` | `GET /api/tags` | public role (granted by default), or an API token with `find` | 4 | 14 | server/api/tags.get.ts | Public by default. The frontend reads `name`, `slug` and the number of `articles`; `id` and `documentId` are added by Strapi whatever `fields` says. |
 
 #### `categories.find`
@@ -211,7 +211,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Object | Required | Surplus |
 | --- | --- | --- |
 | `(body)` | `data` | `meta` |
-| `data` | `id`, `name`, `slug`, `articles` | `documentId`, `description`, `key`, `bird`, `pillar`, `featured`, `color`, `order`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
+| `data` | `id`, `name`, `slug`, `articles` | `documentId`, `description`, `featured`, `color`, `order`, `createdAt`, `updatedAt`, `publishedAt`, `locale` |
 | `data.articles` | `id` | `documentId` |
 | `meta` | none | `pagination` |
 | `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |

@@ -47,33 +47,6 @@
         }
       }
     },
-    "key": {
-      "type": "enumeration",
-      "enum": ["privacidad", "diy", "ia", "software", "linux"],
-      "unique": true,
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
-        }
-      }
-    },
-    "bird": {
-      "type": "string",
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
-        }
-      }
-    },
-    "pillar": {
-      "type": "boolean",
-      "default": false,
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
-        }
-      }
-    },
     "order": {
       "type": "integer",
       "pluginOptions": {

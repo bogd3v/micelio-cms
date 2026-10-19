@@ -3,9 +3,6 @@ import type { Core } from '@strapi/strapi';
 const CATEGORY_UID = 'api::category.category';
 const ARTICLE_UID = 'api::article.article';
 
-/** Stable identifiers of the five blog categories. */
-export type CategoryKey = 'privacidad' | 'diy' | 'ia' | 'software' | 'linux';
-
 /** Locales the categories are translated into. Spanish is the blog's own language. */
 export const CATEGORY_LOCALES = ['es', 'en'] as const;
 /** A locale of `CATEGORY_LOCALES`. */
@@ -19,11 +16,7 @@ interface CategoryText {
 /** A category the consolidation leaves in place, with its translations and the old slugs it absorbs. */
 export interface CategoryTarget {
   slug: string;
-  /** Stable identifier the frontend paints the category with; never shown. */
-  key: CategoryKey;
-  /** Common and scientific name of the category's bird. */
-  bird: string;
-  pillar: boolean;
+  featured: boolean;
   order: number;
   /** Localized fields, per locale. */
   text: Record<CategoryLocale, CategoryText>;
@@ -53,9 +46,7 @@ export interface ConsolidationReport {
 export const CATEGORY_TARGETS: CategoryTarget[] = [
   {
     slug: 'privacidad',
-    key: 'privacidad',
-    bird: 'Pinchaflor (Diglossa cyanea)',
-    pillar: true,
+    featured: true,
     order: 1,
     text: {
       es: {
@@ -71,9 +62,7 @@ export const CATEGORY_TARGETS: CategoryTarget[] = [
   },
   {
     slug: 'diy',
-    key: 'diy',
-    bird: 'Golondrina (Pygochelidon cyanoleuca)',
-    pillar: true,
+    featured: true,
     order: 2,
     text: {
       es: {
@@ -89,9 +78,7 @@ export const CATEGORY_TARGETS: CategoryTarget[] = [
   },
   {
     slug: 'ia',
-    key: 'ia',
-    bird: 'Colibrí chillón (Colibri coruscans)',
-    pillar: false,
+    featured: false,
     order: 3,
     text: {
       es: {
@@ -109,9 +96,7 @@ export const CATEGORY_TARGETS: CategoryTarget[] = [
   },
   {
     slug: 'software',
-    key: 'software',
-    bird: 'Mirla patinaranja (Turdus fuscater)',
-    pillar: false,
+    featured: false,
     order: 4,
     text: {
       es: {
@@ -129,9 +114,7 @@ export const CATEGORY_TARGETS: CategoryTarget[] = [
   },
   {
     slug: 'linux',
-    key: 'linux',
-    bird: 'Monjita bogotana (Chrysomus icterocephalus bogotensis)',
-    pillar: false,
+    featured: false,
     order: 5,
     text: {
       es: {
@@ -157,9 +140,7 @@ interface CategoryRow {
   name: string | null;
   slug: string | null;
   description: string | null;
-  key: CategoryKey | null;
-  bird: string | null;
-  pillar: boolean | null;
+  featured: boolean | null;
   order: number | null;
 }
 
@@ -171,19 +152,16 @@ interface CategoryDocument {
   rows: CategoryRow[];
 }
 
-type CategoryFields = Pick<CategoryTarget, 'slug' | 'key' | 'bird' | 'pillar' | 'order'> &
-  CategoryText;
+type CategoryFields = Pick<CategoryTarget, 'slug' | 'order'> & CategoryText;
 
 function fieldsOf(target: CategoryTarget, locale: CategoryLocale): CategoryFields {
-  const { slug, key, bird, pillar, order } = target;
-  return { slug, key, bird, pillar, order, ...target.text[locale] };
+  const { slug, order } = target;
+  return { slug, order, ...target.text[locale] };
 }
 
 function isInSync(row: CategoryRow, fields: CategoryFields): boolean {
   return (Object.keys(fields) as (keyof CategoryFields)[]).every(
-    // SQLite returns booleans as 0/1, hence the loose comparison for `pillar`.
-    (field) =>
-      field === 'pillar' ? Boolean(row.pillar) === fields.pillar : row[field] === fields[field]
+    (field) => row[field] === fields[field]
   );
 }
 
@@ -226,18 +204,7 @@ function joinTableOf(strapi: Core.Strapi): JoinTable {
 
 async function loadDocuments(strapi: Core.Strapi, defaultLocale: string) {
   const rows = (await strapi.db.query(CATEGORY_UID).findMany({
-    select: [
-      'id',
-      'documentId',
-      'locale',
-      'name',
-      'slug',
-      'description',
-      'key',
-      'bird',
-      'pillar',
-      'order',
-    ],
+    select: ['id', 'documentId', 'locale', 'name', 'slug', 'description', 'featured', 'order'],
     orderBy: { id: 'asc' },
   })) as CategoryRow[];
 
@@ -300,8 +267,8 @@ async function relinkByLocale(strapi: Core.Strapi, joinTable: JoinTable): Promis
 
 /**
  * On BogDev's instance (one that has any of its categories), brings the
- * categories to the five of the redesign, with their key, bird,
- * pillar flag and order, translated into every configured locale among
+ * categories to the five of the redesign, with their featured flag
+ * (the former pillar) and order, translated into every configured locale among
  * `CATEGORY_LOCALES`. Idempotent: once the targets exist in sync and no legacy
  * rows remain, it changes nothing.
  * Articles are moved by rewriting the article → category join table, so the
@@ -349,7 +316,13 @@ export async function consolidateCategories(strapi: Core.Strapi): Promise<Consol
 
     let documentId: string;
     let keeperId: number;
-    const mainFields = fieldsOf(target, mainLocale);
+    // `featured` is set when the document is created or consolidated for the first time (its
+    // `order` is still empty); after that it is the editor's. Existing documents got the flag
+    // of their former `pillar` from the boot migration `category-pillar-to-featured`.
+    const mainFields = {
+      ...fieldsOf(target, mainLocale),
+      ...(target.featured && (!keeper || keeper.main.order == null) ? { featured: true } : {}),
+    };
     if (keeper) {
       documentId = keeper.documentId;
       keeperId = keeper.main.id;

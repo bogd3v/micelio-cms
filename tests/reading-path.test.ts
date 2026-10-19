@@ -11,11 +11,11 @@ const CATEGORY_UID = 'api::category.category';
 type PathEntry = ApiDocument & { pathOrder: number | null };
 
 describe('Reading path (article.pathOrder)', () => {
-  const readingPath = (key: string) =>
+  const readingPath = (slug: string) =>
     request(strapi.server.httpServer)
       .get('/api/articles')
       .query({
-        filters: { category: { key: { $eq: key } }, pathOrder: { $notNull: true } },
+        filters: { category: { slug: { $eq: slug } }, pathOrder: { $notNull: true } },
         sort: 'pathOrder:asc',
       })
       .expect(200);
@@ -38,11 +38,11 @@ describe('Reading path (article.pathOrder)', () => {
     // Filtering through a relation needs read access to its target.
     await setPublicPermissions('category', ['find']);
 
-    // BogDev's redesign categories, with their `key`.
+    // BogDev's redesign categories, by slug.
     await createBogdevCategories();
     const [privacidad, ia] = await Promise.all(
       (['privacidad', 'ia'] as const).map((key) =>
-        strapi.documents(CATEGORY_UID).findFirst({ filters: { key } })
+        strapi.documents(CATEGORY_UID).findFirst({ filters: { slug: key } })
       )
     );
 
@@ -73,7 +73,7 @@ describe('Reading path (article.pathOrder)', () => {
   it('leaves articles without pathOrder out of the path', async () => {
     const res = await request(strapi.server.httpServer)
       .get('/api/articles')
-      .query({ filters: { category: { key: { $eq: 'privacidad' } } } })
+      .query({ filters: { category: { slug: { $eq: 'privacidad' } } } })
       .expect(200);
 
     const offPath = (res.body.data as PathEntry[]).find((entry) => entry.title === 'Off the path');
