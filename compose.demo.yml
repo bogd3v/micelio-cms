@@ -19,7 +19,7 @@ services:
   # Generates Strapi's keys, the database password and the frontend's API
   # token once (scripts/demo-secrets.js); later runs keep them.
   init:
-    image: ${MICELIO_CMS_IMAGE:-ghcr.io/bogd3v/micelio-cms:0.3}
+    image: ${MICELIO_CMS_IMAGE:-ghcr.io/bogd3v/micelio-cms:0.4}
     user: '0'
     entrypoint: ['node', 'scripts/demo-secrets.js', '/secrets']
     volumes:
@@ -44,7 +44,7 @@ services:
         condition: service_completed_successfully
 
   cms:
-    image: ${MICELIO_CMS_IMAGE:-ghcr.io/bogd3v/micelio-cms:0.3}
+    image: ${MICELIO_CMS_IMAGE:-ghcr.io/bogd3v/micelio-cms:0.4}
     # Loads the generated secrets, then starts as the image does.
     entrypoint:
       - /sbin/tini
@@ -87,7 +87,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ${MICELIO_IMAGE:-ghcr.io/bogd3v/micelio:0.3}
+    image: ${MICELIO_IMAGE:-ghcr.io/bogd3v/micelio:0.4}
     # Same network namespace as the CMS: the frontend's server and the
     # visitor's browser both reach Strapi at http://localhost:1337, the one URL
     # the frontend uses for API calls and for image links.
