@@ -136,6 +136,15 @@
         }
       }
     },
+    "privacyJurisdiction": {
+      "type": "enumeration",
+      "enum": ["colombia"],
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
     "privacyUpdatedAt": {
       "type": "datetime",
       "pluginOptions": {

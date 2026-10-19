@@ -266,6 +266,7 @@ export async function seedSite(
       contactEmail: 'contact@example.test',
       privacyContactEmail: 'privacy@example.test',
       securityContact: 'mailto:security@example.test',
+      privacyJurisdiction: 'colombia',
       privacyUpdatedAt: '2026-01-02T00:00:00.000Z',
       supportHandle: 'support',
       timezone: 'UTC',

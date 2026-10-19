@@ -6,7 +6,7 @@ The frontend server reads some content with a **custom** API token (Settings →
 
 | Content type   | Token permissions                                          | Roles cleared by                           |
 | -------------- | ---------------------------------------------------------- | ------------------------------------------ |
-| `site-setting` | `find` (identity, modules and theme)                       | `src/migrations/site-settings.ts`          |
+| `site-setting` | `find` (identity, modules, theme and privacy jurisdiction) | `src/migrations/site-settings.ts`          |
 | `page`         | `find` (also the read-only `build` token)                  | `src/migrations/page-permissions.ts`       |
 | `subscriber`   | what the newsletter flow needs (`strapi-subscriber` skill) | `src/migrations/subscriber-permissions.ts` |
 

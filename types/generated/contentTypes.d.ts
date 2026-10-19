@@ -890,6 +890,12 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
           localized: false;
         };
       }>;
+    privacyJurisdiction: Schema.Attribute.Enumeration<['colombia']> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
     privacyUpdatedAt: Schema.Attribute.DateTime &
       Schema.Attribute.SetPluginOptions<{
         i18n: {

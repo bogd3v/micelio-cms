@@ -334,4 +334,49 @@ describe('Site settings', () => {
       expect((await read()).securityContact).toBe('');
     });
   });
+
+  describe('privacy jurisdiction', () => {
+    async function saveJurisdiction(privacyJurisdiction: string | null): Promise<void> {
+      await strapi.documents(SITE_SETTING).update({
+        documentId: await documentId(),
+        locale: 'en',
+        // @ts-expect-error the generated type is the enum; null clears it
+        data: { privacyJurisdiction },
+      });
+    }
+
+    it('is declared as a shared enumeration with the single value colombia', () => {
+      const attribute = strapi.contentType(SITE_SETTING).attributes.privacyJurisdiction;
+
+      expect(attribute).toMatchObject({
+        type: 'enumeration',
+        enum: ['colombia'],
+        pluginOptions: { i18n: { localized: false } },
+      });
+      expect(attribute).not.toHaveProperty('default');
+    });
+
+    it('is empty on a fresh instance and returned to the frontend token', async () => {
+      const settings = await read();
+
+      expect(settings).toHaveProperty('privacyJurisdiction');
+      expect(settings.privacyJurisdiction ?? null).toBeNull();
+    });
+
+    it('accepts colombia, returns it and can be cleared', async () => {
+      await saveJurisdiction('colombia');
+      expect((await read()).privacyJurisdiction).toBe('colombia');
+
+      await saveJurisdiction(null);
+      expect((await read()).privacyJurisdiction ?? null).toBeNull();
+    });
+
+    it.each([
+      ['an unknown jurisdiction', 'atlantis'],
+      ['another case', 'Colombia'],
+      ['an empty string', ''],
+    ])('rejects %s', async (_case, value) => {
+      await expect(saveJurisdiction(value)).rejects.toMatchObject({ name: 'ValidationError' });
+    });
+  });
 });
