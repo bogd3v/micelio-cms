@@ -38,7 +38,7 @@ A push to `main` publishes the image as the short commit SHA and `edge`; a push 
 
 Create the environment once (Settings, Environments, `release`): a required reviewer, and deployment branches limited to `main`. A real run then stops at `publish` until the maintainer approves, and only that job asks for `packages: write`; the `plan` job gets `contents: write` because the endpoint that generates release notes asks for it, and writes nothing. This is an approval step, not a barrier against someone with write access: a workflow file on another branch sets its own permissions and could leave the environment out. What limits that is who has write access, and a tag ruleset on `v*` (block updates and deletions), which an environment does not replace.
 
-A published version never changes. To release, merge a `chore(release)` pull request when `package.json` needs the new version, run the dry run, then run it again with `dry_run` off.
+A published version never changes. To release, merge a `chore(release)` pull request when `package.json` needs the new version (it also moves the default image tags of `compose.*.yml`, `docker-compose.yml` and `demo/*.env.example` to the new `X.Y`; `tests/compose-images.test.ts` fails otherwise, and the frontend image of that `X.Y` must be published too, or the demo cannot pull it), run the dry run, then run it again with `dry_run` off.
 
 ## Contract tests: `contract.yml`
 
