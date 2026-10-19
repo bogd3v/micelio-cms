@@ -133,16 +133,22 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
 
   const categoryIds: Record<string, string> = {};
   for (const category of DEMO_CATEGORIES) {
+    const display = {
+      slug: category.slug,
+      order: category.order,
+      featured: category.featured,
+      color: category.color ?? null,
+    };
     const created = await documents(strapi, CATEGORY_UID).create({
       locale: main,
-      data: { slug: category.slug, ...category.text[main] },
+      data: { ...display, ...category.text[main] },
     });
     for (const locale of others) {
       await documents(strapi, CATEGORY_UID).update({
         documentId: created.documentId,
         locale,
         // Non-localized, but a new localization is validated with it.
-        data: { slug: category.slug, ...category.text[locale] },
+        data: { ...display, ...category.text[locale] },
       });
     }
     categoryIds[category.slug] = created.documentId;

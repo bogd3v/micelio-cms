@@ -72,6 +72,21 @@ describe('Demo instance', () => {
       );
     });
 
+    it('gives the categories an order, one featured and one pinned color, in every language', async () => {
+      type Display = { slug: string; order: number; featured: boolean; color: number | null };
+      for (const locale of ['en', 'es']) {
+        const categories = (await strapi
+          .documents(CATEGORY_UID)
+          .findMany({ locale, sort: 'order:asc' })) as unknown as Display[];
+        expect(
+          categories.map(({ slug, order, featured, color }) => ({ slug, order, featured, color }))
+        ).toEqual([
+          { slug: 'garden', order: 1, featured: true, color: 2 },
+          { slug: 'kitchen', order: 2, featured: false, color: null },
+        ]);
+      }
+    });
+
     it('creates only its own categories, translated, and none of BogDev', async () => {
       const english = (await strapi.documents(CATEGORY_UID).findMany({ locale: 'en' })) as Named[];
       const spanish = (await strapi.documents(CATEGORY_UID).findMany({ locale: 'es' })) as Named[];
