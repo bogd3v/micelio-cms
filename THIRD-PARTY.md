@@ -34,7 +34,7 @@ The project started from the example template of `create-strapi-app` (`templates
 
 ## Names and marks of Micelio and BogDev
 
-The names Micelio and BogDev and their logos (`public/bogdev-white.svg`, `public/favicon.png`) are the maintainer's own work. Their files are distributed with the code under the AGPL, but no trademark rights are granted (AGPL section 7(e)): a fork or another site may not present itself as BogDev or as the official Micelio.
+The names Micelio and BogDev, the Micelio logo and mark (`brand/`, outside the AGPL, see [TRADEMARKS.md](TRADEMARKS.md)) and the BogDev logos (`public/bogdev-white.svg`, `public/favicon.png`) are the maintainer's own work. Their files are distributed with the code under the AGPL, but no trademark rights are granted (AGPL section 7(e)): a fork or another site may not present itself as BogDev or as the official Micelio.
 
 ## Site content
 
