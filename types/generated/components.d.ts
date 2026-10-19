@@ -181,13 +181,17 @@ export interface AboutStatement extends Struct.ComponentSchema {
 export interface AboutTopic extends Struct.ComponentSchema {
   collectionName: 'components_about_topics';
   info: {
-    description: 'One of the five blog topics with its own description';
+    description: 'A blog topic with its own description; category is the slug of a category of the site';
     displayName: 'Topic';
     icon: 'layer';
   };
   attributes: {
-    category: Schema.Attribute.Enumeration<['privacidad', 'diy', 'ia', 'software', 'linux']> &
-      Schema.Attribute.Required;
+    category: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64;
+        minLength: 1;
+      }>;
     description: Schema.Attribute.Text;
     title: Schema.Attribute.String & Schema.Attribute.Required;
   };
@@ -196,7 +200,7 @@ export interface AboutTopic extends Struct.ComponentSchema {
 export interface AboutTopics extends Struct.ComponentSchema {
   collectionName: 'components_about_topic_lists';
   info: {
-    description: 'The five blog topics with a short description each';
+    description: 'The blog topics with a short description each';
     displayName: 'Topics';
     icon: 'grid';
   };

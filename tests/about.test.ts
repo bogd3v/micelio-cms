@@ -151,23 +151,38 @@ describe('About field card', () => {
     expect(contact.socials[0]).toEqual(expect.objectContaining({ network: 'GitHub' }));
   });
 
-  it('rejects a topic outside the five categories', async () => {
-    const about = await strapi.documents(ABOUT).findFirst();
-    expect(about).not.toBeNull();
-    await expect(
-      strapi.documents(ABOUT).update({
+  describe('topic category', () => {
+    const saveTopic = async (category: string) => {
+      const about = await strapi.documents(ABOUT).findFirst();
+      expect(about).not.toBeNull();
+      return strapi.documents(ABOUT).update({
         documentId: about!.documentId,
-        data: {
-          blocks: [
-            {
-              __component: 'about.topics',
-              // @ts-expect-error: a category outside the enum, on purpose
-              topics: [{ category: 'web', title: 'Web' }],
-            },
-          ],
-        },
-      })
-    ).rejects.toThrow();
+        data: { blocks: [{ __component: 'about.topics', topics: [{ category, title: 'Topic' }] }] },
+      });
+    };
+
+    // The field used to be an enumeration of one site's five slugs; a stored value of the old
+    // list stays valid and any other slug the frontend routes (lowercase, digits, hyphens, at
+    // most 64 characters, micelio's SLUG_PATTERN) is now allowed. The column was always text.
+    it.each(['privacidad', 'linux', 'garden', 'a-1', 'x'.repeat(64)])(
+      'accepts and keeps the slug %s',
+      async (category) => {
+        await saveTopic(category);
+        const saved = (await strapi.documents(ABOUT).findFirst({
+          populate: { blocks: { on: { 'about.topics': { populate: { topics: true } } } } },
+        })) as unknown as {
+          blocks: { topics: { category: string }[] }[];
+        };
+        expect(saved.blocks[0].topics[0].category).toBe(category);
+      }
+    );
+
+    it.each(['', 'has space', 'a/b', '..', 'Upper', 'a_b', 'a.b', 'x'.repeat(65)])(
+      'rejects %j, which the frontend does not route as a category',
+      async (category) => {
+        await expect(saveTopic(category)).rejects.toMatchObject({ name: 'ValidationError' });
+      }
+    );
   });
 
   describe('link URL schemes', () => {
