@@ -33,6 +33,12 @@ export const DEMO_SOCIAL_LINKS = [{ network: 'github', url: 'https://github.com/
 /** A demo category, identified by `slug`, with its localized text. */
 export interface DemoCategory {
   slug: string;
+  /** Position in the category lists and, without `color`, the rank that picks the color. */
+  order: number;
+  /** Shown in the places the theme reserves for the main categories. */
+  featured: boolean;
+  /** Pins the color role (1 to 5) instead of following `order`. */
+  color?: number;
   text: Localized<{ name: string; description: string }>;
 }
 
@@ -40,6 +46,9 @@ export interface DemoCategory {
 export const DEMO_CATEGORIES: DemoCategory[] = [
   {
     slug: 'garden',
+    order: 1,
+    featured: true,
+    color: 2,
     text: {
       en: { name: 'Garden', description: 'Growing food on balconies, roofs and window sills.' },
       es: { name: 'Huerta', description: 'Cultivar comida en balcones, terrazas y ventanas.' },
@@ -47,6 +56,8 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
   },
   {
     slug: 'kitchen',
+    order: 2,
+    featured: false,
     text: {
       en: { name: 'Kitchen', description: 'What to cook with what the garden gives.' },
       es: { name: 'Cocina', description: 'Qué cocinar con lo que da la huerta.' },
