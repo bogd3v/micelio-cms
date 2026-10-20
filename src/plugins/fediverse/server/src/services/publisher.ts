@@ -101,9 +101,10 @@ async function sendRecorded(
   strapi: Core.Strapi,
   documentId: string,
   type: FederatedActivityType,
-  activity: Activity
+  activity: Activity,
+  firstPublishedAt?: string
 ): Promise<FanOut> {
-  const activityAt = await recordSend(strapi, documentId, type);
+  const activityAt = await recordSend(strapi, documentId, type, firstPublishedAt);
   try {
     return await sendToFollowers(strapi, activity);
   } catch (error) {
@@ -151,7 +152,8 @@ export async function federateArticle(
     strapi,
     documentId,
     type,
-    buildArticleActivity(type === 'Create' ? 'create' : 'update', ctx, ACTOR_IDENTIFIER, record)
+    buildArticleActivity(type === 'Create' ? 'create' : 'update', ctx, ACTOR_IDENTIFIER, record),
+    record.firstPublishedAt
   );
   strapi.log.info(
     `[fediverse] ${type}(Article) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`

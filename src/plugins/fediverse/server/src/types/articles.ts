@@ -16,7 +16,14 @@ export interface ArticleRecord {
   description: string;
   slug: string;
   locale: string | null;
+  /** When this version was published: Strapi stamps it again on every publish. */
   publishedAt: string;
   updatedAt: string | null;
+  /**
+   * The `published` of the federated object, which never changes once the `Create` is sent: the
+   * `publishedAt` of the version that was sent first (`createSentAt` of its row), or `publishedAt`
+   * for an article not federated yet.
+   */
+  firstPublishedAt: string;
   image: MediaRecord | null;
 }

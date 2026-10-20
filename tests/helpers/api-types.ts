@@ -42,6 +42,7 @@ export interface ActivityJson {
   to?: string | string[];
   cc?: string | string[];
   published?: string;
+  updated?: string;
   image?: { url: string; mediaType?: string; name?: string };
   outbox?: string;
   totalItems?: number;
