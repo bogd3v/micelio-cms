@@ -1,0 +1,32 @@
+# GoToSocial as a second, real fediverse server for the cross-server checklist in
+# docs/FEDIVERSE.md ("Cross-server verification"). Not part of CI, not for production.
+#
+#   GTS_HOST=<public hostname of this server, no scheme> docker compose -f docker-compose.verify.yml up -d
+#   docker compose -f docker-compose.verify.yml down -v        # removes the data too
+#
+# GoToSocial must be reachable from the CMS over HTTPS on a public name, because the CMS delivers
+# to its inbox and refuses private addresses: use a tunnel (for example
+# `cloudflared tunnel --url http://localhost:8081`) and give its hostname as GTS_HOST, before the
+# first start (GoToSocial bakes the host into its accounts).
+name: gts-verify
+services:
+  gotosocial:
+    # Pinned by digest (GoToSocial 0.22.2); raise it on purpose, not by accident.
+    image: superseriousbusiness/gotosocial@sha256:43e5dd574c5d5f94238b73e2ce17cf5c778f763cebebf06cc7894623d151c78b
+    environment:
+      GTS_HOST: ${GTS_HOST:?set GTS_HOST to the public hostname of this server}
+      GTS_ACCOUNT_DOMAIN: ${GTS_HOST}
+      GTS_PROTOCOL: https
+      GTS_DB_TYPE: sqlite
+      GTS_DB_ADDRESS: /gotosocial/storage/sqlite.db
+      GTS_LETSENCRYPT_ENABLED: "false"
+      GTS_PORT: "8080"
+      GTS_TRUSTED_PROXIES: "127.0.0.1,172.16.0.0/12,10.0.0.0/8,192.168.0.0/16"
+      GTS_ACCOUNTS_REGISTRATION_OPEN: "false"
+      TZ: UTC
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - gts-verify-data:/gotosocial/storage
+volumes:
+  gts-verify-data:
