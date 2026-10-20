@@ -197,7 +197,7 @@ Never limited (`src/constants/rate-limit.ts`):
 
 - `/_health` and `/favicon.ico`, and `/uploads/*`.
 - `/admin` and everything under it, except `POST` on `/admin/login`, `/admin/forgot-password`, `/admin/reset-password`, `/admin/register-admin` and `/admin/register` (group `admin-auth`).
-- The admin-panel API prefixes `/content-manager`, `/content-type-builder`, `/upload`, `/i18n`, `/users-permissions`, `/email`, `/seo`, `/comments` and `/article-stats`. The content API's `/api/upload` and `/api/comments` are limited. The list is static: add the prefix of any plugin that adds admin routes.
+- The admin-panel API prefixes `/content-manager`, `/content-type-builder`, `/upload`, `/i18n`, `/users-permissions`, `/email`, `/seo`, `/comments` and `/article-stats`. The content API's `/api/upload` and `/api/comments` are limited. The list is static: add the prefix of any plugin that adds admin routes. The fediverse article panel's `/fediverse-panel` is not in it on purpose: it counts in the `api` group, which limits "Federate now" per client address.
 - `/mcp` with a bearer that resolves to an admin token (see Token buckets). Without one it counts in the `api` group.
 
 ## Rollout and Rollback

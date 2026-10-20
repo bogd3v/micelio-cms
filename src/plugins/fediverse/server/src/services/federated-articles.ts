@@ -46,6 +46,17 @@ async function settleDuplicates(
   return oldest;
 }
 
+/** The federation row of an article, or `null` when no activity was ever queued for it. */
+export async function findFederatedArticle(
+  strapi: Core.Strapi,
+  articleDocumentId: string
+): Promise<FederatedArticleRow | null> {
+  return (await query(strapi).findOne({
+    where: { articleDocumentId },
+    orderBy: { id: 'asc' },
+  })) as FederatedArticleRow | null;
+}
+
 /** Whether the article has been sent and not retracted, so a re-publish becomes an `Update`. */
 export async function isFederated(
   strapi: Core.Strapi,

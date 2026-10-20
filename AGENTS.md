@@ -24,7 +24,7 @@ npm run strapi <cmd>   # Run Strapi CLI commands
 
 ```bash
 npm run check          # CI's fast steps in order: typecheck, lint (with licence and EE checks), format:check, test
-npm run typecheck      # Type-check the server, the fediverse plugin and the tests
+npm run typecheck      # Type-check the server, the fediverse plugin, the admin panel and the tests
 npm run lint           # Run ESLint
 npm run lint:fix       # Run ESLint and auto-fix issues
 npm run format         # Format files with Prettier
@@ -259,7 +259,7 @@ Each skill file is at `.claude/skills/<name>/SKILL.md`.
 
 1. **Jest + Supertest** configured for integration tests against an isolated SQLite database
 2. **ESLint + Prettier** configured — run `npm run check` before committing
-3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, the fediverse plugin and `tests/`); `npm run typecheck` covers all three
+3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, the fediverse plugin, `src/admin/` and `tests/`); `npm run typecheck` covers all four
 4. **PostgreSQL 18** is the production database; backup and restore are in `docs/operate/backup.md`
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
 6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and build the image on `main` (`docs/architecture/ci-pipeline.md`)

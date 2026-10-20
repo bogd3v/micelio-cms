@@ -104,6 +104,38 @@ function replyCounts(strapi: Core.Strapi, blocked: string[], documentIds?: strin
   return query;
 }
 
+/**
+ * Fediverse replies to one article that a moderator has approved or has yet to review,
+ * under the same rules as `replyCounts`: not removed or blocked, author not a blocked actor.
+ */
+export async function replyCountsByStatus(
+  strapi: Core.Strapi,
+  documentId: string
+): Promise<{ approved: number; pending: number }> {
+  const comment = model(strapi, COMMENT_UID);
+  const status = comment.column('approvalStatus');
+  const blocked = await blockedActorIds(strapi);
+
+  const query = strapi.db
+    .connection(comment.table)
+    .select(`${status} as status`)
+    .count({ replies: '*' })
+    .where(comment.column('related'), `${RELATED_PREFIX}${documentId}`)
+    .whereIn(status, ['APPROVED', 'PENDING'])
+    .whereNotNull(comment.column('fediverseUri'))
+    .where((q) => q.whereNull(comment.column('removed')).orWhere(comment.column('removed'), false))
+    .where((q) => q.whereNull(comment.column('blocked')).orWhere(comment.column('blocked'), false))
+    .groupBy(status);
+  if (blocked.length > 0) query.whereNotIn(comment.column('authorId'), blocked);
+
+  const counts = { approved: 0, pending: 0 };
+  for (const row of (await query) as { status: string; replies: unknown }[]) {
+    if (row.status === 'APPROVED') counts.approved = toNumber(row.replies);
+    if (row.status === 'PENDING') counts.pending = toNumber(row.replies);
+  }
+  return counts;
+}
+
 /** Published article rows (one per document) in `locale`. */
 function publishedArticles(strapi: Core.Strapi, locale: string): QueryBuilder {
   const article = model(strapi, ARTICLE_UID);

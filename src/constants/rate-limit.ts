@@ -47,7 +47,9 @@ export const ADMIN_AUTH_PATHS = [
  * Admin-panel API prefixes outside `/admin` (plugins' admin routes), exempt
  * like `/admin`: they need an admin session. From the routes registered with
  * type `admin`; add the prefix of any plugin or `routes({ type: 'admin' })` added later.
- * The content API's own `/api/upload` and `/api/comments` are not these.
+ * The content API's own `/api/upload` and `/api/comments` are not these. `/fediverse-panel`
+ * (the article panel's routes) is left out on purpose: it counts in the `api` group, which
+ * limits "Federate now" per client address.
  */
 export const ADMIN_API_PREFIXES = [
   '/content-manager',
