@@ -18,6 +18,7 @@ import { ARTICLE_PATH } from '../constants/paths';
 import { ARTICLE_UID } from '../constants/uids';
 import type { ArticleRecord, MediaRecord } from '../types/articles';
 import type { FederatedActivityType } from '../types/federated-articles';
+import { findFirstPublished } from './federated-articles';
 import { escapeHtml } from '../utils/html';
 import { frontendBaseUrl } from '../utils/frontend-url';
 
@@ -204,6 +205,7 @@ function toRecord(row: ArticleRow): ArticleRecord | null {
     locale: row.locale ?? null,
     publishedAt: row.publishedAt,
     updatedAt: row.updatedAt ?? null,
+    firstPublishedAt: row.publishedAt,
     // The article's own image takes priority; the SEO image is only a fallback.
     image:
       toImage(row.cover, formatCreditHtml(row.coverCredit, row.locale ?? null)) ??
@@ -223,7 +225,23 @@ export async function findPublishedArticle(
     locale,
     populate: ARTICLE_POPULATE,
   })) as ArticleRow | null;
-  return row ? toRecord(row) : null;
+  const record = row ? toRecord(row) : null;
+  return record ? (await withFirstPublished(strapi, [record]))[0] : null;
+}
+
+/** Sets `firstPublishedAt` from what was federated, so the object keeps one `published` for life. */
+async function withFirstPublished(
+  strapi: Core.Strapi,
+  records: ArticleRecord[]
+): Promise<ArticleRecord[]> {
+  const first = await findFirstPublished(
+    strapi,
+    records.map((record) => record.documentId)
+  );
+  return records.map((record) => ({
+    ...record,
+    firstPublishedAt: first.get(record.documentId) ?? record.publishedAt,
+  }));
 }
 
 /** Published default-locale articles, newest first. */
@@ -244,13 +262,31 @@ export async function listPublishedArticles(
     }) as Promise<ArticleRow[]>,
     documents.count({ status: 'published', locale }),
   ]);
-  const items = rows.map(toRecord).filter((record): record is ArticleRecord => record != null);
+  const items = await withFirstPublished(
+    strapi,
+    rows.map(toRecord).filter((record): record is ArticleRecord => record != null)
+  );
   return { items, total };
 }
 
 /** An ISO date as the `Temporal.Instant` Fedify takes for `published` and `updated`. */
 export function toInstant(value: string): Temporal.Instant {
   return Temporal.Instant.from(new Date(value).toISOString());
+}
+
+/**
+ * The `updated` of the object: when the current version went live or was last saved, whichever is
+ * later, and none while that is not after `published`. Strapi keeps the draft's `updatedAt` when
+ * it publishes, so `updatedAt` alone can precede `publishedAt` (#320), which GoToSocial refuses.
+ */
+function updatedOf(record: ArticleRecord): Temporal.Instant | undefined {
+  const latest = Math.max(
+    new Date(record.publishedAt).getTime(),
+    record.updatedAt ? new Date(record.updatedAt).getTime() : -Infinity
+  );
+  return latest > new Date(record.firstPublishedAt).getTime()
+    ? toInstant(new Date(latest).toISOString())
+    : undefined;
 }
 
 /**
@@ -278,8 +314,8 @@ export function buildArticle(
     name: record.title,
     content,
     url,
-    published: toInstant(record.publishedAt),
-    updated: record.updatedAt ? toInstant(record.updatedAt) : undefined,
+    published: toInstant(record.firstPublishedAt),
+    updated: updatedOf(record),
     image: record.image
       ? new Image({
           url: new URL(record.image.url, ctx.origin),
@@ -347,7 +383,7 @@ export function buildArticleActivity(
     id: activityId(ctx, record.documentId, fragment),
     actor: ctx.getActorUri(actorIdentifier),
     object: buildArticle(ctx, actorIdentifier, record),
-    published: toInstant(kind === 'create' ? record.publishedAt : new Date().toISOString()),
+    published: toInstant(kind === 'create' ? record.firstPublishedAt : new Date().toISOString()),
     to: PUBLIC_COLLECTION,
     ccs: [ctx.getFollowersUri(actorIdentifier)],
   };

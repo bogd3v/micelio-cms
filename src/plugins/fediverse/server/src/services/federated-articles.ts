@@ -57,6 +57,31 @@ export async function findFederatedArticle(
   })) as FederatedArticleRow | null;
 }
 
+/**
+ * The `published` of each article's federated object, by documentId: `createSentAt` of its row.
+ * An article with no row, one that was retracted (its next `Create` starts over) or one migrated
+ * from the old store key (no `createSentAt`) is left out.
+ */
+export async function findFirstPublished(
+  strapi: Core.Strapi,
+  articleDocumentIds: string[]
+): Promise<Map<string, string>> {
+  const first = new Map<string, string>();
+  // The model exists only while the plugin is enabled; the article builders are also read without it.
+  if (articleDocumentIds.length === 0 || !strapi.db.metadata.has(FEDERATED_ARTICLE_UID))
+    return first;
+  const rows = (await query(strapi).findMany({
+    where: { articleDocumentId: { $in: articleDocumentIds } },
+    orderBy: { id: 'asc' },
+  })) as FederatedArticleRow[];
+  for (const row of rows) {
+    // Duplicate rows are possible (risk 8): the oldest wins, as everywhere else.
+    if (row.status === 'deleted' || !row.createSentAt || first.has(row.articleDocumentId)) continue;
+    first.set(row.articleDocumentId, new Date(row.createSentAt).toISOString());
+  }
+  return first;
+}
+
 /** The most recent rows whose last activity ended `failed`, newest first. */
 export async function listFailedRows(
   strapi: Core.Strapi,
@@ -105,14 +130,21 @@ export async function isFederated(
  * Written before delivering on purpose: an unpublish that lands mid-delivery,
  * or a delivery that fails for one follower, must still end in a `Delete`.
  * `attempts` restarts at 1 for each new activity. `createSentAt` is set by a
- * `Create` and kept by the others.
+ * `Create` and kept by the others: it is the `published` of the object that `Create`
+ * carried (`firstPublishedAt`, else the time it was queued), which every later
+ * activity and the served object repeat.
+ *
+ * @param firstPublishedAt - For a `Create`, the `published` its object carries.
  */
 export async function recordSend(
   strapi: Core.Strapi,
   articleDocumentId: string,
-  type: FederatedActivityType
+  type: FederatedActivityType,
+  firstPublishedAt?: string
 ): Promise<string> {
   const now = new Date().toISOString();
+  // What the `Create` carried as `published`: later activities repeat it (#321).
+  const createSentAt = firstPublishedAt ?? now;
   const data = {
     status: STATUS_OF[type],
     lastActivityAt: now,
@@ -128,13 +160,13 @@ export async function recordSend(
   if (existing) {
     await query(strapi).update({
       where: { id: existing.id },
-      data: type === 'Create' ? { ...data, createSentAt: now } : data,
+      data: type === 'Create' ? { ...data, createSentAt } : data,
     });
     return now;
   }
 
   const created = (await query(strapi).create({
-    data: { articleDocumentId, createSentAt: type === 'Create' ? now : null, ...data },
+    data: { articleDocumentId, createSentAt: type === 'Create' ? createSentAt : null, ...data },
   })) as FederatedArticleRow;
   const oldest = await settleDuplicates(strapi, articleDocumentId);
   if (oldest.id !== created.id) {
