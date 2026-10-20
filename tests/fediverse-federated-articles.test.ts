@@ -3,6 +3,7 @@ import { createExponentialBackoffPolicy } from '@fedify/fedify';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { createRemoteActor, type RemoteActor } from './helpers/remote-actor';
 import { waitUntil } from './helpers/wait-until';
+import { activityTypeFor } from '../src/plugins/fediverse/server/src/services/federated-articles';
 import type followers from '../src/plugins/fediverse/server/src/services/followers';
 import type federatedArticles from '../src/plugins/fediverse/server/src/services/federated-articles';
 
@@ -21,6 +22,24 @@ interface Row {
   attempts: number;
   lastError: string | null;
 }
+
+describe('activityTypeFor', () => {
+  const row = (status: string, lastActivityType: string | null) =>
+    ({ status, lastActivityType }) as never;
+
+  it('sends a Create unless remote servers can already hold the article', () => {
+    expect(activityTypeFor(null)).toBe('Create');
+    expect(activityTypeFor(row('deleted', 'Delete'))).toBe('Create');
+    expect(activityTypeFor(row('created', 'Create'))).toBe('Update');
+    expect(activityTypeFor(row('updated', 'Update'))).toBe('Update');
+  });
+
+  it('keeps a failed Create a Create, and a failed Update an Update', () => {
+    expect(activityTypeFor(row('failed', 'Create'))).toBe('Create');
+    expect(activityTypeFor(row('failed', 'Update'))).toBe('Update');
+    expect(activityTypeFor(row('failed', 'Delete'))).toBe('Create');
+  });
+});
 
 describe('Fediverse federation (federated article state)', () => {
   let followersService: ReturnType<typeof followers>;

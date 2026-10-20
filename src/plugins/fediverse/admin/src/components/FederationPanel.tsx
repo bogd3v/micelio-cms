@@ -2,7 +2,6 @@ import { Badge, Box, Button, Flex, Typography } from '@strapi/design-system';
 import { useNotification } from '@strapi/strapi/admin';
 import type { PanelComponent } from '@strapi/content-manager/strapi-admin';
 import { useState, type ReactNode } from 'react';
-import { useIntl } from 'react-intl';
 
 import { FederateRefused, useArticleFederation } from '../api';
 import {
@@ -12,7 +11,7 @@ import {
   statusView,
   type ArticleFederation,
 } from '../state';
-import en from '../translations/en.json';
+import { useMessages } from '../messages';
 
 const ARTICLE_UID = 'api::article.article';
 const TITLE_ID = 'fediverse.panel.title';
@@ -22,18 +21,6 @@ const COUNTS = [
   ['repliesApproved', 'fediverse.panel.counts.repliesApproved'],
   ['repliesPending', 'fediverse.panel.counts.repliesPending'],
 ] as const;
-
-type MessageId = keyof typeof en;
-
-/** `formatMessage` with the English text as the default, so the panel reads right before the admin loads a locale. */
-function useMessages() {
-  const { formatMessage, formatDate } = useIntl();
-  return {
-    t: (id: string, values?: Record<string, string | number>) =>
-      formatMessage({ id, defaultMessage: en[id as MessageId] ?? id }, values),
-    date: (iso: string) => formatDate(iso, { dateStyle: 'medium', timeStyle: 'short' }),
-  };
-}
 
 function Counts({ federation }: { federation: ArticleFederation }) {
   const { t } = useMessages();

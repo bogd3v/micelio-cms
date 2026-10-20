@@ -225,6 +225,42 @@ export async function countFollowers(
   return await query(strapi).count({ where: await followersWhere(strapi, blocked) });
 }
 
+/** Most followers the plugin page lists; a remote party can add rows, so the answer is bounded. */
+export const FOLLOWER_ROWS_LIMIT = 500;
+
+/** Followers and blocked actors for the plugin page, newest first, up to `FOLLOWER_ROWS_LIMIT`. */
+export async function listFollowerRows(
+  strapi: Core.Strapi
+): Promise<Array<FollowerRecord & { since: string }>> {
+  const rows = (await query(strapi).findMany({
+    orderBy: { createdAt: 'desc' },
+    limit: FOLLOWER_ROWS_LIMIT,
+  })) as Array<FollowerRow & { createdAt: string }>;
+  return rows.map((row) => ({ ...toRecord(row), since: row.createdAt }));
+}
+
+/**
+ * Blocks or unblocks the remote actor of one follower row, from the plugin page.
+ *
+ * @remarks
+ * Acts on every row of the actor, not on the one row: duplicate rows are possible
+ * (risk 8 in `docs/FEDIVERSE.md`) and an actor with any blocked row counts as blocked, so
+ * unblocking one row of two would leave it blocked. Unblocking keeps the row: the actor is an
+ * active follower again, as if the admin had cleared the flag in the content manager.
+ *
+ * @returns `false` when there is no such row.
+ */
+export async function setActorBlocked(
+  strapi: Core.Strapi,
+  documentId: string,
+  blocked: boolean
+): Promise<boolean> {
+  const row = (await query(strapi).findOne({ where: { documentId } })) as FollowerRow | null;
+  if (row == null) return false;
+  await query(strapi).updateMany({ where: { actorId: row.actorId }, data: { blocked } });
+  return true;
+}
+
 /**
  * Flags the followers delivered at `inbox` as unreachable, so fan-outs skip them.
  *
@@ -263,6 +299,8 @@ export default (): {
   listFollowers: typeof listFollowers;
   countFollowers: typeof countFollowers;
   markUnreachable: typeof markUnreachable;
+  listFollowerRows: typeof listFollowerRows;
+  setActorBlocked: typeof setActorBlocked;
   markReachable: typeof markReachable;
 } => ({
   isActorBlocked,
@@ -271,5 +309,7 @@ export default (): {
   listFollowers,
   countFollowers,
   markUnreachable,
+  listFollowerRows,
+  setActorBlocked,
   markReachable,
 });

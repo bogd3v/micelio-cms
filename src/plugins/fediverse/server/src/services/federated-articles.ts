@@ -57,6 +57,33 @@ export async function findFederatedArticle(
   })) as FederatedArticleRow | null;
 }
 
+/** The most recent rows whose last activity ended `failed`, newest first. */
+export async function listFailedRows(
+  strapi: Core.Strapi,
+  limit: number
+): Promise<FederatedArticleRow[]> {
+  return (await query(strapi).findMany({
+    where: { status: 'failed' },
+    orderBy: { lastActivityAt: 'desc' },
+    limit,
+  })) as FederatedArticleRow[];
+}
+
+/**
+ * The activity to send for an article's current published version, given its row.
+ *
+ * @remarks
+ * A `Create` unless remote servers can already hold the object: an article with no row, or one that
+ * was retracted, is a `Create`. A row that is `failed` says the last activity was given up on, not
+ * that the others worked, so a failed `Create` stays a `Create` (an `Update` of an object a
+ * follower never received is ignored, as Mastodon does) and a failed `Update` an `Update`.
+ */
+export function activityTypeFor(row: FederatedArticleRow | null): 'Create' | 'Update' {
+  if (row == null || row.status === 'deleted') return 'Create';
+  if (row.status === 'failed') return row.lastActivityType === 'Update' ? 'Update' : 'Create';
+  return 'Update';
+}
+
 /** Whether the article has been sent and not retracted, so a re-publish becomes an `Update`. */
 export async function isFederated(
   strapi: Core.Strapi,
@@ -215,14 +242,18 @@ export async function migrateFederatedArticles(strapi: Core.Strapi): Promise<num
 
 export default (): {
   isFederated: typeof isFederated;
+  activityTypeFor: typeof activityTypeFor;
   recordSend: typeof recordSend;
   recordFailure: typeof recordFailure;
+  listFailedRows: typeof listFailedRows;
   recordDeliveryFailure: typeof recordDeliveryFailure;
   migrateFederatedArticles: typeof migrateFederatedArticles;
 } => ({
   isFederated,
+  activityTypeFor,
   recordSend,
   recordFailure,
+  listFailedRows,
   recordDeliveryFailure,
   migrateFederatedArticles,
 });

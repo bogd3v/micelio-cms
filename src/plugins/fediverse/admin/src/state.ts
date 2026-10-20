@@ -133,6 +133,41 @@ export function interpretResponse<T>(status: number, body: string): PanelRespons
 }
 
 /**
+ * Reads the answer of a `POST` through the admin fetch client.
+ *
+ * @remarks
+ * Unlike its `get`, the client's `post` takes no `responseType`: it parses the body itself and
+ * returns only `{ data }`, with no status. With every status accepted, a refusal arrives as the
+ * parsed problem detail, which tells itself apart by its `status` (an error) and `code`. A body
+ * that is not JSON makes the client throw, which the caller treats as a refusal with no code.
+ */
+export function interpretPostResponse<T>(data: unknown): PanelResponse<T> {
+  const body = data as { status?: unknown; code?: unknown; error?: { status?: unknown } } | null;
+  // Strapi's own error envelope (an expired session, a rate limit, an uncaught error) has no `code`.
+  if (
+    body != null &&
+    typeof body === 'object' &&
+    typeof body.error?.status === 'number' &&
+    body.error.status >= 400
+  ) {
+    return { ok: false, status: body.error.status, problem: undefined };
+  }
+  if (
+    body != null &&
+    typeof body === 'object' &&
+    typeof body.status === 'number' &&
+    body.status >= 400
+  ) {
+    return {
+      ok: false,
+      status: body.status,
+      problem: typeof body.code === 'string' ? { code: body.code } : undefined,
+    };
+  }
+  return { ok: true, data: data as T };
+}
+
+/**
  * What a failed request means for the panel. A `404` with no problem `code` comes from Strapi, not
  * from the route: federation is turned off, the route does not exist.
  */
@@ -150,6 +185,8 @@ export function problemMessageId(code: string | undefined): string {
     'article-not-published',
     'locale-not-federated',
     'queue-unavailable',
+    'follower-not-found',
+    'not-failed',
   ];
   return code != null && known.includes(code)
     ? `fediverse.panel.problem.${code}`

@@ -7,7 +7,12 @@ export type FederateBlocker = 'locale-not-federated' | 'article-not-published';
 
 /** The error codes of the admin routes; stable, a client branches on them. */
 export type FederationProblemCode =
-  FederateBlocker | 'article-not-found' | 'forbidden' | 'queue-unavailable';
+  | FederateBlocker
+  | 'article-not-found'
+  | 'forbidden'
+  | 'queue-unavailable'
+  | 'follower-not-found'
+  | 'not-failed';
 
 /** Fediverse interactions with one article; blocked actors do not count. */
 export interface FederationCounts {

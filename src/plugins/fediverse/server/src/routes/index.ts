@@ -18,6 +18,43 @@ export default {
         handler: 'federation.federate',
         config: { policies: ['admin::isAuthenticatedAdmin'] },
       },
+      // The plugin page (permissions `plugin::fediverse.read` and `.manage`, checked in the handlers).
+      {
+        method: 'GET',
+        path: '/diagnostics',
+        handler: 'plugin-page.diagnostics',
+        config: { policies: ['admin::isAuthenticatedAdmin'] },
+      },
+      {
+        method: 'GET',
+        path: '/followers',
+        handler: 'plugin-page.followers',
+        config: { policies: ['admin::isAuthenticatedAdmin'] },
+      },
+      {
+        method: 'POST',
+        path: '/followers/:documentId/block',
+        handler: 'plugin-page.block',
+        config: { policies: ['admin::isAuthenticatedAdmin'] },
+      },
+      {
+        method: 'POST',
+        path: '/followers/:documentId/unblock',
+        handler: 'plugin-page.unblock',
+        config: { policies: ['admin::isAuthenticatedAdmin'] },
+      },
+      {
+        method: 'GET',
+        path: '/failures',
+        handler: 'plugin-page.failures',
+        config: { policies: ['admin::isAuthenticatedAdmin'] },
+      },
+      {
+        method: 'POST',
+        path: '/failures/:documentId/retry',
+        handler: 'plugin-page.retry',
+        config: { policies: ['admin::isAuthenticatedAdmin'] },
+      },
     ],
   },
   'content-api': {

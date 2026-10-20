@@ -5,8 +5,8 @@ import { ARTICLE_UID } from '../constants/uids';
 import { getDefaultLocale } from '../services/articles';
 import { describeFederation, federateBlocker } from '../services/federation-panel';
 import { federateArticle } from '../services/publisher';
-import type { FederateResult, FederationProblemCode } from '../types/federation-panel';
-import { PROBLEM_CONTENT_TYPE, problemBody } from '../utils/problem';
+import type { FederateResult } from '../types/federation-panel';
+import { sendProblem } from '../utils/problem';
 
 interface Context {
   params: Record<string, string>;
@@ -15,26 +15,6 @@ interface Context {
   status: number;
   type: string;
   body: unknown;
-}
-
-const PROBLEM_TITLES: Record<FederationProblemCode, string> = {
-  'article-not-found': 'Article not found',
-  forbidden: 'Not allowed',
-  'article-not-published': 'Article not published',
-  'locale-not-federated': 'Locale not federated',
-  'queue-unavailable': 'Delivery queue unavailable',
-};
-
-function sendProblem(
-  ctx: Context,
-  status: number,
-  code: FederationProblemCode,
-  detail: string
-): void {
-  ctx.status = status;
-  ctx.body = problemBody(status, code, PROBLEM_TITLES[code], detail);
-  // After the body: assigning an object sets the type to plain JSON.
-  ctx.type = PROBLEM_CONTENT_TYPE;
 }
 
 /**

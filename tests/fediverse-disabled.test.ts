@@ -41,6 +41,9 @@ describe('Fediverse federation disabled (FEDIVERSE_ENABLED=false)', () => {
     ['/api/fediverse/articles/ranking'],
     // The article panel's admin routes, which have a prefix of their own.
     ['/fediverse-panel/articles/anything/federation'],
+    ['/fediverse-panel/diagnostics'],
+    ['/fediverse-panel/followers'],
+    ['/fediverse-panel/failures'],
   ])('serves nothing at %s', async (path) => {
     await request(strapi.server.httpServer).get(path).set('Accept', ACTIVITY_JSON).expect(404);
   });

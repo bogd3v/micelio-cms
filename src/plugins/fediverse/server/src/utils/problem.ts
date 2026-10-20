@@ -21,3 +21,33 @@ export function problemBody(
 ): ProblemBody {
   return { type: 'about:blank', title, status, detail, code };
 }
+
+const TITLES: Record<FederationProblemCode, string> = {
+  'article-not-found': 'Article not found',
+  forbidden: 'Not allowed',
+  'article-not-published': 'Article not published',
+  'locale-not-federated': 'Locale not federated',
+  'queue-unavailable': 'Delivery queue unavailable',
+  'follower-not-found': 'Follower not found',
+  'not-failed': 'Nothing to retry',
+};
+
+/** The part of a Koa context that answering a problem detail needs. */
+export interface ProblemContext {
+  status: number;
+  type: string;
+  body: unknown;
+}
+
+/** Answers `ctx` with a problem detail: status, `application/problem+json` and the body. */
+export function sendProblem(
+  ctx: ProblemContext,
+  status: number,
+  code: FederationProblemCode,
+  detail: string
+): void {
+  ctx.status = status;
+  ctx.body = problemBody(status, code, TITLES[code], detail);
+  // After the body: assigning an object sets the type to plain JSON.
+  ctx.type = PROBLEM_CONTENT_TYPE;
+}

@@ -67,6 +67,7 @@ import { configuredEncryptionKey, getActorKeyPairs } from './services/keys';
 import { recordInteraction, removeInteraction } from './services/interactions';
 import { ingestReply, removeReply, updateReply } from './services/replies';
 import { settleDelivery } from './services/delivery-outcomes';
+import { recordInboxRefusal } from './services/inbox-refusals';
 import {
   countFollowers,
   isActorBlocked,
@@ -789,6 +790,16 @@ export function getFederation(strapi: Core.Strapi): Federation<FediverseContextD
   return handleOf(strapi).federation;
 }
 
+/** Fedify's key-value store, also used for small counters of the plugin. */
+export function getFederationKv(strapi: Core.Strapi): FederationBackend['kv'] {
+  return handleOf(strapi).backend.kv;
+}
+
+/** Where Fedify keeps its state and queue: `postgres`, or `memory` (lost on restart). */
+export function getFederationBackendKind(strapi: Core.Strapi): FederationBackend['kind'] {
+  return handleOf(strapi).backend.kind;
+}
+
 /**
  * Starts the worker that delivers queued activities; called by the plugin's
  * `bootstrap()`. Messages left by a previous run, retries included, are
@@ -926,6 +937,7 @@ export function mountFediverseMiddleware(
       ctx.type = 'text/plain';
       ctx.body = refusal.message;
       logInboxSignatureRefused(strapi.log, routedPath(ctx), refusal.reason);
+      void recordInboxRefusal(() => getFederationKv(strapi), strapi.log);
       const now = Date.now();
       if (now - (lastRefusalWarning.get(refusal.reason) ?? -Infinity) >= WARNING_INTERVAL_MS) {
         lastRefusalWarning.set(refusal.reason, now);
@@ -949,6 +961,7 @@ export function mountFediverseMiddleware(
     // response is left as it is.
     if (ctx.status === 401 && isInbox) {
       logInboxSignatureRefused(strapi.log, routedPath(ctx), 'invalid-signature');
+      void recordInboxRefusal(() => getFederationKv(strapi), strapi.log);
     }
   };
 }
