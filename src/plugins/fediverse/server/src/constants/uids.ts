@@ -12,3 +12,5 @@ export const SITE_SETTING_UID = 'api::site-setting.site-setting';
 export const FOLLOWER_UID = 'plugin::fediverse.follower';
 /** The plugin's likes and boosts, one row per type, actor and article. */
 export const INTERACTION_UID = 'plugin::fediverse.interaction';
+/** The plugin's federation state of an article, one row per article. */
+export const FEDERATED_ARTICLE_UID = 'plugin::fediverse.federated-article';

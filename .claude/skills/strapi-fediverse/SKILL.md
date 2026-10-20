@@ -16,17 +16,18 @@ The site is an ActivityPub actor (`@blog@<api domain>`) served by a local Strapi
 
 ## Where things are
 
-| Path (under `src/plugins/fediverse/server/src/`) | Responsibility                                                                                              |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `index.ts`                                       | Plugin entry: mounts the Fedify middleware in `register()`, subscribes the publisher in `bootstrap()`       |
-| `federation.ts`                                  | Fedify `Federation`: actor, keys, followers, outbox, article object, NodeInfo dispatchers + inbox listeners |
-| `services/articles.ts`                           | Loads published default-locale articles, builds `Article`/`Create`/`Update`/`Delete`, frontend URLs         |
-| `services/publisher.ts`                          | `entry.publish/unpublish/delete` → fan-out to followers                                                     |
-| `services/replies.ts`                            | `Create/Update/Delete(Note)` → moderated comments; HTML → plain text                                        |
-| `services/interactions.ts`                       | Likes/boosts, dedupe, counts                                                                                |
-| `services/{followers,keys,actor-profile}.ts`     | Follower rows, persisted actor key pair, actor name/bio/avatar/header/fields from `global`                  |
-| `services/stats.ts`                              | Batch counts and ranking as aggregate SQL (likes, boosts, approved fediverse replies)                       |
-| `controllers/stats.ts`, `routes/`                | `GET /api/fediverse/articles/:documentId/stats`, `/articles/stats`, `/articles/ranking`                     |
+| Path (under `src/plugins/fediverse/server/src/`) | Responsibility                                                                                                       |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`                                       | Plugin entry: mounts the Fedify middleware in `register()`, subscribes the publisher in `bootstrap()`                |
+| `federation.ts`                                  | Fedify `Federation`: actor, keys, followers, outbox, article object, NodeInfo dispatchers + inbox listeners          |
+| `services/articles.ts`                           | Loads published default-locale articles, builds `Article`/`Create`/`Update`/`Delete`, frontend URLs                  |
+| `services/federated-articles.ts`                 | `plugin::fediverse.federated-article` rows: what was last sent per article, failures, migration of the old store key |
+| `services/publisher.ts`                          | `entry.publish/unpublish/delete` → records the row, then fan-out to followers; a throw marks it `failed`             |
+| `services/replies.ts`                            | `Create/Update/Delete(Note)` → moderated comments; HTML → plain text                                                 |
+| `services/interactions.ts`                       | Likes/boosts, dedupe, counts                                                                                         |
+| `services/{followers,keys,actor-profile}.ts`     | Follower rows, persisted actor key pair, actor name/bio/avatar/header/fields from `global`                           |
+| `services/stats.ts`                              | Batch counts and ranking as aggregate SQL (likes, boosts, approved fediverse replies)                                |
+| `controllers/stats.ts`, `routes/`                | `GET /api/fediverse/articles/:documentId/stats`, `/articles/stats`, `/articles/ranking`                              |
 
 Outside the plugin: `src/extensions/comments/strapi-server.ts` (adds `fediverseUri`, `fediverseActorHandle`) and `src/middlewares/hide-unapproved-comments.ts`.
 
@@ -53,7 +54,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 ## How it behaves
 
 - **Follow:** `Follow` → follower row + signed `Accept`. A blocked actor's `Follow` gets no answer. `actorId` has no database index, so followers settle duplicate rows like interactions do; treat an actor as blocked if any of its rows is. `Undo(Follow)`/`Block` remove it unless the actor is blocked (the row is kept, so only an admin lifts a block). A blocked actor's activities are ignored and their interactions stop counting.
-- **Articles:** publishing sends `Create(Article)` (public `to`, followers in `cc`); publishing an already-sent article again is an `Update`; unpublish/delete is a `Delete`. Only the default locale, only published, and only articles with a `slug`. Each fan-out logs how many followers it reached (`no followers yet` means nothing was sent).
+- **Articles:** the `federated-article` row (`status`, `lastActivityAt`, `lastActivityType`, `attempts`, `lastError`) is written before each send and marked `failed` if it throws; an article is federated while its row is not `deleted`. Publishing sends `Create(Article)` (public `to`, followers in `cc`); publishing an already-sent article again is an `Update`; unpublish/delete is a `Delete`. Only the default locale, only published, and only articles with a `slug`. Each fan-out logs how many followers it reached (`no followers yet` means nothing was sent).
 - **Replies:** a `Create(Note)` replying to an article (by ActivityPub id or frontend URL) or to a stored reply becomes a `PENDING` comment. Content is stripped to plain text. Edits go back to `PENDING`; deletes set `removed`. Anything else is ignored.
 - **Moderation:** approve/reject in the admin comments moderation view. The global middleware hides `PENDING`/`REJECTED` comments from `GET /api/comments/*`; never remove it.
 - **Profile:** saving the `global` single type sends `Update(Person)` so followers' servers refresh the cached name, bio, avatar and header.

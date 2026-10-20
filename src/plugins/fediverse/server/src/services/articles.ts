@@ -19,8 +19,6 @@ import type { ArticleRecord, MediaRecord } from '../types/articles';
 import { escapeHtml } from '../utils/html';
 import { frontendBaseUrl } from '../utils/frontend-url';
 
-const FEDERATED_STORE_KEY = 'federatedArticles';
-
 /** `shared.image-credit` of the cover. */
 interface ImageCreditRow {
   kind?: string | null;
@@ -336,35 +334,5 @@ export function buildDeleteActivity(
     object: new Tombstone({ id: objectId }),
     to: PUBLIC_COLLECTION,
     ccs: [ctx.getFollowersUri(actorIdentifier)],
-  });
-}
-
-type FederatedMap = Record<string, string>;
-
-async function readFederated(strapi: Core.Strapi): Promise<FederatedMap> {
-  const store = strapi.store({ type: 'plugin', name: 'fediverse' });
-  return ((await store.get({ key: FEDERATED_STORE_KEY })) as FederatedMap | null) ?? {};
-}
-
-/** Whether a `Create(Article)` was already sent, so a re-publish becomes an `Update`. */
-export async function isFederated(strapi: Core.Strapi, documentId: string): Promise<boolean> {
-  return documentId in (await readFederated(strapi));
-}
-
-/**
- * Records in the plugin store whether the article's `Create` has been sent.
- * Clearing it after a `Delete` makes the next publish a `Create` again.
- */
-export async function setFederated(
-  strapi: Core.Strapi,
-  documentId: string,
-  federated: boolean
-): Promise<void> {
-  const map = await readFederated(strapi);
-  if (federated) map[documentId] = new Date().toISOString();
-  else delete map[documentId];
-  await strapi.store({ type: 'plugin', name: 'fediverse' }).set({
-    key: FEDERATED_STORE_KEY,
-    value: map,
   });
 }

@@ -199,7 +199,7 @@ While enabled, the two required values have no defaults: without them the plugin
 
 ### Enable it on a running site
 
-1. Take a database backup ([Backup](backup.md)). On the first boot with the plugin enabled the CMS creates `fediverse_followers` and `fediverse_interactions` and adds `fediverse_uri` and `fediverse_actor_handle` to the comments table.
+1. Take a database backup ([Backup](backup.md)). On the first boot with the plugin enabled the CMS creates `fediverse_followers`, `fediverse_interactions` and `fediverse_federated_articles` and adds `fediverse_uri` and `fediverse_actor_handle` to the comments table.
 2. Set `FEDIVERSE_ENABLED=true` and the two required values, and restart.
 3. Verify from outside:
    ```bash
