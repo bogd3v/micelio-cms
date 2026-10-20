@@ -102,7 +102,10 @@ describe('Fediverse federation (#305: object shape, Article or Note)', () => {
       expect(body.type).toBe(apType);
       expect(body.id).toBe(`http://${host}/fediverse/articles/${draft.documentId}`);
       expect(body.url).toBe(`https://blog.example.test/blog/${draft.slug}`);
-      expect(body.content).toContain(`<p><strong>${draft.title}</strong></p>`);
+      // The Article's `name` is the title; repeating it in the body made GoToSocial show it twice.
+      if (objectType === 'note')
+        expect(body.content).toContain(`<p><strong>${draft.title}</strong></p>`);
+      else expect(body.content).not.toContain(draft.title);
       expect(body.content).toContain('An excerpt with &lt;markup&gt; &amp; more.');
       expect(body.content).toContain(`https://blog.example.test/blog/${draft.slug}`);
       // GoToSocial reads `name` as a content warning, so a Note has none.
@@ -136,6 +139,13 @@ describe('Fediverse federation (#305: object shape, Article or Note)', () => {
       const { body } = await getJson(`/fediverse/articles/${draft.documentId}`);
 
       expect(body.image).toMatchObject({
+        url: `http://${host}/uploads/cover-${objectType}.png`,
+        mediaType: 'image/png',
+        name: 'A cover',
+      });
+      // GoToSocial ignores `image`: the cover must also be an attachment.
+      expect(body.attachment).toMatchObject({
+        type: 'Image',
         url: `http://${host}/uploads/cover-${objectType}.png`,
         mediaType: 'image/png',
         name: 'A cover',
