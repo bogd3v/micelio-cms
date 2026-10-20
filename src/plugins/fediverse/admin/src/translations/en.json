@@ -58,7 +58,7 @@
   "fediverse.page.fix.webfinger-skipped": "The WebFinger check needs URL: set it first.",
   "fediverse.page.fix.webfinger-unreachable": "The CMS could not reach its own public address. Check DNS, the proxy and the firewall, and that URL is the address remote servers use.",
   "fediverse.page.fix.webfinger-not-found": "The public address answered, but not with the WebFinger document. Make sure /.well-known/* and /fediverse/* reach the CMS and are not intercepted by the frontend or a proxy rule.",
-  "fediverse.page.fix.webfinger-wrong-subject": "The public address answered with a different account. Check FEDIVERSE_ACTOR_USERNAME and that the domain in URL is the CMS's.",
+  "fediverse.page.fix.webfinger-wrong-subject": "The public address answered with a different account. Check the username in the site settings (Fediverse profile) and that the domain in URL is the CMS's.",
   "fediverse.page.followers.title": "Followers",
   "fediverse.page.followers.empty": "Nobody follows the blog yet.",
   "fediverse.page.followers.handle": "Handle",

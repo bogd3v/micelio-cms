@@ -12,33 +12,27 @@
 export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER?.trim() ?? '';
 
 /**
- * The `user` of the public handle `@user@domain` (`preferredUsername`).
+ * The `user` of the public handle `@user@domain`, from the environment.
+ *
+ * @deprecated Use the site settings' `fediverse.username`; this variable is only its fallback
+ * until #307 removes it.
+ *
+ * @remarks
  * Unlike the identifier it can change: WebFinger maps it to the identifier,
  * so the account keeps its URI and followers.
  */
 export const ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME?.trim() ?? '';
 
-/** Usernames WebFinger resolves to the blog: the handle, and the identifier as a former one. */
-export const ACTOR_USERNAMES = [...new Set([ACTOR_USERNAME, ACTOR_IDENTIFIER])].filter(Boolean);
-
 /**
- * Stops the boot when the actor's identity is not configured: both variables
- * are required while the plugin is enabled, and the identifier, once
- * federated, can never change.
+ * Stops the boot when the actor's identifier is not configured: it is
+ * required while the plugin is enabled and, once federated, can never change.
+ * The username is not: without a setting or variable the handle is the
+ * identifier.
  */
-export function assertActorConfigured(
-  identifier: string = ACTOR_IDENTIFIER,
-  username: string = ACTOR_USERNAME
-): void {
-  const missing = [
-    ['FEDIVERSE_ACTOR_IDENTIFIER', identifier],
-    ['FEDIVERSE_ACTOR_USERNAME', username],
-  ]
-    .filter(([, value]) => !value)
-    .map(([name]) => name);
-  if (missing.length > 0) {
+export function assertActorConfigured(identifier: string = ACTOR_IDENTIFIER): void {
+  if (!identifier) {
     throw new Error(
-      `[fediverse] ${missing.join(' and ')} must be set while FEDIVERSE_ENABLED=true`
+      '[fediverse] FEDIVERSE_ACTOR_IDENTIFIER must be set while FEDIVERSE_ENABLED=true'
     );
   }
 }

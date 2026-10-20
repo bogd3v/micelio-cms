@@ -52,12 +52,11 @@ describe('Instance configuration', () => {
   });
 
   describe('fediverse actor', () => {
-    it('requires the identifier and the username, with no defaults', () => {
-      expect(() => assertActorConfigured('', '')).toThrow(
-        'FEDIVERSE_ACTOR_IDENTIFIER and FEDIVERSE_ACTOR_USERNAME must be set'
+    it('requires the identifier, with no default; the username falls back to it (#303)', () => {
+      expect(() => assertActorConfigured('')).toThrow(
+        'FEDIVERSE_ACTOR_IDENTIFIER must be set while FEDIVERSE_ENABLED=true'
       );
-      expect(() => assertActorConfigured('blog', '')).toThrow('FEDIVERSE_ACTOR_USERNAME');
-      expect(() => assertActorConfigured('blog', 'blog')).not.toThrow();
+      expect(() => assertActorConfigured('blog')).not.toThrow();
     });
   });
 

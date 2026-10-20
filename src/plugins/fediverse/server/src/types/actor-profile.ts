@@ -12,12 +12,17 @@ export interface ActorProfileField {
  * on followers' servers.
  */
 export interface ActorProfile {
+  /** The handle's `@user` (`preferredUsername`). */
+  username: string;
   name: string;
-  summary: string;
+  /** Plain text bio; null when no setting, variable or site description gives one. */
+  summary: string | null;
   /** Absolute URL to the actor avatar (global favicon), or null. */
   iconUrl: string | null;
-  /** Absolute URL to the profile header image (global fediverseHeader), or null. */
+  /** Absolute URL to the profile header image (site settings, else global fediverseHeader), or null. */
   headerUrl: string | null;
+  /** Whether the actor opts into Mastodon's public directory. */
+  discoverable: boolean;
   /** Human-facing page for the actor: the frontend home page. */
   url: string;
   fields: ActorProfileField[];

@@ -859,6 +859,32 @@ export interface SiteAuthor extends Struct.ComponentSchema {
   };
 }
 
+export interface SiteFediverse extends Struct.ComponentSchema {
+  collectionName: 'components_site_fediverses';
+  info: {
+    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity";
+    displayName: 'Fediverse profile';
+    icon: 'globe';
+  };
+  attributes: {
+    discoverable: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    displayName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    header: Schema.Attribute.Media<'images'>;
+    sourceUrl: Schema.Attribute.String;
+    summary: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    username: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 30;
+      }>;
+  };
+}
+
 export interface SiteModules extends Struct.ComponentSchema {
   collectionName: 'components_site_modules';
   info: {
@@ -970,6 +996,7 @@ declare module '@strapi/strapi' {
       'shared.tech-item': SharedTechItem;
       'site.accent-override': SiteAccentOverride;
       'site.author': SiteAuthor;
+      'site.fediverse': SiteFediverse;
       'site.modules': SiteModules;
       'site.social-link': SiteSocialLink;
       'site.theme': SiteTheme;
