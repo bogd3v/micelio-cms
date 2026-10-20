@@ -14,6 +14,7 @@ import {
   findPublishedArticle,
   getDefaultLocale,
 } from './articles';
+import { getObjectType } from './object-type';
 import {
   activityTypeFor,
   findFederatedArticle,
@@ -148,15 +149,22 @@ export async function federateArticle(
 
   const type = activityTypeFor(await findFederatedArticle(strapi, documentId));
   const ctx = createContext(strapi);
+  const objectType = await getObjectType(strapi);
   const fanOut = await sendRecorded(
     strapi,
     documentId,
     type,
-    buildArticleActivity(type === 'Create' ? 'create' : 'update', ctx, ACTOR_IDENTIFIER, record),
+    buildArticleActivity(
+      type === 'Create' ? 'create' : 'update',
+      ctx,
+      ACTOR_IDENTIFIER,
+      record,
+      objectType
+    ),
     record.firstPublishedAt
   );
   strapi.log.info(
-    `[fediverse] ${type}(Article) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`
+    `[fediverse] ${type}(${objectType === 'note' ? 'Note' : 'Article'}) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`
   );
   return { status: 'queued', type, slug: record.slug, fanOut };
 }

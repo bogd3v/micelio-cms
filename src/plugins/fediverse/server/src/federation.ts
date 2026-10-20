@@ -25,6 +25,7 @@ import {
   Like,
   Link,
   Note,
+  Object as ApObject,
   Person,
   PropertyValue,
   Undo,
@@ -63,6 +64,7 @@ import {
   listPublishedArticles,
 } from './services/articles';
 import { resolveArticleId } from './services/articles';
+import { getObjectType } from './services/object-type';
 import { getActorProfile, getActorUsernames } from './services/actor-profile';
 import { configuredEncryptionKey, getActorKeyPairs } from './services/keys';
 import { recordInteraction, removeInteraction } from './services/interactions';
@@ -472,11 +474,16 @@ export function createFediverseFederation(
     return served == null ? null : buildNote(ctx, ACTOR_IDENTIFIER, served.comment, served.target);
   });
 
-  federation.setObjectDispatcher(Article, ARTICLE_PATH, async (ctx, values) => {
-    const record = await findPublishedArticle(ctx.data.strapi, values.documentId);
-    if (record == null) return null;
-    return buildArticle(ctx, ACTOR_IDENTIFIER, record);
-  });
+  // Keyed by `Article` for the route and the id; the object is a `Note` when the site chose that.
+  federation.setObjectDispatcher<ApObject, 'documentId'>(
+    Article,
+    ARTICLE_PATH,
+    async (ctx, values) => {
+      const record = await findPublishedArticle(ctx.data.strapi, values.documentId);
+      if (record == null) return null;
+      return buildArticle(ctx, ACTOR_IDENTIFIER, record, await getObjectType(ctx.data.strapi));
+    }
+  );
 
   federation
     .setOutboxDispatcher(OUTBOX_PATH, async (ctx, identifier, cursor) => {
@@ -491,8 +498,11 @@ export function createFediverseFederation(
         limit: OUTBOX_PAGE_SIZE,
       });
       const next = start + OUTBOX_PAGE_SIZE;
+      const objectType = await getObjectType(ctx.data.strapi);
       return {
-        items: items.map((record) => buildArticleActivity('create', ctx, identifier, record)),
+        items: items.map((record) =>
+          buildArticleActivity('create', ctx, identifier, record, objectType)
+        ),
         nextCursor: next < total ? String(next) : null,
       };
     })

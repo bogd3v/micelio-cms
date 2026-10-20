@@ -873,6 +873,8 @@ export interface SiteFediverse extends Struct.ComponentSchema {
         maxLength: 100;
       }>;
     header: Schema.Attribute.Media<'images'>;
+    objectType: Schema.Attribute.Enumeration<['article', 'note']> &
+      Schema.Attribute.DefaultTo<'article'>;
     sourceUrl: Schema.Attribute.String;
     summary: Schema.Attribute.Text &
       Schema.Attribute.SetMinMaxLength<{
