@@ -79,7 +79,13 @@ function setupEnvironment() {
 
 let instance: Core.Strapi | undefined;
 
-async function setupStrapi() {
+/**
+ * Boots Strapi on an empty database.
+ *
+ * @param options.keepDatabase - Boots on the database a previous `cleanupStrapi()` left, to
+ * test a restart. PostgreSQL only: the SQLite file is deleted by `cleanupStrapi()`.
+ */
+async function setupStrapi({ keepDatabase = false }: { keepDatabase?: boolean } = {}) {
   if (instance) {
     return instance;
   }
@@ -87,7 +93,13 @@ async function setupStrapi() {
   setupEnvironment();
 
   // Start from an empty database
-  if (TEST_DATABASE_URL) {
+  if (keepDatabase) {
+    if (!TEST_DATABASE_URL) {
+      throw new Error(
+        'keepDatabase needs TEST_DATABASE_URL: cleanupStrapi() removes the SQLite file'
+      );
+    }
+  } else if (TEST_DATABASE_URL) {
     await resetPostgresDatabase();
   } else if (fs.existsSync(TEST_DB_PATH)) {
     fs.unlinkSync(TEST_DB_PATH);

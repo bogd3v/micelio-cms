@@ -44,6 +44,25 @@ describe('Fedify log forwarding without Strapi', () => {
     );
   });
 
+  it("leaves a refusing inbox's response body out of Fedify's delivery record", () => {
+    const log = configure();
+    getLogger(['fedify', 'federation', 'outbox']).error(
+      'Failed to send activity {activityId} to {inbox} ({status} {statusText}):\n{error}',
+      {
+        activityId: 'https://blog.example.test/fediverse/articles/a1#create',
+        inbox: 'https://remote.example.test/inbox',
+        status: 500,
+        statusText: 'Internal Server Error',
+        error: 'REMOTE-BODY-MUST-NOT-LEAK',
+      }
+    );
+
+    expect(log.lines).toHaveLength(1);
+    expect(log.lines[0].message).toContain('(500 Internal Server Error)');
+    expect(log.lines[0].message).toContain('[response body omitted]');
+    expect(log.lines[0].message).not.toContain('REMOTE-BODY-MUST-NOT-LEAK');
+  });
+
   it('bounds the work per record and caps a 100,000-character value', () => {
     const log = configure();
     const values = [

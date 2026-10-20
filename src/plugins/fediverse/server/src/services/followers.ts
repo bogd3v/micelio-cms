@@ -11,6 +11,7 @@ interface FollowerRow {
   inbox?: string | null;
   avatar?: string | null;
   blocked?: boolean;
+  unreachableSince?: string | null;
 }
 
 function query(strapi: Core.Strapi) {
@@ -28,6 +29,7 @@ function toRecord(row: FollowerRow): FollowerRecord {
     inbox: row.inbox ?? null,
     avatar: row.avatar ?? null,
     blocked: row.blocked ?? false,
+    unreachableSince: row.unreachableSince ?? null,
   };
 }
 
@@ -223,16 +225,51 @@ export async function countFollowers(
   return await query(strapi).count({ where: await followersWhere(strapi, blocked) });
 }
 
+/**
+ * Flags the followers delivered at `inbox` as unreachable, so fan-outs skip them.
+ *
+ * @remarks
+ * Called when the inbox answered a permanent failure (`404` or `410`). A follower
+ * already flagged keeps its original `unreachableSince`.
+ *
+ * @returns How many followers were newly flagged.
+ */
+export async function markUnreachable(strapi: Core.Strapi, inbox: string): Promise<number> {
+  const result = (await query(strapi).updateMany({
+    where: { inbox, unreachableSince: { $null: true } },
+    data: { unreachableSince: new Date().toISOString() },
+  })) as { count: number };
+  return result.count;
+}
+
+/**
+ * Clears the unreachable flag of a remote actor that has just sent us an activity,
+ * which shows its server answers again.
+ *
+ * @returns How many followers were cleared.
+ */
+export async function markReachable(strapi: Core.Strapi, actorId: string): Promise<number> {
+  const result = (await query(strapi).updateMany({
+    where: { actorId, unreachableSince: { $notNull: true } },
+    data: { unreachableSince: null },
+  })) as { count: number };
+  return result.count;
+}
+
 export default (): {
   isActorBlocked: typeof isActorBlocked;
   recordFollower: typeof recordFollower;
   removeFollower: typeof removeFollower;
   listFollowers: typeof listFollowers;
   countFollowers: typeof countFollowers;
+  markUnreachable: typeof markUnreachable;
+  markReachable: typeof markReachable;
 } => ({
   isActorBlocked,
   recordFollower,
   removeFollower,
   listFollowers,
   countFollowers,
+  markUnreachable,
+  markReachable,
 });

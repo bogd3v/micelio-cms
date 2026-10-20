@@ -6,7 +6,7 @@ import interactionSchema from './content-types/interaction/schema.json';
 import stats from './controllers/stats';
 import routes from './routes';
 import { assertActorConfigured } from './constants/actor';
-import { mountFediverseMiddleware } from './federation';
+import { mountFediverseMiddleware, startFederationQueue, stopFederation } from './federation';
 import actorProfile from './services/actor-profile';
 import federatedArticles, { migrateFederatedArticles } from './services/federated-articles';
 import followers from './services/followers';
@@ -44,11 +44,14 @@ const plugin = {
     // A key pair stored before encryption at rest is encrypted now, not at first use.
     await encryptStoredActorKeys(strapi);
     await migrateFederatedArticles(strapi);
+    // After the migrations: a message left by the previous run is delivered from here on.
+    startFederationQueue(strapi);
   },
 
-  destroy({ strapi }: { strapi: Core.Strapi }): void {
+  async destroy({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     unsubscribe();
     unsubscribePublisher();
+    await stopFederation(strapi);
     resetFedifyLogging(strapi.log);
   },
 

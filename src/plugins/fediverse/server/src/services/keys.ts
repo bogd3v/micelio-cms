@@ -75,7 +75,7 @@ async function getStore(strapi: Core.Strapi): Promise<PluginStore> {
 let warnedPlainKey = false;
 
 /** The raw `ENCRYPTION_KEY`, read the way Strapi's own encryption service reads it. */
-function configuredEncryptionKey(strapi: Core.Strapi): string | null {
+export function configuredEncryptionKey(strapi: Core.Strapi): string | null {
   const value: unknown = strapi.config.get('admin.secrets.encryptionKey');
   return typeof value === 'string' && value !== '' ? value : null;
 }

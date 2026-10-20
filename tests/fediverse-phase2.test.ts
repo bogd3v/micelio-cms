@@ -381,7 +381,7 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
       try {
         const first = await createArticle();
         await publish(first.documentId);
-        await waitUntil(() => messages().some((m) => m.includes('delivered to 1 follower')));
+        await waitUntil(() => messages().some((m) => m.includes('queued for 1 follower')));
 
         const row = await strapi.db
           .query('plugin::fediverse.follower')

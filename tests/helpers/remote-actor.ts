@@ -24,6 +24,14 @@ interface RemoteActorOptions {
    * test can send a value `new URL()` would reject (a relative path). Wins over `iconUrl`.
    */
   rawIconUrl?: string;
+  /**
+   * Makes the first `times` POSTs to the inbox answer `status` (with a body, as a
+   * real server's error page would) instead of accepting them; they are counted in
+   * `inboxAttempts` but not recorded as deliveries. `times: Infinity` never accepts.
+   * Fedify "double-knocks" a server that refuses a delivery, sending it again with
+   * the other HTTP signature spec in the same attempt, so a failed attempt costs two POSTs.
+   */
+  inboxFailures?: { status: number; times: number; body?: string };
 }
 
 /** RFC 3230 algorithm names a test may put in the `Digest` header, mapped to `node:crypto` hashes. */
@@ -64,12 +72,15 @@ async function createRemoteActor({
   name,
   iconUrl,
   rawIconUrl,
+  inboxFailures,
 }: RemoteActorOptions = {}) {
   const keyPair = await generateCryptoKeyPair();
   // Parsed JSON bodies, as remote servers would receive them.
   const inboxDeliveries: ActivityJson[] = [];
   // The same deliveries as received, so a test can verify their HTTP signatures.
   const inboxRequests: { headers: Headers; body: string }[] = [];
+  // Every POST to the inbox, accepted or not.
+  let inboxAttempts = 0;
 
   const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/actor') {
@@ -90,6 +101,12 @@ async function createRemoteActor({
       const chunks: Buffer[] = [];
       req.on('data', (chunk) => chunks.push(chunk));
       req.on('end', () => {
+        inboxAttempts += 1;
+        if (inboxFailures && inboxAttempts <= inboxFailures.times) {
+          res.writeHead(inboxFailures.status);
+          res.end(inboxFailures.body ?? '');
+          return;
+        }
         const body = Buffer.concat(chunks).toString('utf8');
         const headers = new Headers();
         for (const [name, value] of Object.entries(req.headers)) {
@@ -165,6 +182,10 @@ async function createRemoteActor({
     keyId,
     inboxDeliveries,
     inboxRequests,
+    /** How many POSTs the inbox has received, including the ones `inboxFailures` refused. */
+    get inboxAttempts() {
+      return inboxAttempts;
+    },
     /** Builds an HTTP-signed POST of `activity` to `url` as this remote actor, without sending it. */
     signActivity,
     /** Builds and HTTP-signs a POST of `activity` to `url` as this remote actor. */

@@ -12,7 +12,7 @@ import {
   getDefaultLocale,
 } from './articles';
 import { isFederated, recordFailure, recordSend } from './federated-articles';
-import { countFollowers } from './followers';
+import { listFollowers } from './followers';
 import type { FederatedActivityType } from '../types/federated-articles';
 
 interface EntryEvent {
@@ -31,28 +31,50 @@ function createContext(strapi: Core.Strapi) {
   return getFederation(strapi).createContext(new URL(origin), { strapi });
 }
 
-/** Sends to every non-blocked follower and returns how many there were (0 = nothing sent). */
-async function sendToFollowers(strapi: Core.Strapi, activity: Activity): Promise<number> {
-  const recipients = await countFollowers(strapi);
-  if (recipients === 0) return 0;
-
-  const ctx = createContext(strapi);
-  await ctx.sendActivity({ identifier: ACTOR_IDENTIFIER }, 'followers', activity, {
-    preferSharedInbox: true,
-  });
-  return recipients;
+/** How many followers an activity was queued for, and how many were left out as unreachable. */
+interface FanOut {
+  queued: number;
+  skipped: number;
 }
 
 /**
- * Records the activity on the article's row, sends it and, when sending throws,
- * marks the row failed with the reason before rethrowing for the caller to log.
+ * Queues the activity for every active follower not flagged unreachable.
+ *
+ * @remarks
+ * Returns once the activity is enqueued; Fedify's queue delivers and retries it
+ * in the background. A follower is unreachable after its inbox answered `404`
+ * or `410`, until it sends us an activity again (`markReachable`).
+ */
+async function sendToFollowers(strapi: Core.Strapi, activity: Activity): Promise<FanOut> {
+  const followers = await listFollowers(strapi);
+  const reachable = followers.filter((follower) => follower.unreachableSince == null);
+  const skipped = followers.length - reachable.length;
+  if (reachable.length === 0) return { queued: 0, skipped };
+
+  const ctx = createContext(strapi);
+  await ctx.sendActivity(
+    { identifier: ACTOR_IDENTIFIER },
+    reachable.map((follower) => ({
+      id: new URL(follower.actorId),
+      inboxId: follower.inbox ? new URL(follower.inbox) : null,
+    })),
+    activity,
+    { preferSharedInbox: true }
+  );
+  return { queued: reachable.length, skipped };
+}
+
+/**
+ * Records the activity on the article's row, queues it and, when enqueueing
+ * throws, marks the row failed with the reason before rethrowing for the caller
+ * to log. A delivery that fails later is recorded by `settleDelivery`.
  */
 async function sendRecorded(
   strapi: Core.Strapi,
   documentId: string,
   type: FederatedActivityType,
   activity: Activity
-): Promise<number> {
+): Promise<FanOut> {
   const activityAt = await recordSend(strapi, documentId, type);
   try {
     return await sendToFollowers(strapi, activity);
@@ -62,10 +84,12 @@ async function sendRecorded(
   }
 }
 
-function describeDelivery(recipients: number): string {
-  return recipients === 0
-    ? 'no followers yet, nothing delivered'
-    : `delivered to ${recipients} follower${recipients === 1 ? '' : 's'}`;
+function describeFanOut({ queued, skipped }: FanOut): string {
+  const left = skipped > 0 ? ` (${skipped} unreachable skipped)` : '';
+  if (queued > 0) return `queued for ${queued} follower${queued === 1 ? '' : 's'}${left}`;
+  return skipped > 0
+    ? `no reachable followers, nothing queued${left}`
+    : 'no followers yet, nothing queued';
 }
 
 async function isDefaultLocale(strapi: Core.Strapi, event: EntryEvent): Promise<boolean> {
@@ -88,14 +112,14 @@ async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   // Publishing again is how edits go live in Strapi 5, so a known article is an Update.
   const federated = await isFederated(strapi, documentId);
   const ctx = createContext(strapi);
-  const recipients = await sendRecorded(
+  const fanOut = await sendRecorded(
     strapi,
     documentId,
     federated ? 'Update' : 'Create',
     buildArticleActivity(federated ? 'update' : 'create', ctx, ACTOR_IDENTIFIER, record)
   );
   strapi.log.info(
-    `[fediverse] ${federated ? 'Update' : 'Create'}(Article) for ${documentId} (${record.slug}): ${describeDelivery(recipients)}`
+    `[fediverse] ${federated ? 'Update' : 'Create'}(Article) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`
   );
 }
 
@@ -108,13 +132,13 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   if ((await findPublishedArticle(strapi, documentId)) != null) return;
 
   const ctx = createContext(strapi);
-  const recipients = await sendRecorded(
+  const fanOut = await sendRecorded(
     strapi,
     documentId,
     'Delete',
     buildDeleteActivity(ctx, ACTOR_IDENTIFIER, documentId)
   );
-  strapi.log.info(`[fediverse] Delete(Article) for ${documentId}: ${describeDelivery(recipients)}`);
+  strapi.log.info(`[fediverse] Delete(Article) for ${documentId}: ${describeFanOut(fanOut)}`);
 }
 
 /**
@@ -125,7 +149,7 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
 async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
   const ctx = createContext(strapi);
   const actor = await buildActor(ctx, ACTOR_IDENTIFIER);
-  const recipients = await sendToFollowers(
+  const fanOut = await sendToFollowers(
     strapi,
     new Update({
       id: new URL(`#profile-update/${Date.now()}`, actor.id!),
@@ -135,7 +159,7 @@ async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
       cc: ctx.getFollowersUri(ACTOR_IDENTIFIER),
     })
   );
-  strapi.log.info(`[fediverse] Update(Person) for the profile: ${describeDelivery(recipients)}`);
+  strapi.log.info(`[fediverse] Update(Person) for the profile: ${describeFanOut(fanOut)}`);
 }
 
 /**

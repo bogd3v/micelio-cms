@@ -14,8 +14,10 @@ import {
 } from '@fedify/fedify/vocab';
 
 import { CREDIT_KINDS, LICENSES } from '../constants/licenses';
+import { ARTICLE_PATH } from '../constants/paths';
 import { ARTICLE_UID } from '../constants/uids';
 import type { ArticleRecord, MediaRecord } from '../types/articles';
+import type { FederatedActivityType } from '../types/federated-articles';
 import { escapeHtml } from '../utils/html';
 import { frontendBaseUrl } from '../utils/frontend-url';
 
@@ -287,6 +289,40 @@ export function buildArticle(
     to: PUBLIC_COLLECTION,
     ccs: [ctx.getFollowersUri(actorIdentifier)],
   });
+}
+
+/** The article and the kind of activity an activity id built by this module stands for. */
+export interface ArticleActivityRef {
+  documentId: string;
+  type: FederatedActivityType;
+}
+
+const ARTICLE_PATH_PREFIX = ARTICLE_PATH.slice(0, ARTICLE_PATH.indexOf('{'));
+const ACTIVITY_TYPE_OF_FRAGMENT: Array<[RegExp, FederatedActivityType]> = [
+  [/^create$/, 'Create'],
+  [/^update-\d+$/, 'Update'],
+  [/^delete$/, 'Delete'],
+];
+
+/**
+ * Reads back what `buildArticleActivity` and `buildDeleteActivity` put into an
+ * activity id: the article's `documentId` and the activity type.
+ *
+ * @returns `null` for any other id, such as the profile `Update(Person)` or an `Accept`.
+ */
+export function parseArticleActivityId(id: string | undefined): ArticleActivityRef | null {
+  if (id == null) return null;
+  let url: URL;
+  try {
+    url = new URL(id);
+  } catch {
+    return null;
+  }
+  if (!url.pathname.startsWith(ARTICLE_PATH_PREFIX)) return null;
+  const documentId = url.pathname.slice(ARTICLE_PATH_PREFIX.length);
+  const fragment = url.hash.slice(1);
+  const type = ACTIVITY_TYPE_OF_FRAGMENT.find(([pattern]) => pattern.test(fragment))?.[1];
+  return documentId && !documentId.includes('/') && type ? { documentId, type } : null;
 }
 
 function activityId(ctx: Context<unknown>, documentId: string, fragment: string): URL {
