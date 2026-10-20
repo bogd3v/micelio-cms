@@ -835,6 +835,32 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       }
     });
 
+    it('sends no Update(Person) when the saved settings leave the actor as it was', async () => {
+      const remote = await createRemoteActor({ preferredUsername: 'quiet-reader' });
+      try {
+        await followersService.recordFollower(strapi, {
+          actorId: remote.actorUrl,
+          inbox: remote.inboxUrl,
+        });
+        await writeFediverseProfile({ displayName: 'Steady name' });
+        await waitUntil(() => remote.inboxDeliveries.find((a) => a.object?.name === 'Steady name'));
+        const sent = remote.inboxDeliveries.length;
+
+        // Same profile again, and a setting the actor does not show.
+        await writeFediverseProfile({ displayName: 'Steady name' });
+        const site = await strapi.documents(SITE_SETTING_UID).findFirst();
+        await strapi.documents(SITE_SETTING_UID).update({
+          documentId: site!.documentId,
+          data: { tagline: 'Not on the actor' } as never,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        expect(remote.inboxDeliveries).toHaveLength(sent);
+      } finally {
+        await remote.close();
+      }
+    });
+
     it('sends Update(Person) to followers when the component is saved', async () => {
       const remote = await createRemoteActor({ preferredUsername: 'settings-reader' });
       try {
