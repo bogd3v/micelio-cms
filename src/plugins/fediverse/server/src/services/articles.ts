@@ -7,6 +7,7 @@ import {
   Create,
   Delete,
   Image,
+  Note,
   PUBLIC_COLLECTION,
   Tombstone,
   Update,
@@ -16,7 +17,7 @@ import {
 import { CREDIT_KINDS, LICENSES } from '../constants/licenses';
 import { ARTICLE_PATH } from '../constants/paths';
 import { ARTICLE_UID } from '../constants/uids';
-import type { ArticleRecord, MediaRecord } from '../types/articles';
+import type { ArticleRecord, FederatedObjectType, MediaRecord } from '../types/articles';
 import type { FederatedActivityType } from '../types/federated-articles';
 import { findFirstPublished } from './federated-articles';
 import { escapeHtml } from '../utils/html';
@@ -289,17 +290,8 @@ function updatedOf(record: ArticleRecord): Temporal.Instant | undefined {
     : undefined;
 }
 
-/**
- * Builds the federated `Article`. The body is self-contained (title, excerpt,
- * link) so it reads well on servers that ignore `name`/`image`, and the link
- * lets Mastodon render a preview card. `summary` is deliberately unused:
- * Mastodon shows it as a content warning.
- */
-export function buildArticle(
-  ctx: Context<unknown>,
-  actorIdentifier: string,
-  record: ArticleRecord
-): Article {
+/** What both shapes share: the id, the addressing, the dates, the preview image and the body. */
+function objectOptions(ctx: Context<unknown>, actorIdentifier: string, record: ArticleRecord) {
   const url = getFrontendArticleUrl(record.slug, record.locale);
   const content = [
     `<p><strong>${escapeHtml(record.title)}</strong></p>`,
@@ -308,10 +300,11 @@ export function buildArticle(
     record.image?.creditHtml ? `<p><small>${record.image.creditHtml}</small></p>` : '',
   ].join('');
 
-  return new Article({
+  return {
+    // The id is the `Article` route whatever the type: remote servers keep it, so switching the
+    // type never orphans an object already sent.
     id: ctx.getObjectUri(Article, { documentId: record.documentId }),
     attribution: ctx.getActorUri(actorIdentifier),
-    name: record.title,
     content,
     url,
     published: toInstant(record.firstPublishedAt),
@@ -325,7 +318,39 @@ export function buildArticle(
       : undefined,
     to: PUBLIC_COLLECTION,
     ccs: [ctx.getFollowersUri(actorIdentifier)],
-  });
+  };
+}
+
+/**
+ * The `Article` shape. The body is self-contained (title, excerpt, link) so it reads well on
+ * servers that ignore `name`/`image`, and the link lets Mastodon render a preview card. `summary`
+ * is deliberately unused: Mastodon shows it as a content warning, and GoToSocial does so with `name`.
+ */
+function buildArticleShape(options: ReturnType<typeof objectOptions>, title: string): Article {
+  return new Article({ ...options, name: title });
+}
+
+/**
+ * The `Note` shape, the one Ghost and WriteFreely send: the same body as the `Article` with no
+ * `name`, so a server that reads `name` as a content warning shows the post as a regular one.
+ */
+function buildNoteShape(options: ReturnType<typeof objectOptions>): Note {
+  return new Note(options);
+}
+
+/**
+ * Builds the federated object of an article in the shape the site chose (`objectType` of the site
+ * settings). Its `id` and `url` are the same for both, so switching shapes keeps every object
+ * already sent dereferenceable.
+ */
+export function buildArticle(
+  ctx: Context<unknown>,
+  actorIdentifier: string,
+  record: ArticleRecord,
+  objectType: FederatedObjectType
+): Article | Note {
+  const options = objectOptions(ctx, actorIdentifier, record);
+  return objectType === 'note' ? buildNoteShape(options) : buildArticleShape(options, record.title);
 }
 
 /** The article and the kind of activity an activity id built by this module stands for. */
@@ -376,13 +401,14 @@ export function buildArticleActivity(
   kind: 'create' | 'update',
   ctx: Context<unknown>,
   actorIdentifier: string,
-  record: ArticleRecord
+  record: ArticleRecord,
+  objectType: FederatedObjectType
 ): Activity {
   const fragment = kind === 'create' ? 'create' : `update-${Date.now()}`;
   const options = {
     id: activityId(ctx, record.documentId, fragment),
     actor: ctx.getActorUri(actorIdentifier),
-    object: buildArticle(ctx, actorIdentifier, record),
+    object: buildArticle(ctx, actorIdentifier, record, objectType),
     published: toInstant(kind === 'create' ? record.firstPublishedAt : new Date().toISOString()),
     to: PUBLIC_COLLECTION,
     ccs: [ctx.getFollowersUri(actorIdentifier)],

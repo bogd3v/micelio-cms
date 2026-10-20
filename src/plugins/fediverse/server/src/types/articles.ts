@@ -27,3 +27,6 @@ export interface ArticleRecord {
   firstPublishedAt: string;
   image: MediaRecord | null;
 }
+
+/** The ActivityPub type an article is sent as: `Article` or `Note` (site settings `fediverse.objectType`). */
+export type FederatedObjectType = 'article' | 'note';

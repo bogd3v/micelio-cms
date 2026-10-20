@@ -29,6 +29,11 @@
       "type": "boolean",
       "default": true
     },
+    "objectType": {
+      "type": "enumeration",
+      "enum": ["article", "note"],
+      "default": "article"
+    },
     "sourceUrl": {
       "type": "string",
       "regex": "^https?://\\S+$"

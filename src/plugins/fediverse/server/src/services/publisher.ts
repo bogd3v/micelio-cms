@@ -14,6 +14,7 @@ import {
   findPublishedArticle,
   getDefaultLocale,
 } from './articles';
+import { getObjectType } from './object-type';
 import {
   activityTypeFor,
   findFederatedArticle,
@@ -152,7 +153,13 @@ export async function federateArticle(
     strapi,
     documentId,
     type,
-    buildArticleActivity(type === 'Create' ? 'create' : 'update', ctx, ACTOR_IDENTIFIER, record),
+    buildArticleActivity(
+      type === 'Create' ? 'create' : 'update',
+      ctx,
+      ACTOR_IDENTIFIER,
+      record,
+      await getObjectType(strapi)
+    ),
     record.firstPublishedAt
   );
   strapi.log.info(
