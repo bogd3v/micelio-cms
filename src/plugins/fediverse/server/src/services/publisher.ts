@@ -10,10 +10,10 @@ import {
   buildDeleteActivity,
   findPublishedArticle,
   getDefaultLocale,
-  isFederated,
-  setFederated,
 } from './articles';
+import { isFederated, recordFailure, recordSend } from './federated-articles';
 import { countFollowers } from './followers';
+import type { FederatedActivityType } from '../types/federated-articles';
 
 interface EntryEvent {
   uid?: string;
@@ -43,6 +43,25 @@ async function sendToFollowers(strapi: Core.Strapi, activity: Activity): Promise
   return recipients;
 }
 
+/**
+ * Records the activity on the article's row, sends it and, when sending throws,
+ * marks the row failed with the reason before rethrowing for the caller to log.
+ */
+async function sendRecorded(
+  strapi: Core.Strapi,
+  documentId: string,
+  type: FederatedActivityType,
+  activity: Activity
+): Promise<number> {
+  const activityAt = await recordSend(strapi, documentId, type);
+  try {
+    return await sendToFollowers(strapi, activity);
+  } catch (error) {
+    await recordFailure(strapi, documentId, activityAt, error);
+    throw error;
+  }
+}
+
 function describeDelivery(recipients: number): string {
   return recipients === 0
     ? 'no followers yet, nothing delivered'
@@ -68,12 +87,11 @@ async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
 
   // Publishing again is how edits go live in Strapi 5, so a known article is an Update.
   const federated = await isFederated(strapi, documentId);
-  // Marked before delivering: an unpublish that lands mid-delivery, or a
-  // delivery that fails for one follower, must still end in a Delete.
-  if (!federated) await setFederated(strapi, documentId, true);
   const ctx = createContext(strapi);
-  const recipients = await sendToFollowers(
+  const recipients = await sendRecorded(
     strapi,
+    documentId,
+    federated ? 'Update' : 'Create',
     buildArticleActivity(federated ? 'update' : 'create', ctx, ACTOR_IDENTIFIER, record)
   );
   strapi.log.info(
@@ -90,11 +108,12 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   if ((await findPublishedArticle(strapi, documentId)) != null) return;
 
   const ctx = createContext(strapi);
-  const recipients = await sendToFollowers(
+  const recipients = await sendRecorded(
     strapi,
+    documentId,
+    'Delete',
     buildDeleteActivity(ctx, ACTOR_IDENTIFIER, documentId)
   );
-  await setFederated(strapi, documentId, false);
   strapi.log.info(`[fediverse] Delete(Article) for ${documentId}: ${describeDelivery(recipients)}`);
 }
 

@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
+import federatedArticleSchema from './content-types/federated-article/schema.json';
 import followerSchema from './content-types/follower/schema.json';
 import interactionSchema from './content-types/interaction/schema.json';
 import stats from './controllers/stats';
@@ -7,6 +8,7 @@ import routes from './routes';
 import { assertActorConfigured } from './constants/actor';
 import { mountFediverseMiddleware } from './federation';
 import actorProfile from './services/actor-profile';
+import federatedArticles, { migrateFederatedArticles } from './services/federated-articles';
 import followers from './services/followers';
 import interactions from './services/interactions';
 import keys, { encryptStoredActorKeys } from './services/keys';
@@ -41,6 +43,7 @@ const plugin = {
     subscribePublisher(strapi);
     // A key pair stored before encryption at rest is encrypted now, not at first use.
     await encryptStoredActorKeys(strapi);
+    await migrateFederatedArticles(strapi);
   },
 
   destroy({ strapi }: { strapi: Core.Strapi }): void {
@@ -50,6 +53,9 @@ const plugin = {
   },
 
   contentTypes: {
+    'federated-article': {
+      schema: federatedArticleSchema,
+    },
     follower: {
       schema: followerSchema,
     },
@@ -70,6 +76,7 @@ const plugin = {
   routes,
 
   services: {
+    'federated-articles': federatedArticles,
     interactions,
     lifecycle,
     keys,

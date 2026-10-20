@@ -26,6 +26,9 @@ describe('Fediverse federation disabled (FEDIVERSE_ENABLED=false)', () => {
     // Not in the generated types, which describe the app with the plugin off.
     expect(strapi.contentType('plugin::fediverse.follower' as UID.ContentType)).toBeUndefined();
     expect(strapi.contentType('plugin::fediverse.interaction' as UID.ContentType)).toBeUndefined();
+    expect(
+      strapi.contentType('plugin::fediverse.federated-article' as UID.ContentType)
+    ).toBeUndefined();
   });
 
   it.each([
