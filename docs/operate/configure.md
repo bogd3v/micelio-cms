@@ -182,6 +182,7 @@ The plugin is **off by default**. The full behaviour is in `docs/FEDIVERSE.md`.
 ```env
 FEDIVERSE_ENABLED=true                  # master switch; off = no fediverse routes, content types or publish hooks
 FEDIVERSE_ACTOR_IDENTIFIER=blog         # required: path of the actor URI; never change it, remote follows are keyed by it
+FEDIVERSE_HANDLE_HOST=example.com       # optional: host of the handle, when it is not the CMS host (see below)
 FRONTEND_ARTICLE_PATH=/blog/{slug}      # optional: article path template
 FRONTEND_DEFAULT_LOCALE=en              # optional: locale the frontend serves without a URL prefix
 ```
@@ -191,6 +192,45 @@ While enabled, `FEDIVERSE_ACTOR_IDENTIFIER` has no default: without it the plugi
 **The profile is edited in the admin panel**, not in the environment: Content Manager → Site settings → **Fediverse profile** has the username (the handle's `@user`, lowercase letters, digits and `_`; changing it keeps the former handle and the followers, because the identifier stays), the display name, a summary of up to 500 characters (plain text), a header image (1500×500 recommended; the size is not checked), whether the account is discoverable (on by default) and the source URL shown in the "Código" field. **Object type** chooses what articles are sent as: `Article` (the default, shown by Mastodon as a title and a link card) or `Note` (a regular post with the title, excerpt and link, the shape Ghost and WriteFreely use, which GoToSocial shows without hiding it behind the title). Switching sends nothing and keeps every link and id: posts already sent keep their type until their next edit. Saving it sends an `Update(Person)` to the followers' servers. An empty field uses what the site had before: the deprecated variables below, then the site name. With none of them the handle is the identifier and there is no bio.
 
 Deprecated, still read as fallbacks (a later `0.y` removes them): `FEDIVERSE_ACTOR_USERNAME` → Username, `FEDIVERSE_ACTOR_NAME` → Display name, `FEDIVERSE_ACTOR_SUMMARY` → Summary, `FEDIVERSE_ACTOR_SOURCE_URL` → Source URL. Each one that is set logs one warning at boot that names the setting. Move the value into the site settings, then delete the variable. The `fediverseHeader` of Global is deprecated the same way (use the header of the Fediverse profile).
+
+### A handle on the site's domain (`FEDIVERSE_HANDLE_HOST`)
+
+By default the handle is `@blog@cms.example.com`, the host of `URL`, because the actor lives on the CMS. To show `@blog@example.com` instead, set `FEDIVERSE_HANDLE_HOST=example.com` and make the site domain forward WebFinger to the CMS. Every id stays on the CMS origin (the actor, its inbox, outbox and key ids do not change), so no follower is lost.
+
+1. Set `URL` to the CMS's public origin. It is required with this variable: the boot stops with a message naming the variable if `URL` is missing, or if the value is not a bare host such as `example.com`.
+2. Forward `/.well-known/webfinger` on the site domain to the CMS. The frontend route that does it comes later; until then a proxy rule does:
+
+   ```caddyfile
+   example.com {
+       handle /.well-known/webfinger {
+           reverse_proxy https://cms.example.com {
+               header_up Host {upstream_hostport}
+           }
+       }
+       # the rest of the site as before
+   }
+   ```
+
+   ```yaml
+   # Traefik, dynamic configuration: a router on the site domain, with a higher priority than the site's
+   http:
+     routers:
+       webfinger:
+         rule: 'Host(`example.com`) && Path(`/.well-known/webfinger`)'
+         priority: 100
+         service: cms
+         tls: {}
+     services:
+       cms:
+         loadBalancer:
+           passHostHeader: false
+           servers:
+             - url: 'https://cms.example.com'
+   ```
+
+3. Check it from outside: `npx @fedify/cli lookup @blog@example.com`.
+
+Once set, **only the handle host resolves**: `@blog@cms.example.com` stops answering WebFinger, so searching for it finds nothing. Servers that already follow the site keep doing so, because they key the follow by the actor id. Details and the reason: `docs/FEDIVERSE.md`, "Changing the handle without losing followers".
 
 `URL` must be the CMS's real public origin, because activities sent in the background build their ids from it. Requirements that are easy to miss:
 

@@ -3,6 +3,7 @@ import type { Core } from '@strapi/strapi';
 import { getFederationBackendKind, getFederationKv } from '../federation';
 import type { Diagnostic, DiagnosticFailure } from '../types/plugin-page';
 import { ActorKeyDecryptionError } from '../utils/key-encryption';
+import { webFingerSubject } from '../utils/handle-host';
 import { publicOrigin } from '../utils/public-origin';
 import { countFollowers } from './followers';
 import { getActorUsername } from './actor-profile';
@@ -64,7 +65,7 @@ async function checkWebFinger(
   origin: string | undefined
 ): Promise<Diagnostic> {
   if (origin == null) return failed('webfinger', 'webfinger-skipped');
-  const subject = `acct:${await getActorUsername(strapi)}@${new URL(origin).host}`;
+  const subject = webFingerSubject(await getActorUsername(strapi), origin);
   let response: Response;
   try {
     response = await fetch(

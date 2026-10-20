@@ -25,6 +25,7 @@ import {
 import { configureFedifyLogging, resetFedifyLogging } from './utils/fedify-logging';
 import { warnDeprecatedActorVariables } from './utils/deprecated-variables';
 import { frontendBaseUrl } from './utils/frontend-url';
+import { handleHost } from './utils/handle-host';
 
 const plugin = {
   register({ strapi }: { strapi: Core.Strapi }): void {
@@ -32,6 +33,8 @@ const plugin = {
     // under a made-up account or link to another site: refuse to start.
     assertActorConfigured();
     frontendBaseUrl();
+    // A handle host that is malformed or has no `URL` to keep the ids on stops the boot too.
+    handleHost();
 
     // Mounted in register() on purpose: plugin register() runs before
     // server.initMiddlewares() (which mounts `strapi::body`), and the router
