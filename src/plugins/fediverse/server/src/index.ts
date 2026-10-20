@@ -16,6 +16,7 @@ import followers from './services/followers';
 import interactions from './services/interactions';
 import keys, { encryptStoredActorKeys } from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
+import { subscribeReplies, unsubscribeReplies } from './services/reply-publisher';
 import statsService from './services/stats';
 import {
   subscribe as subscribePublisher,
@@ -44,6 +45,7 @@ const plugin = {
   async bootstrap({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     subscribe(strapi);
     subscribePublisher(strapi);
+    subscribeReplies(strapi);
     // A key pair stored before encryption at rest is encrypted now, not at first use.
     await encryptStoredActorKeys(strapi);
     await migrateFederatedArticles(strapi);
@@ -55,6 +57,7 @@ const plugin = {
   async destroy({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     unsubscribe();
     unsubscribePublisher();
+    unsubscribeReplies();
     await stopFederation(strapi);
     resetFedifyLogging(strapi.log);
   },

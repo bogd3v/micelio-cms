@@ -48,6 +48,7 @@ import {
   FOLLOWERS_PATH,
   INBOX_PATH,
   NODEINFO_PATH,
+  NOTE_PATH,
   OUTBOX_PATH,
   SHARED_INBOX_PATH,
 } from './constants/paths';
@@ -68,6 +69,7 @@ import { recordInteraction, removeInteraction } from './services/interactions';
 import { ingestReply, removeReply, updateReply } from './services/replies';
 import { settleDelivery } from './services/delivery-outcomes';
 import { recordInboxRefusal } from './services/inbox-refusals';
+import { buildNote, findServedReply } from './services/reply-notes';
 import {
   countFollowers,
   isActorBlocked,
@@ -456,6 +458,12 @@ export function createFediverseFederation(
       if (identifier !== ACTOR_IDENTIFIER) return null;
       return await countFollowers(ctx.data.strapi);
     });
+
+  // A moderator's reply: served only while it is shown (a removed one is a 404, as its Tombstone says).
+  federation.setObjectDispatcher(Note, NOTE_PATH, async (ctx, values) => {
+    const served = await findServedReply(ctx.data.strapi, values.documentId);
+    return served == null ? null : buildNote(ctx, ACTOR_IDENTIFIER, served.comment, served.target);
+  });
 
   federation.setObjectDispatcher(Article, ARTICLE_PATH, async (ctx, values) => {
     const record = await findPublishedArticle(ctx.data.strapi, values.documentId);

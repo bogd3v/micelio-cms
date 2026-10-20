@@ -34,6 +34,8 @@ The other keys currently in the file (`approvalScores`, `moderation`, `nested`, 
 - Extra fields added by `src/extensions/comments/strapi-server.ts`: `fediverseUri` (remote Note id, used to dedupe) and `fediverseActorHandle` (`@user@host`). Fediverse replies are created with `strapi.documents('plugin::comments.comment')` by `src/plugins/fediverse/server/src/services/replies.ts`; see `docs/FEDIVERSE.md` (Phase 3).
 - Extend the schema in `strapi-server.ts`, not with an extension `schema.json`: Strapi merges schema files shallowly, so a `schema.json` with `attributes` replaces every attribute of the plugin.
 
+- A reply an admin writes to a fediverse comment is sent to the remote thread by the fediverse plugin (a lifecycle hook on this model, `services/reply-publisher.ts`); the note id goes in `fediverseNoteUri` (`<origin>/fediverse/notes/<documentId>`), a non-public attribute: the public `fediverseUri` and `fediverseActorHandle` stay `null`, because the frontend marks a comment as remote by either. Only an admin who may moderate comments federates (the plugin's admin routes check no permission). See `docs/FEDIVERSE.md`, flow 5.
+
 ## Public permissions
 
 The comments plugin has its own actions, separate from the content-type permissions the seed script sets. Enable them for the public role under **Settings → Users & Permissions → Public → Comments**, or programmatically:

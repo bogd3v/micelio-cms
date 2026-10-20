@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
+import type { Context } from '@fedify/fedify';
 import { PUBLIC_COLLECTION, Update, type Activity } from '@fedify/fedify/vocab';
 
 import { ACTOR_IDENTIFIER } from '../constants/actor';
@@ -20,6 +21,7 @@ import {
 } from './federated-articles';
 import { listFollowers } from './followers';
 import type { FederatedActivityType } from '../types/federated-articles';
+import type { FediverseContextData } from '../types/federation';
 
 interface EntryEvent {
   uid?: string;
@@ -32,9 +34,17 @@ let unsubscribers: Array<() => void> = [];
  * Fedify context for work that isn't tied to an HTTP request. Its origin comes
  * from Strapi's public `URL`, so ids match the ones served over HTTP.
  */
-function createContext(strapi: Core.Strapi) {
+export function createContext(strapi: Core.Strapi): Context<FediverseContextData> {
   const origin = strapi.config.get('server.url') as string;
   return getFederation(strapi).createContext(new URL(origin), { strapi });
+}
+
+/** An actor outside the followers an activity is also delivered to: its id and its inbox. */
+export interface ExtraRecipient {
+  id: URL | null;
+  inboxId: URL | null;
+  /** The actor's endpoints, so a shared inbox can be used. */
+  endpoints?: { sharedInbox: URL | null } | null;
 }
 
 /** How many followers an activity was queued for, and how many were left out as unreachable. */
@@ -51,19 +61,26 @@ export interface FanOut {
  * in the background. A follower is unreachable after its inbox answered `404`
  * or `410`, until it sends us an activity again (`markReachable`).
  */
-async function sendToFollowers(strapi: Core.Strapi, activity: Activity): Promise<FanOut> {
+export async function sendToFollowers(
+  strapi: Core.Strapi,
+  activity: Activity,
+  extra: ExtraRecipient[] = []
+): Promise<FanOut> {
   const followers = await listFollowers(strapi);
   const reachable = followers.filter((follower) => follower.unreachableSince == null);
   const skipped = followers.length - reachable.length;
-  if (reachable.length === 0) return { queued: 0, skipped };
+  if (reachable.length === 0 && extra.length === 0) return { queued: 0, skipped };
 
   const ctx = createContext(strapi);
   await ctx.sendActivity(
     { identifier: ACTOR_IDENTIFIER },
-    reachable.map((follower) => ({
-      id: new URL(follower.actorId),
-      inboxId: follower.inbox ? new URL(follower.inbox) : null,
-    })),
+    [
+      ...extra,
+      ...reachable.map((follower) => ({
+        id: new URL(follower.actorId),
+        inboxId: follower.inbox ? new URL(follower.inbox) : null,
+      })),
+    ],
     activity,
     { preferSharedInbox: true }
   );
@@ -90,7 +107,8 @@ async function sendRecorded(
   }
 }
 
-function describeFanOut({ queued, skipped }: FanOut): string {
+/** The log text of a fan-out: how many followers it was queued for. */
+export function describeFanOut({ queued, skipped }: FanOut): string {
   const left = skipped > 0 ? ` (${skipped} unreachable skipped)` : '';
   if (queued > 0) return `queued for ${queued} follower${queued === 1 ? '' : 's'}${left}`;
   return skipped > 0

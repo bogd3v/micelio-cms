@@ -15,5 +15,11 @@ export const OUTBOX_PATH = '/fediverse/user/{identifier}/outbox';
 /** Path where the ActivityPub `Article` of a published article is served. */
 export const ARTICLE_PATH = '/fediverse/articles/{documentId}';
 
+/**
+ * Path where the ActivityPub `Note` of a moderator's reply is served: `/fediverse/notes/<documentId>`
+ * of the comment. A visitor-facing identifier that never changes: remote servers store it.
+ */
+export const NOTE_PATH = '/fediverse/notes/{documentId}';
+
 /** Everything Fedify can answer lives under these prefixes. */
 export const FEDERATION_PREFIXES = ['/fediverse/', '/.well-known/', '/nodeinfo/'];

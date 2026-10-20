@@ -41,6 +41,7 @@ describe('Fediverse federation disabled (FEDIVERSE_ENABLED=false)', () => {
     ['/api/fediverse/articles/ranking'],
     // The article panel's admin routes, which have a prefix of their own.
     ['/fediverse-panel/articles/anything/federation'],
+    ['/fediverse/notes/anything'],
     ['/fediverse-panel/diagnostics'],
     ['/fediverse-panel/followers'],
     ['/fediverse-panel/failures'],

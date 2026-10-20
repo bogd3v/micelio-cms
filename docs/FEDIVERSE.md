@@ -230,6 +230,15 @@ An inbox that answers `404` or `410` is gone for good. Fedify calls `setOutboxPe
 3. `Undo(Like)` / `Undo(Announce)` → remove the row.
 4. Stats endpoint aggregates counts for the frontend.
 
+### 5. Reply → remote thread
+
+1. A moderator answers a fediverse comment in the admin's comments view: the comments plugin creates a comment with `threadOf` (the remote comment), `authorId` (the admin user's id) and `isAdminComment: true`.
+2. The plugin hooks the database lifecycle of `plugin::comments.comment` (`services/reply-publisher.ts`), so it sees that creation and every later change or removal. A reply federates only if: an admin user who has the permission to moderate comments wrote it; its parent is a **fediverse** comment of someone else (it has a `fediverseUri`) that is itself shown; and the article is published. A reader's or guest's comment, a reply to a local comment and a reply by an admin account without that permission send nothing.
+3. It stores the reply's own note id in `fediverseNoteUri` (`<origin>/fediverse/notes/<documentId>`) and sends a signed `Create(Note)` from the blog actor: `inReplyTo` the remote note, `to` the remote author, `cc` the public collection and the followers, a `Mention` tag of the author, `content` the comment text as escaped HTML (a paragraph per blank line), `url` the article page with `#comment-<documentId>`. It goes to the remote author's inbox, found by fetching the author's actor with the blog's signed loader (not if the author is blocked here), and to every reachable follower, through the queue. The public `fediverseUri` and `fediverseActorHandle` stay `null`, so the frontend does not mark the site's own reply as remote.
+4. Editing the text sends an `Update(Note)`. Removing, blocking (the reply, or a thread above it), rejecting it, sending it back to moderation, or deleting its row sends a `Delete(Note)` with a `Tombstone`; showing it again sends a `Create` again. Every activity has an id of its own.
+5. `GET /fediverse/notes/<documentId>` serves the `Note` only while the reply is shown: `404` once it is removed, blocked, pending or rejected, and for any comment that is not a moderator's reply to a fediverse comment.
+6. A reply to the admin's note from Mastodon arrives as a `Create(Note)` whose `inReplyTo` is the note id: reply ingestion finds the comment by `fediverseNoteUri` and nests it (one hop; deeper threads are #302).
+
 ---
 
 ## Discoverability on Other Networks
@@ -402,7 +411,6 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 ## Future Work (Out of Scope for MVP)
 
 - Locale-specific federation objects (`inLanguage` fan-out, per-locale handles)
-- Blog-actor outbound replies into remote threads (admin replies federate back to Mastodon)
 - `fediverse:creator` author attribution
 - Admin page of the plugin with diagnostics, followers and failures (#300)
 - WebFinger on the frontend domain (`@blog@example.com`) via the proxy
@@ -501,6 +509,28 @@ The admin menu has a **Fediverse** entry with three sections: **Diagnostics** (i
 **Retry** goes through `retryFailedDelivery` in `services/publisher.ts`: a failed `Create` or `Update` is sent again through the same path as "Federate now" (`federateArticle`), so it is queued and skips unreachable followers; a failed `Delete` is sent as a `Delete` again unless the article was published since. Fedify reports no success, so the row says `created`, `updated` or `deleted` (queued) at once and turns `failed` again only if Fedify gives up again.
 
 **A bug of #299 found here.** Strapi's admin fetch client takes no `responseType` for `post`: it parses the body itself and returns only `{ data }`, with no status, so a refusal arrives as the parsed problem detail. The first version of "Federate now" read a status that was never there and showed an error notice after every press, although the activity was queued; checking only that the state changed did not show it. `interpretPostResponse` (`state.ts`) reads that shape, with tests, and both the panel and the page use it.
+
+## Moderator replies (#301)
+
+A moderator's answer to a fediverse comment is sent back to the remote thread (flow 5 above). Code: `services/reply-publisher.ts` (lifecycle hook, what to send), `services/reply-notes.ts` (the `Note`, the activities, who federates), the `Note` dispatcher in `federation.ts`.
+
+**Open decision applied (issue #301): admin only.** Only comments written by an admin user (`isAdminComment`) federate. Replies from registered readers ([ACCOUNTS.md](ACCOUNTS.md)) do not; the author of a federated reply is the blog actor, so nothing of the moderator (name, email) leaves the server. Widening it means widening `resolveReplyTarget` and deciding what a reader's name is on another server.
+
+**A contract that never changes: `/fediverse/notes/<documentId>`.** The documentId of the comment is the `Note` id (`NOTE_PATH` in `constants/paths.ts`). Remote servers store it and a reply to the note comes back with it as `inReplyTo`, so it is a visitor-facing identifier in the sense of the engineering standard, section 6: it is not renamed or reused.
+
+Differences from the issue's text, and findings:
+
+- **The note id is in `fediverseNoteUri`, not in the public `fediverseUri`, and `fediverseNoteRetracted` says whether it was last retracted.** Both are non-public attributes added in `src/extensions/comments/strapi-server.ts` and not re-attached by `src/middlewares/fediverse-comment-fields.ts`. The issue says the comment gets its own `fediverseUri`, expecting the frontend's badge to follow `fediverseActorHandle`; the frontend (`app/helpers/comments.ts`) marks a comment as remote by `fediverseActorHandle || fediverseUri` and links "View on instance" to `fediverseUri`. With the note id there, the site's own reply would be badged as remote and linked to a URL that only answers ActivityPub. `fediverseUri` keeps meaning "a remote server's note id". **The criterion "the public API shows `fediverseUri`" is therefore not met on purpose:** it shows `fediverseUri: null` and `fediverseActorHandle: null`. If the frontend later wants to show the thread link, it is a change on its side first. Reply ingestion resolves a reply to the admin's note through `fediverseNoteUri`.
+- **The hook is in the fediverse plugin, not in `src/extensions/comments/strapi-server.ts`.** That extension is root code that must not depend on a plugin that is off by default; the plugin subscribes to the comments model's lifecycle (`afterCreate`, `afterUpdate`, `afterUpdateMany`, `beforeDelete`, `beforeDeleteMany`) in `bootstrap()` and only runs while it is enabled. The work is done in the background, one comment at a time, so the admin's request is not held by the lookup of the remote author.
+- **Who may speak as the blog is checked here, because the comments plugin does not check it.** Its admin routes (`postComment`, `updateComment`, and the moderation routes) have no policy: any admin account can post a comment, and `isAdminComment` only says an admin wrote it. Since federating signs the text as the blog actor, `authorMayModerate` builds the author's ability as Strapi's admin login does and requires `plugin::comments.comments-moderate`. An admin account without it can still post on the site, as before. The gap in the comments plugin itself is not fixed here: it is a third-party plugin's routes (it needs a policy on them, or a report upstream).
+- **State, not changes.** A note is _live_ remotely when it has a `fediverseNoteUri` and `fediverseNoteRetracted` is not true. A shown reply that is not live is sent as a `Create`; a hidden one that is live is retracted; a shown, live one whose text changed is an `Update`. Comparing states means a write that changes nothing visible sends nothing, and the `updateMany` paths of the comments plugin (a blocked thread, a deleted article's comments, a reader removing a comment with replies) are covered by re-examining the federated replies after them.
+- **A retracted reply stays retracted on Mastodon.** Mastodon keeps a tombstone for a deleted URL and ignores a later `Create` of the same id; showing the reply again sends a `Create` with a new activity id, which servers that do not keep tombstones accept. Sending a reply back to moderation therefore retracts it for good there. The plugin does not guess otherwise.
+- **"Shown" has no `APPROVED` requirement:** an admin's reply made through the plugin has no approval status, and is shown unless it is removed, blocked (itself or by a blocked thread), `PENDING` or `REJECTED`. The parent must be shown too, and the article published.
+- **The plugin stores a moderator's text as sanitized HTML** (`&` becomes `&amp;`; some tags stay). The `Note` content is that text escaped once: the four entities the sanitizer writes are decoded first and any markup that remains is escaped, so it is text remotely as it is on the site.
+- **The remote author is addressed through a fetched actor** (an outbound `GET`, see [security/outbound.md](security/outbound.md)); if that fails, the reply goes to the followers only and a warning is logged. A `Mention` tag is sent, because a remote server notifies a person only of a mention.
+- **Not verified here:** the live check on staging (the reply under the Mastodon post, and a Mastodon reply nesting under it). The tests run against a fake remote server, signed deliveries included, and the served `Note` parses with Fedify's vocabulary, which is what `npx @fedify/cli lookup` uses.
+
+Release-note material (#301, minor, no upgrade step): replies a moderator writes to fediverse comments are now sent to the remote thread, and the comments table gets two nullable columns. Nothing changes for a site where federation is off, or that has no fediverse comments.
 
 ## Origin of the ids
 
