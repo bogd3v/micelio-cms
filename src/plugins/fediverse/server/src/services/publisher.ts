@@ -32,7 +32,7 @@ function createContext(strapi: Core.Strapi) {
 }
 
 /** How many followers an activity was queued for, and how many were left out as unreachable. */
-interface FanOut {
+export interface FanOut {
   queued: number;
   skipped: number;
 }
@@ -97,30 +97,50 @@ async function isDefaultLocale(strapi: Core.Strapi, event: EntryEvent): Promise<
   return locale == null || locale === (await getDefaultLocale(strapi));
 }
 
-async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> {
-  const documentId = event.entry?.documentId;
-  if (!documentId || !(await isDefaultLocale(strapi, event))) return;
+/** What `federateArticle` did. */
+export type FederateOutcome =
+  | { status: 'queued'; type: 'Create' | 'Update'; slug: string; fanOut: FanOut }
+  | { status: 'not-federable' };
 
+/**
+ * Queues the article's current published version for the followers: a `Create` when it was never
+ * sent (or was retracted), an `Update` otherwise, because publishing again is how edits go live in
+ * Strapi 5. Used by the publish event and by the admin panel's "Federate now".
+ *
+ * @returns `not-federable` when the default locale has no published version with a title and slug.
+ */
+export async function federateArticle(
+  strapi: Core.Strapi,
+  documentId: string
+): Promise<FederateOutcome> {
   const record = await findPublishedArticle(strapi, documentId);
-  if (record == null) {
-    strapi.log.warn(
-      `[fediverse] not federating article ${documentId}: no published default-locale version with a title and slug`
-    );
-    return;
-  }
+  if (record == null) return { status: 'not-federable' };
 
-  // Publishing again is how edits go live in Strapi 5, so a known article is an Update.
   const federated = await isFederated(strapi, documentId);
+  const type = federated ? 'Update' : 'Create';
   const ctx = createContext(strapi);
   const fanOut = await sendRecorded(
     strapi,
     documentId,
-    federated ? 'Update' : 'Create',
+    type,
     buildArticleActivity(federated ? 'update' : 'create', ctx, ACTOR_IDENTIFIER, record)
   );
   strapi.log.info(
-    `[fediverse] ${federated ? 'Update' : 'Create'}(Article) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`
+    `[fediverse] ${type}(Article) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`
   );
+  return { status: 'queued', type, slug: record.slug, fanOut };
+}
+
+async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> {
+  const documentId = event.entry?.documentId;
+  if (!documentId || !(await isDefaultLocale(strapi, event))) return;
+
+  const outcome = await federateArticle(strapi, documentId);
+  if (outcome.status === 'not-federable') {
+    strapi.log.warn(
+      `[fediverse] not federating article ${documentId}: no published default-locale version with a title and slug`
+    );
+  }
 }
 
 async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> {

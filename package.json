@@ -19,7 +19,7 @@
     "upgrade": "npx @strapi/upgrade latest",
     "upgrade:dry": "npx @strapi/upgrade latest --dry",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
-    "typecheck": "tsc --noEmit && tsc --project src/plugins/fediverse/tsconfig.json && tsc --project tests/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --project src/plugins/fediverse/tsconfig.json && tsc --project src/admin/tsconfig.json && tsc --project tests/tsconfig.json",
     "prebuild": "npm run build:fediverse",
     "predev": "npm run build:fediverse",
     "predevelop": "npm run build:fediverse",

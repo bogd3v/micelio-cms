@@ -3,6 +3,7 @@ import type { Core } from '@strapi/strapi';
 import federatedArticleSchema from './content-types/federated-article/schema.json';
 import followerSchema from './content-types/follower/schema.json';
 import interactionSchema from './content-types/interaction/schema.json';
+import federation from './controllers/federation';
 import stats from './controllers/stats';
 import routes from './routes';
 import { assertActorConfigured } from './constants/actor';
@@ -73,6 +74,7 @@ const plugin = {
   },
 
   controllers: {
+    federation,
     stats,
   },
 

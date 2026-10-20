@@ -39,8 +39,19 @@ describe('Fediverse federation disabled (FEDIVERSE_ENABLED=false)', () => {
     ['/api/fediverse/articles/anything/stats'],
     ['/api/fediverse/articles/stats?documentIds=anything'],
     ['/api/fediverse/articles/ranking'],
+    // The article panel's admin routes, which have a prefix of their own.
+    ['/fediverse-panel/articles/anything/federation'],
   ])('serves nothing at %s', async (path) => {
     await request(strapi.server.httpServer).get(path).set('Accept', ACTIVITY_JSON).expect(404);
+  });
+
+  it('has no federate route either', async () => {
+    // Strapi's catch-all answers a POST to an unknown path with 404 or 405; what matters
+    // is that it is neither the 202 of the route nor the 401 of its admin policy.
+    const res = await request(strapi.server.httpServer).post(
+      '/fediverse-panel/articles/anything/federate'
+    );
+    expect([404, 405]).toContain(res.status);
   });
 
   it('leaves the rest of the app working, including article publishing', async () => {

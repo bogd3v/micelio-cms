@@ -1,9 +1,13 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
 import { ChartPie } from '@strapi/icons';
 
+import { fediverseTranslations, registerFederationPanel } from '../plugins/fediverse/admin/src';
+
 export default {
   config: {
     locales: [],
+    // Strings of the federation panel (src/plugins/fediverse/admin); `es` shows once that locale is enabled above.
+    translations: fediverseTranslations,
   },
   register(app: StrapiApp) {
     // Visitors synced from Umami (docs/ANALYTICS.md), on the admin homepage.
@@ -17,5 +21,8 @@ export default {
       },
     });
   },
-  bootstrap() {},
+  bootstrap(app: StrapiApp) {
+    // In the side column of the article edit view (docs/FEDIVERSE.md, article panel).
+    registerFederationPanel(app);
+  },
 };
