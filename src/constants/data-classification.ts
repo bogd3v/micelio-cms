@@ -67,6 +67,8 @@ export const DATA_CLASSIFICATION: Readonly<Record<string, AttributeLevels>> = {
     threadOf: 'public',
     fediverseUri: 'personal',
     fediverseActorHandle: 'personal',
+    fediverseNoteUri: 'public',
+    fediverseNoteRetracted: 'public',
   },
   'plugin::comments.comment-report': {
     content: 'personal',

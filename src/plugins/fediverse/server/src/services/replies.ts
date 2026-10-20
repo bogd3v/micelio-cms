@@ -132,6 +132,12 @@ async function findCommentByUri(strapi: Core.Strapi, uri: string): Promise<Comme
   })) as CommentRow | null;
 }
 
+async function findCommentByNoteUri(strapi: Core.Strapi, uri: string): Promise<CommentRow | null> {
+  return (await comments(strapi).findFirst({
+    filters: { fediverseNoteUri: uri },
+  })) as CommentRow | null;
+}
+
 /**
  * Finds the article a reply belongs to, and the parent comment when it is a
  * reply to another fediverse reply (one hop, via the parent's stored Note id).
@@ -144,7 +150,9 @@ async function resolveTarget(
   const articleId = await resolveArticleId(strapi, inReplyTo, context.parseArticleUri);
   if (articleId) return { articleId, parent: null };
 
-  const parent = await findCommentByUri(strapi, inReplyTo);
+  // A reply to a remote comment, or to a moderator's own reply (whose note id is not public).
+  const parent =
+    (await findCommentByUri(strapi, inReplyTo)) ?? (await findCommentByNoteUri(strapi, inReplyTo));
   const related = parent?.related ?? '';
   const separator = related.lastIndexOf(':');
   if (parent && related.slice(0, separator) === ARTICLE_UID) {

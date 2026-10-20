@@ -248,7 +248,8 @@ export async function listPublishedArticles(
   return { items, total };
 }
 
-function toInstant(value: string): Temporal.Instant {
+/** An ISO date as the `Temporal.Instant` Fedify takes for `published` and `updated`. */
+export function toInstant(value: string): Temporal.Instant {
   return Temporal.Instant.from(new Date(value).toISOString());
 }
 
