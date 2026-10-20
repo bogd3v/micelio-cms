@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_site_fediverses",
+  "info": {
+    "displayName": "Fediverse profile",
+    "icon": "globe",
+    "description": "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity"
+  },
+  "options": {},
+  "attributes": {
+    "username": {
+      "type": "string",
+      "regex": "^[a-z0-9_]+$",
+      "maxLength": 30
+    },
+    "displayName": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "summary": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "header": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "discoverable": {
+      "type": "boolean",
+      "default": true
+    },
+    "sourceUrl": {
+      "type": "string",
+      "regex": "^https?://\\S+$"
+    }
+  }
+}

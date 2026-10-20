@@ -379,4 +379,46 @@ describe('Site settings', () => {
       await expect(saveJurisdiction(value)).rejects.toMatchObject({ name: 'ValidationError' });
     });
   });
+
+  describe('fediverse profile (#303)', () => {
+    // The populate of the frontend's site request (micelio `server/lib/constants.ts`, SITE_POPULATE):
+    // it names what it reads, so a new component of the single type must not reach it.
+    const FRONTEND_POPULATE = {
+      author: { fields: ['name', 'url'] },
+      logo: { fields: ['url', 'alternativeText', 'width', 'height'] },
+      favicon: { fields: ['url', 'alternativeText', 'width', 'height'] },
+      defaultOgImage: { fields: ['url', 'alternativeText', 'width', 'height'] },
+      socialLinks: true,
+      modules: true,
+      theme: { populate: '*' },
+      homePage: { fields: ['slug'] },
+    };
+
+    /** The response as the frontend reads it, without the timestamps every save moves. */
+    async function frontendResponse(): Promise<unknown> {
+      const settings = await read('en', FRONTEND_POPULATE);
+      delete settings.updatedAt;
+      delete settings.publishedAt;
+      return settings;
+    }
+
+    it('leaves the frontend response as it was, and shows the profile only when asked', async () => {
+      const before = await frontendResponse();
+
+      await strapi.documents(SITE_SETTING).update({
+        documentId: await documentId(),
+        locale: 'en',
+        data: { fediverse: { username: 'news_desk', summary: 'A bio.', discoverable: false } },
+      });
+
+      expect(JSON.stringify(await frontendResponse())).toBe(JSON.stringify(before));
+      // populate=* reaches the component's fields but not the media inside it.
+      const shallow = await read();
+      expect(shallow.fediverse).toMatchObject({ username: 'news_desk' });
+      expect(shallow.fediverse).not.toHaveProperty('header');
+      expect(await read('en', { fediverse: true })).toMatchObject({
+        fediverse: { username: 'news_desk', summary: 'A bio.', discoverable: false },
+      });
+    });
+  });
 });

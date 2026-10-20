@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from '@jest/globals';
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi';
 import { createRemoteActor } from './helpers/remote-actor';
 import { waitUntil } from './helpers/wait-until';
@@ -10,6 +10,7 @@ const ACTIVITY_JSON = 'application/activity+json';
 /** The fields of the actor document these tests check. */
 interface ActorDocument {
   id: string;
+  preferredUsername: string;
   inbox: string;
   name: string;
   summary: string;
@@ -28,6 +29,17 @@ async function writeGlobal(data: Modules.Documents.Params.Data.Input<'api::globa
     return strapi.documents('api::global.global').update({ documentId: existing.documentId, data });
   }
   return strapi.documents('api::global.global').create({ data });
+}
+
+const SITE_SETTING_UID = 'api::site-setting.site-setting';
+
+/** Sets the `fediverse` component of the site settings (default locale); `null` empties it. */
+async function writeFediverseProfile(fediverse: Record<string, unknown> | null) {
+  const existing = await strapi.documents(SITE_SETTING_UID).findFirst();
+  return strapi.documents(SITE_SETTING_UID).update({
+    documentId: existing!.documentId,
+    data: { fediverse } as never,
+  });
 }
 
 async function createImage(name: string): Promise<{ id: number }> {
@@ -658,6 +670,191 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
             .findOne({ where: { actorId: remote.actorUrl } });
           return row == null;
         });
+      } finally {
+        await remote.close();
+      }
+    });
+  });
+
+  describe('profile in the site settings (#303)', () => {
+    const VARIABLES = [
+      'FEDIVERSE_ACTOR_NAME',
+      'FEDIVERSE_ACTOR_SUMMARY',
+      'FEDIVERSE_ACTOR_SOURCE_URL',
+    ] as const;
+
+    async function readActor(): Promise<ActorDocument> {
+      const res = await fetch(actorUrl, { headers: { accept: ACTIVITY_JSON } });
+      return (await res.json()) as ActorDocument;
+    }
+
+    async function clearProfileSources() {
+      const existing = await strapi.documents('api::global.global').findFirst();
+      if (existing) {
+        await strapi.documents('api::global.global').delete({ documentId: existing.documentId });
+      }
+      const site = await strapi.documents(SITE_SETTING_UID).findFirst();
+      await strapi.documents(SITE_SETTING_UID).update({
+        documentId: site!.documentId,
+        data: { name: 'Site Name', description: null } as never,
+      });
+      await writeFediverseProfile(null);
+      for (const name of VARIABLES) delete process.env[name];
+    }
+
+    beforeEach(clearProfileSources);
+    afterAll(clearProfileSources);
+
+    it('shows the component values, ahead of the variables and the global settings', async () => {
+      process.env.FEDIVERSE_ACTOR_NAME = 'Variable name';
+      process.env.FEDIVERSE_ACTOR_SUMMARY = 'Variable bio.';
+      process.env.FEDIVERSE_ACTOR_SOURCE_URL = 'https://code.example.test/variable';
+      await writeGlobal({ siteName: 'Global name', siteDescription: 'Global bio.' });
+      const header = await createImage('profile-header.png');
+      await writeFediverseProfile({
+        username: 'news_desk',
+        displayName: 'The news desk',
+        summary: 'What the component says.',
+        header: header.id,
+        discoverable: false,
+        sourceUrl: 'https://code.example.test/component',
+      });
+
+      const body = await readActor();
+
+      expect(body).toMatchObject({
+        preferredUsername: 'news_desk',
+        name: 'The news desk',
+        summary: 'What the component says.',
+        discoverable: false,
+        image: { url: `http://${host}/uploads/profile-header.png` },
+      });
+      expect(body.attachment[1].value).toContain('https://code.example.test/component');
+    });
+
+    it('falls back to the variables when the component is empty', async () => {
+      process.env.FEDIVERSE_ACTOR_NAME = 'Variable name';
+      process.env.FEDIVERSE_ACTOR_SUMMARY = 'Variable bio.';
+      process.env.FEDIVERSE_ACTOR_SOURCE_URL = 'https://code.example.test/variable';
+      // The site settings' own name would come first, so the variable shows only without it.
+      const site = await strapi.documents(SITE_SETTING_UID).findFirst();
+      await strapi.documents(SITE_SETTING_UID).update({
+        documentId: site!.documentId,
+        data: { name: ' ' } as never,
+      });
+
+      const body = await readActor();
+
+      expect(body).toMatchObject({
+        preferredUsername: 'bogdev',
+        name: 'Variable name',
+        summary: 'Variable bio.',
+        discoverable: true,
+      });
+      expect(body.attachment[1].value).toContain('https://code.example.test/variable');
+    });
+
+    it('falls back to the site name, with no summary and no header, when everything is empty', async () => {
+      const body = await readActor();
+
+      expect(body.name).toBe('Site Name');
+      expect(body.summary).toBeUndefined();
+      expect(body.image).toBeUndefined();
+      expect(body.attachment[1].value).toContain('github.com/bogd3v/micelio-cms');
+    });
+
+    it("falls back to the global settings' header when the component has none", async () => {
+      const header = await createImage('global-header.png');
+      await writeGlobal({
+        siteName: 'Global name',
+        siteDescription: 'Global bio.',
+        fediverseHeader: header.id,
+      });
+
+      const body = await readActor();
+
+      expect(body.name).toBe('Global name');
+      expect(body.image.url).toBe(`http://${host}/uploads/global-header.png`);
+    });
+
+    it('rejects a username with an invalid character', async () => {
+      for (const username of ['News Desk', 'news.desk', 'News', 'news@desk']) {
+        await expect(writeFediverseProfile({ username })).rejects.toThrow();
+      }
+      await expect(writeFediverseProfile({ username: 'news_desk_2' })).resolves.toBeDefined();
+    });
+
+    it('rejects a summary over 500 characters', async () => {
+      await expect(writeFediverseProfile({ summary: 'x'.repeat(501) })).rejects.toThrow();
+    });
+
+    it('resolves the new handle through WebFinger, and the identifier as the former one', async () => {
+      await writeFediverseProfile({ username: 'news_desk' });
+      const resolve = async (username: string) =>
+        fetch(`http://${host}/.well-known/webfinger?resource=acct:${username}@${host}`, {
+          headers: { accept: 'application/jrd+json' },
+        });
+
+      // The identifier and the deprecated variable's value keep resolving as former handles.
+      for (const username of ['news_desk', 'devbog', 'bogdev']) {
+        const res = await resolve(username);
+        expect(res.status).toBe(200);
+        const jrd = (await res.json()) as { links: { rel: string; href: string }[] };
+        expect(jrd.links.find((link) => link.rel === 'self')?.href).toBe(actorUrl);
+      }
+      expect((await resolve('nobody')).status).toBe(404);
+    });
+
+    it('sends Update(Person) when the component is saved in another locale', async () => {
+      const remote = await createRemoteActor({ preferredUsername: 'es-reader' });
+      try {
+        await followersService.recordFollower(strapi, {
+          actorId: remote.actorUrl,
+          inbox: remote.inboxUrl,
+        });
+        const site = await strapi.documents(SITE_SETTING_UID).findFirst();
+        // The Spanish version first, so the save below is an edit of an existing locale.
+        await strapi.documents(SITE_SETTING_UID).update({
+          documentId: site!.documentId,
+          locale: 'es',
+          data: { name: 'Sitio' } as never,
+        });
+        await strapi.documents(SITE_SETTING_UID).update({
+          documentId: site!.documentId,
+          locale: 'es',
+          data: { fediverse: { displayName: 'La mesa de noticias' } } as never,
+        });
+
+        await waitUntil(() =>
+          remote.inboxDeliveries.find(
+            (a) => a.type === 'Update' && a.object?.name === 'La mesa de noticias'
+          )
+        );
+      } finally {
+        await remote.close();
+      }
+    });
+
+    it('sends Update(Person) to followers when the component is saved', async () => {
+      const remote = await createRemoteActor({ preferredUsername: 'settings-reader' });
+      try {
+        await followersService.recordFollower(strapi, {
+          actorId: remote.actorUrl,
+          inbox: remote.inboxUrl,
+        });
+
+        await writeFediverseProfile({ username: 'news_desk', displayName: 'The news desk' });
+
+        const update = await waitUntil(() =>
+          remote.inboxDeliveries.find(
+            (a) =>
+              a.type === 'Update' &&
+              a.object?.type === 'Person' &&
+              a.object?.name === 'The news desk'
+          )
+        );
+        expect(update.object?.preferredUsername).toBe('news_desk');
+        expect(update.object?.id).toBe(update.actor);
       } finally {
         await remote.close();
       }

@@ -4,7 +4,7 @@ import type { Context } from '@fedify/fedify';
 import { PUBLIC_COLLECTION, Update, type Activity } from '@fedify/fedify/vocab';
 
 import { ACTOR_IDENTIFIER } from '../constants/actor';
-import { ARTICLE_UID, GLOBAL_UID } from '../constants/uids';
+import { ARTICLE_UID, GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids';
 import { buildActor, getFederation } from '../federation';
 import {
   buildArticleActivity,
@@ -27,6 +27,9 @@ interface EntryEvent {
   uid?: string;
   entry?: { documentId?: string; locale?: string | null } | null;
 }
+
+/** How long a save in a non-default locale waits for i18n to copy the shared fields. */
+const LOCALE_SYNC_DELAY_MS = 1000;
 
 let unsubscribers: Array<() => void> = [];
 
@@ -212,6 +215,17 @@ async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   }
 }
 
+/**
+ * The `fediverse` component is not localized: a save in another locale reaches the default
+ * locale's row only when i18n copies it, after the event. So the actor is built a moment later.
+ */
+async function onSiteSettingsChanged(strapi: Core.Strapi, event: EntryEvent): Promise<void> {
+  if (!(await isDefaultLocale(strapi, event))) {
+    await new Promise((resolve) => setTimeout(resolve, LOCALE_SYNC_DELAY_MS));
+  }
+  await onProfileChanged(strapi);
+}
+
 async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> {
   const documentId = event.entry?.documentId;
   if (!documentId || !(await isDefaultLocale(strapi, event))) return;
@@ -231,9 +245,9 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
 }
 
 /**
- * Mastodon caches remote profiles, so a change to the `global` single type
- * (name, description, avatar, header) only reaches followers' servers through
- * an Update(Person) carrying the new actor.
+ * Mastodon caches remote profiles, so a change to the `global` single type or to the site
+ * settings (name, bio, avatar, header, username) only reaches followers' servers through an
+ * Update(Person) carrying the new actor.
  */
 async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
   const ctx = createContext(strapi);
@@ -293,6 +307,17 @@ export function subscribe(strapi: Core.Strapi): void {
     strapi.eventHub.on(
       'entry.update',
       guarded(GLOBAL_UID, 'profile update federation', onProfileChanged)
+    ),
+    // The actor's profile lives in the site settings' `fediverse` component. Not filtered by locale:
+    // it is not localized, so a save in `es` changes the actor but only emits the `es` event
+    // (see onSiteSettingsChanged).
+    strapi.eventHub.on(
+      'entry.create',
+      guarded(SITE_SETTING_UID, 'profile update federation', onSiteSettingsChanged)
+    ),
+    strapi.eventHub.on(
+      'entry.update',
+      guarded(SITE_SETTING_UID, 'profile update federation', onSiteSettingsChanged)
     ),
   ];
 }

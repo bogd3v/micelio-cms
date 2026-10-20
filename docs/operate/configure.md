@@ -181,16 +181,18 @@ The plugin is **off by default**. The full behaviour is in `docs/FEDIVERSE.md`.
 
 ```env
 FEDIVERSE_ENABLED=true                  # master switch; off = no fediverse routes, content types or publish hooks
-FEDIVERSE_ACTOR_USERNAME=blog           # required: the @user part of the handle; safe to change (WebFinger maps it)
 FEDIVERSE_ACTOR_IDENTIFIER=blog         # required: path of the actor URI; never change it, remote follows are keyed by it
 FRONTEND_ARTICLE_PATH=/blog/{slug}      # optional: article path template
 FRONTEND_DEFAULT_LOCALE=en              # optional: locale the frontend serves without a URL prefix
-FEDIVERSE_ACTOR_NAME=                   # optional: fallbacks when Global and the site settings are empty
-FEDIVERSE_ACTOR_SUMMARY=
-FEDIVERSE_ACTOR_SOURCE_URL=
 ```
 
-While enabled, the two required values have no defaults: without them the plugin refuses to start. `URL` must be the CMS's real public origin, because activities sent in the background build their ids from it. Requirements that are easy to miss:
+While enabled, `FEDIVERSE_ACTOR_IDENTIFIER` has no default: without it the plugin refuses to start.
+
+**The profile is edited in the admin panel**, not in the environment: Content Manager → Site settings → **Fediverse profile** has the username (the handle's `@user`, lowercase letters, digits and `_`; changing it keeps the former handle and the followers, because the identifier stays), the display name, a summary of up to 500 characters (plain text), a header image (1500×500 recommended; the size is not checked), whether the account is discoverable (on by default) and the source URL shown in the "Código" field. Saving it sends an `Update(Person)` to the followers' servers. An empty field uses what the site had before: the deprecated variables below, then the site name. With none of them the handle is the identifier and there is no bio.
+
+Deprecated, still read as fallbacks (a later `0.y` removes them): `FEDIVERSE_ACTOR_USERNAME` → Username, `FEDIVERSE_ACTOR_NAME` → Display name, `FEDIVERSE_ACTOR_SUMMARY` → Summary, `FEDIVERSE_ACTOR_SOURCE_URL` → Source URL. Each one that is set logs one warning at boot that names the setting. Move the value into the site settings, then delete the variable. The `fediverseHeader` of Global is deprecated the same way (use the header of the Fediverse profile).
+
+`URL` must be the CMS's real public origin, because activities sent in the background build their ids from it. Requirements that are easy to miss:
 
 - **Node 22.12 or later.** Fedify depends on an ESM-only package that `require()` loads only from that version on. The image is on Node 22.
 - **A persistent database.** Followers, the actor's key pair, the record of federated articles and, on PostgreSQL, the deliveries waiting to be sent live in the database. If it is wiped, the next boot generates a new actor key and every follower is lost.
@@ -200,7 +202,7 @@ While enabled, the two required values have no defaults: without them the plugin
 ### Enable it on a running site
 
 1. Take a database backup ([Backup](backup.md)). On the first boot with the plugin enabled the CMS creates `fediverse_followers`, `fediverse_interactions` and `fediverse_federated_articles` and adds `fediverse_uri` and `fediverse_actor_handle` to the comments table.
-2. Set `FEDIVERSE_ENABLED=true` and the two required values, and restart.
+2. Set `FEDIVERSE_ENABLED=true` and `FEDIVERSE_ACTOR_IDENTIFIER`, and restart.
 3. Verify from outside:
    ```bash
    curl -s https://cms.example.com/_health -o /dev/null -w '%{http_code}\n'   # 204
@@ -223,7 +225,7 @@ What each failing diagnostic means and how to fix it:
 - **WebFinger, `webfinger-skipped`:** needs `URL`.
 - **WebFinger, `webfinger-unreachable`:** the CMS cannot reach its own public address: check DNS, the proxy and the firewall.
 - **WebFinger, `webfinger-not-found`:** the address answers, but not with the WebFinger document: make sure `/.well-known/*` and `/fediverse/*` reach the CMS.
-- **WebFinger, `webfinger-wrong-subject`:** check `FEDIVERSE_ACTOR_USERNAME` and that the domain of `URL` is the CMS's.
+- **WebFinger, `webfinger-wrong-subject`:** check the username in the site settings (Fediverse profile) and that the domain of `URL` is the CMS's.
 
 ### Delivery queue and database connections
 

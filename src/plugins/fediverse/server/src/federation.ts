@@ -40,7 +40,7 @@ import { createMiddleware } from '@fedify/koa';
 import type { Context as KoaContext } from 'koa';
 
 import pkg from '../../package.json';
-import { ACTOR_IDENTIFIER, ACTOR_USERNAME, ACTOR_USERNAMES } from './constants/actor';
+import { ACTOR_IDENTIFIER } from './constants/actor';
 import {
   ACTOR_PATH,
   ARTICLE_PATH,
@@ -63,7 +63,7 @@ import {
   listPublishedArticles,
 } from './services/articles';
 import { resolveArticleId } from './services/articles';
-import { getActorProfile } from './services/actor-profile';
+import { getActorProfile, getActorUsernames } from './services/actor-profile';
 import { configuredEncryptionKey, getActorKeyPairs } from './services/keys';
 import { recordInteraction, removeInteraction } from './services/interactions';
 import { ingestReply, removeReply, updateReply } from './services/replies';
@@ -199,11 +199,16 @@ async function extractAvatarUrl(
   }
 }
 
+/** What reply handling needs, with the blog's usernames as the site settings have them now. */
+async function loadReplyContext(ctx: Context<FediverseContextData>): Promise<ReplyContext> {
+  return { ...replyContext(ctx), actorUsernames: await getActorUsernames(ctx.data.strapi) };
+}
+
 function replyContext(ctx: {
   parseUri(uri: URL): { type: string; class?: unknown; values?: Record<string, string> } | null;
 }): ReplyContext {
   return {
-    actorUsernames: ACTOR_USERNAMES,
+    actorUsernames: [],
     parseArticleUri(uri) {
       try {
         const parsed = ctx.parseUri(new URL(uri));
@@ -313,14 +318,14 @@ export async function buildActor(
 
   return new Person({
     id: actorUri,
-    preferredUsername: identifier === ACTOR_IDENTIFIER ? ACTOR_USERNAME : identifier,
+    preferredUsername: identifier === ACTOR_IDENTIFIER ? profile.username : identifier,
     name: profile.name,
-    summary: profile.summary,
+    summary: profile.summary ?? undefined,
     url: new URL(profile.url),
     inbox: ctx.getInboxUri(identifier),
     followers: ctx.getFollowersUri(identifier),
     outbox: ctx.getOutboxUri(identifier),
-    discoverable: true,
+    discoverable: profile.discoverable,
     manuallyApprovesFollowers: false,
     icon: profile.iconUrl ? new Image({ url: new URL(profile.iconUrl) }) : undefined,
     image: profile.headerUrl ? new Image({ url: new URL(profile.headerUrl) }) : undefined,
@@ -424,8 +429,10 @@ export function createFediverseFederation(
       if (identifier !== ACTOR_IDENTIFIER) return null;
       return buildActor(ctx, identifier);
     })
-    .mapHandle((_ctx, username) =>
-      ACTOR_USERNAMES.includes(username.toLowerCase()) ? ACTOR_IDENTIFIER : null
+    .mapHandle(async (ctx, username) =>
+      (await getActorUsernames(ctx.data.strapi)).includes(username.toLowerCase())
+        ? ACTOR_IDENTIFIER
+        : null
     )
     .setKeyPairsDispatcher(async (context, identifier) => {
       if (identifier !== ACTOR_IDENTIFIER) return [];
@@ -700,7 +707,7 @@ export function createFediverseFederation(
           actorId: create.actorId.href,
           ...remote,
         },
-        replyContext(ctx)
+        await loadReplyContext(ctx)
       );
       if (result.status === 'applied') {
         strapi.log.info(
@@ -725,7 +732,7 @@ export function createFediverseFederation(
           actorId: update.actorId.href,
           contentHtml: String(note.content ?? ''),
         },
-        replyContext(ctx)
+        await loadReplyContext(ctx)
       );
       if (result.status === 'applied') {
         strapi.log.info(`[fediverse] reply ${note.id.href} edited; sent back to PENDING`);

@@ -856,6 +856,12 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
           localized: false;
         };
       }>;
+    fediverse: Schema.Attribute.Component<'site.fediverse', false> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
     homePage: Schema.Attribute.Relation<'oneToOne', 'api::page.page'> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {

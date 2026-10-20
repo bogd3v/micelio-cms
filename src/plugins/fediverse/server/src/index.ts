@@ -23,6 +23,7 @@ import {
   unsubscribe as unsubscribePublisher,
 } from './services/publisher';
 import { configureFedifyLogging, resetFedifyLogging } from './utils/fedify-logging';
+import { warnDeprecatedActorVariables } from './utils/deprecated-variables';
 import { frontendBaseUrl } from './utils/frontend-url';
 
 const plugin = {
@@ -43,6 +44,7 @@ const plugin = {
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }): Promise<void> {
+    warnDeprecatedActorVariables(strapi.log);
     subscribe(strapi);
     subscribePublisher(strapi);
     subscribeReplies(strapi);

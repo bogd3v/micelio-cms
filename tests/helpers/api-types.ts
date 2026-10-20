@@ -52,6 +52,8 @@ export interface ActivityJson {
 /** The site settings single type (`GET /api/site-setting?populate=*`). */
 export interface ApiSiteSetting {
   documentId: string;
+  updatedAt?: string;
+  publishedAt?: string | null;
   locale: string;
   name: string;
   description: string | null;
@@ -73,6 +75,8 @@ export interface ApiSiteSetting {
   supportHandle: string | null;
   modules: Record<string, boolean>;
   theme: ApiSiteTheme | null;
+  /** The fediverse profile; only in a response that populates it. */
+  fediverse?: { username: string | null; summary: string | null; discoverable: boolean } | null;
 }
 
 export interface ApiSiteTheme {

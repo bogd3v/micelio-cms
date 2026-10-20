@@ -200,6 +200,16 @@
         }
       }
     },
+    "fediverse": {
+      "type": "component",
+      "repeatable": false,
+      "component": "site.fediverse",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
     "homePage": {
       "type": "relation",
       "relation": "oneToOne",

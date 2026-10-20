@@ -31,7 +31,7 @@ The site is an ActivityPub actor (`@blog@<api domain>`) served by a local Strapi
 | `utils/federation-backend.ts`, `utils/observed-queue.ts`                             | Fedify's KV and queue (PostgreSQL tables, or memory on SQLite); the queue wrapper that encrypts the actor key in messages and observes each delivery                                                      |
 | `services/replies.ts`                                                                | `Create/Update/Delete(Note)` → moderated comments; HTML → plain text                                                                                                                                      |
 | `services/interactions.ts`                                                           | Likes/boosts, dedupe, counts                                                                                                                                                                              |
-| `services/{followers,keys,actor-profile}.ts`                                         | Follower rows, persisted actor key pair, actor name/bio/avatar/header/fields from `global`                                                                                                                |
+| `services/{followers,keys,actor-profile}.ts`                                         | Follower rows, persisted actor key pair, actor username/name/bio/header/fields from the site settings' `fediverse` component (then the deprecated variables and `global`), avatar from `global`           |
 | `services/stats.ts`                                                                  | Batch counts and ranking as aggregate SQL (likes, boosts, approved fediverse replies)                                                                                                                     |
 | `controllers/stats.ts`, `routes/`                                                    | `GET /api/fediverse/articles/:documentId/stats`, `/articles/stats`, `/articles/ranking`                                                                                                                   |
 
@@ -41,17 +41,17 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 
 ## Environment variables
 
-| Variable                                           | Default                                                   | Notes                                                                                    |
-| -------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `FEDIVERSE_ENABLED`                                | `false`                                                   | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types    |
-| `URL`                                              | `http://localhost:1337`                                   | Strapi's public origin. Activity ids built outside a request come from it: keep it right |
-| `FEDIVERSE_ACTOR_USERNAME`                         | required                                                  | The handle's `@user` (`preferredUsername`); safe to change, WebFinger maps it            |
-| `FEDIVERSE_ACTOR_IDENTIFIER`                       | required                                                  | Path of the actor URI. Never change it: remote follows are keyed by the URI              |
-| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                                                     | Fallbacks when `global` and the site settings have no name/description                   |
-| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo                                       | "Código" profile field link                                                              |
-| `FRONTEND_URL`                                     | required in production; `http://localhost:3000` otherwise | Origin of the human-facing article links                                                 |
-| `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`                                            | Article path template                                                                    |
-| `FRONTEND_DEFAULT_LOCALE`                          | `en`                                                      | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links      |
+| Variable                                           | Default                                                   | Notes                                                                                                                |
+| -------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `FEDIVERSE_ENABLED`                                | `false`                                                   | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types                                |
+| `URL`                                              | `http://localhost:1337`                                   | Strapi's public origin. Activity ids built outside a request come from it: keep it right                             |
+| `FEDIVERSE_ACTOR_USERNAME`                         | unset                                                     | Deprecated (#303): site settings `fediverse.username` wins; then this, then the identifier                           |
+| `FEDIVERSE_ACTOR_IDENTIFIER`                       | required                                                  | Path of the actor URI. Never change it: remote follows are keyed by the URI                                          |
+| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                                                     | Deprecated (#303): fallbacks when the `fediverse` component, `global` and the site settings have no name/description |
+| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo                                       | Deprecated (#303): replaced by `fediverse.sourceUrl`; "Código" profile field link                                    |
+| `FRONTEND_URL`                                     | required in production; `http://localhost:3000` otherwise | Origin of the human-facing article links                                                                             |
+| `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`                                            | Article path template                                                                                                |
+| `FRONTEND_DEFAULT_LOCALE`                          | `en`                                                      | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links                                  |
 
 ## Endpoints
 
@@ -65,7 +65,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 - **Moderator replies:** an admin's reply (`isAdminComment`) to a fediverse comment goes out as a signed `Create(Note)` (to the remote author, cc public and followers); edit → `Update`, removed, blocked, rejected or pending → `Delete` with a `Tombstone`; `GET /fediverse/notes/<id>` is a 404 once it is not shown. Readers' and guests' comments never federate.
 - **Replies:** a `Create(Note)` replying to an article (by ActivityPub id or frontend URL) or to a stored reply becomes a `PENDING` comment. Content is stripped to plain text. Edits go back to `PENDING`; deletes set `removed`. Anything else is ignored.
 - **Moderation:** approve/reject in the admin comments moderation view. The global middleware hides `PENDING`/`REJECTED` comments from `GET /api/comments/*`; never remove it.
-- **Profile:** saving the `global` single type sends `Update(Person)` so followers' servers refresh the cached name, bio, avatar and header.
+- **Profile:** the `fediverse` component of the site settings (`username`, `displayName`, `summary`, `header`, `discoverable`, `sourceUrl`) is the home of the profile; each empty field falls back to the deprecated `FEDIVERSE_ACTOR_*` variable and `global` as before (`docs/FEDIVERSE.md`, "Actor profile in the site settings"). The username is read on every WebFinger and actor request, so a change needs no restart. Saving the default locale of the site settings, or the `global` single type, sends `Update(Person)` so followers' servers refresh the cached profile. Each deprecated variable that is set logs one boot warning (`utils/deprecated-variables.ts`).
 - **Likes/boosts:** `Like`/`Announce` of a published article are recorded once per (type, actor, article); `Undo` removes only the sender's own.
 
 ## Pitfalls that cost time before

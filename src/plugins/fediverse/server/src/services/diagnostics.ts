@@ -1,11 +1,11 @@
 import type { Core } from '@strapi/strapi';
 
-import { ACTOR_USERNAME } from '../constants/actor';
 import { getFederationBackendKind, getFederationKv } from '../federation';
 import type { Diagnostic, DiagnosticFailure } from '../types/plugin-page';
 import { ActorKeyDecryptionError } from '../utils/key-encryption';
 import { publicOrigin } from '../utils/public-origin';
 import { countFollowers } from './followers';
+import { getActorUsername } from './actor-profile';
 import { countInboxRefusals } from './inbox-refusals';
 import { verifyStoredActorKey } from './keys';
 
@@ -59,9 +59,12 @@ async function checkActorKey(strapi: Core.Strapi): Promise<Diagnostic> {
  * would. The only request the plugin makes to its own origin; the address is the operator's
  * `URL`, never one a visitor gave.
  */
-async function checkWebFinger(origin: string | undefined): Promise<Diagnostic> {
+async function checkWebFinger(
+  strapi: Core.Strapi,
+  origin: string | undefined
+): Promise<Diagnostic> {
   if (origin == null) return failed('webfinger', 'webfinger-skipped');
-  const subject = `acct:${ACTOR_USERNAME}@${new URL(origin).host}`;
+  const subject = `acct:${await getActorUsername(strapi)}@${new URL(origin).host}`;
   let response: Response;
   try {
     response = await fetch(
@@ -119,7 +122,7 @@ export async function runDiagnostics(strapi: Core.Strapi): Promise<Diagnostic[]>
   const origin = publicOrigin();
   const [actorKey, webfinger, followers, refusals] = await Promise.all([
     checkActorKey(strapi),
-    checkWebFinger(origin),
+    checkWebFinger(strapi, origin),
     figure(strapi, 'followers', () => countFollowers(strapi)),
     figure(strapi, 'inbox refusals', () => countInboxRefusals(getFederationKv(strapi))),
   ]);
