@@ -1,8 +1,8 @@
 # Micelio engineering standard
 
-Version 1.3 (2026-10-18). Canonical copy: `bogd3v/micelio`, `docs/engineering-standard.md`. Every other repository of the Micelio ecosystem carries an identical copy at the same path.
+Version 1.4 (2026-10-20). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
 
-These are the rules shared by every Micelio repository: the frontend (`micelio`), the CMS (`micelio-cms`), theme packages, the theme registry and whatever comes next. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`.
+These are the rules shared by every repository of **Micelio**: the frontend (`micelio`), the reference distribution of the CMS (`micelio-cms`), the Strapi plugins (`micelio-plugin-core` and the ones that follow it), theme packages, the theme registry and the tooling (`micelio-engineering`), all of them on Node. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`. The standard is Micelio's, not bogd3v's: other projects of the organisation, in other languages or under other licences, are not bound by it.
 
 **Must** marks a rule that blocks a pull request. **Should** marks the default: a pull request may deviate when it says why.
 
@@ -12,16 +12,17 @@ Each fact has one home. Other documents link to it instead of repeating it.
 
 | Document | Holds |
 | --- | --- |
-| `docs/engineering-standard.md` | The rules every repository shares (this file) |
-| `AGENTS.md` | The repository's own conventions, commands and structure. It may add rules or tighten these, never relax them |
+| `docs/engineering-standard.md` | The rules every repository shares (this file). The canonical copy lives in `micelio-engineering`; each repository keeps a copy for the agents, synced by the Micelio bot and checked by `lint:standard` against the version pinned in `AGENTS.md` (section 16) |
+| `AGENTS.md` | The repository's own conventions, commands and structure, and the version of this standard it follows. It may add rules or tighten these, never relax them |
 | `CLAUDE.md` | Imports only: `AGENTS.md`, this file and `.claude/TEAM.md` |
 | `.claude/TEAM.md`, `.claude/agents/` | How the agent team is organised and its hard limits |
 | `.claude/skills/` | Procedures: the steps for one kind of task |
 | `docs/adr/` | Decisions that are expensive to undo, and every accepted exception to this standard |
 | `docs/` | Documentation, organised by reader (section 12) |
 | `README.md` | What Micelio is and the shortest path to a running site |
-| `CONTRIBUTING.md`, `SECURITY.md` | The terms of a contribution and how to report a vulnerability |
-| `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `TRADEMARKS.md` | How people treat each other in the project, who decides what, and how the name and the logo may be used |
+| `CONTRIBUTING.md` | The terms of a contribution: a short file that links Micelio's canonical one in `micelio-engineering` (licence, the theme exception, the DCO) and adds only what is specific to the repository |
+| `GOVERNANCE.md`, `TRADEMARKS.md` | Who decides what, and how the Micelio name and logo may be used. Micelio's, in `micelio-engineering`; repositories link to them |
+| `CODE_OF_CONDUCT.md`, `SECURITY.md` | How people treat each other and how to report a vulnerability. Served to every repository from `bogd3v/.github`; a repository carries its own only to say something more |
 | GitHub releases | What changed in each version and what an upgrade needs |
 | GitHub issues and milestones | The plan and its progress |
 
@@ -190,7 +191,12 @@ export function readingMinutes(markdown: string, wordsPerMinute = 230): number
 | Operator interface: environment variable names, image names and tags, Compose service and volume names, health endpoints, backup paths | `.env.example`, the Compose files, the operator documentation | Renaming or removing one, or an upgrade that needs a manual step |
 | Visitor-facing identifiers: URLs, feeds, fediverse actor ids, cookie and storage keys | The ADR that introduced each | Any change that breaks a link, a follow or a stored preference |
 | Stored data: database schema and boot migrations | `src/migrations/` | A migration that the previous release's code cannot run against, or that cannot run twice |
+| Block contract: the catalogue of blocks, each with its id, schema, presentation options, cost and static alternative | ADR 0018; `contract/blocks.ts` in `micelio-plugin-core` and the schema and reference generated from it | Removing or renaming a block or an option, or changing the schema of a block that stored content uses without a content migration |
+| Plugin hooks API: the hooks the core exposes to other plugins and their payloads | `micelio-plugin-core`, the reference generated from the TSDoc of the hooks | Removing or renaming a hook, or changing a payload |
+| Editorial states and transitions | ADR 0017; the `transitions` service of `micelio-plugin-core` | Removing or renaming a state or a transition, or changing who may perform one by default |
+| Site export format | `docs/export-format.md` in `micelio-plugin-core` | An archive the previous release can no longer import |
 
+- Every contract keyed by content is keyed by site (ADR 0017): a content type, a hook payload, a policy and an export name the site they belong to.
 - Adding is free when it is optional and has a default that keeps existing consumers working. Removing, renaming or changing a meaning is a breaking change.
 - A breaking change **must** have an ADR, a migration path for whoever depends on it, and upgrade notes in the release (section 7). Before 1.0.0 only the upgrade notes are required (section 7, "Before 1.0.0").
 - A change that crosses both repositories goes CMS first (behind a default that keeps the current frontend working), frontend second, each in its own pull request that references the same issue.
@@ -208,7 +214,7 @@ The public interface of a repository is the set of contracts of section 6 that i
 | Part | Changes when | Examples |
 | --- | --- | --- |
 | MAJOR | A contract of section 6 breaks, or the upgrade needs the operator to act | A removed or renamed variable, field, route or hook; a new required variable; a manual migration step; a higher minimum Node or PostgreSQL major; a new major of the theme contract |
-| MINOR | Something is added without breaking, or something is deprecated | A new feature, optional variable, content type, field or block; a new hook, slot or layout variant (a minor of the theme contract) |
+| MINOR | Something is added without breaking, or something is deprecated | A new feature, optional variable, content type, field or block; a new hook, slot or layout variant (a minor of the theme contract); a new plugin hook, block option or editorial state |
 | PATCH | No contract changes | A fix, a security fix, performance, refactoring, a dependency update, documentation |
 
 - The bump follows the pull request titles merged since the last release, and the highest wins: a `!` after the type or scope is a major (`feat(theme)!: …`), `feat` is a minor, everything else a patch.
@@ -225,6 +231,8 @@ While the version is `0.y.z` the project is alpha: nothing is stable and any `0.
 - Upgrades go CMS first. The CMS of a release line also serves the frontend of the previous MINOR, so a site upgrades one side at a time without downtime. Across a MAJOR, the upgrade notes give the order.
 - The builder image carries the version of `micelio`.
 - A theme package has its own version (ADR 0008) and declares the theme contract it needs as `major.minor`. A minor of the contract ships in a MINOR of the core, a major of the contract in a MAJOR.
+- A plugin package (`@micelio/strapi-plugin-*`) has its own version and declares the release line of the core it supports as `major.minor` (ADR 0017). The distribution `micelio-cms` raises a MINOR when it raises the plugins it installs, and a MAJOR when one of them does.
+- The shared configuration packages (`@micelio/eslint-config`, `@micelio/tsconfig`, `@micelio/prettier-config`) have their own versions; a repository pins them like any dependency.
 - This standard is versioned as `major.minor`.
 
 ### Tags and artifacts
@@ -295,7 +303,8 @@ While the version is `0.y.z` the project is alpha: nothing is stable and any `0.
 ## 10. Dependencies, licences, supply chain and runtime
 
 - A new production dependency **must** be justified in the pull request: what it replaces, what it weighs, its licence and who maintains it. Prefer the platform (principle 5).
-- Licences are checked against the allowlist (`npm run lint:licenses`). Third-party material keeps its licence file next to it, is listed in `THIRD-PARTY.md` and annotated in `REUSE.toml`.
+- Licences are checked against the allowlist (`npm run lint:licenses`, shipped with the shared configuration packages). Third-party material keeps its licence file next to it, is listed in `THIRD-PARTY.md` and annotated in `REUSE.toml`.
+- The licence policy (ADR 0007: AGPL-3.0-only, the theme exception, the DCO) and the allowlist are Micelio's. They bind the repositories of section 1 and nothing else in the organisation.
 - The lockfile is committed and never edited by hand. CI installs with `npm ci`.
 - Pin exactly what breaks on minor versions (0.x packages, WASM runtimes); use ranges for the rest.
 - Dependabot proposes grouped minor and patch updates weekly. A major upgrade is done by hand, in its own pull request, with the full suite.
@@ -368,7 +377,7 @@ Documentation is source: Markdown in the repository, changed in the same pull re
 
 ### Decisions and planning
 
-- An ADR is written for a decision that is expensive to undo: caching, authentication, data model, a public contract, licensing, security headers, deployment, versioning. Records are never rewritten; a new record supersedes the old one. Decisions that span repositories are recorded in `micelio`, and the other repositories link to them.
+- An ADR is written for a decision that is expensive to undo: caching, authentication, data model, a public contract, licensing, security headers, deployment, versioning. Records are never rewritten; a new record supersedes the old one. Decisions about the product that span repositories are recorded in `micelio`; decisions about this standard and the shared tooling in `micelio-engineering`; the other repositories link to them.
 - An issue is opened from a template (`.github/ISSUE_TEMPLATE/`): a bug, a proposal, a task or an epic. Bugs and proposals are how anyone reports; tasks and epics are the plan, written by maintainers and agents.
 - A task is titled with the conventional prefix its pull request will carry and has five parts: Why, What to build, Requirements (the contracts and behaviour that must not break, and the version bump), Acceptance criteria (a checklist where every line can be verified by a test or a command) and Progress.
 - An epic lists its issues by phase with their dependencies, and says which can start now. Its Progress section and its checkboxes are updated by every pull request that advances it.
@@ -390,15 +399,25 @@ Agents follow everything above. They are also held to these rules:
 
 ## 14. Starting a new repository
 
+The template of `micelio-engineering` (`template/`) produces all of this; the list is what it must contain.
+
 - [ ] `LICENSE`, `REUSE.toml`, `THIRD-PARTY.md` and the licence allowlist check
-- [ ] `README.md`, `CONTRIBUTING.md` (licence terms and DCO), `SECURITY.md` and `CODE_OF_CONDUCT.md`, with links to the governance and trademark documents
-- [ ] `AGENTS.md`, `CLAUDE.md`, `.claude/TEAM.md` and a copy of this standard
+- [ ] `README.md` and the short `CONTRIBUTING.md` that links Micelio's canonical one (section 1); `SECURITY.md` and `CODE_OF_CONDUCT.md` only when the repository has something to add to the organisation's
+- [ ] `AGENTS.md` with the pinned version of this standard, `CLAUDE.md`, `.claude/TEAM.md` and the copy of this standard
 - [ ] `.editorconfig`, `.nvmrc` and `.env.example`
-- [ ] A `version` in `package.json` and the release workflow of section 7
-- [ ] The scripts `dev`, `build`, `typecheck`, `lint`, `lint:fix`, `test` and `check`
-- [ ] CI with the required checks of section 15, the DCO check, Dependabot and the Scorecard workflow
+- [ ] A `version` in `package.json`, the shared configuration packages, and the release workflow of section 7
+- [ ] The scripts `dev`, `build`, `typecheck`, `lint`, `lint:fix`, `lint:standard`, `test` and `check`
+- [ ] CI with the required checks of section 15 called from the reusable workflows of `micelio-engineering`, the DCO check, Dependabot and the Scorecard workflow
 - [ ] The pull request template, the issue templates, the title-to-label workflow and the release notes configuration
-- [ ] `main` protected: changes arrive by pull request, required checks pass, no force push
+- [ ] `main` protected by the organisation rulesets: changes arrive by pull request, required checks pass, no force push
+- [ ] The Micelio bot installed on the repository (section 16)
+
+A plugin repository also needs:
+
+- [ ] The Strapi plugin SDK scaffold, publishing `@micelio/strapi-plugin-<name>`
+- [ ] A suite that boots a clean Strapi with the plugin installed, next to the unit tests
+- [ ] The release line of the core it supports, declared in `package.json` (section 7)
+- [ ] Its hooks, blocks and states documented from their TSDoc (section 6)
 
 ## 15. Required checks
 
@@ -411,6 +430,7 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | Format | `npm run format:check`, or the stylistic rules inside lint | Yes |
 | Tests with the coverage floor | `npm run test` or `npm run test:coverage` | Yes |
 | Licences | `npm run lint:licenses` and `reuse lint` | Yes (allowlist) |
+| The copy of this standard | `npm run lint:standard` | Yes |
 | Build | `npm run build` | No |
 | Known vulnerabilities | `npm audit --audit-level=critical` | No |
 | Sign-off | The `DCO` workflow | No |
@@ -421,7 +441,8 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 ## 16. Changing this standard
 
 - Propose the change as a pull request to the canonical copy, titled `docs(standard): …`, with the reason. Raise the version and add a line to the table below.
-- Copy the new version to the other repositories in a `docs(standard)` pull request that references the first one.
+- When the new version is released, the Micelio bot (the organisation's GitHub App) opens a `docs(standard): sync to X.Y` pull request in every repository of section 1 that replaces the local copy and the version pinned in `AGENTS.md`. A human reviews and merges it; the bot never merges. Until that workflow exists (bogd3v/micelio-engineering#5), the copy is made by hand in a pull request that references the first one.
+- `npm run lint:standard` fails when the local copy does not match the version pinned in `AGENTS.md`. A repository may stay on an older version on purpose; the lint checks the pinned one.
 - An exception for one repository or one case is an ADR in that repository, not an edit here.
 
 | Version | Date | Change |
@@ -430,3 +451,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | 1.1 | 2026-10-09 | Contract tests between repositories, OWASP ASVS, problem details and OpenAPI, SBOM and provenance, `security.txt`, WCAG 2.2 with a manual check, sustainability, and the community documents |
 | 1.2 | 2026-10-15 | Before 1.0.0 the project is alpha: breaking changes need no deprecation period and no ADR, only the `!`, a `BREAKING CHANGE:` paragraph and upgrade notes |
 | 1.3 | 2026-10-18 | The Integrator row of section 12 names the generated OpenAPI document as the reference of routes, inputs, outputs and errors, and `docs/api.md` for caching and behaviour |
+| 1.4 | 2026-10-20 | Scoped to Micelio's repositories, with the Strapi plugins and the tooling among them; the canonical copy moves to `micelio-engineering` and local copies are synced by the Micelio bot and checked by `lint:standard`; the code of conduct and the security policy come from the organisation, contribution terms, governance and trademarks from `micelio-engineering`; contracts for blocks, plugin hooks, editorial states and the site export, keyed by site; plugin and configuration packages in the versioning rules; the licence policy stated as Micelio's; the plugin checklist in section 14 |
