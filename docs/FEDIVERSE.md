@@ -631,13 +631,16 @@ An article is federated as an `Article` or as a `Note`, per site: `objectType` (
 - **Why a `Note` at all.** Ghost and WriteFreely send one. A `Note` has no `name` for a server to read as a content warning, which is what GoToSocial does with an `Article` (#322).
 - **Tests.** `tests/fediverse-object-type.test.ts` runs the dispatcher, the outbox and the `Create` and `Update` fan-out with both types, and checks that the id and `url` are the same under both and that switching sends nothing to the fake inbox. `tests/fediverse-phase2.test.ts` keeps covering the default. `npx @fedify/cli lookup` (Fedify 2.4.4) parses both shapes from a running instance.
 
-**What each type looks like.** What is known:
+**What each type looks like.** Seen on **GoToSocial 0.22.2** on 2026-10-20 (Elk as the client, the CMS and GoToSocial behind two Cloudflare quick tunnels, one article of each type with a cover and a CC BY credit; the procedure of [Cross-server verification](#cross-server-verification-304), steps 4 and 5):
 
-- **GoToSocial 0.22.2, `Article`** (seen in #304, screenshots in its Progress): collapsed behind a "Show more" button with the title as the visible line, the title repeated in bold in the body, the cover missing (`image` is not turned into an attachment), the link as plain text. The excerpt, the link and the cover credit line render fine.
-- **Mastodon, `Article`** (seen on staging): the title and excerpt as the body and a link card built from the link and `image`.
-- **`Note` on either:** not yet seen. A `Note` without `name` should not be collapsed on GoToSocial, and Mastodon builds the card from the link as it does for an `Article`, but that is the expectation, not a check.
+![The same article sent as an Article and as a Note, on GoToSocial](assets/object-shape-gotosocial.png)
 
-The rendering comparison with screenshots needs a real Mastodon account and a GoToSocial instance behind public names (the checklist in [Cross-server verification](#cross-server-verification-304)). Run steps 4 and 5 once with each type, add the four screenshots to the Progress of #305, and decide the default then. Whether the `Note` should also send the cover as an `attachment` is #322.
+- **`Article`:** collapsed behind a "Show more" button with the title as the visible line; opened, the title again in bold, the excerpt and the link as plain text. This is #322.
+- **`Note`:** not collapsed. The title once in bold, the excerpt and the link, with no click.
+- **Both:** no cover (the `image` is not turned into an attachment) and no credit line: the payload carries it (`<p><small>Photo: … CC BY 4.0</small></p>`), but GoToSocial did not show it for either type in this run, unlike what #304 recorded for an `Article`. Not investigated here; it belongs with #322, since a licence such as CC BY requires the credit.
+- **Which one was sent.** The `Create` carries the type the setting had at publish time; the object served at its id carries the type of the setting _now_. Switching therefore leaves a dereferenced post's type different from the one a remote server stored until the next `Update`.
+
+**Mastodon is not checked.** It needs a CMS on a named domain (`mastodon.social` rejected the `*.trycloudflare.com` hosts in #304), which is staging or a real instance. The Mastodon `Article` card was seen on staging before this issue; a `Note` there is the expectation (the card comes from the link, as for an `Article`), not a check. **The default stays `article`** until a Mastodon screenshot of a `Note` exists; on GoToSocial alone the `Note` is the better shape. Whether the `Note` also sends the cover as an `attachment` is #322.
 
 ## Origin of the ids
 
