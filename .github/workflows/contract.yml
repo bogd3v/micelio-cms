@@ -1,6 +1,9 @@
 # The frontend's contract suite against a CMS built from this pull request. The suite lives in bogd3v/micelio
 # (e2e/contract/, `npm run test:contract`); it starts the image given in CONTRACT_CMS_IMAGE with Postgres and the demo content
-# (MICELIO_DEMO). Docs: docs/architecture/ci-pipeline.md. It does not gate `deploy`.
+# (MICELIO_DEMO). Docs: docs/architecture/ci-pipeline.md.
+#
+# It runs on every pull request to main or develop, with no `paths` filter, so it can be a required check of `main`: a required check
+# from a workflow that a path filter skips never reports and blocks the pull request. It does not gate `deploy`.
 #
 # The frontend's own workflow cannot be called from here: a called workflow checks out the caller's repository, so the frontend's
 # source is checked out below instead.
@@ -11,15 +14,6 @@ on:
     branches: [main]
   pull_request:
     branches: [main, develop]
-    paths:
-      - src/api/**
-      - src/components/**
-      - src/extensions/**
-      - src/middlewares/**
-      - src/utils/**
-      - src/migrations/api-tokens.ts
-      - scripts/release/frontend-refs.mjs
-      - .github/workflows/contract.yml
   workflow_dispatch:
     inputs:
       frontend_ref:
