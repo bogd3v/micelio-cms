@@ -574,6 +574,44 @@ The actor's profile is edited in the admin panel, in the `fediverse` component o
 
 Release-note material (#303, minor, no upgrade step): the actor's username, display name, bio, header, discoverability and source link are edited in Site settings → Fediverse profile. The four `FEDIVERSE_ACTOR_*` variables still work and log a deprecation warning at boot; `FEDIVERSE_ACTOR_USERNAME` is no longer required. A site with no bio anywhere no longer shows "A Micelio site, federated on the fediverse." The site settings table gets one component table (`components_site_fediverses`); rolling back leaves it in place.
 
+## Cross-server verification (#304)
+
+Federation was first verified against Mastodon only. This is how to run the same checks against GoToSocial, a second, independent implementation. Nothing here touches production or staging: the CMS runs on your machine.
+
+**Set up** (about ten minutes):
+
+1. Two public HTTPS names that reach your machine: one for the CMS (port 1337) and one for GoToSocial (port 8081). A quick tunnel does it, for example `cloudflared tunnel --url http://localhost:1337` and `cloudflared tunnel --url http://localhost:8081`. Each prints a `https://….trycloudflare.com` name; they last as long as the process, so a run is one sitting.
+2. Start GoToSocial with the second name: `GTS_HOST=<name> docker compose -f docker-compose.verify.yml up -d`. Create a user: `docker exec gts-verify-gotosocial-1 /gotosocial/gotosocial admin account create --username alice --email alice@example.test --password '<a throwaway password>'`. The image is pinned by digest; `docker compose -f docker-compose.verify.yml down -v` removes everything.
+3. Start the CMS with the first name as `URL` and a database of its own: `DATABASE_CLIENT=sqlite DATABASE_FILENAME=.tmp/verify.db URL=https://<cms name> FRONTEND_URL=https://blog.example.test FEDIVERSE_ENABLED=true FEDIVERSE_ACTOR_IDENTIFIER=blog npm run develop`. Create the first admin, and fill Site settings → Fediverse profile (name, summary, header, source URL).
+4. GoToSocial has no web client of its own, and refuses password logins over its API. Sign in as `alice` from a Mastodon-API web client such as `elk.zone` (server: the second name).
+
+**Checklist**, run in order; write the result of each line, with a screenshot where it says so, in the issue's Progress. A difference between what the plugin sends and what the other server does is its own issue, not a fix in the run.
+
+| #   | Step                                                                          | Expect                                                                                                                  | Screenshot |
+| --- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 1   | Search `@<username>@<cms name>` from GoToSocial                               | The account is found: WebFinger, actor, followers and outbox answer `200` in the CMS log                                | yes        |
+| 2   | The actor profile                                                             | Name, summary, avatar, header, the `Blog` and `Código` fields; the `rel="me"` link shows as verified when it links back | yes        |
+| 3   | Follow it                                                                     | `follow accepted` in the CMS log, a follower row, the follow shows as accepted on GoToSocial                            |            |
+| 4   | Publish an article with a cover (and a cover credit)                          | The article reaches the timeline of `alice`; log `Create(Article) … queued for 1 follower`                              | yes        |
+| 5   | How the body and the card render                                              | Title, excerpt, link, the credit line, the card with the cover                                                          | yes        |
+| 6   | Reply to the article from GoToSocial, then reply to that reply                | Two comments in the admin as `PENDING`, the second nested under the first (one hop is the limit, #302)                  | yes        |
+| 7   | Approve a reply and answer it as a moderator in the admin                     | The answer appears under the reply on GoToSocial (#301)                                                                 | yes        |
+| 8   | Like, then boost the article; undo each                                       | The counts of `GET /api/fediverse/articles/<id>/stats` go up and back down                                              |            |
+| 9   | Edit and publish the article again                                            | `Update(Article)` queued; the timeline post shows the edit, or not (note which)                                         | yes        |
+| 10  | Unpublish the article                                                         | `Delete(Article)` queued; the post disappears from the timeline                                                         |            |
+| 11  | Edit the display name and summary, then rename the username                   | `Update(Person)` queued; GoToSocial shows the new profile (checked in #303)                                             |            |
+| 12  | WebFinger through the handle host, when `FEDIVERSE_HANDLE_HOST` is set (#298) | Skipped until #298 lands                                                                                                |            |
+
+Akkoma is a second target for the same table when there is time.
+
+**First run (2026-10-20, GoToSocial 0.22.2, the CMS at `main` after #314).** Steps 1 to 11 were run; step 12 waits for #298. What passed: the follow and `Accept`, the profile (name, summary, header, source link), the reply and its nested reply arriving as `PENDING` comments (threaded one hop, and a reply to a reply under it), a moderator's answer reaching the remote thread as a `Note`, like and boost counted and undone, the rename and the `Update(Person)` of #303, and a `Delete(Article)` that GoToSocial processed (its stored copy ends emptied). Divergences, each its own issue:
+
+- **#320:** the `Article`'s `updated` is a few milliseconds before its `published` (Strapi keeps the draft's `updatedAt` when it publishes), and GoToSocial drops the whole post (`'updated' predates 'published'`). The run continued with a local, uncommitted clamp.
+- **#321:** every publish stamps a new `publishedAt`, so an `Update(Article)` carries another `published` than its `Create`, and GoToSocial refuses it (`'published' changed`): edits never reach it.
+- **#322:** GoToSocial shows the `Article` collapsed behind its title (it reads `name` as a content warning), repeats the title in bold in the body, and drops the cover (the `image` is not turned into an attachment; the link is plain text). The excerpt, the link and the cover credit line render fine. Input for #305.
+- **Observation, no issue:** publishing again an article whose id was just retracted with a `Delete` did not show up on GoToSocial (`Create` answered `202`, nothing stored), as Mastodon keeps a tombstone for a deleted id. A new article id worked at once. It is the same rule as for a moderator's reply that is hidden and shown again (see [Moderator replies (#301)](#moderator-replies-301)).
+- **Not exercised:** Akkoma, the `rel="me"` verification mark (the link goes to a placeholder site), and Mastodon (`mastodon.social` could not be used with a tunnel host, see [Actor profile in the site settings (#303)](#actor-profile-in-the-site-settings-303)).
+
 ## Origin of the ids
 
 When `URL` is set, `getFederation` passes its origin (`publicOrigin`, `src/plugins/fediverse/server/src/utils/public-origin.ts`) to `createFederation`, so the actor, inbox, key and WebFinger ids never depend on the request's `Host` or `X-Forwarded-*` headers. The publisher already used `server.url`. With `URL` unset (development, tests) Fedify takes the origin from the request. Test: `tests/fediverse-origin.test.ts`.
