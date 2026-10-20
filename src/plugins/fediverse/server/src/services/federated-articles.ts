@@ -122,6 +122,44 @@ export async function recordFailure(
   });
 }
 
+/**
+ * Records that delivering the article's last activity to one inbox failed.
+ *
+ * @remarks
+ * Does nothing unless the row's last activity is of `type`, so a failure of a `Create` cannot
+ * overwrite a later `Update`. It cannot tell two activities of one type apart: a late failure of
+ * an earlier `Update` (or of a `Create` before a re-publish) lands on the newer one.
+ * `attempts` only grows, so the inbox that has been retried most is the one
+ * shown. The status turns `failed` only when delivery to that inbox is
+ * abandoned; while retries remain the row keeps its status and shows the last
+ * error. A delivery that later succeeds clears nothing: Fedify has no callback
+ * for a delivery that worked, so a row that stays `created` means "queued",
+ * never "delivered".
+ *
+ * @param attempts - Delivery attempts made or scheduled for that inbox.
+ * @param abandoned - Whether Fedify will not try that inbox again.
+ */
+export async function recordDeliveryFailure(
+  strapi: Core.Strapi,
+  articleDocumentId: string,
+  type: FederatedActivityType,
+  { attempts, abandoned, error }: { attempts: number; abandoned: boolean; error: unknown }
+): Promise<void> {
+  const row = (await query(strapi).findOne({
+    where: { articleDocumentId },
+    orderBy: { id: 'asc' },
+  })) as FederatedArticleRow | null;
+  if (row == null || row.lastActivityType !== type) return;
+  await query(strapi).update({
+    where: { id: row.id },
+    data: {
+      attempts: Math.max(row.attempts ?? 0, attempts),
+      lastError: describeDeliveryError(error),
+      ...(abandoned ? { status: 'failed' } : {}),
+    },
+  });
+}
+
 function legacyIds(value: unknown): string[] {
   return value != null && typeof value === 'object' ? Object.keys(value) : [];
 }
@@ -168,10 +206,12 @@ export default (): {
   isFederated: typeof isFederated;
   recordSend: typeof recordSend;
   recordFailure: typeof recordFailure;
+  recordDeliveryFailure: typeof recordDeliveryFailure;
   migrateFederatedArticles: typeof migrateFederatedArticles;
 } => ({
   isFederated,
   recordSend,
   recordFailure,
+  recordDeliveryFailure,
   migrateFederatedArticles,
 });

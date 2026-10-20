@@ -1,11 +1,17 @@
+import { setTimeout as pause } from 'node:timers/promises';
+
 import type { Core } from '@strapi/strapi';
 
 import {
+  createExponentialBackoffPolicy,
   createFederation,
-  MemoryKvStore,
+  SendActivityError,
   type Context,
   type Federation,
   type InboxContext,
+  type InboxListener,
+  type InboxListenerSetters,
+  type RetryPolicy,
 } from '@fedify/fedify';
 import {
   Accept,
@@ -24,7 +30,12 @@ import {
   Undo,
   Update,
 } from '@fedify/fedify/vocab';
-import { getActorHandle, type Actor, type DocumentLoader } from '@fedify/fedify/vocab';
+import {
+  getActorHandle,
+  type Activity,
+  type Actor,
+  type DocumentLoader,
+} from '@fedify/fedify/vocab';
 import { createMiddleware } from '@fedify/koa';
 import type { Context as KoaContext } from 'koa';
 
@@ -41,6 +52,7 @@ import {
   SHARED_INBOX_PATH,
 } from './constants/paths';
 import { ARTICLE_UID } from './constants/uids';
+import { QUEUE_STOP_TIMEOUT_MS } from './constants/queue';
 import type { RequestGuard, RequestGuardKind } from './types/request-guard';
 import { logInboxSignatureRefused } from './utils/security-log';
 import {
@@ -51,25 +63,30 @@ import {
 } from './services/articles';
 import { resolveArticleId } from './services/articles';
 import { getActorProfile } from './services/actor-profile';
-import { getActorKeyPairs } from './services/keys';
+import { configuredEncryptionKey, getActorKeyPairs } from './services/keys';
 import { recordInteraction, removeInteraction } from './services/interactions';
 import { ingestReply, removeReply, updateReply } from './services/replies';
+import { settleDelivery } from './services/delivery-outcomes';
 import {
   countFollowers,
   isActorBlocked,
   listFollowers,
+  markReachable,
   recordFollower,
   removeFollower,
 } from './services/followers';
 import type { ActorProfileField } from './types/actor-profile';
-import type { FediverseContextData } from './types/federation';
+import type { FederationBackend, FediverseContextData, FederationSetup } from './types/federation';
 import type { InteractionType } from './types/interactions';
 import type { ReplyContext } from './types/replies';
 import { escapeHtml } from './utils/html';
+import { createFederationBackend } from './utils/federation-backend';
 import { ActorKeyDecryptionError } from './utils/key-encryption';
+import { currentObservation, ObservedMessageQueue } from './utils/observed-queue';
 import { publicOrigin } from './utils/public-origin';
 import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
 import { inboxDigestRefusal } from './inbox-digest';
+import { describeDeliveryError } from './utils/delivery-error';
 import { cleanRemoteText } from './utils/remote-text';
 import { safeRemoteUrl } from './utils/remote-url';
 
@@ -83,6 +100,19 @@ const OUTBOX_MAX_CURSOR = 100_000;
 const AVATAR_MAX_LENGTH = 255;
 /** Shortest gap between two repeats of the guard, digest and key pairs warnings. */
 const WARNING_INTERVAL_MS = 60_000;
+/**
+ * Whether `line` may be logged now: not within `WARNING_INTERVAL_MS` of its last
+ * time in `lastLogged`. Records the time when it may, and empties the map if it
+ * reached `maxLines`, so a stream of distinct lines cannot grow it.
+ */
+function mayLog(lastLogged: Map<string, number>, line: string, maxLines: number): boolean {
+  const now = Date.now();
+  if (now - (lastLogged.get(line) ?? -Infinity) < WARNING_INTERVAL_MS) return false;
+  if (lastLogged.size >= maxLines) lastLogged.clear();
+  lastLogged.set(line, now);
+  return true;
+}
+
 /**
  * Distinct key pairs failure lines kept for throttling. The lines come from a
  * fixed set (decryption messages and error names), so this only guards memory.
@@ -107,12 +137,29 @@ function logKeyPairsFailure(strapi: Core.Strapi, error: unknown): void {
     error instanceof ActorKeyDecryptionError
       ? error.message
       : `[fediverse] the actor key pairs could not be loaded (${error instanceof Error ? error.name : 'unknown error'})`;
-  const now = Date.now();
-  if (now - (lastKeyPairsFailureLog.get(line) ?? -Infinity) < WARNING_INTERVAL_MS) return;
-  if (lastKeyPairsFailureLog.size >= KEY_PAIRS_FAILURE_LINES_MAX) lastKeyPairsFailureLog.clear();
-  lastKeyPairsFailureLog.set(line, now);
+  if (!mayLog(lastKeyPairsFailureLog, line, KEY_PAIRS_FAILURE_LINES_MAX)) return;
   strapi.log.error(`${line} Repeats are held back for a minute.`);
 }
+
+/** Distinct delivery failure lines kept for throttling; the map is emptied when it is full. */
+const DELIVERY_FAILURE_LINES_MAX = 64;
+/** When each delivery failure line was last logged by this process. */
+const lastDeliveryFailureLog = new Map<string, number>();
+
+/**
+ * Logs a failed delivery attempt, each distinct activity and reason at most once per
+ * `WARNING_INTERVAL_MS`. A dead server fails once per follower and retry, so an
+ * unthrottled line would fill the log. Only the HTTP status or the error's name
+ * is written, never the remote server's answer, which is untrusted text.
+ */
+function logDeliveryFailure(log: Logger, error: Error, activityId: string | undefined): void {
+  const reason = error instanceof SendActivityError ? `HTTP ${error.statusCode}` : error.name;
+  const line = `[fediverse] delivery of ${activityId ?? '(unknown activity)'} failed (${reason}); Fedify retries it with backoff. Repeats are held back for a minute.`;
+  if (mayLog(lastDeliveryFailureLog, line, DELIVERY_FAILURE_LINES_MAX)) log.error(line);
+}
+
+/** When a dropped, undecryptable queued delivery was last logged. */
+const lastUnreadableLog = new Map<string, number>();
 
 /** The actor has no usable key pair; the cause is logged by `logKeyPairsFailure`. */
 class ActorKeyUnavailableError extends Error {
@@ -281,36 +328,92 @@ export async function buildActor(
 }
 
 /**
+ * Wraps an inbox listener so that any activity from a follower flagged
+ * unreachable first clears the flag: the follower's server answers again.
+ */
+function heardFrom<TActivity extends Activity>(
+  listener: InboxListener<FediverseContextData, TActivity>
+): InboxListener<FediverseContextData, TActivity> {
+  return async (ctx, activity) => {
+    const { strapi } = ctx.data;
+    if (activity.actorId != null) {
+      try {
+        const cleared = await markReachable(strapi, activity.actorId.href);
+        if (cleared > 0) strapi.log.info(`[fediverse] ${activity.actorId.href} is reachable again`);
+      } catch (error) {
+        strapi.log.warn(
+          `[fediverse] could not clear the unreachable flag: ${error instanceof Error ? error.name : 'unknown error'}`
+        );
+      }
+    }
+    await listener(ctx, activity);
+  };
+}
+
+/**
+ * Makes every listener registered on `setters` clear the sender's unreachable flag first,
+ * so no listener has to remember to. `on` keeps returning the same object, so the
+ * chain of registrations reads as before.
+ */
+function heardFromListeners(
+  setters: InboxListenerSetters<FediverseContextData>
+): InboxListenerSetters<FediverseContextData> {
+  const register = setters.on.bind(setters) as typeof setters.on;
+  setters.on = ((type, listener) => register(type, heardFrom(listener))) as typeof setters.on;
+  return setters;
+}
+
+/**
  * Builds the Fedify `Federation` of the blog actor, with every dispatcher and
  * inbox listener registered.
  *
  * @remarks
- * Its key-value store is in memory: durable state lives in the plugin's
- * content types. `getFederation` keeps one per Strapi instance.
- *
- * @param log - Receives failed outbox deliveries with the activity id, which
- * Fedify's own LogTape line leaves out.
- * @param origin - Fixed public origin for every id Fedify builds; without it the
- * origin comes from the request (see `publicOrigin`).
+ * Outgoing activities go through `setup.backend`'s queue, so publishing returns
+ * once they are enqueued and a failed delivery is retried with Fedify's default
+ * backoff (`setup.retryPolicy` can replace it, for tests). The queue is not
+ * started here: `startFederationQueue` does it at bootstrap, so messages left
+ * by a previous run are picked up even before the first request. `getFederation`
+ * keeps one per Strapi instance.
  */
 export function createFediverseFederation(
-  log?: Logger,
-  origin?: string
+  setup: FederationSetup
 ): Federation<FediverseContextData> {
+  const { log, origin, backend } = setup;
+  const queue = new ObservedMessageQueue(backend.queue, {
+    encryptionKey: setup.encryptionKey,
+    settle: setup.settle,
+    onUnreadable: setup.onUnreadable,
+  });
+  const defaultRetryPolicy = createExponentialBackoffPolicy();
   const federation = createFederation<FediverseContextData>({
-    kv: new MemoryKvStore(),
+    kv: backend.kv,
+    // Outgoing only: incoming activities are still handled while the request is open.
+    queue: { outbox: queue, fanout: queue },
+    manuallyStartQueue: true,
     ...(origin ? { origin } : {}),
-    // Fedify's own LogTape line for a failed delivery (see utils/fedify-logging)
-    // does not name the activity; this one does, so a rejected delivery (e.g.
+    outboxRetryPolicy: (context) => {
+      const delay = (setup.retryPolicy?.() ?? defaultRetryPolicy)(context);
+      const observation = currentObservation();
+      if (observation) observation.retry = delay;
+      return delay;
+    },
+    // Called for every failed attempt, retries included. Fedify's own LogTape line for
+    // it does not name the activity; this one does, so a rejected delivery (e.g.
     // Mastodon answering 401/422) can be traced to the article.
     onOutboxError: (error, activity) => {
-      log?.error(
-        `[fediverse] delivery failed for ${activity?.id?.href ?? '(unknown activity)'}: ${error.message}`
-      );
+      const observation = currentObservation();
+      if (observation) observation.failure = { error, activity };
+      if (log) logDeliveryFailure(log, error, activity?.id?.href);
     },
     // Lets tests dereference a fake remote actor served from 127.0.0.1 (real
     // remotes are always public hosts). Never true outside NODE_ENV=test.
     allowPrivateAddress: process.env.NODE_ENV === 'test',
+  });
+
+  // Only a 404 or 410 from the inbox, or a held activity that expired: Fedify does not retry it.
+  federation.setOutboxPermanentFailureHandler((_ctx, values) => {
+    const observation = currentObservation();
+    if (observation) observation.permanent = { reason: values.reason, error: values.error };
   });
 
   federation
@@ -408,6 +511,11 @@ export function createFediverseFederation(
       },
     };
   });
+
+  // Every inbox listener below clears the sender's unreachable flag first (`heardFrom`).
+  const setInboxListeners = federation.setInboxListeners.bind(federation);
+  federation.setInboxListeners = (...args: Parameters<typeof setInboxListeners>) =>
+    heardFromListeners(setInboxListeners(...args));
 
   federation
     .setInboxListeners(INBOX_PATH, SHARED_INBOX_PATH)
@@ -633,16 +741,92 @@ export function createFediverseFederation(
   return federation;
 }
 
-const federations = new WeakMap<Core.Strapi, Federation<FediverseContextData>>();
+/** A Federation with the backend it runs on and, once started, its queue worker. */
+interface FederationHandle {
+  federation: Federation<FediverseContextData>;
+  backend: FederationBackend;
+  worker?: { stop: AbortController; running: Promise<void> };
+}
+
+const federations = new WeakMap<Core.Strapi, FederationHandle>();
+
+/** Instances whose federation was stopped: a late call must not open a pool nothing closes. */
+const stopped = new WeakSet<Core.Strapi>();
+
+function handleOf(strapi: Core.Strapi): FederationHandle {
+  if (stopped.has(strapi)) throw new Error('[fediverse] federation is stopped');
+  let handle = federations.get(strapi);
+  if (handle == null) {
+    const backend = createFederationBackend(strapi);
+    handle = {
+      backend,
+      federation: createFediverseFederation({
+        log: strapi.log,
+        origin: publicOrigin(),
+        backend,
+        encryptionKey: () => configuredEncryptionKey(strapi),
+        settle: (observation) => settleDelivery(strapi, observation),
+        onUnreadable: (error) => {
+          if (mayLog(lastUnreadableLog, 'unreadable', 1)) {
+            strapi.log.error(
+              `[fediverse] a queued delivery was dropped: it cannot be decrypted (${error instanceof Error ? error.name : 'unknown error'}); ENCRYPTION_KEY changed since it was queued. Repeats are held back for a minute.`
+            );
+          }
+        },
+        retryPolicy: () => {
+          const policy: unknown = strapi.config.get('plugin::fediverse.outboxRetryPolicy');
+          return typeof policy === 'function' ? (policy as RetryPolicy) : undefined;
+        },
+      }),
+    };
+    federations.set(strapi, handle);
+  }
+  return handle;
+}
 
 /** One Federation per Strapi instance, shared by the middleware and the article publisher. */
 export function getFederation(strapi: Core.Strapi): Federation<FediverseContextData> {
-  let federation = federations.get(strapi);
-  if (federation == null) {
-    federation = createFediverseFederation(strapi.log, publicOrigin());
-    federations.set(strapi, federation);
+  return handleOf(strapi).federation;
+}
+
+/**
+ * Starts the worker that delivers queued activities; called by the plugin's
+ * `bootstrap()`. Messages left by a previous run, retries included, are
+ * delivered from here on. Does nothing if it already runs.
+ */
+export function startFederationQueue(strapi: Core.Strapi): void {
+  const handle = handleOf(strapi);
+  if (handle.worker != null) return;
+  const stop = new AbortController();
+  const running = (async () => {
+    try {
+      await handle.federation.startQueue({ strapi }, { signal: stop.signal });
+    } catch (error) {
+      strapi.log.error(
+        `[fediverse] the delivery queue stopped, so nothing is delivered until the next restart: ${describeDeliveryError(error) ?? 'unknown error'}`
+      );
+    }
+  })();
+  handle.worker = { stop, running };
+}
+
+/**
+ * Stops the queue worker and closes the connections Fedify opened; called by the
+ * plugin's `destroy()`. A delivery in flight gets `QUEUE_STOP_TIMEOUT_MS` to finish.
+ */
+export async function stopFederation(strapi: Core.Strapi): Promise<void> {
+  const handle = federations.get(strapi);
+  if (handle == null) return;
+  federations.delete(strapi);
+  stopped.add(strapi);
+  if (handle.worker != null) {
+    handle.worker.stop.abort();
+    await Promise.race([
+      handle.worker.running,
+      pause(QUEUE_STOP_TIMEOUT_MS, undefined, { ref: false }),
+    ]);
   }
-  return federation;
+  await handle.backend.close();
 }
 
 /**

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
+import { createExponentialBackoffPolicy } from '@fedify/fedify';
 import { setupStrapi, cleanupStrapi } from './strapi';
 import { createRemoteActor, type RemoteActor } from './helpers/remote-actor';
 import { waitUntil } from './helpers/wait-until';
@@ -115,7 +116,7 @@ describe('Fediverse federation (federated article state)', () => {
       expect(await rowsOf(id)).toHaveLength(1);
     });
 
-    it('marks the row failed with a sanitized reason when delivery throws', async () => {
+    it('marks the row failed with a sanitized reason when delivery is abandoned', async () => {
       const row = await strapi.db
         .query(FOLLOWER_UID)
         .findOne({ where: { actorId: remote.actorUrl } });
@@ -123,17 +124,30 @@ describe('Fediverse federation (federated article state)', () => {
         where: { documentId: row.documentId },
         data: { inbox: 'http://127.0.0.1:1/inbox?token=secret' },
       });
+      // Two quick retries instead of Fedify's hours-long backoff.
+      strapi.config.set(
+        'plugin::fediverse.outboxRetryPolicy',
+        createExponentialBackoffPolicy({
+          initialDelay: { milliseconds: 20 },
+          maxAttempts: 2,
+          jitter: false,
+        })
+      );
 
-      const draft = await createArticle();
-      await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
+      try {
+        const draft = await createArticle();
+        await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
 
-      const failed = await waitUntil(async () => {
-        const current = await rowOf(draft.documentId);
-        return current?.status === 'failed' ? current : null;
-      });
-      expect(failed.lastActivityType).toBe('Create');
-      expect(failed.attempts).toBe(1);
-      expect(failed.lastError ?? '').not.toMatch(/\?|127\.0\.0\.1|secret/);
+        const failed = await waitUntil(async () => {
+          const current = await rowOf(draft.documentId);
+          return current?.status === 'failed' ? current : null;
+        });
+        expect(failed.lastActivityType).toBe('Create');
+        expect(failed.attempts).toBe(3);
+        expect(failed.lastError ?? '').not.toMatch(/\?|127\.0\.0\.1|secret/);
+      } finally {
+        strapi.config.set('plugin::fediverse.outboxRetryPolicy', undefined);
+      }
     });
   });
 

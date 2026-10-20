@@ -1,5 +1,7 @@
 import { isIPv4, isIPv6 } from 'node:net';
 
+import { SendActivityError } from '@fedify/fedify';
+
 import { cleanRemoteText } from './remote-text';
 
 const MAX_ERROR_LENGTH = 500;
@@ -15,6 +17,10 @@ const IPV6_CANDIDATE = /\[?[0-9a-f:.]*:[0-9a-f:.]*\]?/gi;
 function messagesOf(error: unknown): string[] {
   if (typeof error === 'string') return [error];
   if (!(error instanceof Error)) return [];
+  // Its message ends with the remote server's answer, which is untrusted text.
+  if (error instanceof SendActivityError) {
+    return [`The inbox at ${error.inbox.host} answered HTTP ${error.statusCode}`];
+  }
   // An `AggregateError` (one failure per inbox) carries its causes in `errors`.
   const causes = (error as { errors?: unknown }).errors;
   const nested = Array.isArray(causes) ? causes.slice(0, MAX_SUB_ERRORS).flatMap(messagesOf) : [];
@@ -28,7 +34,8 @@ function messagesOf(error: unknown): string[] {
  * Query strings and fragments are cut from every URL, IP literals and email
  * addresses are replaced, and the text goes through `cleanRemoteText`: a
  * remote server's answer or a follower's inbox address must not end up in the
- * database, where an admin panel will show it.
+ * database, where an admin panel will show it. A `SendActivityError` is reduced
+ * to the inbox's host and the HTTP status: its message carries the response body.
  *
  * @returns The cleaned text, at most 500 characters, or `null` when nothing is left.
  */

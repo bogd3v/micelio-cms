@@ -88,6 +88,7 @@ export const DATA_CLASSIFICATION: Readonly<Record<string, AttributeLevels>> = {
     inbox: 'personal',
     avatar: 'personal',
     blocked: 'personal',
+    unreachableSince: 'personal',
   },
   'plugin::fediverse.interaction': {
     type: 'public',

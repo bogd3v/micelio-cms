@@ -193,7 +193,7 @@ FEDIVERSE_ACTOR_SOURCE_URL=
 While enabled, the two required values have no defaults: without them the plugin refuses to start. `URL` must be the CMS's real public origin, because activities sent in the background build their ids from it. Requirements that are easy to miss:
 
 - **Node 22.12 or later.** Fedify depends on an ESM-only package that `require()` loads only from that version on. The image is on Node 22.
-- **A persistent database.** Followers, the actor's key pair and the record of federated articles live in the database. If it is wiped, the next boot generates a new actor key and every follower is lost.
+- **A persistent database.** Followers, the actor's key pair, the record of federated articles and, on PostgreSQL, the deliveries waiting to be sent live in the database. If it is wiped, the next boot generates a new actor key and every follower is lost.
 - **Proxy headers.** Behind a TLS-terminating proxy, generated URLs use `https` only if the CMS follows `X-Forwarded-Proto` and `X-Forwarded-Host`: that is the default, but only for a connection from a proxy that `TRUST_PROXY` trusts (a private address by default, see above); from any other peer the CMS uses the real scheme and the `Host` header. `TRUST_PROXY_PROTOCOL=false` turns it off. A proxy outside the private ranges must be listed in `TRUST_PROXY`. Federation does not depend on those headers when `URL` is set: every actor, inbox, key and WebFinger id is built from the origin of `URL`, so a forged `X-Forwarded-Host` cannot make the actor document name another host. Set `URL` to the real public origin in production; unset, the ids follow the request.
 - **No proxy or DNS changes.** Fedify's routes (`/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/*`) are served by the CMS on the same domain as the API.
 
@@ -207,7 +207,15 @@ While enabled, the two required values have no defaults: without them the plugin
    npx @fedify/cli webfinger @blog@cms.example.com                            # 200, https links
    npx @fedify/cli lookup @blog@cms.example.com                               # actor with inbox, outbox, publicKey
    ```
-4. Follow the actor from a Mastodon account, publish an article, and watch the logs for `[fediverse]` lines (each fan-out reports how many followers it reached).
+4. Follow the actor from a Mastodon account, publish an article, and watch the logs for `[fediverse]` lines (each fan-out reports how many followers it was queued for).
+
+### Delivery queue and database connections
+
+Publishing returns as soon as the activities are queued; the CMS delivers them in the background and retries a failure with Fedify's default backoff (up to 10 retries over roughly 20 to 35 minutes; a host that keeps failing is then held by Fedify's circuit breaker for up to a week). There is no variable for it: the backend follows `DATABASE_URL`.
+
+- **PostgreSQL (production).** The queue and Fedify's cache are two tables, `fedify_message_v2` and `fedify_kv_v2`, created on first use in the schema the CMS uses (`DATABASE_SCHEMA`). A restart loses none of the deliveries waiting in it; the one being sent at the moment of a crash is lost. They use their own pool, apart from Strapi's: **at most 3 connections plus 1 that listens for new messages, so 4 more per CMS process**. Count them in `max_connections` (a managed database with a small limit, or a pooler in transaction mode, is where this shows up). The constant is `FEDIFY_POOL_SIZE` in `src/plugins/fediverse/server/src/constants/queue.ts`. The queued activities hold the actor's signing key, encrypted with `ENCRYPTION_KEY` (change that value and what is waiting in the queue is dropped); the pool checks the database certificate for the `sslmode`s that Strapi's `pg` checks; a backup of these tables is as sensitive as one of the key itself ([Backup](backup.md)).
+- **SQLite (development, tests).** The queue is in memory: a restart loses what was waiting.
+- **Reading the state.** Each article's `Fediverse Federated Article` entry in the admin panel says when its last activity was queued, how many attempts it has had and the last error; `failed` means at least one follower's server was given up on. Nothing says an activity was _delivered_: Fedify does not report it. A follower whose server answered `404` or `410` is skipped by later publishes until it sends the blog an activity again.
 
 **Rollback:** set `FEDIVERSE_ENABLED=false` and restart. The routes and hooks disappear; the tables, followers and key pair stay in the database, and the comments-visibility middleware keeps hiding pending comments. Remote servers that still know the actor get 404s until it is enabled again.
 

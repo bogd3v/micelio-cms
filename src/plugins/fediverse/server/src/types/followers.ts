@@ -16,6 +16,12 @@ export interface FollowerRecord {
    * and replies are ignored, and its interactions stop counting.
    */
   blocked: boolean;
+  /**
+   * When the follower's inbox answered a permanent failure (`404` or `410`), or
+   * `null`. Fan-outs skip the follower until it sends an activity again; the
+   * followers collection and its count still include it.
+   */
+  unreachableSince: string | null;
 }
 
 /**

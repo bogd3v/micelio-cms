@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { Core } from '@strapi/strapi';
+import { SendActivityError } from '@fedify/fedify';
 import { configureSync, getConfig, resetSync, type LogRecord, type Sink } from '@logtape/logtape';
 
 import { cleanRemoteText } from './remote-text';
@@ -31,6 +32,8 @@ const REPEAT_INTERVAL_MS = 60_000;
 const MAX_TRACKED_TEMPLATES = 500;
 /** Shape of the `reason` property kept from a record: a camelCase code. */
 const REASON_PATTERN = /^[A-Za-z]{1,40}$/;
+/** Category of Fedify's delivery records. */
+const OUTBOX_CATEGORY = 'fedify.federation.outbox';
 /** Marks the configuration this module installed, so it never resets someone else's. */
 const OWN_CONFIG = Symbol('fediverse.logtape');
 
@@ -122,7 +125,7 @@ const strapiSink: Sink = (record: LogRecord): void => {
   const suppressed = repeatsHeldBack(key, category, Date.now());
   if (suppressed == null) return;
   const repeats = suppressed > 0 ? ` (${suppressed} similar lines held back)` : '';
-  const line = `[fediverse] ${category}: ${renderMessage(record.message)}${repeats}`;
+  const line = `[fediverse] ${category}: ${renderMessage(withoutRemoteBody(record))}${repeats}`;
   const meta: Record<string, string> = { source: 'fedify', category };
   // Fedify's failure code (`keyFetchError`, `invalidSignature`, …): an identifier, never free text.
   const reason = record.properties.reason;
@@ -130,6 +133,24 @@ const strapiSink: Sink = (record: LogRecord): void => {
   if (record.level === 'warning') log.warn(line, meta);
   else log.error(line, meta);
 };
+
+/**
+ * The record's message parts with a remote server's answer taken out. When an inbox
+ * refuses a delivery, Fedify logs the response body, any text of any size, as a plain
+ * string in the `{error}` slot of its outbox record.
+ */
+function withoutRemoteBody(record: LogRecord): readonly unknown[] {
+  if (typeof record.rawMessage !== 'string' || record.category.join('.') !== OUTBOX_CATEGORY) {
+    return record.message;
+  }
+  const names = Array.from(record.rawMessage.matchAll(/\{([^{}]+)\}/g), (match) => match[1]);
+  const slot = names.indexOf('error');
+  if (slot === -1 || typeof record.properties.error !== 'string') return record.message;
+  // Parts alternate between text and values, so the n-th placeholder is part 2n + 1.
+  return record.message.map((part, index) =>
+    index === 2 * slot + 1 ? '[response body omitted]' : part
+  );
+}
 
 function templateOf(raw: string | TemplateStringsArray): string {
   return (typeof raw === 'string' ? raw : raw.join('{}')).slice(0, MAX_VALUE_LENGTH);
@@ -176,6 +197,10 @@ function valueText(value: unknown): string {
     return String(value);
   }
   if (value instanceof URL) return value.href.split(/[?#]/, 1)[0] ?? '';
+  // Its message ends with the remote server's answer to the delivery: untrusted text of any size.
+  if (value instanceof SendActivityError) {
+    return `SendActivityError: HTTP ${value.statusCode} from ${value.inbox.host}`;
+  }
   if (value instanceof Error) {
     return `${String(value.name).slice(0, 100)}: ${String(value.message).slice(0, MAX_VALUE_LENGTH)}`;
   }

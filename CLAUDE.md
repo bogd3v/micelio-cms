@@ -32,6 +32,7 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 ## Pitfalls to know before any change
 
 - Publish and unpublish are only observable through `strapi.eventHub` (`entry.publish` / `entry.unpublish`, async after commit); Strapi 5 emits no `afterPublish` through `strapi.db.lifecycles`. See `docs/FEDIVERSE.md`.
+- Outgoing activities are queued (`@fedify/postgres` on PostgreSQL, in memory on SQLite): publishing returns once they are enqueued, a test must `waitUntil` the fake inbox, and the queued message holds the actor key, which `utils/observed-queue.ts` encrypts. Fedify has no delivery-success callback, so nothing may say "delivered". See `docs/FEDIVERSE.md`.
 - `unique: true` is Document Service validation only: there is no database index, so race-prone `db.query` inserts can duplicate. See `docs/FEDIVERSE.md`.
 - Drafts are served to any `find` caller with `?status=draft`, populated relations included; `src/utils/drafts-access.ts` closes it. See `docs/architecture/drafts.md`.
 - `strapi-plugin-comments` responses pass through a fixed zod schema that drops unknown attributes; add fields through `src/extensions/comments/strapi-server.ts` (never a `schema.json`) and re-attach them in a middleware like `src/middlewares/fediverse-comment-fields.ts`; its public endpoints also return pending comments (`hide-unapproved-comments.ts`). See `docs/architecture/comments.md`.
