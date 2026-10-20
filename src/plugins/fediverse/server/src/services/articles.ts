@@ -291,14 +291,27 @@ function updatedOf(record: ArticleRecord): Temporal.Instant | undefined {
 }
 
 /** What both shapes share: the id, the addressing, the dates, the preview image and the body. */
-function objectOptions(ctx: Context<unknown>, actorIdentifier: string, record: ArticleRecord) {
+function objectOptions(
+  ctx: Context<unknown>,
+  actorIdentifier: string,
+  record: ArticleRecord,
+  includeTitle: boolean
+) {
   const url = getFrontendArticleUrl(record.slug, record.locale);
   const content = [
-    `<p><strong>${escapeHtml(record.title)}</strong></p>`,
+    includeTitle ? `<p><strong>${escapeHtml(record.title)}</strong></p>` : '',
     record.description ? `<p>${escapeHtml(record.description)}</p>` : '',
     `<p><a href="${escapeHtml(url.href)}">${escapeHtml(url.href)}</a></p>`,
     record.image?.creditHtml ? `<p><small>${record.image.creditHtml}</small></p>` : '',
   ].join('');
+
+  const cover = record.image
+    ? new Image({
+        url: new URL(record.image.url, ctx.origin),
+        mediaType: record.image.mime ?? undefined,
+        name: record.image.alternativeText ?? undefined,
+      })
+    : undefined;
 
   return {
     // The id is the `Article` route whatever the type: remote servers keep it, so switching the
@@ -309,22 +322,18 @@ function objectOptions(ctx: Context<unknown>, actorIdentifier: string, record: A
     url,
     published: toInstant(record.firstPublishedAt),
     updated: updatedOf(record),
-    image: record.image
-      ? new Image({
-          url: new URL(record.image.url, ctx.origin),
-          mediaType: record.image.mime ?? undefined,
-          name: record.image.alternativeText ?? undefined,
-        })
-      : undefined,
+    image: cover,
+    // GoToSocial ignores `image`; it only shows a cover that is an attachment.
+    attachments: cover ? [cover] : [],
     to: PUBLIC_COLLECTION,
     ccs: [ctx.getFollowersUri(actorIdentifier)],
   };
 }
 
 /**
- * The `Article` shape. The body is self-contained (title, excerpt, link) so it reads well on
- * servers that ignore `name`/`image`, and the link lets Mastodon render a preview card. `summary`
- * is deliberately unused: Mastodon shows it as a content warning, and GoToSocial does so with `name`.
+ * The `Article` shape: `name` carries the title, so the body has the excerpt and the link only
+ * (GoToSocial shows `name` as a content warning and would repeat the title in the body). `summary`
+ * is deliberately unused: Mastodon shows it as a content warning.
  */
 function buildArticleShape(options: ReturnType<typeof objectOptions>, title: string): Article {
   return new Article({ ...options, name: title });
@@ -349,8 +358,9 @@ export function buildArticle(
   record: ArticleRecord,
   objectType: FederatedObjectType
 ): Article | Note {
-  const options = objectOptions(ctx, actorIdentifier, record);
-  return objectType === 'note' ? buildNoteShape(options) : buildArticleShape(options, record.title);
+  return objectType === 'note'
+    ? buildNoteShape(objectOptions(ctx, actorIdentifier, record, true))
+    : buildArticleShape(objectOptions(ctx, actorIdentifier, record, false), record.title);
 }
 
 /** The article and the kind of activity an activity id built by this module stands for. */
