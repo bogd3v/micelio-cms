@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import type { Core } from '@strapi/strapi';
 
 import type { Context } from '@fedify/fedify';
@@ -244,14 +246,26 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   strapi.log.info(`[fediverse] Delete(Article) for ${documentId}: ${describeFanOut(fanOut)}`);
 }
 
+const PROFILE_FINGERPRINT_KEY = 'profileFingerprint';
+
 /**
  * Mastodon caches remote profiles, so a change to the `global` single type or to the site
  * settings (name, bio, avatar, header, username) only reaches followers' servers through an
  * Update(Person) carrying the new actor.
+ *
+ * @remarks
+ * Sent only when the served actor differs from the one last sent (a fingerprint in the plugin
+ * store), so saving unrelated settings, or the same profile in another locale, sends nothing.
  */
 async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
   const ctx = createContext(strapi);
   const actor = await buildActor(ctx, ACTOR_IDENTIFIER);
+  const fingerprint = createHash('sha256')
+    .update(JSON.stringify(await actor.toJsonLd()))
+    .digest('hex');
+  const store = strapi.store({ type: 'plugin', name: 'fediverse' });
+  if ((await store.get({ key: PROFILE_FINGERPRINT_KEY })) === fingerprint) return;
+
   const fanOut = await sendToFollowers(
     strapi,
     new Update({
@@ -262,6 +276,7 @@ async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
       cc: ctx.getFollowersUri(ACTOR_IDENTIFIER),
     })
   );
+  await store.set({ key: PROFILE_FINGERPRINT_KEY, value: fingerprint });
   strapi.log.info(`[fediverse] Update(Person) for the profile: ${describeFanOut(fanOut)}`);
 }
 
@@ -311,10 +326,9 @@ export function subscribe(strapi: Core.Strapi): void {
     // The actor's profile lives in the site settings' `fediverse` component. Not filtered by locale:
     // it is not localized, so a save in `es` changes the actor but only emits the `es` event
     // (see onSiteSettingsChanged).
-    strapi.eventHub.on(
-      'entry.create',
-      guarded(SITE_SETTING_UID, 'profile update federation', onSiteSettingsChanged)
-    ),
+    // Only updates: the boot seed creates the document (one per locale), and an actor nobody has
+    // cached yet has nothing to refresh. Subscribing to creates sent a delayed `Update(Person)`
+    // to whoever followed right after boot.
     strapi.eventHub.on(
       'entry.update',
       guarded(SITE_SETTING_UID, 'profile update federation', onSiteSettingsChanged)
