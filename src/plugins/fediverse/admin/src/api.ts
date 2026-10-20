@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   classifyFailure,
+  interpretPostResponse,
   interpretResponse,
   type ArticleFederation,
   type FederateResult,
@@ -94,14 +95,17 @@ export function useArticleFederation(
 
   const federate = useCallback(async (): Promise<FederateResult> => {
     try {
-      const response = await clientRef.current.post<string>(
+      const response = await clientRef.current.post<unknown>(
         `${ROUTE_PREFIX}/${documentId}/federate`,
         {},
-        { params: { locale }, ...AS_TEXT }
+        { params: { locale }, validateStatus: () => true }
       );
-      const result = interpretResponse<FederateResult>(response.status ?? 0, response.data);
+      const result = interpretPostResponse<FederateResult>(response.data);
       if (!result.ok) throw new FederateRefused(result.problem?.code);
       return result.data;
+    } catch (error) {
+      // A body that is not JSON, or no answer at all: refused with no code to explain.
+      throw error instanceof FederateRefused ? error : new FederateRefused(undefined);
     } finally {
       refresh();
     }

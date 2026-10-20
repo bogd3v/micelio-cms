@@ -1,7 +1,11 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
 import { ChartPie } from '@strapi/icons';
 
-import { fediverseTranslations, registerFederationPanel } from '../plugins/fediverse/admin/src';
+import {
+  fediverseTranslations,
+  registerFederationPanel,
+  registerFediversePage,
+} from '../plugins/fediverse/admin/src';
 
 export default {
   config: {
@@ -10,6 +14,8 @@ export default {
     translations: fediverseTranslations,
   },
   register(app: StrapiApp) {
+    // The Fediverse page in the menu (docs/FEDIVERSE.md, plugin page).
+    registerFediversePage(app);
     // Visitors synced from Umami (docs/ANALYTICS.md), on the admin homepage.
     app.widgets.register({
       id: 'visitors',

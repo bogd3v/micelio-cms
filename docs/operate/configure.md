@@ -209,6 +209,22 @@ While enabled, the two required values have no defaults: without them the plugin
    ```
 4. Follow the actor from a Mastodon account, publish an article, and watch the logs for `[fediverse]` lines (each fan-out reports how many followers it was queued for).
 
+### Fediverse page
+
+The admin menu has a **Fediverse** entry (diagnostics, followers, failed deliveries). It appears only for a role that has the permission **Read the Fediverse page** (`plugin::fediverse.read`); blocking, unblocking and retrying need **Block and unblock followers, and retry failed deliveries** (`plugin::fediverse.manage`). The super admin has both. Give them to the other roles in Settings → Administration Panel → Roles, under Plugins. They exist only while `FEDIVERSE_ENABLED=true`, so with federation off nobody sees the entry. **Turning federation off and on again removes the grants:** Strapi deletes the permissions of an action that is not registered from every role at boot, so after enabling it again only the super admin has them and the other roles must be given them again. Opening the page makes the CMS request its own WebFinger address (`URL`), once per visit.
+
+What each failing diagnostic means and how to fix it:
+
+- **Public address, `url-missing`:** set `URL` to the CMS's real public origin (for example `https://cms.example.com`) and restart.
+- **Public address, `url-not-https`:** `URL` should be the public `https` origin; behind a TLS-terminating proxy, set it to the `https` address and make the proxy forward `X-Forwarded-Proto`.
+- **Actor key, `actor-key-missing-encryption-key`:** `ENCRYPTION_KEY` is not the value the key was encrypted with. Put the previous value back and restart; the stored key is not touched.
+- **Actor key, `actor-key-missing`:** no key is stored yet. It is created the first time a remote server fetches the actor or an activity is sent; fetch the actor's address once, or publish an article. If followers already exist, the key was lost: restore the database from a backup. The page only reads the key, it never creates it.
+- **Actor key, `actor-key-unreadable`:** restore the database from a backup taken before the problem; a new key would be a new identity for every follower.
+- **WebFinger, `webfinger-skipped`:** needs `URL`.
+- **WebFinger, `webfinger-unreachable`:** the CMS cannot reach its own public address: check DNS, the proxy and the firewall.
+- **WebFinger, `webfinger-not-found`:** the address answers, but not with the WebFinger document: make sure `/.well-known/*` and `/fediverse/*` reach the CMS.
+- **WebFinger, `webfinger-wrong-subject`:** check `FEDIVERSE_ACTOR_USERNAME` and that the domain of `URL` is the CMS's.
+
 ### Delivery queue and database connections
 
 Publishing returns as soon as the activities are queued; the CMS delivers them in the background and retries a failure with Fedify's default backoff (up to 10 retries over roughly 20 to 35 minutes; a host that keeps failing is then held by Fedify's circuit breaker for up to a week). There is no variable for it: the backend follows `DATABASE_URL`.

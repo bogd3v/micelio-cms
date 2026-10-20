@@ -11,7 +11,13 @@ import {
   findPublishedArticle,
   getDefaultLocale,
 } from './articles';
-import { isFederated, recordFailure, recordSend } from './federated-articles';
+import {
+  activityTypeFor,
+  findFederatedArticle,
+  isFederated,
+  recordFailure,
+  recordSend,
+} from './federated-articles';
 import { listFollowers } from './followers';
 import type { FederatedActivityType } from '../types/federated-articles';
 
@@ -104,8 +110,8 @@ export type FederateOutcome =
 
 /**
  * Queues the article's current published version for the followers: a `Create` when it was never
- * sent (or was retracted), an `Update` otherwise, because publishing again is how edits go live in
- * Strapi 5. Used by the publish event and by the admin panel's "Federate now".
+ * sent, was retracted or its `Create` failed, an `Update` otherwise (`activityTypeFor`), because
+ * publishing again is how edits go live in Strapi 5. Used by the publish event and by the admin panel's "Federate now".
  *
  * @returns `not-federable` when the default locale has no published version with a title and slug.
  */
@@ -116,19 +122,64 @@ export async function federateArticle(
   const record = await findPublishedArticle(strapi, documentId);
   if (record == null) return { status: 'not-federable' };
 
-  const federated = await isFederated(strapi, documentId);
-  const type = federated ? 'Update' : 'Create';
+  const type = activityTypeFor(await findFederatedArticle(strapi, documentId));
   const ctx = createContext(strapi);
   const fanOut = await sendRecorded(
     strapi,
     documentId,
     type,
-    buildArticleActivity(federated ? 'update' : 'create', ctx, ACTOR_IDENTIFIER, record)
+    buildArticleActivity(type === 'Create' ? 'create' : 'update', ctx, ACTOR_IDENTIFIER, record)
   );
   strapi.log.info(
     `[fediverse] ${type}(Article) for ${documentId} (${record.slug}): ${describeFanOut(fanOut)}`
   );
   return { status: 'queued', type, slug: record.slug, fanOut };
+}
+
+/** What `retryFailedDelivery` did. */
+export type RetryOutcome =
+  | { status: 'queued'; type: 'Create' | 'Update' | 'Delete'; fanOut: FanOut }
+  | { status: 'not-failed' }
+  | { status: 'not-federable' };
+
+/**
+ * Sends again the last activity of an article whose delivery was given up on.
+ *
+ * @remarks
+ * A failed `Delete` is sent as a `Delete` again, unless the article was published since, in which
+ * case the current version is what the followers should have. Anything else goes through
+ * `federateArticle`, the same path as "Federate now", so it is queued like any publish and skips
+ * unreachable followers. Fedify reports no success, so the row says `created`, `updated` or
+ * `deleted` (queued) at once and turns `failed` again only if Fedify gives up again.
+ */
+export async function retryFailedDelivery(
+  strapi: Core.Strapi,
+  documentId: string
+): Promise<RetryOutcome> {
+  const row = await findFederatedArticle(strapi, documentId);
+  if (row == null || row.status !== 'failed') return { status: 'not-failed' };
+
+  if (
+    row.lastActivityType === 'Delete' &&
+    (await findPublishedArticle(strapi, documentId)) == null
+  ) {
+    const ctx = createContext(strapi);
+    const fanOut = await sendRecorded(
+      strapi,
+      documentId,
+      'Delete',
+      buildDeleteActivity(ctx, ACTOR_IDENTIFIER, documentId)
+    );
+    strapi.log.info(
+      `[fediverse] Delete(Article) for ${documentId} retried: ${describeFanOut(fanOut)}`
+    );
+    return { status: 'queued', type: 'Delete', fanOut };
+  }
+
+  const outcome = await federateArticle(strapi, documentId);
+  return outcome.status === 'queued'
+    ? { status: 'queued', type: outcome.type, fanOut: outcome.fanOut }
+    : { status: 'not-federable' };
 }
 
 async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> {

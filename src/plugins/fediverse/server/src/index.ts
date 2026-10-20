@@ -4,11 +4,13 @@ import federatedArticleSchema from './content-types/federated-article/schema.jso
 import followerSchema from './content-types/follower/schema.json';
 import interactionSchema from './content-types/interaction/schema.json';
 import federation from './controllers/federation';
+import pluginPage from './controllers/plugin-page';
 import stats from './controllers/stats';
 import routes from './routes';
 import { assertActorConfigured } from './constants/actor';
 import { mountFediverseMiddleware, startFederationQueue, stopFederation } from './federation';
 import actorProfile from './services/actor-profile';
+import { registerPermissionActions } from './services/permissions';
 import federatedArticles, { migrateFederatedArticles } from './services/federated-articles';
 import followers from './services/followers';
 import interactions from './services/interactions';
@@ -45,6 +47,7 @@ const plugin = {
     // A key pair stored before encryption at rest is encrypted now, not at first use.
     await encryptStoredActorKeys(strapi);
     await migrateFederatedArticles(strapi);
+    await registerPermissionActions(strapi);
     // After the migrations: a message left by the previous run is delivered from here on.
     startFederationQueue(strapi);
   },
@@ -75,6 +78,7 @@ const plugin = {
 
   controllers: {
     federation,
+    'plugin-page': pluginPage,
     stats,
   },
 

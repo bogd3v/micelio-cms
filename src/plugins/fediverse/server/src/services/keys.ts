@@ -182,6 +182,30 @@ export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPai
 }
 
 /**
+ * Whether the stored actor key can be used, reading the store only: it never generates a key pair
+ * and never rewrites an entry, unlike `getActorKeyPairs`.
+ *
+ * @returns `missing` when no key pair is stored.
+ * @throws `ActorKeyDecryptionError`, naming `ENCRYPTION_KEY`, when a private key cannot be decrypted.
+ */
+export async function verifyStoredActorKey(strapi: Core.Strapi): Promise<'ok' | 'missing'> {
+  const store = await getStore(strapi);
+  const stored: unknown = await store.get({ key: STORE_KEY });
+  if (!isStoredKeyPairs(stored)) return 'missing';
+  const key = configuredEncryptionKey(strapi);
+  for (const entry of stored) {
+    await importStoredJwk(entry.publicJwk, 'public');
+    await importStoredJwk(
+      isEncryptedEnvelope(entry.privateJwk)
+        ? (JSON.parse(decryptText(entry.privateJwk, key)) as JsonWebKey)
+        : entry.privateJwk,
+      'private'
+    );
+  }
+  return 'ok';
+}
+
+/**
  * Returns the persisted JWK entries as stored, private keys encrypted
  * (test/debug helper; also lets tests prove persistence without re-deriving keys).
  */
@@ -196,9 +220,11 @@ export async function getStoredKeyPairEntries(
 export default (): {
   encryptStoredActorKeys: typeof encryptStoredActorKeys;
   getActorKeyPairs: typeof getActorKeyPairs;
+  verifyStoredActorKey: typeof verifyStoredActorKey;
   getStoredKeyPairEntries: typeof getStoredKeyPairEntries;
 } => ({
   encryptStoredActorKeys,
   getActorKeyPairs,
+  verifyStoredActorKey,
   getStoredKeyPairEntries,
 });

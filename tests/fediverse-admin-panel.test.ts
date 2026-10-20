@@ -3,6 +3,7 @@ import {
   blockedMessageId,
   classifyFailure,
   federateHintId,
+  interpretPostResponse,
   interpretResponse,
   problemMessageId,
   statusView,
@@ -145,6 +146,53 @@ describe('Fediverse admin panel: what it says about each state', () => {
     });
   });
 
+  describe('reads a POST answer the way the admin fetch client returns it: parsed, with no status', () => {
+    it('takes the 202 body as the data', () => {
+      expect(interpretPostResponse({ activity: 'Create', queued: 2, skipped: 0 })).toEqual({
+        ok: true,
+        data: { activity: 'Create', queued: 2, skipped: 0 },
+      });
+      expect(interpretPostResponse({ blocked: true })).toEqual({
+        ok: true,
+        data: { blocked: true },
+      });
+    });
+
+    it('recognises a problem detail by its status and code', () => {
+      const problem = {
+        type: 'about:blank',
+        title: 'x',
+        status: 409,
+        detail: 'y',
+        code: 'not-failed',
+      };
+      expect(interpretPostResponse(problem)).toEqual({
+        ok: false,
+        status: 409,
+        problem: { code: 'not-failed' },
+      });
+      expect(interpretPostResponse({ status: 503 })).toEqual({
+        ok: false,
+        status: 503,
+        problem: undefined,
+      });
+    });
+
+    it("takes Strapi's own error envelope, which has no code, for a refusal", () => {
+      // An expired session (401), a rate limit (429) or an uncaught error (500).
+      for (const status of [401, 429, 500]) {
+        expect(
+          interpretPostResponse({ data: null, error: { status, name: 'Error', message: 'x' } })
+        ).toEqual({ ok: false, status, problem: undefined });
+      }
+    });
+
+    it('does not take an empty or null body for a refusal', () => {
+      expect(interpretPostResponse({})).toEqual({ ok: true, data: {} });
+      expect(interpretPostResponse(null)).toEqual({ ok: true, data: null });
+    });
+  });
+
   it('tells a missing route (federation off) from a missing article and a forbidden one', () => {
     expect(classifyFailure(undefined, 404)).toBe('off');
     expect(classifyFailure({ code: 'article-not-found' }, 404)).toBe('hidden');
@@ -167,7 +215,7 @@ describe('Fediverse admin panel: translations', () => {
   });
 
   it('prefixes every id, so it cannot clash with the admin or another plugin', () => {
-    for (const id of Object.keys(en)) expect(id.startsWith('fediverse.panel.')).toBe(true);
+    for (const id of Object.keys(en)) expect(/^fediverse\.(panel|page)\./.test(id)).toBe(true);
   });
 });
 
