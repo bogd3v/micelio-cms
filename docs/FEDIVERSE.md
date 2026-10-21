@@ -616,17 +616,17 @@ Akkoma is a second target for the same table when there is time.
 
 ## Object shape: Article or Note (#305)
 
-An article is federated as an `Article` or as a `Note`, per site: `objectType` (`article` | `note`) in the `fediverse` component of the site settings (Site settings → Fediverse profile → Object type). `services/articles.ts` builds the object through one function per type (`buildArticleShape`, `buildNoteShape`) on top of the options both share; `services/object-type.ts` reads the setting on every call, so a change needs no restart, and an empty or unknown value is `article`.
+An article is federated as an `Article` or as a `Note`, per site: `objectType` (`article` | `note`) in the `fediverse` component of the site settings (Site settings → Fediverse profile → Object type). `services/articles.ts` builds the object through one function per type (`buildArticleShape`, `buildNoteShape`) on top of the options both share; `services/object-type.ts` reads the setting on every call, so a change needs no restart, and an empty or unknown value is `note`.
 
-**Open decision applied: the default is `article`.** It is what every site sent before the setting existed, so no site changes until its editor picks `note`; the epic asked for the default to be decided after the screenshots of the cross-server check, and those are not in yet (see below). The default can change in a later minor once they are.
+**The default is `note`.** It was `article` while there was no Mastodon rendering of a `Note`; with one (below), the `Note` shows the excerpt on both Mastodon and GoToSocial and the `Article` does not. A site whose setting is empty now sends `Note` from its next publish or update; a site that wants `Article` sets it explicitly (Site settings → Fediverse profile → Object type). Objects already sent keep their type on remote servers until they are edited.
 
-|             | `Article` (default)                                  | `Note`    |
-| ----------- | ---------------------------------------------------- | --------- |
-| `name`      | the title                                            | none      |
-| `content`   | bold title, escaped excerpt, link, cover credit line | the same  |
-| `image`     | the cover, else the SEO image                        | the same  |
-| `summary`   | never set (Mastodon shows it as a content warning)   | never set |
-| `id`, `url` | `/fediverse/articles/<documentId>`, the frontend URL | identical |
+|             | `Article`                                            | `Note` (default) |
+| ----------- | ---------------------------------------------------- | ---------------- |
+| `name`      | the title                                            | none             |
+| `content`   | bold title, escaped excerpt, link, cover credit line | the same         |
+| `image`     | the cover, else the SEO image                        | the same         |
+| `summary`   | never set (Mastodon shows it as a content warning)   | never set        |
+| `id`, `url` | `/fediverse/articles/<documentId>`, the frontend URL | identical        |
 
 - **Contracts.** The id stays the `Article` route (`/fediverse/articles/<documentId>`, registered with `Article` as the Fedify class and returning a `Note` when the site chose it) and `url` is the frontend URL, under both types, so switching keeps every object already sent dereferenceable, and `Like`, `Announce` and replies to it keep resolving. Remote servers keep the type they stored: a post sent as an `Article` stays an `Article` there until it is edited, because **changing the setting re-sends nothing** (the profile fingerprint does not move, so there is no `Update(Person)` either). The next `Update` of an article carries the new type.
 - **Why a `Note` at all.** Ghost and WriteFreely send one. A `Note` has no `name` for a server to read as a content warning, which is what GoToSocial does with an `Article` (#322).
@@ -647,9 +647,16 @@ An article is federated as an `Article` or as a `Note`, per site: `objectType` (
 
 - **`Note`:** the title once in bold, the excerpt without a click, the link, the credit line and the cover.
 - **`Article`:** still behind its title (GoToSocial shows `name` as a content warning, which only a `Note` avoids), but opened it has the excerpt, the link, the credit line and the cover, with no repeated title.
-- **Not checked on Mastodon, and two risks there.** A status with a media attachment gets no link card (the card came from `image` and the link), and, as far as I know, Mastodon reads `name` only when `content` is empty, so an `Article` without the title in its body may show no title there. Both need a look on a real Mastodon before a release.
+  **On Mastodon (2026-10-21, `mastodon.social`, a production instance on a named domain, one test article without a cover, seen from a follower account).** The handle and the domain of the link are covered in the captures.
 
-**Mastodon is not checked.** It needs a CMS on a named domain (`mastodon.social` rejected the `*.trycloudflare.com` hosts in #304), which is staging or a real instance. The Mastodon `Article` card was seen on staging before this issue; a `Note` there is the expectation (the card comes from the link, as for an `Article`), not a check. **The default stays `article`** until a Mastodon screenshot of a `Note` exists; on GoToSocial alone the `Note` is the better shape. The default stays `article` for #322 as well.
+![The Note on Mastodon: the title in bold, the excerpt and the full link](assets/object-shape-mastodon-note.png)
+
+![The same status after switching to Article: the title and a shortened link, no excerpt](assets/object-shape-mastodon-article.png)
+
+- **`Note`:** the title in bold, the excerpt and the whole link, like a regular post.
+- **`Article`:** the title and a shortened link; the excerpt is not shown, because Mastodon renders an `Article` from its `name` and `url`.
+- **Switching the type is an edit on Mastodon.** The same status went from `Note` to `Article` (it shows "Edited") when the next `Update` carried the other type, so no second post appears.
+- **No link card in either capture.** The article had no cover, so this run says nothing about the card. A status with a media attachment gets no link card (the card came from `image` and the link), so a cover sent as an attachment (#322) may cost the card on Mastodon; that still needs a run with a cover.
 
 ## Changing the handle without losing followers (#298)
 

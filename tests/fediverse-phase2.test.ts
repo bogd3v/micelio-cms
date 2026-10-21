@@ -17,6 +17,7 @@ import { waitUntil } from './helpers/wait-until';
 
 const ACTIVITY_JSON = 'application/activity+json';
 const ARTICLE_UID = 'api::article.article';
+const SITE_SETTING_UID = 'api::site-setting.site-setting';
 
 type ArticleInput = Modules.Documents.Params.Data.Input<typeof ARTICLE_UID>;
 
@@ -75,6 +76,13 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
     host = serverHost();
     actorUrl = `http://${host}/fediverse/user/devbog`;
     followersService = strapi.plugin('fediverse').service('followers');
+
+    // The default is a Note (#305); this suite covers the Article shape, so it asks for it.
+    const settings = await strapi.documents(SITE_SETTING_UID).findFirst();
+    await strapi.documents(SITE_SETTING_UID).update({
+      documentId: settings!.documentId,
+      data: { fediverse: { objectType: 'article' } } as never,
+    });
   });
 
   beforeEach(async () => {
