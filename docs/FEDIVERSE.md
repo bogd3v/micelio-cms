@@ -656,7 +656,18 @@ An article is federated as an `Article` or as a `Note`, per site: `objectType` (
 - **`Note`:** the title in bold, the excerpt and the whole link, like a regular post.
 - **`Article`:** the title and a shortened link; the excerpt is not shown, because Mastodon renders an `Article` from its `name` and `url`.
 - **Switching the type is an edit on Mastodon.** The same status went from `Note` to `Article` (it shows "Edited") when the next `Update` carried the other type, so no second post appears.
-- **No link card in either capture.** The article had no cover, so this run says nothing about the card. A status with a media attachment gets no link card (the card came from `image` and the link), so a cover sent as an attachment (#322) may cost the card on Mastodon; that still needs a run with a cover.
+- **No link card in either capture.** The article had no cover, so this first run says nothing about the card; the run with a cover is below.
+
+**On Mastodon with a cover (2026-10-21, same instance, a second test article with a cover and a credit, after #322).** The cover is sent as an `attachment` as well as `image`, so GoToSocial shows it (see above). The handle and the domain of the link are covered.
+
+![A Note with a cover on Mastodon: the title once, the excerpt, the link, the credit line and the cover](assets/object-shape-mastodon-note-cover.png)
+
+![The same status edited to an Article, with a cover on Mastodon: the title, a shortened link and the cover](assets/object-shape-mastodon-article-cover.png)
+
+- **`Note`:** the title once in bold, the excerpt, the whole link, the credit line («Ilustración: … · Generada con Google Gemini · obra propia») and the cover as an attachment.
+- **`Article`:** the title once (Mastodon reads `name`, so dropping the title from the body costs nothing), a shortened link and the cover. **No excerpt and no credit line**: Mastodon renders an `Article` from its `name` and `url` only, so the attribution that a licence such as CC BY requires is not shown there. Another reason for `Note` as the default.
+- **No link card in either type.** A status with a media attachment gets no card on Mastodon: the attachment takes its place. Sending the cover as an `attachment` therefore trades the card for the full image and the credit; kept, because GoToSocial shows no cover without it and the credit travels with the post.
+- **A type switch is an edit, as before:** the same status went from `Note` to `Article` with its cover.
 
 ## Changing the handle without losing followers (#298)
 
