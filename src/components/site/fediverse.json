@@ -32,7 +32,7 @@
     "objectType": {
       "type": "enumeration",
       "enum": ["article", "note"],
-      "default": "article"
+      "default": "note"
     },
     "sourceUrl": {
       "type": "string",

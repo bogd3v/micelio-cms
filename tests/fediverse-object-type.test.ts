@@ -185,13 +185,13 @@ describe('Fediverse federation (#305: object shape, Article or Note)', () => {
     });
   });
 
-  it('sends an Article when the setting is empty, which is what sites sent before it existed', async () => {
+  it('sends a Note when the setting is empty', async () => {
     await setObjectType(null);
     const draft = await createPublished();
 
     const { body } = await getJson(`/fediverse/articles/${draft.documentId}`);
 
-    expect(body.type).toBe('Article');
+    expect(body.type).toBe('Note');
   });
 
   it('keeps the id and the url of an article when the type changes', async () => {
