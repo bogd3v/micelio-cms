@@ -41,17 +41,18 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 
 ## Environment variables
 
-| Variable                                           | Default                                                   | Notes                                                                                                                |
-| -------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `FEDIVERSE_ENABLED`                                | `false`                                                   | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types                                |
-| `URL`                                              | `http://localhost:1337`                                   | Strapi's public origin. Activity ids built outside a request come from it: keep it right                             |
-| `FEDIVERSE_ACTOR_USERNAME`                         | unset                                                     | Deprecated (#303): site settings `fediverse.username` wins; then this, then the identifier                           |
-| `FEDIVERSE_ACTOR_IDENTIFIER`                       | required                                                  | Path of the actor URI. Never change it: remote follows are keyed by the URI                                          |
-| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                                                     | Deprecated (#303): fallbacks when the `fediverse` component, `global` and the site settings have no name/description |
-| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo                                       | Deprecated (#303): replaced by `fediverse.sourceUrl`; "Código" profile field link                                    |
-| `FRONTEND_URL`                                     | required in production; `http://localhost:3000` otherwise | Origin of the human-facing article links                                                                             |
-| `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`                                            | Article path template                                                                                                |
-| `FRONTEND_DEFAULT_LOCALE`                          | `en`                                                      | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links                                  |
+| Variable                                           | Default                                                   | Notes                                                                                                                                         |
+| -------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FEDIVERSE_ENABLED`                                | `false`                                                   | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types                                                         |
+| `URL`                                              | `http://localhost:1337`                                   | Strapi's public origin. Activity ids built outside a request come from it: keep it right                                                      |
+| `FEDIVERSE_ACTOR_USERNAME`                         | unset                                                     | Deprecated (#303): site settings `fediverse.username` wins; then this, then the identifier                                                    |
+| `FEDIVERSE_HANDLE_HOST`                            | unset                                                     | Host of the handle when it is not the CMS host (#298): `origin: { handleHost, webOrigin }`; only that host resolves in WebFinger; needs `URL` |
+| `FEDIVERSE_ACTOR_IDENTIFIER`                       | required                                                  | Path of the actor URI. Never change it: remote follows are keyed by the URI                                                                   |
+| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                                                     | Deprecated (#303): fallbacks when the `fediverse` component, `global` and the site settings have no name/description                          |
+| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo                                       | Deprecated (#303): replaced by `fediverse.sourceUrl`; "Código" profile field link                                                             |
+| `FRONTEND_URL`                                     | required in production; `http://localhost:3000` otherwise | Origin of the human-facing article links                                                                                                      |
+| `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`                                            | Article path template                                                                                                                         |
+| `FRONTEND_DEFAULT_LOCALE`                          | `en`                                                      | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links                                                           |
 
 ## Endpoints
 

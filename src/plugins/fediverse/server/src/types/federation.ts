@@ -19,12 +19,15 @@ export interface FederationBackend {
   close(): Promise<void>;
 }
 
+/** What Fedify's `origin` option takes: the web origin alone, or the handle host split from it. */
+export type FederationOriginOption = string | { handleHost: string; webOrigin: string };
+
 /** What `createFediverseFederation` needs besides the dispatchers it registers itself. */
 export interface FederationSetup {
   /** Receives failed outbox deliveries, with the activity id Fedify's own LogTape line leaves out. */
   log?: Pick<Core.Strapi['log'], 'error'>;
-  /** Fixed public origin for every id Fedify builds; without it the origin comes from the request. */
-  origin?: string;
+  /** Fixed public origin for every id Fedify builds, with the handle host when it differs; without it the origin comes from the request. */
+  origin?: FederationOriginOption;
   /** Where Fedify keeps its caches and queues outgoing deliveries. */
   backend: FederationBackend;
   /** The raw `ENCRYPTION_KEY`, or `null`; read on every queued message. */

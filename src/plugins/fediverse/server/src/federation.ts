@@ -88,7 +88,7 @@ import { escapeHtml } from './utils/html';
 import { createFederationBackend } from './utils/federation-backend';
 import { ActorKeyDecryptionError } from './utils/key-encryption';
 import { currentObservation, ObservedMessageQueue } from './utils/observed-queue';
-import { publicOrigin } from './utils/public-origin';
+import { federationOrigin } from './utils/handle-host';
 import { FEDERATION_SECURITY_HEADERS } from './utils/security-headers';
 import { inboxDigestRefusal } from './inbox-digest';
 import { describeDeliveryError } from './utils/delivery-error';
@@ -788,7 +788,7 @@ function handleOf(strapi: Core.Strapi): FederationHandle {
       backend,
       federation: createFediverseFederation({
         log: strapi.log,
-        origin: publicOrigin(),
+        origin: federationOrigin(),
         backend,
         encryptionKey: () => configuredEncryptionKey(strapi),
         settle: (observation) => settleDelivery(strapi, observation),
