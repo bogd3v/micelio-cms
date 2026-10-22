@@ -84,18 +84,18 @@ CI runs the same checks plus `npm run build` and `reuse lint` on every pull requ
 
 The documentation is organised by reader; start at [`docs/README.md`](docs/README.md).
 
-| Topic                                         | Where                                                                                |
-| --------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Install, configure, upgrade, back up          | [`docs/operate/`](docs/operate/install.md)                                           |
-| Every environment variable                    | [`docs/operate/configure.md`](docs/operate/configure.md), `.env.example`             |
-| Architecture, commands, non-obvious behaviour | `CLAUDE.md`, [`docs/architecture/`](docs/architecture/overview.md)                   |
-| Conventions, project layout, Strapi patterns  | `AGENTS.md`                                                                          |
-| Reader accounts, editors, account deletion    | [`docs/ACCOUNTS.md`](docs/ACCOUNTS.md)                                               |
-| Umami visitors and most read articles         | [`docs/ANALYTICS.md`](docs/ANALYTICS.md)                                             |
-| ActivityPub federation (`fediverse` plugin)   | [`docs/FEDIVERSE.md`](docs/FEDIVERSE.md)                                             |
-| The frontend's API token and its permissions  | [`docs/API_TOKENS.md`](docs/API_TOKENS.md)                                           |
-| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md`                                                          |
-| Reporting vulnerabilities, dependency policy  | [`SECURITY.md`](SECURITY.md), [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md) |
+| Topic                                         | Where                                                                                                                                                                      |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Install, configure, upgrade, back up          | [`docs/operate/`](docs/operate/install.md)                                                                                                                                 |
+| Every environment variable                    | [`docs/operate/configure.md`](docs/operate/configure.md), `.env.example`                                                                                                   |
+| Architecture, commands, non-obvious behaviour | `CLAUDE.md`, [`docs/architecture/`](docs/architecture/overview.md)                                                                                                         |
+| Conventions, project layout, Strapi patterns  | `AGENTS.md`                                                                                                                                                                |
+| Reader accounts, editors, account deletion    | [`docs/ACCOUNTS.md`](docs/ACCOUNTS.md)                                                                                                                                     |
+| Umami visitors and most read articles         | [`docs/ANALYTICS.md`](docs/ANALYTICS.md)                                                                                                                                   |
+| ActivityPub federation (`fediverse` plugin)   | [`docs/FEDIVERSE.md`](docs/FEDIVERSE.md)                                                                                                                                   |
+| The frontend's API token and its permissions  | [`docs/API_TOKENS.md`](docs/API_TOKENS.md)                                                                                                                                 |
+| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md`                                                                                                                                                |
+| Reporting vulnerabilities, dependency policy  | [Security policy](https://github.com/bogd3v/.github/blob/main/SECURITY.md), [`docs/security.md`](docs/security.md), [`docs/DEPENDENCY_RISKS.md`](docs/DEPENDENCY_RISKS.md) |
 
 ## Releases
 
@@ -110,7 +110,7 @@ Micelio CMS is free software under the [GNU AGPL-3.0-only](LICENSE), like the [f
 - **Future versions**: Micelio CMS is AGPL version 3 only. A proxy named in [LICENSE](LICENSE) (section 14) can accept a later version of the AGPL for it; a change to any other license is not possible this way.
 - **Integrations over the network**: Micelio's maintainer does not consider an app that only talks to Micelio CMS over its HTTP API, without including its code (the Micelio frontend, a hosting control panel, a bot), to be combined with it or covered by its license.
 - **Name and logo**: the AGPL grants no right to the name Micelio or its logo; [TRADEMARKS.md](TRADEMARKS.md) says what you may do and what needs permission.
-- **Community**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for how we treat each other and [GOVERNANCE.md](GOVERNANCE.md) for who decides what.
+- **Community**: the organisation's [Code of Conduct](https://github.com/bogd3v/.github/blob/main/CODE_OF_CONDUCT.md) for how we treat each other and [GOVERNANCE.md](GOVERNANCE.md) for who decides what.
 - **Per file**: every file's license and copyright are recorded in [REUSE.toml](REUSE.toml), following the [REUSE specification](https://reuse.software/); the license texts are in [LICENSES/](LICENSES/).
 
 The reasons are in [ADR 0007](https://github.com/bogd3v/micelio/blob/main/docs/adr/0007-license.md) of the frontend.

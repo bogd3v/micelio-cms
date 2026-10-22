@@ -11,12 +11,6 @@ path = "**"
 SPDX-FileCopyrightText = "2026 Alejandro Ramirez Garcia and the Micelio contributors"
 SPDX-License-Identifier = "AGPL-3.0-only"
 
-# The Code of Conduct is the Contributor Covenant 2.1, CC BY-SA 4.0
-[[annotations]]
-path = "CODE_OF_CONDUCT.md"
-SPDX-FileCopyrightText = "Organization for Ethical Source"
-SPDX-License-Identifier = "CC-BY-SA-4.0"
-
 # The Micelio logo and mark: a trademark, outside the AGPL (TRADEMARKS.md)
 [[annotations]]
 path = "brand/**"

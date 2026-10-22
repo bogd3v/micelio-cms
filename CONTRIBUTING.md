@@ -18,4 +18,4 @@ work are the [engineering standard](docs/engineering-standard.md).
 - Decisions that are expensive to undo are ADRs; product decisions are recorded in
   [`micelio`](https://github.com/bogd3v/micelio/blob/main/docs/adr/README.md), written from the
   [template](https://github.com/bogd3v/micelio-engineering/blob/main/docs/adr-template.md).
-- Report a vulnerability privately, as [SECURITY.md](SECURITY.md) explains.
+- Report a vulnerability privately, as the organisation's [security policy](https://github.com/bogd3v/.github/blob/main/SECURITY.md) explains; the scope of this repository is in [docs/security.md](docs/security.md).

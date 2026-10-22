@@ -4,7 +4,7 @@ How decisions are made in Micelio today. It is a small project with one maintain
 
 ## Who decides
 
-Micelio has one maintainer, Alejandro Ramirez Garcia, who decides what is merged, released and recorded as a decision. Everyone else contributes through issues and pull requests, under the terms of [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+Micelio has one maintainer, Alejandro Ramirez Garcia, who decides what is merged, released and recorded as a decision. Everyone else contributes through issues and pull requests, under the terms of [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](https://github.com/bogd3v/.github/blob/main/CODE_OF_CONDUCT.md).
 
 The maintainer is also the proxy of section 14 of the AGPL named in [LICENSE](LICENSE): a public statement of acceptance by the proxy authorizes a later version of the AGPL for Micelio, and nothing else. The reasons are in [ADR 0007](https://github.com/bogd3v/micelio/blob/main/docs/adr/0007-license.md).
 
@@ -29,4 +29,4 @@ If the maintainer stops working on the project, the section 14 proxy and the tra
 
 ## Conduct
 
-Reports under the [Code of Conduct](CODE_OF_CONDUCT.md) are handled by the maintainer. Anyone who is the subject of a report is not involved in deciding it.
+Reports under the [Code of Conduct](https://github.com/bogd3v/.github/blob/main/CODE_OF_CONDUCT.md) are handled by the maintainer. Anyone who is the subject of a report is not involved in deciding it.

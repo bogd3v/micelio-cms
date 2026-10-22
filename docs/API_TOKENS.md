@@ -1,6 +1,6 @@
 # The frontend's API token
 
-How the frontend server reads content from this CMS. This is the security model; the reporting policy is in [`SECURITY.md`](../SECURITY.md). The frontend's side of the contract is `docs/security.md` in micelio, which must keep matching `src/migrations/api-tokens.ts`.
+How the frontend server reads content from this CMS. This is the security model; the reporting policy and scope are in [`security.md`](security.md). The frontend's side of the contract is `docs/security.md` in micelio, which must keep matching `src/migrations/api-tokens.ts`.
 
 The frontend server reads some content with a **custom** API token (Settings → API Tokens) instead of a role, so that content stays off the public API. No role has permissions on it: a migration removes them on every boot, and a request without the token gets 403.
 
