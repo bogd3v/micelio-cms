@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-const CATEGORY_UID = 'api::category.category';
+const CATEGORY_UID = 'plugin::micelio.category';
 const ARTICLE_UID = 'api::article.article';
 
 /** Locales the categories are translated into. Spanish is the blog's own language. */

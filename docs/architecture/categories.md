@@ -2,7 +2,7 @@
 
 **Kind:** explanation. The decision is ADR 0016 in `bogd3v/micelio` ("Categories come from the CMS").
 
-`api::category.category` has no draft and publish and is i18n-localized for `name` and `description`; `slug` and every field below are shared across locales. The frontend lists the categories from the CMS, so a site is not tied to any slug: the core names none.
+`plugin::micelio.category` has no draft and publish and is i18n-localized for `name` and `description`; `slug` and every field below are shared across locales. The frontend lists the categories from the CMS, so a site is not tied to any slug: the core names none.
 
 | Field      | Type             | What it does                                                                                                                                                                                                                                                                                                        |
 | ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

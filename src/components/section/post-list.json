@@ -19,12 +19,12 @@
     "category": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::category.category"
+      "target": "plugin::micelio.category"
     },
     "tag": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::tag.tag"
+      "target": "plugin::micelio.tag"
     },
     "count": {
       "type": "integer",

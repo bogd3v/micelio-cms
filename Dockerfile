@@ -42,6 +42,8 @@ COPY --from=build /app/dist/src ./src
 # package.json that points at it are needed at runtime.
 COPY --from=build /app/src/plugins/fediverse/package.json ./src/plugins/fediverse/package.json
 COPY --from=build /app/src/plugins/fediverse/dist ./src/plugins/fediverse/dist
+COPY --from=build /app/src/plugins/micelio/package.json ./src/plugins/micelio/package.json
+COPY --from=build /app/src/plugins/micelio/dist ./src/plugins/micelio/dist
 COPY --from=build /app/dist/build ./build
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/database ./database

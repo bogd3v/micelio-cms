@@ -123,10 +123,10 @@ describe('Pages', () => {
 
   it('rejects a post list with both a category and a tag, even as a draft', async () => {
     const category = await strapi
-      .documents('api::category.category')
+      .documents('plugin::micelio.category')
       .create({ data: { name: 'Garden', slug: 'garden' } });
     const tag = await strapi
-      .documents('api::tag.tag')
+      .documents('plugin::micelio.tag')
       .create({ data: { name: 'Compost', slug: 'compost' } });
     const section = { __component: 'section.post-list', category: category.documentId };
 

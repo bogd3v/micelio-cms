@@ -23,8 +23,8 @@ import {
   type ShowcaseMedia,
 } from './demo/content';
 
-const CATEGORY_UID = 'api::category.category';
-const TAG_UID = 'api::tag.tag';
+const CATEGORY_UID = 'plugin::micelio.category';
+const TAG_UID = 'plugin::micelio.tag';
 // Marks that the demo content was written once; afterwards it is the user's.
 const MARKER = { type: 'core', name: 'migrations', key: 'demo-seed' };
 const VERSION = 1;

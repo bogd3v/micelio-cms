@@ -83,7 +83,8 @@ let instance: Core.Strapi | undefined;
  * Boots Strapi on an empty database.
  *
  * @param options.keepDatabase - Boots on the database a previous `cleanupStrapi()` left, to
- * test a restart. PostgreSQL only: the SQLite file is deleted by `cleanupStrapi()`.
+ * test a restart. On SQLite the previous `cleanupStrapi({ keepDatabase: true })` must have kept the
+ * file; a plain `cleanupStrapi()` deletes it.
  */
 async function setupStrapi({ keepDatabase = false }: { keepDatabase?: boolean } = {}) {
   if (instance) {
@@ -94,9 +95,9 @@ async function setupStrapi({ keepDatabase = false }: { keepDatabase?: boolean } 
 
   // Start from an empty database
   if (keepDatabase) {
-    if (!TEST_DATABASE_URL) {
+    if (!TEST_DATABASE_URL && !fs.existsSync(TEST_DB_PATH)) {
       throw new Error(
-        'keepDatabase needs TEST_DATABASE_URL: cleanupStrapi() removes the SQLite file'
+        'keepDatabase needs TEST_DATABASE_URL or a SQLite file kept by cleanupStrapi({ keepDatabase: true })'
       );
     }
   } else if (TEST_DATABASE_URL) {
@@ -146,7 +147,12 @@ async function waitForPoolIdle(connection: unknown): Promise<void> {
   }
 }
 
-async function cleanupStrapi() {
+/**
+ * Stops the running Strapi.
+ *
+ * @param options.keepDatabase - Leaves the SQLite file for a `setupStrapi({ keepDatabase: true })`.
+ */
+async function cleanupStrapi({ keepDatabase = false }: { keepDatabase?: boolean } = {}) {
   if (!instance) {
     return;
   }
@@ -162,7 +168,7 @@ async function cleanupStrapi() {
   await instance.destroy();
   instance = undefined;
 
-  if (!TEST_DATABASE_URL && fs.existsSync(TEST_DB_PATH)) {
+  if (!keepDatabase && !TEST_DATABASE_URL && fs.existsSync(TEST_DB_PATH)) {
     fs.unlinkSync(TEST_DB_PATH);
   }
 }

@@ -4,7 +4,7 @@ import { setupStrapi, cleanupStrapi } from './strapi';
 // ADR 0016 (bogd3v/micelio): a category carries an optional stable `color` (one of the five
 // category roles) and a `featured` flag, so the frontend needs no list of any one site's slugs.
 
-const CATEGORY = 'api::category.category';
+const CATEGORY = 'plugin::micelio.category';
 
 describe('Category color and featured', () => {
   beforeAll(async () => {

@@ -53,9 +53,9 @@ describe('Article drafts are only for editors', () => {
     }
 
     const [category, author, tag] = await Promise.all([
-      strapi.documents('api::category.category').create({ data: { name: 'Cat', slug: 'cat' } }),
+      strapi.documents('plugin::micelio.category').create({ data: { name: 'Cat', slug: 'cat' } }),
       strapi.documents('api::author.author').create({ data: { name: 'Ana' } }),
-      strapi.documents('api::tag.tag').create({ data: { name: 'Tag', slug: 'tag' } }),
+      strapi.documents('plugin::micelio.tag').create({ data: { name: 'Tag', slug: 'tag' } }),
     ]);
     const relations = {
       category: category.documentId,

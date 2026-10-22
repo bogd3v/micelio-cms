@@ -6,6 +6,15 @@ async function getPublicRole() {
   return getRole('public');
 }
 
+// Spike: category and tag live in the micelio plugin, the rest under `api::`.
+const PLUGIN_TYPES = ['category', 'tag'];
+
+function uidOf(contentType: string) {
+  return PLUGIN_TYPES.includes(contentType)
+    ? `plugin::micelio.${contentType}`
+    : `api::${contentType}.${contentType}`;
+}
+
 async function setRolePermissions(roleType: string, contentType: string, actions: string[]) {
   const role = await getRole(roleType);
 
@@ -16,7 +25,7 @@ async function setRolePermissions(roleType: string, contentType: string, actions
   const permissionQueries = actions.map((action) =>
     strapi.query('plugin::users-permissions.permission').create({
       data: {
-        action: `api::${contentType}.${contentType}.${action}`,
+        action: `${uidOf(contentType)}.${action}`,
         role: role.id,
       },
     })

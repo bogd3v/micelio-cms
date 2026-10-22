@@ -67,6 +67,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       enabled: env.bool('FEDIVERSE_ENABLED', false),
       resolve: './src/plugins/fediverse',
     },
+    micelio: {
+      enabled: true,
+      resolve: './src/plugins/micelio',
+    },
     upload: {
       // No site needs HTML in the media library, and a served HTML file is
       // a page on this origin (src/utils/upload-headers.ts).

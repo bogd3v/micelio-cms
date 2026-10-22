@@ -53,6 +53,7 @@ Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**
 | Site settings, theme, modules                      | `docs/architecture/site-settings.md`                                               |
 | Authors                                            | `docs/architecture/authors.md`                                                     |
 | Categories                                         | `docs/architecture/categories.md`                                                  |
+| The `micelio` plugin (category, tag)               | `docs/architecture/micelio-plugin.md`                                              |
 | Pages, sections, rebuild hook                      | `docs/architecture/pages.md`                                                       |
 | Demo instance, new instances, API tokens           | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`                        |
 | Playground blocks                                  | `docs/architecture/playground-blocks.md`                                           |

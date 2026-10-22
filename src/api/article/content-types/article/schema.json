@@ -68,13 +68,13 @@
     "category": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::category.category",
+      "target": "plugin::micelio.category",
       "inversedBy": "articles"
     },
     "tags": {
       "type": "relation",
       "relation": "manyToMany",
-      "target": "api::tag.tag",
+      "target": "plugin::micelio.tag",
       "inversedBy": "articles"
     },
     "blocks": {
