@@ -449,7 +449,7 @@ export interface SectionPostList extends Struct.ComponentSchema {
     icon: 'bulletList';
   };
   attributes: {
-    category: Schema.Attribute.Relation<'oneToOne', 'api::category.category'>;
+    category: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.category'>;
     count: Schema.Attribute.Integer &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
@@ -460,7 +460,7 @@ export interface SectionPostList extends Struct.ComponentSchema {
         number
       > &
       Schema.Attribute.DefaultTo<3>;
-    tag: Schema.Attribute.Relation<'oneToOne', 'api::tag.tag'>;
+    tag: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.tag'>;
     title: Schema.Attribute.String;
     variant: Schema.Attribute.Enumeration<['cards', 'list']> &
       Schema.Attribute.Required &
@@ -874,7 +874,7 @@ export interface SiteFediverse extends Struct.ComponentSchema {
       }>;
     header: Schema.Attribute.Media<'images'>;
     objectType: Schema.Attribute.Enumeration<['article', 'note']> &
-      Schema.Attribute.DefaultTo<'article'>;
+      Schema.Attribute.DefaultTo<'note'>;
     sourceUrl: Schema.Attribute.String;
     summary: Schema.Attribute.Text &
       Schema.Attribute.SetMinMaxLength<{

@@ -2,7 +2,7 @@ import path from 'path';
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import { setupStrapi, cleanupStrapi } from './strapi';
 
-const CATEGORY = 'api::category.category';
+const CATEGORY = 'plugin::micelio.category';
 const TABLE = 'categories';
 const MIGRATION_FILE = '2026.10.19T00.00.00.category-pillar-to-featured.js';
 

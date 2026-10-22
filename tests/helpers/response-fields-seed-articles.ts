@@ -2,8 +2,8 @@ import { SEEDED, credit, documents, seoOf, type SeededImages } from './response-
 
 const ARTICLE_UID = 'api::article.article';
 const AUTHOR_UID = 'api::author.author';
-const CATEGORY_UID = 'api::category.category';
-const TAG_UID = 'api::tag.tag';
+const CATEGORY_UID = 'plugin::micelio.category';
+const TAG_UID = 'plugin::micelio.tag';
 
 /** Document ids of the authors, taxonomy and articles `seedArticles` creates. */
 export interface SeededArticles {

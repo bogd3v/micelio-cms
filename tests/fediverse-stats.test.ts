@@ -8,8 +8,8 @@ import type { InteractionType } from '../src/plugins/fediverse/server/src/types/
 const ARTICLE_UID = 'api::article.article';
 const COMMENT_UID = 'plugin::comments.comment';
 const FOLLOWER_UID = 'plugin::fediverse.follower';
-const CATEGORY_UID = 'api::category.category';
-const TAG_UID = 'api::tag.tag';
+const CATEGORY_UID = 'plugin::micelio.category';
+const TAG_UID = 'plugin::micelio.tag';
 
 const BLOCKED_ACTOR = 'https://spam.example/users/troll';
 

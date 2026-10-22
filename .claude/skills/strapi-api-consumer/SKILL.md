@@ -107,7 +107,7 @@ Reading path: each category has an ordered list of articles, chosen by the edito
 GET /api/articles?locale=es&filters[category][slug][$eq]=privacidad&filters[pathOrder][$notNull]=true&sort=pathOrder:asc
 ```
 
-Tags: `api::tag.tag`, many-to-many with articles (`article.tags` ↔ `tag.articles`). Like categories, tags are localized: `name` changes with `locale` (`Privacidad` / `Privacy`), while `slug` is shared by every locale, so a `?tag=<slug>` filter survives a language switch. The public role gets `find`/`findOne` on tags at every boot (`src/migrations/public-tag-permissions.ts`), because `populate[tags]` fails the whole request without it.
+Tags: `plugin::micelio.tag`, many-to-many with articles (`article.tags` ↔ `tag.articles`). Like categories, tags are localized: `name` changes with `locale` (`Privacidad` / `Privacy`), while `slug` is shared by every locale, so a `?tag=<slug>` filter survives a language switch. The public role gets `find`/`findOne` on tags at every boot (`src/migrations/public-tag-permissions.ts`), because `populate[tags]` fails the whole request without it.
 
 ```http
 GET /api/articles?locale=es&filters[tags][slug][$eq]=vue&populate[tags][fields][0]=name&populate[tags][fields][1]=slug

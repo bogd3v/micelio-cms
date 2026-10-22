@@ -2,7 +2,7 @@ import type { Core } from '@strapi/strapi';
 
 const ROLE_UID = 'plugin::users-permissions.role';
 const PERMISSION_UID = 'plugin::users-permissions.permission';
-const ACTIONS = ['api::tag.tag.find', 'api::tag.tag.findOne'];
+const ACTIONS = ['plugin::micelio.tag.find', 'plugin::micelio.tag.findOne'];
 
 /**
  * Lets the public role read tags, as it reads categories. The frontend asks

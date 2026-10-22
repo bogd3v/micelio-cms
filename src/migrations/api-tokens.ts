@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { READ_ACTIONS as MICELIO_READ_ACTIONS } from '../plugins/micelio/server/src/constants/actions';
 
 const TOKEN_UID = 'admin::api-token';
 
@@ -20,8 +21,7 @@ export const FRONTEND_TOKEN_NAME = 'frontend';
  */
 export const FRONTEND_TOKEN_PERMISSIONS = [
   'api::article.article.find',
-  'api::category.category.find',
-  'api::tag.tag.find',
+  ...MICELIO_READ_ACTIONS,
   'api::about.about.find',
   'api::site-setting.site-setting.find',
   'api::page.page.find',
@@ -46,8 +46,7 @@ export const BUILD_TOKEN_NAME = 'build';
  */
 export const BUILD_TOKEN_PERMISSIONS = [
   'api::article.article.find',
-  'api::category.category.find',
-  'api::tag.tag.find',
+  ...MICELIO_READ_ACTIONS,
   'api::about.about.find',
   'api::site-setting.site-setting.find',
   'api::page.page.find',

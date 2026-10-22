@@ -161,9 +161,9 @@ async function updateBlocks(blocks) {
 }
 
 async function importArticles() {
-  const allCategories = await strapi.documents('api::category.category').findMany();
+  const allCategories = await strapi.documents('plugin::micelio.category').findMany();
   const allAuthors = await strapi.documents('api::author.author').findMany();
-  const allTags = await strapi.documents('api::tag.tag').findMany();
+  const allTags = await strapi.documents('plugin::micelio.tag').findMany();
 
   const categoryMap = {};
   allCategories.forEach((cat) => {

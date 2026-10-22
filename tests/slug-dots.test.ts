@@ -2,15 +2,16 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { setupStrapi, cleanupStrapi } from './strapi';
 
 type DraftUid = 'api::article.article' | 'api::page.page';
-type Uid = 'api::article.article' | 'api::page.page' | 'api::category.category' | 'api::tag.tag';
+type Uid =
+  'api::article.article' | 'api::page.page' | 'plugin::micelio.category' | 'plugin::micelio.tag';
 
 // Strapi skips the `regex` check on drafts, so types with draft and publish refuse the slug when
 // publishing (the moment an article is federated); the others refuse it on create.
 const CASES: { uid: Uid; titleField: 'title' | 'name'; hasDrafts: boolean }[] = [
   { uid: 'api::article.article', titleField: 'title', hasDrafts: true },
   { uid: 'api::page.page', titleField: 'title', hasDrafts: true },
-  { uid: 'api::category.category', titleField: 'name', hasDrafts: false },
-  { uid: 'api::tag.tag', titleField: 'name', hasDrafts: false },
+  { uid: 'plugin::micelio.category', titleField: 'name', hasDrafts: false },
+  { uid: 'plugin::micelio.tag', titleField: 'name', hasDrafts: false },
 ];
 
 describe('Slugs that are dot segments', () => {

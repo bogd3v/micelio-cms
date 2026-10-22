@@ -1,0 +1,16 @@
+{
+  "name": "micelio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Spike: category and tag as a Strapi plugin (bogd3v/micelio-cms#316)",
+  "exports": {
+    "./strapi-server": "./dist/strapi-server.js",
+    "./package.json": "./package.json"
+  },
+  "strapi": {
+    "kind": "plugin",
+    "name": "micelio",
+    "displayName": "Micelio core",
+    "description": "Content types of Micelio shipped as a plugin"
+  }
+}

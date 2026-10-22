@@ -47,7 +47,7 @@ describe('GET /api/articles/drafts', () => {
 
     const articles = strapi.documents(ARTICLE_UID);
     const category = await strapi
-      .documents('api::category.category')
+      .documents('plugin::micelio.category')
       .create({ data: { name: 'Pruebas', slug: 'pruebas' } });
     const author = await strapi.documents('api::author.author').create({ data: { name: 'Ana' } });
 

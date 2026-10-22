@@ -32,6 +32,16 @@ Frontend 0.2.0 or later looks a token up by its hash first and falls back to the
 
 In a rolling deploy, stop the old CMS instances first: an old image keeps writing and looking up plain tokens until the new image has booted, and none of them should run next to a migrated database. The rewrites are irreversible; a rollback restores the code, not the plain values.
 
+## Upgrading to 0.5: category and tag move into the `micelio` plugin
+
+Categories and tags are now content types of the local plugin `micelio` (`src/plugins/micelio/`): their UIDs change from `api::category.category` and `api::tag.tag` to `plugin::micelio.category` and `plugin::micelio.tag`. The URLs do not change (`/api/categories`, `/api/tags`), the tables and their rows stay where they are, and the frontend needs no change.
+
+The first boot moves what Strapi stored under the old UIDs, before any plugin bootstraps (`renameLegacyUids`, `src/plugins/micelio/server/src/migrations/rename-legacy-uids.ts`): the permissions of the public and authenticated roles, the permissions of API tokens, the subject of admin role permissions and the saved content manager layouts. Nothing to do by hand, and a restart that stops halfway is safe to repeat. The migration is needed because Strapi deletes the permissions of an action that no longer exists: without it the public role would lose read access to categories and tags.
+
+- **Back up first** (step 2): the rewrite cannot be undone. Going back to the previous image runs, but its code looks for the old UIDs: roles, tokens and layouts would start from scratch there.
+- **Custom API tokens** created outside the `frontend` and `build` ones keep their permissions; the migration renames them in place. A script or an MCP client that names `api::category.category.find` in a new token gets `Unknown permissions provided`: use `plugin::micelio.category.find`.
+- **Code and webhooks** that name the UIDs (`strapi.documents('api::category.category')`, the `uid` of a rebuild hook payload) must use the new ones.
+
 ## Upgrading to 0.5: articles are sent as a Note by default
 
 With the fediverse plugin on, an article is now federated as a `Note` (the title in bold, the excerpt and the link) unless the site settings say otherwise: Site settings → Fediverse profile → Object type. Before, a site that never set it sent an `Article`. Nothing is re-sent at the upgrade: the new type goes out with the next publish or update of an article, and remote servers keep the type they stored until then. To keep sending `Article`, set Object type to `Article` before the first publish after the upgrade. There is no migration and nothing else to do.

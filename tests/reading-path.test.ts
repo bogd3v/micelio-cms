@@ -6,7 +6,7 @@ import { createBogdevCategories } from './helpers/bogdev-categories';
 import type { ApiDocument } from './helpers/api-types';
 
 const ARTICLE_UID = 'api::article.article';
-const CATEGORY_UID = 'api::category.category';
+const CATEGORY_UID = 'plugin::micelio.category';
 
 type PathEntry = ApiDocument & { pathOrder: number | null };
 

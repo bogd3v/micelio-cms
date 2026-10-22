@@ -6,7 +6,7 @@ import { grantPublicTagPermissions } from '../src/migrations/public-tag-permissi
 import type { ApiDocument } from './helpers/api-types';
 
 const ARTICLE_UID = 'api::article.article';
-const TAG_UID = 'api::tag.tag';
+const TAG_UID = 'plugin::micelio.tag';
 
 type Tag = { name: string; slug: string };
 type TaggedArticle = ApiDocument & { tags: Tag[] };
@@ -72,11 +72,11 @@ describe('Tags', () => {
   it('grants the public role read access to tags on bootstrap, once', async () => {
     const role = await getPublicRole();
     const actions = await strapi.db.query('plugin::users-permissions.permission').findMany({
-      where: { role: role.id, action: { $startsWith: 'api::tag.tag.' } },
+      where: { role: role.id, action: { $startsWith: 'plugin::micelio.tag.' } },
     });
     expect(actions.map((permission) => permission.action).sort()).toEqual([
-      'api::tag.tag.find',
-      'api::tag.tag.findOne',
+      'plugin::micelio.tag.find',
+      'plugin::micelio.tag.findOne',
     ]);
     expect(await grantPublicTagPermissions(strapi)).toBe(0);
   });

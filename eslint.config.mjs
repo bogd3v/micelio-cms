@@ -7,6 +7,7 @@ export default tseslint.config(
   {
     ignores: [
       'dist/',
+      'src/plugins/*/dist/',
       'build/',
       'node_modules/',
       '.tmp/',

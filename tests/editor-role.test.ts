@@ -32,10 +32,10 @@ describe('Editor role migration', () => {
       'api::article.article.findOne',
       'api::author.author.find',
       'api::author.author.findOne',
-      'api::category.category.find',
-      'api::category.category.findOne',
-      'api::tag.tag.find',
-      'api::tag.tag.findOne',
+      'plugin::micelio.category.find',
+      'plugin::micelio.category.findOne',
+      'plugin::micelio.tag.find',
+      'plugin::micelio.tag.findOne',
       'plugin::upload.content-api.find',
       'plugin::upload.content-api.findOne',
       // Granted by the account settings migration (issue #52).
@@ -57,11 +57,11 @@ describe('Editor role migration', () => {
 
   it('restores a missing permission without touching the rest', async () => {
     await strapi.query(PERMISSION_UID).delete({
-      where: { role: role.id, action: 'api::tag.tag.find' },
+      where: { role: role.id, action: 'plugin::micelio.tag.find' },
     });
 
     expect(await ensureEditorRole(strapi)).toEqual({ roleCreated: false, permissionsGranted: 1 });
-    expect(await actionsOf(role.id)).toContain('api::tag.tag.find');
+    expect(await actionsOf(role.id)).toContain('plugin::micelio.tag.find');
   });
 
   describe('as an editor', () => {

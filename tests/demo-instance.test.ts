@@ -15,8 +15,8 @@ import {
 // compose.demo.yml needs no manual step.
 
 const ARTICLE_UID = 'api::article.article';
-const CATEGORY_UID = 'api::category.category';
-const TAG_UID = 'api::tag.tag';
+const CATEGORY_UID = 'plugin::micelio.category';
+const TAG_UID = 'plugin::micelio.tag';
 const ABOUT_UID = 'api::about.about';
 const SITE_SETTING_UID = 'api::site-setting.site-setting';
 const TOKEN_UID = 'admin::api-token';

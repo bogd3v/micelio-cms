@@ -5,7 +5,7 @@ export const ABOUT_UID = 'api::about.about';
 /** Blog articles. */
 export const ARTICLE_UID = 'api::article.article';
 /** Categories of articles, with no drafts. */
-export const CATEGORY_UID = 'api::category.category';
+export const CATEGORY_UID = 'plugin::micelio.category';
 /** Comments of `strapi-plugin-comments`. */
 export const COMMENT_UID = 'plugin::comments.comment';
 /** Per-article visitor counts synced from Umami. */

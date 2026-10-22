@@ -10,7 +10,7 @@ import {
 } from '../src/migrations/consolidate-categories';
 import type { Modules } from '@strapi/strapi';
 
-const CATEGORY = 'api::category.category';
+const CATEGORY = 'plugin::micelio.category';
 const ARTICLE = 'api::article.article';
 
 type Article = { documentId: string; title?: string | null };

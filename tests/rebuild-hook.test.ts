@@ -17,7 +17,7 @@ const PAGE_UID = 'api::page.page';
 const ARTICLE_UID = 'api::article.article';
 const SITE_SETTING_UID = 'api::site-setting.site-setting';
 const ABOUT_UID = 'api::about.about';
-const CATEGORY_UID = 'api::category.category';
+const CATEGORY_UID = 'plugin::micelio.category';
 const DEBOUNCE_MS = 300;
 
 interface Received {
