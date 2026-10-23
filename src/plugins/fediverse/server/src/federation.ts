@@ -26,7 +26,7 @@ import {
   Link,
   Note,
   Object as ApObject,
-  Person,
+  type Person,
   PropertyValue,
   Undo,
   Update,
@@ -43,6 +43,7 @@ import { createMiddleware } from '@fedify/koa'
 import type { Context as KoaContext } from 'koa'
 
 import pkg from '../../package.json'
+import { AttributedPerson } from './attributed-actor'
 import { ACTOR_IDENTIFIER } from './constants/actor'
 import {
   ACTOR_PATH,
@@ -386,7 +387,8 @@ function profileField(field: ActorProfileField): PropertyValue {
 /**
  * The blog actor, as served by the actor dispatcher and embedded in the
  * `Update(Person)` sent when the profile changes. Profile data comes from the
- * `global` single type (see services/actor-profile.ts).
+ * `global` single type (see services/actor-profile.ts); `attributionDomains`
+ * goes through `AttributedPerson`, since Fedify's `Person` has no such property.
  */
 export async function buildActor(
   ctx: Context<FediverseContextData>,
@@ -404,7 +406,7 @@ export async function buildActor(
   )
   if (httpSignatureKey == null) throw new ActorKeyUnavailableError()
 
-  return new Person({
+  return new AttributedPerson({
     id: actorUri,
     preferredUsername: identifier === ACTOR_IDENTIFIER ? profile.username : identifier,
     name: profile.name,
@@ -420,6 +422,7 @@ export async function buildActor(
     attachments: profile.fields.map(profileField),
     publicKey: httpSignatureKey.cryptographicKey,
     assertionMethods: keyPairs.map((keyPair) => keyPair.multikey),
+    attributionDomains: profile.attributionDomains,
   })
 }
 

@@ -3,8 +3,9 @@ import { createHash } from 'node:crypto'
 import type { Core } from '@strapi/strapi'
 
 import type { Context } from '@fedify/fedify'
-import { PUBLIC_COLLECTION, Update, type Activity } from '@fedify/fedify/vocab'
+import { PUBLIC_COLLECTION, type Activity } from '@fedify/fedify/vocab'
 
+import { ActorUpdate } from '../attributed-actor'
 import { ACTOR_IDENTIFIER } from '../constants/actor'
 import { ARTICLE_UID, GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids'
 import { buildActor, getFederation } from '../federation'
@@ -278,7 +279,8 @@ async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
 
   const fanOut = await sendToFollowers(
     strapi,
-    new Update({
+    // `ActorUpdate`, not `Update`: Mastodon resets `attributionDomains` when the bare key is missing.
+    new ActorUpdate({
       id: new URL(`#profile-update/${Date.now()}`, actor.id!),
       actor: actor.id,
       object: actor,
@@ -288,6 +290,21 @@ async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
   )
   await store.set({ key: PROFILE_FINGERPRINT_KEY, value: fingerprint })
   strapi.log.info(`[fediverse] Update(Person) for the profile: ${describeFanOut(fanOut)}`)
+}
+
+/**
+ * Sends `Update(Person)` at boot when the served actor differs from the one last sent. Part of the
+ * actor comes from variables (the `url`, the Blog field and `attributionDomains` from `FRONTEND_URL`
+ * and `FEDIVERSE_HANDLE_HOST`), which change only on a restart; a release that adds a property to
+ * the actor reaches followers' servers this way too. Failures are logged, never thrown: the boot
+ * goes on.
+ */
+export async function syncProfileAtBoot(strapi: Core.Strapi): Promise<void> {
+  try {
+    await onProfileChanged(strapi)
+  } catch (error) {
+    strapi.log.error('[fediverse] profile update federation at boot failed', { error })
+  }
 }
 
 /**

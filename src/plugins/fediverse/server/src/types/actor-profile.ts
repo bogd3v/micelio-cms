@@ -26,4 +26,6 @@ export interface ActorProfile {
   /** Human-facing page for the actor: the frontend home page. */
   url: string
   fields: ActorProfileField[]
+  /** Domains whose pages Mastodon may credit the actor on, see `utils/attribution-domains.ts`; empty for none. */
+  attributionDomains: string[]
 }
