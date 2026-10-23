@@ -80,9 +80,13 @@ jobs:
       packages: write
 
     steps:
+      # Side by side with the frontend, never around it: Vite resolves a tsconfig by walking up from
+      # each source file, and the CMS's tsconfig.json extends @micelio/tsconfig, which this job does
+      # not install.
       - name: Checkout the CMS
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          path: cms
           persist-credentials: false
 
       - name: Set up Docker Buildx
@@ -92,14 +96,14 @@ jobs:
       - name: Build the CMS image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: .
+          context: cms
           target: production
           load: true
           push: false
           tags: ${{ env.CMS_IMAGE }}
           cache-from: type=gha
 
-      # After the image build: inside the Docker context, Strapi's TypeScript build would compile the frontend's sources.
+      # Outside the Docker context (`cms`), so Strapi's TypeScript build never sees the frontend's sources.
       - name: Checkout the frontend
         id: frontend
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
