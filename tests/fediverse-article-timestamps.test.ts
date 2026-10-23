@@ -21,6 +21,9 @@ describe('Fediverse federation (Article published and updated)', () => {
   let remote: RemoteActor;
 
   const deliveriesOf = (type: string) => remote.inboxDeliveries.filter((a) => a.type === type);
+  // The profile's `Update(Person)` goes to the same inbox as the article's `Update`.
+  const forArticle = (documentId: string) => (a: ActivityJson) =>
+    a.object?.id?.endsWith(documentId);
   const uniqueTitle = () => `Timestamps ${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
   async function createArticle() {
@@ -105,9 +108,7 @@ describe('Fediverse federation (Article published and updated)', () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 50));
     await strapi.documents(ARTICLE_UID).update({ documentId: id, data: { title: 'Edited' } });
     await strapi.documents(ARTICLE_UID).publish({ documentId: id });
-    await waitUntil(() => deliveriesOf('Update').length === 1);
-
-    const update = deliveriesOf('Update')[0].object!;
+    const update = (await waitUntil(() => deliveriesOf('Update').find(forArticle(id)))).object!;
     const object = await served(id);
     expect(update.name).toBe('Edited');
     expect(update.published).toBe(firstPublished);
@@ -115,6 +116,26 @@ describe('Fediverse federation (Article published and updated)', () => {
     // The edit is what `updated` says, and it is after `published`.
     expect(instant(update.updated)).toBeGreaterThan(instant(firstPublished));
     expect(instant(object.updated)).toBeGreaterThan(instant(firstPublished));
+  });
+
+  it('reads the article’s Update even when a profile Update(Person) arrived first', async () => {
+    const draft = await createArticle();
+    const id = draft.documentId;
+    await strapi.documents(ARTICLE_UID).publish({ documentId: id });
+    await waitUntil(() => deliveriesOf('Create').find(forArticle(id)));
+
+    const settings = await strapi.documents(SITE_SETTING_UID).findFirst();
+    await strapi.documents(SITE_SETTING_UID).update({
+      documentId: settings!.documentId,
+      data: { fediverse: { objectType: 'article', displayName: `Renamed ${Date.now()}` } } as never,
+    });
+    await waitUntil(() => deliveriesOf('Update').length === 1);
+    expect(deliveriesOf('Update')[0].object?.type).toBe('Person');
+
+    await strapi.documents(ARTICLE_UID).update({ documentId: id, data: { title: 'Edited' } });
+    await strapi.documents(ARTICLE_UID).publish({ documentId: id });
+    const update = (await waitUntil(() => deliveriesOf('Update').find(forArticle(id)))).object!;
+    expect(update.name).toBe('Edited');
   });
 
   it('starts over when the article is retracted and published again', async () => {
