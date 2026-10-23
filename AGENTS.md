@@ -6,7 +6,7 @@ This is a **Strapi 5** CMS backend project. Below are conventions and commands f
 
 ## Engineering standard
 
-The rules shared by every Micelio repository live in [`docs/engineering-standard.md`](docs/engineering-standard.md). This repository follows standard version 1.5 (`standard: 1.5`; the line `lint:standard` checks once the sync bot exists, bogd3v/micelio-engineering#5). This file adds what is specific to this repository (stack, commands, folders, naming) and may tighten the standard, never relax it. When the two disagree, the standard wins.
+The rules shared by every Micelio repository live in [`docs/engineering-standard.md`](docs/engineering-standard.md). This repository follows standard version 1.5 (`standard: 1.5`; `npm run lint:standard` checks the copy against the hashes bundled in `@micelio/eslint-config`). This file adds what is specific to this repository (stack, commands, folders, naming) and may tighten the standard, never relax it. When the two disagree, the standard wins.
 
 ## Build Commands
 
@@ -23,9 +23,11 @@ npm run strapi <cmd>   # Run Strapi CLI commands
 ## Quality & Test Commands
 
 ```bash
-npm run check          # CI's fast steps in order: typecheck, lint (with licence and EE checks), format:check, test
+npm run check          # CI's fast steps in order: typecheck, lint (ESLint, placement, EE), format:check, test, lint:licenses, lint:standard
 npm run typecheck      # Type-check the server, the fediverse plugin, the admin panel and the tests
-npm run lint           # Run ESLint
+npm run lint           # Run ESLint, the placement check and the EE check
+npm run lint:licenses  # Production dependency licences against the AGPL-3.0 allowlist
+npm run lint:standard  # The copy of the engineering standard matches the version pinned above
 npm run lint:fix       # Run ESLint and auto-fix issues
 npm run format         # Format files with Prettier
 npm run format:check   # Check formatting without writing files
@@ -88,7 +90,7 @@ npm run test:coverage  # Run Jest with coverage report
 
 ### TypeScript Conventions
 
-Exported functions under `src/` declare their return type (`@typescript-eslint/explicit-module-boundary-types`). Every exported declaration has a TSDoc comment (standard, section 4, "Doc comments (TSDoc)"). `npm run lint` checks the syntax (`tsdoc/syntax`) and, per area, that the comment exists (`jsdoc/require-jsdoc`; see `eslint.config.mjs`). Default exports that the framework discovers need none.
+Exported functions declare their return type (`@typescript-eslint/explicit-module-boundary-types`). Every exported declaration has a TSDoc comment (standard, section 4, "Doc comments (TSDoc)"). `npm run lint` checks the syntax (`tsdoc/syntax`) and that the comment exists (`jsdoc/require-jsdoc`); both rules come from `@micelio/eslint-config` and cover every `.ts` file outside tests and declarations. Default exports that the framework discovers need none.
 
 1. **Use `import type` for type-only imports**:
 
@@ -165,7 +167,7 @@ const articles = await strapi.documents('api::article.article').findMany({
 
 ### Async code
 
-`async`/`await` with `try`/`catch`. No `.then()`, `.catch()` or `.finally()` chains; `no-restricted-syntax` in `eslint.config.mjs` fails `npm run lint` on them. `Promise.all`, `race`, `any` and `allSettled` are fine when awaited. `new Promise` only inside a small helper that adapts an event or callback API. A script's entry point wraps its `main()` in an async function with `try`/`catch` and exits non-zero on failure.
+`async`/`await` with `try`/`catch`. No `.then()`, `.catch()` or `.finally()` chains; `no-restricted-syntax` from `@micelio/eslint-config` fails `npm run lint` on them. `Promise.all`, `race`, `any` and `allSettled` are fine when awaited. `new Promise` only inside a small helper that adapts an event or callback API. A script's entry point wraps its `main()` in an async function with `try`/`catch` and exits non-zero on failure.
 
 ### Error Handling
 
@@ -258,7 +260,7 @@ Each skill file is at `.claude/skills/<name>/SKILL.md`.
 ## Important Notes
 
 1. **Jest + Supertest** configured for integration tests against an isolated SQLite database
-2. **ESLint + Prettier** configured — run `npm run check` before committing
+2. **ESLint, Prettier and the base `tsconfig`** come from `@micelio/eslint-config`, `@micelio/prettier-config` and `@micelio/tsconfig`; `eslint.config.mjs` and the `tsconfig.json` files hold only what is this repository's own. Prettier has no semicolons. Run `npm run check` before committing
 3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, the fediverse plugin, `src/admin/` and `tests/`); `npm run typecheck` covers all four
 4. **PostgreSQL 18** is the production database; backup and restore are in `docs/operate/backup.md`
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles

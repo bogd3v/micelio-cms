@@ -4,14 +4,13 @@
 
 ## Checks: `ci.yml`
 
-`.github/workflows/ci.yml` is a reusable workflow, also run on every pull request to `main` or `develop`. It runs these jobs in parallel:
+`.github/workflows/ci.yml` is a reusable workflow, also run on every pull request to `main` or `develop`. Its one job, `check`, calls `check.yml` of `bogd3v/micelio-engineering` (pinned by commit SHA; [its documentation](https://github.com/bogd3v/micelio-engineering/blob/main/docs/workflows.md)), which runs:
 
-- `checks`: `npm audit --audit-level=critical`, typecheck, lint and format.
-- `reuse`: `reuse lint`, the licence headers and `REUSE.toml`.
-- `test`: the Jest suites, in two shards.
-- `build`: `npm run build`.
+- `Checks`: `npm audit --audit-level=critical`, typecheck, lint, format, the Jest suites (not sharded), `lint:licenses` and `lint:standard`.
+- `REUSE`: `reuse lint`, the licence headers and `REUSE.toml`.
+- `Build`: `npm run build`.
 
-A final job named `ci` passes only when all of them do. That name is the check the ruleset of `main` requires, so keep it when you add a job, and add the new job to its `needs`. `codeql.yml`, `scorecard.yml` and `dco.yml` run beside it.
+A final job, `Check`, passes only when all of them did or were skipped by an input. Reported as `check / Check`, it is the check the ruleset "Protect main" requires. `dco.yml` and `scorecard.yml` call the reusable `dco.yml` and `scorecard.yml` the same way (the DCO check is reported as `dco / Signed-off-by`); `codeql.yml` (`analyze`), `contract.yml` and `release.yml` are this repository's own. Raise the pinned SHA in a pull request when the reusable workflows change.
 
 A finding of `npm audit` that cannot be fixed yet goes in `docs/DEPENDENCY_RISKS.md` with its reason, never silenced without one.
 

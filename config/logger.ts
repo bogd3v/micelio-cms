@@ -6,6 +6,7 @@ import { jsonLogFormat } from '../src/utils/json-log-format'
  * V16.2.4; docs/security/logging.md). Elsewhere Strapi's pretty format stays.
  * The destination is still the one console transport.
  */
-const config = () => (process.env.NODE_ENV === 'production' ? { format: jsonLogFormat } : {})
+const config = (): { format?: typeof jsonLogFormat } =>
+  process.env.NODE_ENV === 'production' ? { format: jsonLogFormat } : {}
 
 export default config

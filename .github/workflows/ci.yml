@@ -1,7 +1,8 @@
 name: CI
 
 # Pull requests run it here; pushes to main and develop run it from deploy.yml,
-# which deploys only if it passes.
+# which deploys only if it passes. The checks are the reusable workflow of
+# micelio-engineering (docs/workflows.md there), pinned by commit SHA.
 on:
   pull_request:
     branches: [main, develop]
@@ -11,102 +12,14 @@ permissions:
   contents: read
 
 jobs:
-  # Fast checks that need the dependencies, in one job so `npm ci` runs once.
-  checks:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Audit dependencies
-        run: npm audit --audit-level=critical
-
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Format
-        run: npm run format:check
-
-  # Needs no dependencies, so it runs beside the others from the start.
-  reuse:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Licensing metadata (REUSE)
-        run: pipx run reuse==6.2.0 lint
-
-  # Strapi boots once per suite, so the suites are split over two runners.
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Test (shard ${{ matrix.shard }} of 2)
-        run: npm run test -- --shard=${{ matrix.shard }}/2
-
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-  # The single required status check (repository ruleset "Protect main") and
-  # the one deploy.yml waits for: it passes only when every job above did.
-  ci:
-    if: always()
-    needs: [checks, reuse, test, build]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: All jobs passed
-        env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
-        run: |
-          echo "Job results: ${RESULTS}"
-          for result in ${RESULTS}; do
-            [ "${result}" = "success" ] || exit 1
-          done
+  # The required check of the ruleset "Protect main" and the one deploy.yml waits for is
+  # `check / Check`: it passes only when audit, typecheck, lint, format, tests, licences, the
+  # copy of the standard, REUSE and the build did.
+  check:
+    permissions:
+      contents: read
+    uses: bogd3v/micelio-engineering/.github/workflows/check.yml@3693c82f3ed517705c4db27180662d28458f0458 # main
+    with:
+      licenses: true
+      standard: true
+      reuse: true
