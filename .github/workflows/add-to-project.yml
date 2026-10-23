@@ -1,0 +1,15 @@
+name: Add to project
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  add:
+    uses: bogd3v/.github/.github/workflows/add-to-project.yml@9d8897594e6b7dea758ddb9e8c7c867c3b349ffb # main
+    secrets:
+      ADD_TO_PROJECT_PAT: ${{ secrets.ADD_TO_PROJECT_PAT }}
