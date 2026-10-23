@@ -1,6 +1,6 @@
 # Micelio engineering standard
 
-Version 1.4 (2026-10-20). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
+Version 1.5 (2026-10-22). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
 
 These are the rules shared by every repository of **Micelio**: the frontend (`micelio`), the reference distribution of the CMS (`micelio-cms`), the Strapi plugins (`micelio-plugin-core` and the ones that follow it), theme packages, the theme registry and the tooling (`micelio-engineering`), all of them on Node. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`. The standard is Micelio's, not bogd3v's: other projects of the organisation, in other languages or under other licences, are not bound by it.
 
@@ -274,7 +274,7 @@ While the version is `0.y.z` the project is alpha: nothing is stable and any `0.
 - HTML built from content is sanitized on the server. `v-html` renders only sanitized output, with the reason on the line.
 - The Content Security Policy is built from hashes. A new inline script, embed or media origin is probed on a production build before merging.
 - Anything that writes, authenticates or sends email is rate limited.
-- A security fix is its own pull request with the `security` scope. Vulnerabilities are reported privately, as each repository's `SECURITY.md` says.
+- A security fix is its own pull request with the `security` scope. Vulnerabilities are reported privately, as the organisation's security policy says; each repository's `docs/security.md` gives its scope.
 - Security review follows the OWASP Application Security Verification Standard: level 2 for authentication, sessions, access control and input handling, level 1 for the rest. Each repository's security document maps the requirements that apply to where they are enforced and tested.
 - A site serves `/.well-known/security.txt` (RFC 9116) when its owner has set a security contact, and nothing otherwise.
 
@@ -452,3 +452,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | 1.2 | 2026-10-15 | Before 1.0.0 the project is alpha: breaking changes need no deprecation period and no ADR, only the `!`, a `BREAKING CHANGE:` paragraph and upgrade notes |
 | 1.3 | 2026-10-18 | The Integrator row of section 12 names the generated OpenAPI document as the reference of routes, inputs, outputs and errors, and `docs/api.md` for caching and behaviour |
 | 1.4 | 2026-10-20 | Scoped to Micelio's repositories, with the Strapi plugins and the tooling among them; the canonical copy moves to `micelio-engineering` and local copies are synced by the Micelio bot and checked by `lint:standard`; the code of conduct and the security policy come from the organisation, contribution terms, governance and trademarks from `micelio-engineering`; contracts for blocks, plugin hooks, editorial states and the site export, keyed by site; plugin and configuration packages in the versioning rules; the licence policy stated as Micelio's; the plugin checklist in section 14 |
+| 1.5 | 2026-10-22 | Section 9 points vulnerability reports to the organisation's security policy, with each repository's scope in its `docs/security.md`, instead of a `SECURITY.md` per repository |
