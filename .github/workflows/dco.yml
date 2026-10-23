@@ -10,7 +10,8 @@ permissions:
 jobs:
   dco:
     name: Signed-off-by
-    if: github.actor != 'dependabot[bot]'
+    # The sign-off is a person's certification (section 13): the bots' pull requests are reviewed and merged by a person instead.
+    if: github.actor != 'dependabot[bot]' && github.actor != 'micelio-bot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -28,9 +29,6 @@ jobs:
           for sha in $(git rev-list --no-merges "$BASE..$HEAD"); do
             email=$(git log -1 --format=%ae "$sha")
             author=$(git log -1 --format=%an "$sha")
-            if [ "$email" = "49699333+dependabot[bot]@users.noreply.github.com" ]; then
-              continue
-            fi
             if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$sha" | grep -qixF "$author <$email>"; then
               echo "::error::Commit $sha lacks 'Signed-off-by: $author <$email>' (use git commit -s)"
               failed=1
