@@ -33,6 +33,8 @@ import {
 } from '@fedify/fedify/vocab';
 import {
   getActorHandle,
+  isActor,
+  PUBLIC_COLLECTION,
   type Activity,
   type Actor,
   type DocumentLoader,
@@ -68,7 +70,8 @@ import { getObjectType } from './services/object-type';
 import { getActorProfile, getActorUsernames } from './services/actor-profile';
 import { configuredEncryptionKey, getActorKeyPairs } from './services/keys';
 import { recordInteraction, removeInteraction } from './services/interactions';
-import { ingestReply, removeReply, updateReply } from './services/replies';
+import { removeReply, updateReply } from './services/replies';
+import { ingestReplyThread } from './services/reply-threads';
 import { settleDelivery } from './services/delivery-outcomes';
 import { recordInboxRefusal } from './services/inbox-refusals';
 import { buildNote, findServedReply } from './services/reply-notes';
@@ -83,7 +86,8 @@ import {
 import type { ActorProfileField } from './types/actor-profile';
 import type { FederationBackend, FediverseContextData, FederationSetup } from './types/federation';
 import type { InteractionType } from './types/interactions';
-import type { ReplyContext } from './types/replies';
+import type { FetchedNote, RemoteAuthor, ReplyContext, ThreadFetcher } from './types/replies';
+import { untilAborted } from './utils/abortable';
 import { escapeHtml } from './utils/html';
 import { createFederationBackend } from './utils/federation-backend';
 import { ActorKeyDecryptionError } from './utils/key-encryption';
@@ -238,6 +242,88 @@ async function describeRemoteActor(
   }
   const name = cleanRemoteText(actor?.name) || cleanRemoteText(actor?.preferredUsername) || handle;
   return { handle, name, avatar: await extractAvatarUrl(strapi, actor, documentLoader) };
+}
+
+/** Whether a note is addressed to the public: only those may become comments on a public site. */
+function isPublicNote(note: Note): boolean {
+  return [...note.toIds, ...note.ccIds].some((id) => id.href === PUBLIC_COLLECTION.href);
+}
+
+/**
+ * How reply ingestion fetches the notes above a reply and their authors: with
+ * the blog's signed document loader (servers that require authorized fetch
+ * answer it), bounded by the caller's signal.
+ */
+function threadFetcher(ctx: InboxContext<FediverseContextData>): ThreadFetcher {
+  const strapi = ctx.data.strapi;
+  let signed: Promise<DocumentLoader> | undefined;
+  const loaderFor = async (signal: AbortSignal): Promise<DocumentLoader> => {
+    signed ??= ctx.getDocumentLoader({ identifier: ACTOR_IDENTIFIER });
+    const loader = await signed;
+    return (url, options) => loader(url, { ...options, signal });
+  };
+
+  return {
+    async fetchNote(uri, signal): Promise<FetchedNote | null> {
+      let url: URL;
+      try {
+        url = new URL(uri);
+      } catch {
+        return null;
+      }
+      // Our own ids that matched nothing stored are not fetched back from ourselves.
+      if (!['http:', 'https:'].includes(url.protocol) || ctx.parseUri(url) != null) return null;
+
+      let note: unknown;
+      try {
+        // Loaded directly, not through `lookupObject`: that falls back to an unsigned
+        // WebFinger lookup when the fetch fails, which could hand back another host's note.
+        const documentLoader = await loaderFor(signal);
+        const { document, documentUrl } = await documentLoader(url.href);
+        if (new URL(documentUrl).origin !== url.origin) return null;
+        note = await ApObject.fromJsonLd(document, {
+          documentLoader,
+          contextLoader: ctx.contextLoader,
+        });
+      } catch (error) {
+        strapi.log.debug(
+          `[fediverse] could not fetch ${url.href}: ${error instanceof Error ? error.message : 'unknown error'}`
+        );
+        return null;
+      }
+      if (!(note instanceof Note) || note.id == null || note.attributionId == null) return null;
+      // The note's server vouches only for its own ids and actors, as the signature
+      // does for a delivered note; a redirect to another host is refused above.
+      if (note.id.origin !== url.origin || note.attributionId.origin !== url.origin) return null;
+      if (!isPublicNote(note)) return null;
+
+      return {
+        uri: note.id.href,
+        inReplyTo: note.replyTargetId?.href ?? null,
+        contentHtml: String(note.content ?? ''),
+        actorId: note.attributionId.href,
+      };
+    },
+
+    async describeAuthor(actorId, signal): Promise<RemoteAuthor> {
+      try {
+        const documentLoader = await loaderFor(signal);
+        const actor = await ctx.lookupObject(actorId, { documentLoader, signal });
+        return await untilAborted(
+          describeRemoteActor(
+            strapi,
+            isActor(actor) ? actor : null,
+            new URL(actorId),
+            documentLoader
+          ),
+          signal
+        );
+      } catch {
+        // Out of time or unreachable: the comment is stored with the actor id as its author name.
+        return { handle: null, name: null, avatar: null };
+      }
+    },
+  };
 }
 
 /**
@@ -708,7 +794,7 @@ export function createFediverseFederation(
         ctx.documentLoader
       );
 
-      const result = await ingestReply(
+      const result = await ingestReplyThread(
         strapi,
         {
           uri: note.id.href,
@@ -717,7 +803,8 @@ export function createFediverseFederation(
           actorId: create.actorId.href,
           ...remote,
         },
-        await loadReplyContext(ctx)
+        await loadReplyContext(ctx),
+        threadFetcher(ctx)
       );
       if (result.status === 'applied') {
         strapi.log.info(
