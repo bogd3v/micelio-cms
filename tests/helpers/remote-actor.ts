@@ -13,7 +13,8 @@ const ACTIVITY_JSON = 'application/activity+json';
  * public key — so our plugin's inbound HTTP-signature verification and
  * `ctx.lookupObject()` calls have something real to dereference — and it
  * records any activity POSTed to its inbox (e.g. the signed `Accept` our
- * plugin sends back for a `Follow`).
+ * plugin sends back for a `Follow`). It also serves the documents a test
+ * registers with `serve()` (the notes of a thread) and can leave a path hanging.
  */
 interface RemoteActorOptions {
   preferredUsername?: string;
@@ -81,8 +82,20 @@ async function createRemoteActor({
   const inboxRequests: { headers: Headers; body: string }[] = [];
   // Every POST to the inbox, accepted or not.
   let inboxAttempts = 0;
+  // Documents served at other paths (notes of a thread), and paths that never answer.
+  const documents = new Map<string, unknown>();
+  const hangingPaths = new Set<string>();
+  // The path of every GET the server received, in order.
+  const getRequests: string[] = [];
 
   const server = http.createServer((req, res) => {
+    if (req.method === 'GET') getRequests.push(req.url ?? '');
+    if (req.method === 'GET' && hangingPaths.has(req.url ?? '')) return;
+    if (req.method === 'GET' && documents.has(req.url ?? '')) {
+      res.writeHead(200, { 'content-type': ACTIVITY_JSON });
+      res.end(JSON.stringify(documents.get(req.url ?? '')));
+      return;
+    }
     if (req.method === 'GET' && req.url === '/actor') {
       void (async () => {
         try {
@@ -182,6 +195,17 @@ async function createRemoteActor({
     keyId,
     inboxDeliveries,
     inboxRequests,
+    getRequests,
+    /** Serves `document` as ActivityPub JSON at `path` (from `/`) and returns its URL. */
+    serve(path: string, document: unknown): string {
+      documents.set(path, document);
+      return `http://127.0.0.1:${port}${path}`;
+    },
+    /** Makes GETs of `path` never answer, as a stalled server would, and returns its URL. */
+    hang(path: string): string {
+      hangingPaths.add(path);
+      return `http://127.0.0.1:${port}${path}`;
+    },
     /** How many POSTs the inbox has received, including the ones `inboxFailures` refused. */
     get inboxAttempts() {
       return inboxAttempts;
@@ -193,6 +217,8 @@ async function createRemoteActor({
       return fetch(await signActivity(url, activity, options));
     },
     async close() {
+      // A request left hanging would keep `close()` waiting forever.
+      server.closeAllConnections();
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve()))
       );

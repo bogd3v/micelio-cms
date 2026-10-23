@@ -205,7 +205,11 @@ An inbox that answers `404` or `410` is gone for good. Fedify calls `setOutboxPe
 1. Inbox receives `Create(Note)` with `inReplyTo` pointing at:
    - our article AP id (`/fediverse/articles/{documentId}`) → top-level comment, or
    - the frontend article URL pattern (some clients use `url`), or
-   - another note's URI matching a stored comment's `fediverseUri` → `threadOf` = that comment (one hop). Anything that doesn't resolve to one of our published articles is ignored: it is not our conversation.
+   - another note's URI matching a stored comment's `fediverseUri` (or a moderator's `fediverseNoteUri`) → `threadOf` = that comment (one hop, the fast path), or
+   - a note we never received (a branch that grew on the remote side, or a note sent while the CMS was down) → the parents are fetched, see [Threads deeper than one hop](#threads-deeper-than-one-hop).
+
+   Anything that doesn't resolve to one of our published articles is ignored: it is not our conversation.
+
 2. Create `plugin::comments.comment` via `strapi.documents()`:
 
 | Comment field          | Source                                                                                                                                    |
@@ -224,6 +228,17 @@ An inbox that answers `404` or `410` is gone for good. Fedify calls `setOutboxPe
 4. `Update(Note)` → edit the content **and send the comment back to `PENDING`** (an approved comment must not be swappable for spam); `Delete(Note)` → set `removed`. Both are only honoured from the original author.
 5. Admin approves/rejects in the existing comments moderation view — no new admin UI needed.
 
+#### Threads deeper than one hop
+
+Code: `services/reply-threads.ts` (the walk), `threadFetcher` in `federation.ts` (the fetches), limits in `constants/replies.ts`.
+
+1. When a delivered reply's `inReplyTo` matches nothing stored, its parent is fetched with the blog's signed document loader (servers that require authorized fetch answer it), then the parent's parent, until one replies to an article, a stored comment or a moderator's note. Our own ids are never fetched back from ourselves, and only `http(s)` ids are fetched. The note is loaded directly and parsed with `Object.fromJsonLd`, not through `lookupObject`: when a fetch fails, `lookupObject` falls back to an unsigned WebFinger lookup of the URL and fetches whatever `self` link it returns, which could hand back a note of another host and adds requests the budget does not count.
+2. **Bounded per delivery.** At most `MAX_THREAD_DEPTH` (5) notes are fetched, and the fetches and the authors' profiles share one budget of `THREAD_TIME_BUDGET_MS` (5 s) through an `AbortSignal`. Inbox listeners run while the sender waits for the answer, so a server that never answers holds the inbox for the budget, not for Fedify's 10 s per document. A chain that has not reached our conversation within the depth or the budget, that ends at a post answering nothing, or whose next note cannot be fetched, is dropped whole: nothing is stored.
+3. **Each fetched note is checked as a delivered one would be.** It must be a `Note` addressed to the public (`to` or `cc`); a followers-only or direct note could otherwise reach a public site through the signed fetch. Its id and its author (`attributedTo`) must have the origin of the URL it was fetched from, and a redirect to another origin is refused: a server vouches only for its own notes and actors, as the signature does for a delivered note. The content goes through the same sanitization (`storeReply`).
+4. **Stored from the top down.** The article being published is checked once, then every fetched note becomes a `PENDING` comment with its own `fediverseUri`, nested under the one above it, and the delivered reply last. A note that another delivery stored meanwhile is reused as the parent.
+5. **A blocked actor stops the branch at its note.** The notes above it stay stored (they are a valid conversation on their own); the blocked note and everything under it, the delivered reply included, are not. A fetched note that is empty once sanitized (an image-only post, or one that only mentions the blog) stops the branch the same way: it cannot be stored, and its replies have nothing to nest under. The delivered reply's own author being blocked is still refused before anything is fetched.
+6. A delivered reply that is empty once sanitized fetches nothing.
+
 ### 4. Likes & boosts
 
 1. Inbox receives `Like(Article)` → upsert `fediverse-interaction` (type `like`).
@@ -238,7 +253,7 @@ An inbox that answers `404` or `410` is gone for good. Fedify calls `setOutboxPe
 3. It stores the reply's own note id in `fediverseNoteUri` (`<origin>/fediverse/notes/<documentId>`) and sends a signed `Create(Note)` from the blog actor: `inReplyTo` the remote note, `to` the remote author, `cc` the public collection and the followers, a `Mention` tag of the author, `content` the comment text as escaped HTML (a paragraph per blank line), `url` the article page with `#comment-<documentId>`. It goes to the remote author's inbox, found by fetching the author's actor with the blog's signed loader (not if the author is blocked here), and to every reachable follower, through the queue. The public `fediverseUri` and `fediverseActorHandle` stay `null`, so the frontend does not mark the site's own reply as remote.
 4. Editing the text sends an `Update(Note)`. Removing, blocking (the reply, or a thread above it), rejecting it, sending it back to moderation, or deleting its row sends a `Delete(Note)` with a `Tombstone`; showing it again sends a `Create` again. Every activity has an id of its own.
 5. `GET /fediverse/notes/<documentId>` serves the `Note` only while the reply is shown: `404` once it is removed, blocked, pending or rejected, and for any comment that is not a moderator's reply to a fediverse comment.
-6. A reply to the admin's note from Mastodon arrives as a `Create(Note)` whose `inReplyTo` is the note id: reply ingestion finds the comment by `fediverseNoteUri` and nests it (one hop; deeper threads are #302).
+6. A reply to the admin's note from Mastodon arrives as a `Create(Note)` whose `inReplyTo` is the note id: reply ingestion finds the comment by `fediverseNoteUri` and nests it. A reply to a remote reply of that note that never reached us is resolved by fetching it ([Threads deeper than one hop](#threads-deeper-than-one-hop)).
 
 ---
 
@@ -357,7 +372,8 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Approval config in `config/plugins.ts` is inert.** See Moderation & Security above. Note that comments left through the site's own form are therefore approved immediately today; enabling the plugin's real `approvalFlow: ['api::article.article']` would put those in `PENDING` too (a product decision, not made here).
 - **Comment `related` is `api::article.article:<documentId>`** (not the numeric id), and `threadOf` is set through the document service by the parent's `documentId`.
 - **Author mapping:** `authorId` = remote actor URI (stable identity), `authorName` = actor name or `preferredUsername`, `authorAvatar` = actor icon (absolute `http(s)` URL without credentials and of at most 255 characters, else `null`; any other scheme such as `javascript:` or `data:` is dropped). The 255 is the size of a Strapi `string` column: the comment is written through the Document Service, whose validation rejects a longer `authorAvatar` on any database (seen on SQLite: the whole reply was lost), and `follower.avatar` is written through `db.query`, with no Strapi validation, so SQLite stores a longer value while PostgreSQL's `varchar(255)` rejects the write, `fediverseActorHandle` = `@user@host`. `authorEmail` is deliberately never set: the plugin exposes it publicly.
-- **Threading is one hop.** A reply to a stored fediverse reply attaches to it via `threadOf`; a reply to something we don't know is ignored (not our conversation), not attached as top-level.
+- **Threading resolves up to five hops (#302).** A reply to a stored fediverse reply attaches to it via `threadOf` without any fetch. A reply to a note we never received fetches the missing parents, signed, up to `MAX_THREAD_DEPTH` (5) notes and within `THREAD_TIME_BUDGET_MS` (5 s), and stores them as `PENDING` comments if the chain reaches our conversation ([Threads deeper than one hop](#threads-deeper-than-one-hop)); otherwise it is ignored (not our conversation), never attached as top-level. Fetched notes must be public: a reply delivered to us is stored whatever its addressing (unchanged), but a note we fetch was not sent to us. `fediverseUri` is unique only through Document Service validation, so two deliveries of the same thread at the same instant can still both store a missing parent (the same race the one-hop path has). Tests: `tests/fediverse-reply-threads.test.ts`.
+- Release-note material (#302, minor, no upgrade step): a reply to a remote reply the site never received now brings the missing notes of its thread in as `PENDING` comments, up to five levels. The CMS makes a few more signed `GET`s to the servers in that thread, bounded in number and time.
 - **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading mention of the actor (the handle, or a former one) is stripped; content is capped at 5000 characters.
 - **Authorship is checked.** A `Note` whose `attributedTo` differs from the signature-verified activity actor is dropped, and edits/deletes are only honoured from the original author.
 
@@ -596,7 +612,7 @@ Federation was first verified against Mastodon only. This is how to run the same
 | 3   | Follow it                                                                     | `follow accepted` in the CMS log, a follower row, the follow shows as accepted on GoToSocial                            |            |
 | 4   | Publish an article with a cover (and a cover credit)                          | The article reaches the timeline of `alice`; log `Create(Article) … queued for 1 follower`                              | yes        |
 | 5   | How the body and the card render                                              | Title, excerpt, link, the credit line, the card with the cover                                                          | yes        |
-| 6   | Reply to the article from GoToSocial, then reply to that reply                | Two comments in the admin as `PENDING`, the second nested under the first (one hop is the limit, #302)                  | yes        |
+| 6   | Reply to the article from GoToSocial, then reply to that reply                | Two comments in the admin as `PENDING`, the second nested under the first                                               | yes        |
 | 7   | Approve a reply and answer it as a moderator in the admin                     | The answer appears under the reply on GoToSocial (#301)                                                                 | yes        |
 | 8   | Like, then boost the article; undo each                                       | The counts of `GET /api/fediverse/articles/<id>/stats` go up and back down                                              |            |
 | 9   | Edit and publish the article again                                            | `Update(Article)` queued; the timeline post shows the edit, or not (note which)                                         | yes        |

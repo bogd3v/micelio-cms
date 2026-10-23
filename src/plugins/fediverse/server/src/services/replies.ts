@@ -1,7 +1,7 @@
 import type { Core } from '@strapi/strapi';
 
 import { ARTICLE_UID, COMMENT_UID } from '../constants/uids';
-import type { IncomingReply, IngestResult, ReplyContext } from '../types/replies';
+import type { IncomingReply, IngestResult, ReplyContext, ReplyParent } from '../types/replies';
 import { findPublishedArticle, getDefaultLocale, resolveArticleId } from './articles';
 import { isActorBlocked } from './followers';
 
@@ -112,7 +112,8 @@ interface CommentRow {
   content?: string | null;
 }
 
-const ignored = (reason: string): IngestResult => ({ status: 'ignored', reason });
+/** An `ignored` result with its reason. */
+export const ignored = (reason: string): IngestResult => ({ status: 'ignored', reason });
 
 // The generated types for plugin content types don't include the comments
 // plugin's attributes (or our extension's), so type the document service by hand.
@@ -138,17 +139,26 @@ async function findCommentByNoteUri(strapi: Core.Strapi, uri: string): Promise<C
   })) as CommentRow | null;
 }
 
+/** Why a reply whose `inReplyTo` matches nothing stored is ignored by `ingestReply`. */
+export const NOT_OUR_CONVERSATION = 'not a reply to one of our articles';
+
+/** The documentId of the comment stored for a remote note, or `null`. */
+export async function findStoredReply(strapi: Core.Strapi, uri: string): Promise<string | null> {
+  return (await findCommentByUri(strapi, uri))?.documentId ?? null;
+}
+
 /**
  * Finds the article a reply belongs to, and the parent comment when it is a
- * reply to another fediverse reply (one hop, via the parent's stored Note id).
+ * reply to a stored fediverse reply or to a moderator's own note. `null` when
+ * `inReplyTo` is none of these.
  */
-async function resolveTarget(
+export async function findReplyParent(
   strapi: Core.Strapi,
   inReplyTo: string,
   context: ReplyContext
-): Promise<{ articleId: string; parent: CommentRow | null } | null> {
+): Promise<ReplyParent | null> {
   const articleId = await resolveArticleId(strapi, inReplyTo, context.parseArticleUri);
-  if (articleId) return { articleId, parent: null };
+  if (articleId) return { articleId, parentDocumentId: null };
 
   // A reply to a remote comment, or to a moderator's own reply (whose note id is not public).
   const parent =
@@ -156,17 +166,51 @@ async function resolveTarget(
   const related = parent?.related ?? '';
   const separator = related.lastIndexOf(':');
   if (parent && related.slice(0, separator) === ARTICLE_UID) {
-    return { articleId: related.slice(separator + 1), parent };
+    return { articleId: related.slice(separator + 1), parentDocumentId: parent.documentId };
   }
 
   return null;
 }
 
 /**
- * Stores a remote reply as a comment on the article it answers. It always
- * enters as `PENDING`: the content is untrusted and a moderator approves it.
+ * Writes a remote reply as a `PENDING` comment under `parent`, with its content
+ * sanitized. The caller has checked the author, the dedupe and the article.
  * Only the default locale is federated, so the reply belongs to that version
  * of the article and is stored in its locale, where the frontend asks for it.
+ */
+export async function storeReply(
+  strapi: Core.Strapi,
+  reply: IncomingReply,
+  parent: ReplyParent,
+  context: ReplyContext
+): Promise<IngestResult> {
+  const content = toCommentContent(reply.contentHtml, context.actorUsernames);
+  if (!content) return ignored('empty after sanitizing');
+
+  const created = (await comments(strapi).create({
+    data: {
+      content,
+      related: `${ARTICLE_UID}:${parent.articleId}`,
+      locale: await getDefaultLocale(strapi),
+      approvalStatus: 'PENDING',
+      isAdminComment: false,
+      authorId: reply.actorId,
+      authorName: reply.name ?? reply.handle ?? reply.actorId,
+      authorAvatar: reply.avatar ?? undefined,
+      fediverseUri: reply.uri,
+      fediverseActorHandle: reply.handle ?? undefined,
+      ...(parent.parentDocumentId ? { threadOf: parent.parentDocumentId } : {}),
+    },
+  })) as CommentRow;
+
+  return { status: 'applied', documentId: created.documentId };
+}
+
+/**
+ * Stores a remote reply as a comment on the article it answers, or under the
+ * stored comment it answers (one hop). It always enters as `PENDING`: the
+ * content is untrusted and a moderator approves it. Deeper threads are
+ * resolved by `ingestReplyThread`.
  */
 export async function ingestReply(
   strapi: Core.Strapi,
@@ -176,32 +220,13 @@ export async function ingestReply(
   if (await isActorBlocked(strapi, reply.actorId)) return ignored('actor is blocked');
   if (await findCommentByUri(strapi, reply.uri)) return ignored('already stored');
 
-  const target = await resolveTarget(strapi, reply.inReplyTo, context);
-  if (!target) return ignored('not a reply to one of our articles');
-  if ((await findPublishedArticle(strapi, target.articleId)) == null) {
+  const parent = await findReplyParent(strapi, reply.inReplyTo, context);
+  if (!parent) return ignored(NOT_OUR_CONVERSATION);
+  if ((await findPublishedArticle(strapi, parent.articleId)) == null) {
     return ignored('article is not published');
   }
 
-  const content = toCommentContent(reply.contentHtml, context.actorUsernames);
-  if (!content) return ignored('empty after sanitizing');
-
-  const created = (await comments(strapi).create({
-    data: {
-      content,
-      related: `${ARTICLE_UID}:${target.articleId}`,
-      locale: await getDefaultLocale(strapi),
-      approvalStatus: 'PENDING',
-      isAdminComment: false,
-      authorId: reply.actorId,
-      authorName: reply.name ?? reply.handle ?? reply.actorId,
-      authorAvatar: reply.avatar ?? undefined,
-      fediverseUri: reply.uri,
-      fediverseActorHandle: reply.handle ?? undefined,
-      ...(target.parent ? { threadOf: target.parent.documentId } : {}),
-    },
-  })) as CommentRow;
-
-  return { status: 'applied', documentId: created.documentId };
+  return storeReply(strapi, reply, parent, context);
 }
 
 /**
