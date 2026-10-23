@@ -5,26 +5,26 @@ import {
   link,
   seoOf,
   type SeededImages,
-} from './response-fields-seed-base';
-import type { SeededArticles } from './response-fields-seed-articles';
+} from './response-fields-seed-base'
+import type { SeededArticles } from './response-fields-seed-articles'
 
-const ABOUT_UID = 'api::about.about';
-const GLOBAL_UID = 'api::global.global';
-const PAGE_UID = 'api::page.page';
-const SITE_SETTING_UID = 'api::site-setting.site-setting';
-const SUBSCRIBER_UID = 'api::subscriber.subscriber';
+const ABOUT_UID = 'api::about.about'
+const GLOBAL_UID = 'api::global.global'
+const PAGE_UID = 'api::page.page'
+const SITE_SETTING_UID = 'api::site-setting.site-setting'
+const SUBSCRIBER_UID = 'api::subscriber.subscriber'
 
 /** Creates a page with every section, the About page, the global type, the site settings and a subscriber. */
 export async function seedSite(
   images: SeededImages,
   articles: SeededArticles
 ): Promise<{ pageDocumentId: string }> {
-  const { cover, avatar, metaImage, slide: sliderFile, poster, model } = images;
-  const seo = seoOf(metaImage);
-  const category = { documentId: articles.categoryDocumentId };
-  const tag = { documentId: articles.tagDocumentId };
+  const { cover, avatar, metaImage, slide: sliderFile, poster, model } = images
+  const seo = seoOf(metaImage)
+  const category = { documentId: articles.categoryDocumentId }
+  const tag = { documentId: articles.tagDocumentId }
 
-  const pageImage = (file: number) => file;
+  const pageImage = (file: number) => file
   const page = await documents(PAGE_UID).create({
     data: {
       title: 'Fields page',
@@ -140,14 +140,14 @@ export async function seedSite(
         },
       ],
     },
-  });
-  await documents(PAGE_UID).publish({ documentId: page.documentId });
+  })
+  await documents(PAGE_UID).publish({ documentId: page.documentId })
   await documents(PAGE_UID).update({
     documentId: page.documentId,
     locale: 'es',
     data: { title: 'Página de campos', slug: 'pagina-de-campos' },
-  });
-  await documents(PAGE_UID).publish({ documentId: page.documentId, locale: 'es' });
+  })
+  await documents(PAGE_UID).publish({ documentId: page.documentId, locale: 'es' })
 
   await documents(ABOUT_UID).create({
     data: {
@@ -236,7 +236,7 @@ export async function seedSite(
         },
       ],
     },
-  });
+  })
 
   await documents(GLOBAL_UID).create({
     data: {
@@ -246,10 +246,10 @@ export async function seedSite(
       fediverseHeader: cover,
       defaultSeo: seo,
     },
-  });
+  })
 
-  const settings = await documents(SITE_SETTING_UID).findFirst();
-  if (!settings) throw new Error('site-setting was not seeded on boot');
+  const settings = await documents(SITE_SETTING_UID).findFirst()
+  if (!settings) throw new Error('site-setting was not seeded on boot')
   await documents(SITE_SETTING_UID).update({
     documentId: settings.documentId,
     data: {
@@ -279,7 +279,7 @@ export async function seedSite(
       },
       homePage: page.documentId,
     },
-  });
+  })
 
   await documents(SUBSCRIBER_UID).create({
     data: {
@@ -289,7 +289,7 @@ export async function seedSite(
       confirmed: true,
       language: 'en',
     },
-  });
+  })
 
-  return { pageDocumentId: page.documentId };
+  return { pageDocumentId: page.documentId }
 }

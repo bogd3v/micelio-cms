@@ -1,23 +1,23 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-import { FOLLOWER_UID } from '../constants/uids';
-import type { FollowerInput, FollowerRecord } from '../types/followers';
+import { FOLLOWER_UID } from '../constants/uids'
+import type { FollowerInput, FollowerRecord } from '../types/followers'
 
 interface FollowerRow {
-  documentId: string;
-  actorId: string;
-  handle?: string | null;
-  name?: string | null;
-  inbox?: string | null;
-  avatar?: string | null;
-  blocked?: boolean;
-  unreachableSince?: string | null;
+  documentId: string
+  actorId: string
+  handle?: string | null
+  name?: string | null
+  inbox?: string | null
+  avatar?: string | null
+  blocked?: boolean
+  unreachableSince?: string | null
 }
 
 function query(strapi: Core.Strapi) {
   // db.query is used instead of strapi.documents because the plugin's
   // generated content type inputs are not visible to plugin-local TypeScript.
-  return strapi.db.query(FOLLOWER_UID);
+  return strapi.db.query(FOLLOWER_UID)
 }
 
 function toRecord(row: FollowerRow): FollowerRecord {
@@ -30,7 +30,7 @@ function toRecord(row: FollowerRow): FollowerRecord {
     avatar: row.avatar ?? null,
     blocked: row.blocked ?? false,
     unreachableSince: row.unreachableSince ?? null,
-  };
+  }
 }
 
 /** Every row of one actor, oldest first. More than one is possible: see `settleDuplicates`. */
@@ -38,19 +38,19 @@ async function rowsOf(strapi: Core.Strapi, actorId: string): Promise<FollowerRow
   return (await query(strapi).findMany({
     where: { actorId },
     orderBy: { id: 'asc' },
-  })) as FollowerRow[];
+  })) as FollowerRow[]
 }
 
 /** Deletes the given rows unless an admin has blocked them in the meantime. */
 async function deleteUnblocked(strapi: Core.Strapi, rows: FollowerRow[]): Promise<number> {
-  if (rows.length === 0) return 0;
+  if (rows.length === 0) return 0
   const result = (await query(strapi).deleteMany({
     where: {
       documentId: { $in: rows.map((row) => row.documentId) },
       $or: [{ blocked: false }, { blocked: { $null: true } }],
     },
-  })) as { count: number };
-  return result.count;
+  })) as { count: number }
+  return result.count
 }
 
 /**
@@ -62,32 +62,32 @@ async function deleteUnblocked(strapi: Core.Strapi, rows: FollowerRow[]): Promis
  * @param rows - The rows of one actor, oldest first; at least one.
  */
 async function settleDuplicates(strapi: Core.Strapi, rows: FollowerRow[]): Promise<FollowerRow> {
-  const [oldest, ...duplicates] = rows;
-  if (duplicates.length === 0) return oldest;
+  const [oldest, ...duplicates] = rows
+  if (duplicates.length === 0) return oldest
 
-  const survivor = { ...oldest };
+  const survivor = { ...oldest }
   const block = async () => {
-    if (survivor.blocked) return;
+    if (survivor.blocked) return
     await query(strapi).update({
       where: { documentId: oldest.documentId },
       data: { blocked: true },
-    });
-    survivor.blocked = true;
-  };
+    })
+    survivor.blocked = true
+  }
 
-  if (duplicates.some((row) => row.blocked)) await block();
-  await deleteUnblocked(strapi, duplicates);
+  if (duplicates.some((row) => row.blocked)) await block()
+  await deleteUnblocked(strapi, duplicates)
 
   const left = (await rowsOf(strapi, oldest.actorId)).filter(
     (row) => row.documentId !== oldest.documentId
-  );
+  )
   if (left.length > 0) {
-    await block();
+    await block()
     for (const row of left) {
-      await query(strapi).delete({ where: { documentId: row.documentId } });
+      await query(strapi).delete({ where: { documentId: row.documentId } })
     }
   }
-  return survivor;
+  return survivor
 }
 
 /**
@@ -102,15 +102,15 @@ export async function recordFollower(
   strapi: Core.Strapi,
   input: FollowerInput
 ): Promise<FollowerRecord> {
-  const rows = await rowsOf(strapi, input.actorId);
-  const existing = rows.length > 0 ? await settleDuplicates(strapi, rows) : null;
+  const rows = await rowsOf(strapi, input.actorId)
+  const existing = rows.length > 0 ? await settleDuplicates(strapi, rows) : null
 
   if (existing) {
     if (existing.blocked) {
       strapi.log.warn(
         `[fediverse] ignored follow from blocked actor ${input.actorId} (blocked by admin)`
-      );
-      return toRecord(existing);
+      )
+      return toRecord(existing)
     }
 
     const updated = await query(strapi).update({
@@ -121,8 +121,8 @@ export async function recordFollower(
         inbox: input.inbox ?? null,
         avatar: input.avatar ?? null,
       },
-    });
-    return toRecord(updated as FollowerRow);
+    })
+    return toRecord(updated as FollowerRow)
   }
 
   const created = await query(strapi).create({
@@ -134,14 +134,14 @@ export async function recordFollower(
       avatar: input.avatar ?? null,
       blocked: false,
     },
-  });
+  })
   // Another delivery may have inserted at the same time: keep the oldest row. If this
   // delivery lost, its profile fields are not written; both come from the same actor.
   // An Undo can also have removed the row already, hence the fallback.
-  const settled = await rowsOf(strapi, input.actorId);
+  const settled = await rowsOf(strapi, input.actorId)
   return toRecord(
     settled.length > 0 ? await settleDuplicates(strapi, settled) : (created as FollowerRow)
-  );
+  )
 }
 
 /**
@@ -154,15 +154,15 @@ export async function recordFollower(
  * @returns `false` when the actor had no row, or when any of its rows is blocked.
  */
 export async function removeFollower(strapi: Core.Strapi, actorId: string): Promise<boolean> {
-  const rows = await rowsOf(strapi, actorId);
-  if (rows.length === 0) return false;
+  const rows = await rowsOf(strapi, actorId)
+  if (rows.length === 0) return false
   if (rows.some((row) => row.blocked)) {
-    strapi.log.info(`[fediverse] kept the blocked actor ${actorId}: only an admin lifts a block`);
-    return false;
+    strapi.log.info(`[fediverse] kept the blocked actor ${actorId}: only an admin lifts a block`)
+    return false
   }
 
   // Rows blocked since the read stay: a delete never removes a block.
-  return (await deleteUnblocked(strapi, rows)) > 0;
+  return (await deleteUnblocked(strapi, rows)) > 0
 }
 
 /**
@@ -172,7 +172,7 @@ export async function removeFollower(strapi: Core.Strapi, actorId: string): Prom
  * True when any row of the actor is blocked, because duplicate rows are possible.
  */
 export async function isActorBlocked(strapi: Core.Strapi, actorId: string): Promise<boolean> {
-  return (await query(strapi).count({ where: { actorId, blocked: true } })) > 0;
+  return (await query(strapi).count({ where: { actorId, blocked: true } })) > 0
 }
 
 /** The actors with a blocked row: none of their rows counts as an active follower. */
@@ -180,17 +180,17 @@ async function blockedActorIds(strapi: Core.Strapi): Promise<string[]> {
   const rows = (await query(strapi).findMany({
     where: { blocked: true },
     select: ['actorId'],
-  })) as Array<{ actorId: string }>;
-  return rows.map((row) => row.actorId).filter((actorId) => typeof actorId === 'string');
+  })) as Array<{ actorId: string }>
+  return rows.map((row) => row.actorId).filter((actorId) => typeof actorId === 'string')
 }
 
 /** The `where` of the active followers (`blocked` false) or of the blocked ones (`blocked` true). */
 async function followersWhere(strapi: Core.Strapi, blocked: boolean) {
-  if (blocked) return { blocked: true };
-  const excluded = await blockedActorIds(strapi);
+  if (blocked) return { blocked: true }
+  const excluded = await blockedActorIds(strapi)
   return excluded.length > 0
     ? { blocked: false, actorId: { $notIn: excluded } }
-    : { blocked: false };
+    : { blocked: false }
 }
 
 /**
@@ -203,12 +203,12 @@ export async function listFollowers(
   strapi: Core.Strapi,
   options: { blocked?: boolean } = {}
 ): Promise<FollowerRecord[]> {
-  const blocked = options.blocked ?? false;
+  const blocked = options.blocked ?? false
   const rows = (await query(strapi).findMany({
     where: await followersWhere(strapi, blocked),
     orderBy: { createdAt: 'asc' },
-  })) as FollowerRow[];
-  return rows.map(toRecord);
+  })) as FollowerRow[]
+  return rows.map(toRecord)
 }
 
 /**
@@ -221,12 +221,12 @@ export async function countFollowers(
   strapi: Core.Strapi,
   options: { blocked?: boolean } = {}
 ): Promise<number> {
-  const blocked = options.blocked ?? false;
-  return await query(strapi).count({ where: await followersWhere(strapi, blocked) });
+  const blocked = options.blocked ?? false
+  return await query(strapi).count({ where: await followersWhere(strapi, blocked) })
 }
 
 /** Most followers the plugin page lists; a remote party can add rows, so the answer is bounded. */
-export const FOLLOWER_ROWS_LIMIT = 500;
+export const FOLLOWER_ROWS_LIMIT = 500
 
 /** Followers and blocked actors for the plugin page, newest first, up to `FOLLOWER_ROWS_LIMIT`. */
 export async function listFollowerRows(
@@ -235,8 +235,8 @@ export async function listFollowerRows(
   const rows = (await query(strapi).findMany({
     orderBy: { createdAt: 'desc' },
     limit: FOLLOWER_ROWS_LIMIT,
-  })) as Array<FollowerRow & { createdAt: string }>;
-  return rows.map((row) => ({ ...toRecord(row), since: row.createdAt }));
+  })) as Array<FollowerRow & { createdAt: string }>
+  return rows.map((row) => ({ ...toRecord(row), since: row.createdAt }))
 }
 
 /**
@@ -255,10 +255,10 @@ export async function setActorBlocked(
   documentId: string,
   blocked: boolean
 ): Promise<boolean> {
-  const row = (await query(strapi).findOne({ where: { documentId } })) as FollowerRow | null;
-  if (row == null) return false;
-  await query(strapi).updateMany({ where: { actorId: row.actorId }, data: { blocked } });
-  return true;
+  const row = (await query(strapi).findOne({ where: { documentId } })) as FollowerRow | null
+  if (row == null) return false
+  await query(strapi).updateMany({ where: { actorId: row.actorId }, data: { blocked } })
+  return true
 }
 
 /**
@@ -274,8 +274,8 @@ export async function markUnreachable(strapi: Core.Strapi, inbox: string): Promi
   const result = (await query(strapi).updateMany({
     where: { inbox, unreachableSince: { $null: true } },
     data: { unreachableSince: new Date().toISOString() },
-  })) as { count: number };
-  return result.count;
+  })) as { count: number }
+  return result.count
 }
 
 /**
@@ -288,20 +288,20 @@ export async function markReachable(strapi: Core.Strapi, actorId: string): Promi
   const result = (await query(strapi).updateMany({
     where: { actorId, unreachableSince: { $notNull: true } },
     data: { unreachableSince: null },
-  })) as { count: number };
-  return result.count;
+  })) as { count: number }
+  return result.count
 }
 
 export default (): {
-  isActorBlocked: typeof isActorBlocked;
-  recordFollower: typeof recordFollower;
-  removeFollower: typeof removeFollower;
-  listFollowers: typeof listFollowers;
-  countFollowers: typeof countFollowers;
-  markUnreachable: typeof markUnreachable;
-  listFollowerRows: typeof listFollowerRows;
-  setActorBlocked: typeof setActorBlocked;
-  markReachable: typeof markReachable;
+  isActorBlocked: typeof isActorBlocked
+  recordFollower: typeof recordFollower
+  removeFollower: typeof removeFollower
+  listFollowers: typeof listFollowers
+  countFollowers: typeof countFollowers
+  markUnreachable: typeof markUnreachable
+  listFollowerRows: typeof listFollowerRows
+  setActorBlocked: typeof setActorBlocked
+  markReachable: typeof markReachable
 } => ({
   isActorBlocked,
   recordFollower,
@@ -312,4 +312,4 @@ export default (): {
   listFollowerRows,
   setActorBlocked,
   markReachable,
-});
+})

@@ -1,18 +1,14 @@
-import type { Core } from '@strapi/strapi';
-import type { Context, Next } from 'koa';
-import { MCP_PATH } from '../constants/rate-limit';
-import { ipBucket } from '../utils/client-ip';
-import { extractBearer, isTokenCandidate } from '../utils/rate-limit/api-token';
-import { classifyRequest, normalizePath } from '../utils/rate-limit/groups';
-import { groupKey, tokenKey } from '../utils/rate-limit/keys';
-import {
-  rejectLogged,
-  setRateLimitHeaders,
-  type RejectionLogAs,
-} from '../utils/rate-limit/respond';
-import { getRateLimitRuntime } from '../utils/rate-limit/runtime';
-import { rateLimitState } from '../utils/rate-limit/state';
-import type { RateLimitDecision, RateLimitRuntime } from '../utils/rate-limit/types';
+import type { Core } from '@strapi/strapi'
+import type { Context, Next } from 'koa'
+import { MCP_PATH } from '../constants/rate-limit'
+import { ipBucket } from '../utils/client-ip'
+import { extractBearer, isTokenCandidate } from '../utils/rate-limit/api-token'
+import { classifyRequest, normalizePath } from '../utils/rate-limit/groups'
+import { groupKey, tokenKey } from '../utils/rate-limit/keys'
+import { rejectLogged, setRateLimitHeaders, type RejectionLogAs } from '../utils/rate-limit/respond'
+import { getRateLimitRuntime } from '../utils/rate-limit/runtime'
+import { rateLimitState } from '../utils/rate-limit/state'
+import type { RateLimitDecision, RateLimitRuntime } from '../utils/rate-limit/types'
 
 /** Counts a decision: rejects when over the limit, else sets the headers. */
 function enforce(
@@ -22,9 +18,9 @@ function enforce(
   decision: RateLimitDecision | null,
   logAs?: RejectionLogAs
 ): void {
-  if (!decision) return;
-  if (!decision.allowed) rejectLogged(ctx, runtime, group, decision, logAs);
-  setRateLimitHeaders(ctx, decision);
+  if (!decision) return
+  if (!decision.allowed) rejectLogged(ctx, runtime, group, decision, logAs)
+  setRateLimitHeaders(ctx, decision)
 }
 
 /**
@@ -35,36 +31,34 @@ function enforce(
  * before skip the client bucket. See docs/RATE_LIMITING.md.
  */
 async function limitApi(ctx: Context, runtime: RateLimitRuntime, isMcp: boolean): Promise<void> {
-  const { limiters, tokens } = runtime;
-  if (!limiters.rule('api')) return;
+  const { limiters, tokens } = runtime
+  if (!limiters.rule('api')) return
 
   // A forwarded request that names the visitor stays on the visitor's bucket:
   // the frontend's token must not lift the limit its users share.
-  const header = rateLimitState(ctx).clientSupplied
-    ? null
-    : extractBearer(ctx.get('authorization'));
-  const bearer = header && isTokenCandidate(header) ? header : null;
-  const tokenLimited = limiters.rule('token') !== null;
-  let known = bearer ? tokens.peek(bearer) : null;
+  const header = rateLimitState(ctx).clientSupplied ? null : extractBearer(ctx.get('authorization'))
+  const bearer = header && isTokenCandidate(header) ? header : null
+  const tokenLimited = limiters.rule('token') !== null
+  let known = bearer ? tokens.peek(bearer) : null
 
   const byToken = async (id: number) =>
-    enforce(ctx, runtime, 'token', await limiters.consume('token', tokenKey(id)));
+    enforce(ctx, runtime, 'token', await limiters.consume('token', tokenKey(id)))
 
   // RATE_LIMIT_TOKEN=0: a valid content-API token is not limited.
-  if (known?.kind === 'content-api') return tokenLimited ? byToken(known.id) : undefined;
-  if (known?.kind === 'admin' && isMcp) return;
+  if (known?.kind === 'content-api') return tokenLimited ? byToken(known.id) : undefined
+  if (known?.kind === 'admin' && isMcp) return
 
-  const ip = ctx.request.ip;
-  const decision = await limiters.consume('api', groupKey(ip, '', false));
-  if (!decision || decision.allowed) return enforce(ctx, runtime, 'api', decision);
+  const ip = ctx.request.ip
+  const decision = await limiters.consume('api', groupKey(ip, '', false))
+  if (!decision || decision.allowed) return enforce(ctx, runtime, 'api', decision)
 
   if (bearer && known === undefined) {
-    const budget = await limiters.consume('token-lookup', ipBucket(ip));
-    if (!budget || budget.allowed) known = await tokens.lookup(bearer);
+    const budget = await limiters.consume('token-lookup', ipBucket(ip))
+    if (!budget || budget.allowed) known = await tokens.lookup(bearer)
   }
-  if (known?.kind === 'content-api') return tokenLimited ? byToken(known.id) : undefined;
-  if (known?.kind === 'admin' && isMcp) return;
-  return rejectLogged(ctx, runtime, 'api', decision);
+  if (known?.kind === 'content-api') return tokenLimited ? byToken(known.id) : undefined
+  if (known?.kind === 'admin' && isMcp) return
+  return rejectLogged(ctx, runtime, 'api', decision)
 }
 
 /**
@@ -75,13 +69,13 @@ async function limitApi(ctx: Context, runtime: RateLimitRuntime, isMcp: boolean)
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
-    const runtime = getRateLimitRuntime(strapi);
-    const state = rateLimitState(ctx);
-    if (!runtime || state.checked) return next();
+    const runtime = getRateLimitRuntime(strapi)
+    const state = rateLimitState(ctx)
+    if (!runtime || state.checked) return next()
 
-    const path = normalizePath(ctx.path);
-    const route = classifyRequest(ctx.method, path);
-    if (route.kind === 'exempt') return next();
+    const path = normalizePath(ctx.path)
+    const route = classifyRequest(ctx.method, path)
+    if (route.kind === 'exempt') return next()
 
     // A frontend that forwards its visitors still counts as one peer per group,
     // at a multiple of the group's own limit.
@@ -89,15 +83,15 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
       const ceiling = await runtime.limiters.consume(
         `ceiling:${route.group}`,
         ipBucket(state.peerIp)
-      );
-      enforce(ctx, runtime, `ceiling:${route.group}`, ceiling, { ip: state.peerIp });
+      )
+      enforce(ctx, runtime, `ceiling:${route.group}`, ceiling, { ip: state.peerIp })
     }
 
     if (route.group === 'api') {
-      await limitApi(ctx, runtime, route.mcp || path === MCP_PATH);
+      await limitApi(ctx, runtime, route.mcp || path === MCP_PATH)
     } else {
-      const key = groupKey(ctx.request.ip, route.pathKey, route.keyByPath);
-      enforce(ctx, runtime, route.group, await runtime.limiters.consume(route.group, key));
+      const key = groupKey(ctx.request.ip, route.pathKey, route.keyByPath)
+      enforce(ctx, runtime, route.group, await runtime.limiters.consume(route.group, key))
     }
-    return next();
-  };
+    return next()
+  }

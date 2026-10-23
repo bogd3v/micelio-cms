@@ -5,7 +5,7 @@
  * which also turns away API tokens.
  */
 
-import { ARTICLE_UID } from '../../../constants/uids';
+import { ARTICLE_UID } from '../../../constants/uids'
 
 export default {
   routes: [
@@ -16,4 +16,4 @@ export default {
       config: { policies: ['global::is-editor'] },
     },
   ],
-};
+}

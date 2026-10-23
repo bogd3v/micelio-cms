@@ -1,19 +1,19 @@
-import type { Core } from '@strapi/strapi';
-import { corsAllowsCredentials, corsOrigins as corsOriginsFrom } from '../src/utils/cors-origins';
+import type { Core } from '@strapi/strapi'
+import { corsAllowsCredentials, corsOrigins as corsOriginsFrom } from '../src/utils/cors-origins'
 
 /** Origin of the public media host (R2), so the admin can show uploads. */
 function mediaOriginsFrom(baseUrl: string | undefined): string[] {
-  if (!baseUrl) return [];
+  if (!baseUrl) return []
   try {
-    return [new URL(baseUrl).origin];
+    return [new URL(baseUrl).origin]
   } catch {
-    return [];
+    return []
   }
 }
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => {
-  const mediaOrigins = mediaOriginsFrom(env('R2_BASE_URL'));
-  const corsOrigins = corsOriginsFrom(env.array('CORS_ORIGINS', []), env('FRONTEND_URL'));
+  const mediaOrigins = mediaOriginsFrom(env('R2_BASE_URL'))
+  const corsOrigins = corsOriginsFrom(env.array('CORS_ORIGINS', []), env('FRONTEND_URL'))
   return [
     // Not strapi::logger: it logs the query string (emails, tokens).
     'global::request-logger',
@@ -94,7 +94,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     'global::fediverse-comment-fields',
     'global::hide-unapproved-comments',
     'global::strip-comment-author-email',
-  ];
-};
+  ]
+}
 
-export default config;
+export default config

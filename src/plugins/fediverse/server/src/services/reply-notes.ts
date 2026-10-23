@@ -1,4 +1,4 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
 import {
   PUBLIC_COLLECTION,
@@ -8,16 +8,16 @@ import {
   Note,
   Tombstone,
   Update,
-} from '@fedify/fedify/vocab';
-import type { Context } from '@fedify/fedify';
+} from '@fedify/fedify/vocab'
+import type { Context } from '@fedify/fedify'
 
-import { COMMENT_UID } from '../constants/uids';
-import type { ReplyComment, ReplyTarget } from '../types/reply-notes';
-import { escapeHtml } from '../utils/html';
-import { findPublishedArticle, getFrontendArticleUrl, toInstant } from './articles';
-import { isActorBlocked } from './followers';
+import { COMMENT_UID } from '../constants/uids'
+import type { ReplyComment, ReplyTarget } from '../types/reply-notes'
+import { escapeHtml } from '../utils/html'
+import { findPublishedArticle, getFrontendArticleUrl, toInstant } from './articles'
+import { isActorBlocked } from './followers'
 
-const RELATED_PREFIX = 'api::article.article:';
+const RELATED_PREFIX = 'api::article.article:'
 
 /** The comment with the two facts of its parent a federated reply needs. */
 export async function loadReplyComment(
@@ -39,8 +39,8 @@ export async function loadReplyComment(
         ],
       },
     },
-  })) as ReplyComment | null;
-  return row;
+  })) as ReplyComment | null
+  return row
 }
 
 /**
@@ -54,11 +54,11 @@ export function isNoteVisible(comment: ReplyComment): boolean {
     comment.blockedThread !== true &&
     comment.approvalStatus !== 'PENDING' &&
     comment.approvalStatus !== 'REJECTED'
-  );
+  )
 }
 
 /** The comments plugin's permission to moderate: write, edit and remove comments in the admin. */
-const MODERATE_PERMISSION = 'plugin::comments.comments-moderate';
+const MODERATE_PERMISSION = 'plugin::comments.comments-moderate'
 
 /**
  * Whether the admin user who wrote a reply may moderate comments.
@@ -70,12 +70,12 @@ const MODERATE_PERMISSION = 'plugin::comments.comments-moderate';
  * admin's ability. A comment whose author is not a known admin user does not federate.
  */
 async function authorMayModerate(strapi: Core.Strapi, authorId: string | null): Promise<boolean> {
-  const id = Number(authorId);
-  if (!Number.isInteger(id) || id <= 0) return false;
-  const user = await strapi.service('admin::user').findOne(id);
-  if (user == null || user.isActive === false) return false;
-  const ability = await strapi.service('admin::permission').engine.generateUserAbility(user);
-  return ability.can(MODERATE_PERMISSION) === true;
+  const id = Number(authorId)
+  if (!Number.isInteger(id) || id <= 0) return false
+  const user = await strapi.service('admin::user').findOne(id)
+  if (user == null || user.isActive === false) return false
+  const ability = await strapi.service('admin::permission').engine.generateUserAbility(user)
+  return ability.can(MODERATE_PERMISSION) === true
 }
 
 /** Whether the comment a reply answers is itself shown: not removed, blocked, pending or rejected. */
@@ -86,7 +86,7 @@ function isParentShown(parent: NonNullable<ReplyComment['threadOf']>): boolean {
     parent.blockedThread !== true &&
     parent.approvalStatus !== 'PENDING' &&
     parent.approvalStatus !== 'REJECTED'
-  );
+  )
 }
 
 /**
@@ -103,23 +103,22 @@ export async function resolveReplyTarget(
   strapi: Core.Strapi,
   comment: ReplyComment
 ): Promise<ReplyTarget | null> {
-  if (comment.isAdminComment !== true) return null;
-  const parent = comment.threadOf;
-  if (parent?.fediverseUri == null || parent.authorId == null || !isParentShown(parent))
-    return null;
+  if (comment.isAdminComment !== true) return null
+  const parent = comment.threadOf
+  if (parent?.fediverseUri == null || parent.authorId == null || !isParentShown(parent)) return null
   try {
-    new URL(parent.fediverseUri);
-    new URL(parent.authorId);
+    new URL(parent.fediverseUri)
+    new URL(parent.authorId)
   } catch {
-    return null;
+    return null
   }
 
   const documentId = comment.related.startsWith(RELATED_PREFIX)
     ? comment.related.slice(RELATED_PREFIX.length)
-    : null;
-  const article = documentId ? await findPublishedArticle(strapi, documentId) : null;
-  if (article == null) return null;
-  if (!(await authorMayModerate(strapi, comment.authorId))) return null;
+    : null
+  const article = documentId ? await findPublishedArticle(strapi, documentId) : null
+  if (article == null) return null
+  if (!(await authorMayModerate(strapi, comment.authorId))) return null
 
   return {
     parentUri: parent.fediverseUri,
@@ -127,7 +126,7 @@ export async function resolveReplyTarget(
     remoteAuthorHandle: parent.fediverseActorHandle,
     articleUrl: getFrontendArticleUrl(article.slug, article.locale),
     deliverToAuthor: !(await isActorBlocked(strapi, parent.authorId)),
-  };
+  }
 }
 
 /**
@@ -140,7 +139,7 @@ function decodeSanitizedText(text: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&');
+    .replace(/&amp;/g, '&')
 }
 
 /**
@@ -157,7 +156,7 @@ export function commentToHtml(text: string): string {
     .split(/\n{2,}/)
     .filter((paragraph) => paragraph.trim() !== '')
     .map((paragraph) => `<p>${escapeHtml(paragraph.trim()).replace(/\n/g, '<br>')}</p>`)
-    .join('');
+    .join('')
 }
 
 /**
@@ -170,8 +169,8 @@ export function buildNote(
   comment: ReplyComment,
   target: ReplyTarget
 ): Note {
-  const anchor = new URL(target.articleUrl.href);
-  anchor.hash = `comment-${comment.documentId}`;
+  const anchor = new URL(target.articleUrl.href)
+  anchor.hash = `comment-${comment.documentId}`
   return new Note({
     id: ctx.getObjectUri(Note, { documentId: comment.documentId }),
     attribution: ctx.getActorUri(actorIdentifier),
@@ -189,7 +188,7 @@ export function buildNote(
         name: target.remoteAuthorHandle ?? target.remoteAuthorId,
       }),
     ],
-  });
+  })
 }
 
 /** The addressing every activity of a reply carries. */
@@ -198,7 +197,7 @@ function addressing(ctx: Context<unknown>, actorIdentifier: string, target: Repl
     actor: ctx.getActorUri(actorIdentifier),
     to: new URL(target.remoteAuthorId),
     ccs: [PUBLIC_COLLECTION, ctx.getFollowersUri(actorIdentifier)],
-  };
+  }
 }
 
 /**
@@ -207,9 +206,9 @@ function addressing(ctx: Context<unknown>, actorIdentifier: string, target: Repl
  * new id.
  */
 function activityId(ctx: Context<unknown>, documentId: string, fragment: string): URL {
-  const id = new URL(ctx.getObjectUri(Note, { documentId }).href);
-  id.hash = fragment;
-  return id;
+  const id = new URL(ctx.getObjectUri(Note, { documentId }).href)
+  id.hash = fragment
+  return id
 }
 
 /** `Create`, `Update` or `Delete` (with a `Tombstone`) of a reply, addressed like the note. */
@@ -220,21 +219,21 @@ export function buildReplyActivity(
   comment: ReplyComment,
   target: ReplyTarget
 ): Create | Update | Delete {
-  const base = addressing(ctx, actorIdentifier, target);
+  const base = addressing(ctx, actorIdentifier, target)
   if (kind === 'delete') {
     return new Delete({
       ...base,
       id: activityId(ctx, comment.documentId, `delete-${Date.now()}`),
       object: new Tombstone({ id: ctx.getObjectUri(Note, { documentId: comment.documentId }) }),
-    });
+    })
   }
   const options = {
     ...base,
     id: activityId(ctx, comment.documentId, `${kind}-${Date.now()}`),
     object: buildNote(ctx, actorIdentifier, comment, target),
     published: toInstant(kind === 'create' ? comment.createdAt : new Date().toISOString()),
-  };
-  return kind === 'create' ? new Create(options) : new Update(options);
+  }
+  return kind === 'create' ? new Create(options) : new Update(options)
 }
 
 /**
@@ -245,8 +244,8 @@ export async function findServedReply(
   strapi: Core.Strapi,
   documentId: string
 ): Promise<{ comment: ReplyComment; target: ReplyTarget } | null> {
-  const comment = await loadReplyComment(strapi, { documentId });
-  if (comment == null || comment.fediverseNoteUri == null || !isNoteVisible(comment)) return null;
-  const target = await resolveReplyTarget(strapi, comment);
-  return target ? { comment, target } : null;
+  const comment = await loadReplyComment(strapi, { documentId })
+  if (comment == null || comment.fediverseNoteUri == null || !isNoteVisible(comment)) return null
+  const target = await resolveReplyTarget(strapi, comment)
+  return target ? { comment, target } : null
 }

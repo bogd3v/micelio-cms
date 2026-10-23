@@ -1,9 +1,9 @@
-import path from 'path';
-import type { Core } from '@strapi/strapi';
+import path from 'path'
+import type { Core } from '@strapi/strapi'
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database => {
   // sqlite locally, in tests and on staging; postgres in production.
-  const client = env('DATABASE_CLIENT', 'sqlite');
+  const client = env('DATABASE_CLIENT', 'sqlite')
 
   const connections = {
     postgres: {
@@ -32,7 +32,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database 
       },
       useNullAsDefault: true,
     },
-  };
+  }
 
   return {
     // Strapi validates the client; the cast only narrows env's plain string.
@@ -41,7 +41,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database 
       ...connections[client as keyof typeof connections],
       acquireConnectionTimeout: env.int('DATABASE_CONNECTION_TIMEOUT', 60000),
     } as Core.Config.Database['connection'],
-  };
-};
+  }
+}
 
-export default config;
+export default config

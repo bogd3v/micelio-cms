@@ -2,23 +2,23 @@ import {
   BUILT_IN_BANNED_WORDS,
   MIN_BANNED_WORD_LENGTH,
   MIN_PASSWORD_LENGTH,
-} from '../constants/password';
-import { BREACHED_PASSWORD_LINES } from '../constants/breached-passwords';
-import { COMMON_PASSWORDS } from '../constants/common-passwords';
+} from '../constants/password'
+import { BREACHED_PASSWORD_LINES } from '../constants/breached-passwords'
+import { COMMON_PASSWORDS } from '../constants/common-passwords'
 
-const COMMON = new Set(COMMON_PASSWORDS);
+const COMMON = new Set(COMMON_PASSWORDS)
 
-let breached: Set<string> | null = null;
+let breached: Set<string> | null = null
 
 /** The breached set, built on the first password checked so a boot that never checks one does not pay for it. */
 function breachedSet(): Set<string> {
-  breached ??= new Set(BREACHED_PASSWORD_LINES.flatMap((line) => line.split(' ')));
-  return breached;
+  breached ??= new Set(BREACHED_PASSWORD_LINES.flatMap((line) => line.split(' ')))
+  return breached
 }
 
 /** Folds case and compatibility forms, so `ＰＡＳＳＷＯＲＤ` and `Password` compare equal. */
 function normalize(value: string): string {
-  return value.normalize('NFKC').toLowerCase();
+  return value.normalize('NFKC').toLowerCase()
 }
 
 /**
@@ -34,7 +34,7 @@ export function parseBannedWords(raw: string | undefined): string[] {
     .flatMap((word) => [word, word.replace(/\s+/g, '')])
     .filter(
       (word, index, all) => word.length >= MIN_BANNED_WORD_LENGTH && all.indexOf(word) === index
-    );
+    )
 }
 
 /**
@@ -51,20 +51,20 @@ export function parseBannedWords(raw: string | undefined): string[] {
 export function createPasswordValidator(
   extraWords: readonly string[] = []
 ): (value: unknown) => boolean {
-  const banned = [...BUILT_IN_BANNED_WORDS, ...extraWords];
+  const banned = [...BUILT_IN_BANNED_WORDS, ...extraWords]
   return (value: unknown): boolean => {
-    if (typeof value !== 'string') throw new Error('Password must be a string');
+    if (typeof value !== 'string') throw new Error('Password must be a string')
     if (Array.from(value).length < MIN_PASSWORD_LENGTH) {
-      throw new Error(`Password must have at least ${MIN_PASSWORD_LENGTH} characters`);
+      throw new Error(`Password must have at least ${MIN_PASSWORD_LENGTH} characters`)
     }
-    const folded = normalize(value);
-    if (COMMON.has(folded)) throw new Error('Password is too common, choose another');
+    const folded = normalize(value)
+    if (COMMON.has(folded)) throw new Error('Password is too common, choose another')
     if (breachedSet().has(folded)) {
-      throw new Error('Password appears in known data breaches, choose another');
+      throw new Error('Password appears in known data breaches, choose another')
     }
     if (banned.some((word) => folded.includes(word))) {
-      throw new Error('Password contains a word tied to this site, choose another');
+      throw new Error('Password contains a word tied to this site, choose another')
     }
-    return true;
-  };
+    return true
+  }
 }

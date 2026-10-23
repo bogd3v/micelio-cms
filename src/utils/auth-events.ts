@@ -1,15 +1,15 @@
-import type { Core } from '@strapi/strapi';
-import type { Context } from 'koa';
-import { AUTH_EVENT_LOGGED_STATE, type SecurityEvent } from '../constants/security-events';
+import type { Core } from '@strapi/strapi'
+import type { Context } from 'koa'
+import { AUTH_EVENT_LOGGED_STATE, type SecurityEvent } from '../constants/security-events'
 import {
   hashIdentifier,
   logSecurityEvent,
   securityLogSecret,
   type SecurityEventFields,
-} from './security-log';
+} from './security-log'
 
 /** Fields of an authentication event that depend on the outcome, not on the request. */
-export type AuthEventFields = Pick<SecurityEventFields, 'actor' | 'reason'>;
+export type AuthEventFields = Pick<SecurityEventFields, 'actor' | 'reason'>
 
 /**
  * Writes one authentication security event for a request, with the keyed hash
@@ -27,31 +27,31 @@ export function logAuthEvent(
   event: SecurityEvent,
   fields: AuthEventFields = {}
 ): void {
-  ctx.state[AUTH_EVENT_LOGGED_STATE] = true;
+  ctx.state[AUTH_EVENT_LOGGED_STATE] = true
   try {
     logSecurityEvent(strapi, event, {
       ...fields,
       client: hashIdentifier(ctx.request.ip, securityLogSecret(strapi)),
       path: ctx.path,
-    });
+    })
   } catch (error) {
     strapi.log.error(
       `[security-log] could not write ${event}: ${error instanceof Error ? error.message : 'unknown error'}`
-    );
+    )
   }
 }
 
 /** The numeric id of `user` in a response body such as `{ user: { id } }` or `{ data: { user: { id } } }`, or `undefined`. */
 export function userIdFromBody(body: unknown): number | undefined {
-  if (typeof body !== 'object' || body === null) return undefined;
-  const record = body as { user?: unknown; data?: unknown };
-  const holder = record.user ?? (record.data as { user?: unknown } | null | undefined)?.user;
-  const id = (holder as { id?: unknown } | null | undefined)?.id;
-  return typeof id === 'number' && Number.isInteger(id) ? id : undefined;
+  if (typeof body !== 'object' || body === null) return undefined
+  const record = body as { user?: unknown; data?: unknown }
+  const holder = record.user ?? (record.data as { user?: unknown } | null | undefined)?.user
+  const id = (holder as { id?: unknown } | null | undefined)?.id
+  return typeof id === 'number' && Number.isInteger(id) ? id : undefined
 }
 
 /** The numeric id of the user in `ctx.state.user`, or `undefined` when nobody is signed in. */
 export function userIdFromState(user: unknown): number | undefined {
-  const id = (user as { id?: unknown } | null | undefined)?.id;
-  return typeof id === 'number' && Number.isInteger(id) ? id : undefined;
+  const id = (user as { id?: unknown } | null | undefined)?.id
+  return typeof id === 'number' && Number.isInteger(id) ? id : undefined
 }

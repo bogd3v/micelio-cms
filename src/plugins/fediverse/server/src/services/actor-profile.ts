@@ -1,61 +1,61 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-import { ACTOR_IDENTIFIER, ACTOR_USERNAME } from '../constants/actor';
-import { GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids';
-import type { ActorProfile } from '../types/actor-profile';
-import { frontendBaseUrl } from '../utils/frontend-url';
+import { ACTOR_IDENTIFIER, ACTOR_USERNAME } from '../constants/actor'
+import { GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids'
+import type { ActorProfile } from '../types/actor-profile'
+import { frontendBaseUrl } from '../utils/frontend-url'
 
-const DEFAULT_NAME = 'Micelio';
+const DEFAULT_NAME = 'Micelio'
 // Micelio's own code, not the site's: every instance runs it.
-const DEFAULT_SOURCE_URL = 'https://github.com/bogd3v/micelio-cms';
+const DEFAULT_SOURCE_URL = 'https://github.com/bogd3v/micelio-cms'
 
 interface Media {
-  url?: string | null;
+  url?: string | null
 }
 
 interface GlobalSettings {
-  siteName?: string | null;
-  siteDescription?: string | null;
-  favicon?: Media | null;
-  fediverseHeader?: Media | null;
+  siteName?: string | null
+  siteDescription?: string | null
+  favicon?: Media | null
+  fediverseHeader?: Media | null
 }
 
 /** The `fediverse` component of the site settings (`site.fediverse`). */
 interface FediverseSettings {
-  username?: string | null;
-  displayName?: string | null;
-  summary?: string | null;
-  header?: Media | null;
-  discoverable?: boolean | null;
-  sourceUrl?: string | null;
+  username?: string | null
+  displayName?: string | null
+  summary?: string | null
+  header?: Media | null
+  discoverable?: boolean | null
+  sourceUrl?: string | null
 }
 
 interface SiteSettings {
-  name?: string | null;
-  description?: string | null;
-  fediverse?: FediverseSettings | null;
+  name?: string | null
+  description?: string | null
+  fediverse?: FediverseSettings | null
 }
 
 function absoluteUrl(url: string | null | undefined, baseUrl: string): string | null {
-  if (!url) return null;
+  if (!url) return null
   try {
-    return new URL(url, baseUrl).href;
+    return new URL(url, baseUrl).href
   } catch {
-    return null;
+    return null
   }
 }
 
 function frontendHome(): string {
-  return new URL(frontendBaseUrl()).href;
+  return new URL(frontendBaseUrl()).href
 }
 
 /** The first of the values that is not empty or only spaces, trimmed. */
 function firstFilled(...values: Array<string | null | undefined>): string | null {
   for (const value of values) {
-    const trimmed = value?.trim();
-    if (trimmed) return trimmed;
+    const trimmed = value?.trim()
+    if (trimmed) return trimmed
   }
-  return null;
+  return null
 }
 
 /**
@@ -66,15 +66,15 @@ async function loadSiteSettings(strapi: Core.Strapi): Promise<SiteSettings | nul
   try {
     return (await strapi.documents(SITE_SETTING_UID).findFirst({
       populate: { fediverse: { populate: { header: true } } },
-    })) as SiteSettings | null;
+    })) as SiteSettings | null
   } catch (error) {
-    strapi.log.warn('[fediverse] failed to load site settings for actor profile', { error });
-    return null;
+    strapi.log.warn('[fediverse] failed to load site settings for actor profile', { error })
+    return null
   }
 }
 
 function resolveUsername(settings: SiteSettings | null): string {
-  return firstFilled(settings?.fediverse?.username, ACTOR_USERNAME, ACTOR_IDENTIFIER) ?? '';
+  return firstFilled(settings?.fediverse?.username, ACTOR_USERNAME, ACTOR_IDENTIFIER) ?? ''
 }
 
 /**
@@ -82,7 +82,7 @@ function resolveUsername(settings: SiteSettings | null): string {
  * deprecated `FEDIVERSE_ACTOR_USERNAME`, then the actor identifier.
  */
 export async function getActorUsername(strapi: Core.Strapi): Promise<string> {
-  return resolveUsername(await loadSiteSettings(strapi));
+  return resolveUsername(await loadSiteSettings(strapi))
 }
 
 /**
@@ -90,8 +90,8 @@ export async function getActorUsername(strapi: Core.Strapi): Promise<string> {
  * the deprecated `FEDIVERSE_ACTOR_USERNAME` and the identifier.
  */
 export async function getActorUsernames(strapi: Core.Strapi): Promise<string[]> {
-  const usernames = [await getActorUsername(strapi), ACTOR_USERNAME, ACTOR_IDENTIFIER];
-  return [...new Set(usernames.filter(Boolean).map((username) => username.toLowerCase()))];
+  const usernames = [await getActorUsername(strapi), ACTOR_USERNAME, ACTOR_IDENTIFIER]
+  return [...new Set(usernames.filter(Boolean).map((username) => username.toLowerCase()))]
 }
 
 /**
@@ -112,36 +112,36 @@ export async function getActorUsernames(strapi: Core.Strapi): Promise<string[]> 
  * `fediverseHeader` is too.
  */
 export async function getActorProfile(strapi: Core.Strapi, baseUrl: string): Promise<ActorProfile> {
-  let globalSettings: GlobalSettings | null = null;
+  let globalSettings: GlobalSettings | null = null
 
   try {
     globalSettings = (await strapi.documents(GLOBAL_UID).findFirst({
       populate: { favicon: true, fediverseHeader: true },
-    })) as GlobalSettings | null;
+    })) as GlobalSettings | null
   } catch (error) {
-    strapi.log.warn('[fediverse] failed to load global settings for actor profile', { error });
+    strapi.log.warn('[fediverse] failed to load global settings for actor profile', { error })
   }
 
   // The default locale, like every other read of the actor.
-  const siteSettings = await loadSiteSettings(strapi);
-  const fediverse = siteSettings?.fediverse;
+  const siteSettings = await loadSiteSettings(strapi)
+  const fediverse = siteSettings?.fediverse
 
-  const url = frontendHome();
+  const url = frontendHome()
   const name =
     firstFilled(
       fediverse?.displayName,
       globalSettings?.siteName,
       siteSettings?.name,
       process.env.FEDIVERSE_ACTOR_NAME
-    ) ?? DEFAULT_NAME;
+    ) ?? DEFAULT_NAME
   const summary = firstFilled(
     fediverse?.summary,
     globalSettings?.siteDescription,
     siteSettings?.description,
     process.env.FEDIVERSE_ACTOR_SUMMARY
-  );
+  )
   const sourceUrl =
-    firstFilled(fediverse?.sourceUrl, process.env.FEDIVERSE_ACTOR_SOURCE_URL) ?? DEFAULT_SOURCE_URL;
+    firstFilled(fediverse?.sourceUrl, process.env.FEDIVERSE_ACTOR_SOURCE_URL) ?? DEFAULT_SOURCE_URL
 
   return {
     username: resolveUsername(siteSettings),
@@ -155,11 +155,11 @@ export async function getActorProfile(strapi: Core.Strapi, baseUrl: string): Pro
       { name: 'Blog', url },
       { name: 'Código', url: sourceUrl },
     ],
-  };
+  }
 }
 
 export default (): {
-  getActorProfile: typeof getActorProfile;
+  getActorProfile: typeof getActorProfile
 } => ({
   getActorProfile,
-});
+})

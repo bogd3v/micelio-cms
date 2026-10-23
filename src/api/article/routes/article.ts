@@ -2,7 +2,7 @@
  * article router.
  */
 
-import { factories } from '@strapi/strapi';
-import { ARTICLE_UID } from '../../../constants/uids';
+import { factories } from '@strapi/strapi'
+import { ARTICLE_UID } from '../../../constants/uids'
 
-export default factories.createCoreRouter(ARTICLE_UID);
+export default factories.createCoreRouter(ARTICLE_UID)

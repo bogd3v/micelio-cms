@@ -1,10 +1,10 @@
-import type { Core } from '@strapi/strapi';
-import { COMMENT_UID } from '../../constants/uids';
+import type { Core } from '@strapi/strapi'
+import { COMMENT_UID } from '../../constants/uids'
 
-const USER_UID = 'plugin::users-permissions.user';
+const USER_UID = 'plugin::users-permissions.user'
 
 /** Author shown on the comments of a deleted account. */
-export const ANONYMOUS_AUTHOR = { id: 'anonymous', name: 'Anónimo' };
+export const ANONYMOUS_AUTHOR = { id: 'anonymous', name: 'Anónimo' }
 
 /**
  * Deletes a users-permissions user for good and keeps their comments
@@ -19,7 +19,7 @@ export async function deleteAccount(strapi: Core.Strapi, userId: number): Promis
     const comments = (await strapi.db.query(COMMENT_UID).findMany({
       select: ['id'],
       where: { authorUser: { id: userId } },
-    })) as { id: number }[];
+    })) as { id: number }[]
 
     for (const comment of comments) {
       await strapi.db.query(COMMENT_UID).update({
@@ -31,12 +31,12 @@ export async function deleteAccount(strapi: Core.Strapi, userId: number): Promis
           authorEmail: null,
           authorAvatar: null,
         },
-      });
+      })
     }
 
     // Also revokes the user's refresh sessions.
-    await strapi.plugin('users-permissions').service('user').remove({ id: userId });
-  });
+    await strapi.plugin('users-permissions').service('user').remove({ id: userId })
+  })
 }
 
 /** Whether `password` is the current password of the user. */
@@ -45,17 +45,17 @@ export async function checkPassword(
   userId: number,
   password: unknown
 ): Promise<boolean> {
-  if (typeof password !== 'string' || password.length === 0) return false;
+  if (typeof password !== 'string' || password.length === 0) return false
 
   const user = (await strapi.db
     .query(USER_UID)
     .findOne({ select: ['id', 'password'], where: { id: userId } })) as {
-    password?: string;
-  } | null;
-  if (!user?.password) return false;
+    password?: string
+  } | null
+  if (!user?.password) return false
 
   return strapi
     .plugin('users-permissions')
     .service('user')
-    .validatePassword(password, user.password);
+    .validatePassword(password, user.password)
 }

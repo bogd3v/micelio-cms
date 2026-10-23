@@ -1,18 +1,18 @@
-import { hashIdentifier } from './security-log';
+import { hashIdentifier } from './security-log'
 
 /** Which user table `actor` belongs to: admin and reader ids overlap. */
-export type ActorKind = 'admin' | 'user';
+export type ActorKind = 'admin' | 'user'
 
 /** Metadata the request line carries next to its message. Absent fields are omitted. */
 export interface RequestLogMeta {
   /** Server-generated id, also in `ctx.state.requestId`. */
-  requestId: string;
+  requestId: string
   /** Keyed hash of the client address (16 hex characters), never the address. */
-  client?: string;
+  client?: string
   /** Numeric id of the authenticated reader or admin user. */
-  actor?: number;
+  actor?: number
   /** Table of `actor`; present only with `actor`, and only when the auth strategy is known. */
-  actorKind?: ActorKind;
+  actorKind?: ActorKind
 }
 
 /** Auth strategy names of Strapi 5 (`ctx.state.auth.strategy.name`) that set `state.user`. */
@@ -20,7 +20,7 @@ const ACTOR_KINDS: Readonly<Record<string, ActorKind>> = {
   admin: 'admin',
   'admin-token': 'admin',
   'users-permissions': 'user',
-};
+}
 
 /**
  * Numeric id of the user a request authenticated as, or `undefined`.
@@ -32,11 +32,11 @@ const ACTOR_KINDS: Readonly<Record<string, ActorKind>> = {
  * @param state - Koa's `ctx.state`.
  */
 export function requestActor(state: unknown): number | undefined {
-  if (typeof state !== 'object' || state === null) return undefined;
-  const user: unknown = (state as { user?: unknown }).user;
-  if (typeof user !== 'object' || user === null) return undefined;
-  const id: unknown = (user as { id?: unknown }).id;
-  return typeof id === 'number' && Number.isSafeInteger(id) && id > 0 ? id : undefined;
+  if (typeof state !== 'object' || state === null) return undefined
+  const user: unknown = (state as { user?: unknown }).user
+  if (typeof user !== 'object' || user === null) return undefined
+  const id: unknown = (user as { id?: unknown }).id
+  return typeof id === 'number' && Number.isSafeInteger(id) && id > 0 ? id : undefined
 }
 
 /**
@@ -45,15 +45,15 @@ export function requestActor(state: unknown): number | undefined {
  * @param state - Koa's `ctx.state`.
  */
 export function requestActorKind(state: unknown): ActorKind | undefined {
-  if (typeof state !== 'object' || state === null) return undefined;
-  const auth: unknown = (state as { auth?: unknown }).auth;
-  if (typeof auth !== 'object' || auth === null) return undefined;
-  const strategy: unknown = (auth as { strategy?: unknown }).strategy;
-  if (typeof strategy !== 'object' || strategy === null) return undefined;
-  const name: unknown = (strategy as { name?: unknown }).name;
+  if (typeof state !== 'object' || state === null) return undefined
+  const auth: unknown = (state as { auth?: unknown }).auth
+  if (typeof auth !== 'object' || auth === null) return undefined
+  const strategy: unknown = (auth as { strategy?: unknown }).strategy
+  if (typeof strategy !== 'object' || strategy === null) return undefined
+  const name: unknown = (strategy as { name?: unknown }).name
   return typeof name === 'string' && Object.prototype.hasOwnProperty.call(ACTOR_KINDS, name)
     ? ACTOR_KINDS[name]
-    : undefined;
+    : undefined
 }
 
 /**
@@ -70,13 +70,13 @@ export function buildRequestLogMeta(
   state: unknown,
   secret: Buffer | undefined
 ): RequestLogMeta {
-  const meta: RequestLogMeta = { requestId };
-  if (secret && ip) meta.client = hashIdentifier(ip, secret);
-  const actor = requestActor(state);
+  const meta: RequestLogMeta = { requestId }
+  if (secret && ip) meta.client = hashIdentifier(ip, secret)
+  const actor = requestActor(state)
   if (actor !== undefined) {
-    meta.actor = actor;
-    const kind = requestActorKind(state);
-    if (kind) meta.actorKind = kind;
+    meta.actor = actor
+    const kind = requestActorKind(state)
+    if (kind) meta.actorKind = kind
   }
-  return meta;
+  return meta
 }

@@ -1,7 +1,7 @@
-import { normalizePath } from './rate-limit/groups';
+import { normalizePath } from './rate-limit/groups'
 
 /** Path of the Media Library route that imports files from URLs (the upload plugin's admin API). */
-const UPLOAD_FROM_URL_PATH = '/upload/actions/upload-from-urls';
+const UPLOAD_FROM_URL_PATH = '/upload/actions/upload-from-urls'
 
 /**
  * Whether the Media Library import-from-URL feature is enabled: only when
@@ -11,7 +11,7 @@ const UPLOAD_FROM_URL_PATH = '/upload/actions/upload-from-urls';
  * @param value - The raw environment value.
  */
 export function isUploadFromUrlEnabled(value: string | undefined): boolean {
-  return value === 'true';
+  return value === 'true'
 }
 
 /**
@@ -19,5 +19,5 @@ export function isUploadFromUrlEnabled(value: string | undefined): boolean {
  * `actions/upload-from-urls` route, in any letter case, with or without a trailing slash.
  */
 export function isUploadFromUrlRequest(method: string, path: string): boolean {
-  return method.toUpperCase() === 'POST' && normalizePath(path) === UPLOAD_FROM_URL_PATH;
+  return method.toUpperCase() === 'POST' && normalizePath(path) === UPLOAD_FROM_URL_PATH
 }

@@ -1,31 +1,31 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import request from 'supertest';
-import { setupStrapi, cleanupStrapi } from './strapi';
-import { ensureEditorRole } from '../src/migrations/editor-role';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import request from 'supertest'
+import { setupStrapi, cleanupStrapi } from './strapi'
+import { ensureEditorRole } from '../src/migrations/editor-role'
 
-const ROLE_UID = 'plugin::users-permissions.role';
-const PERMISSION_UID = 'plugin::users-permissions.permission';
+const ROLE_UID = 'plugin::users-permissions.role'
+const PERMISSION_UID = 'plugin::users-permissions.permission'
 
 describe('Editor role migration', () => {
-  let role: { id: number };
+  let role: { id: number }
 
-  const http = () => request(strapi.server.httpServer);
+  const http = () => request(strapi.server.httpServer)
   const actionsOf = async (roleId: number) =>
     (await strapi.query(PERMISSION_UID).findMany({ where: { role: roleId } }))
       .map((permission) => permission.action)
-      .sort();
+      .sort()
 
   beforeAll(async () => {
-    await setupStrapi();
-    role = await strapi.query(ROLE_UID).findOne({ where: { type: 'editor' } });
-  });
+    await setupStrapi()
+    role = await strapi.query(ROLE_UID).findOne({ where: { type: 'editor' } })
+  })
 
   afterAll(async () => {
-    await cleanupStrapi();
-  });
+    await cleanupStrapi()
+  })
 
   it('creates the Editor role on bootstrap with read-only permissions', async () => {
-    expect(role).toMatchObject({ name: 'Editor', type: 'editor' });
+    expect(role).toMatchObject({ name: 'Editor', type: 'editor' })
     expect(await actionsOf(role.id)).toEqual([
       'api::article.article.drafts',
       'api::article.article.find',
@@ -41,31 +41,31 @@ describe('Editor role migration', () => {
       // Granted by the account settings migration (issue #52).
       'plugin::users-permissions.user.destroyMe',
       'plugin::users-permissions.user.me',
-    ]);
-  });
+    ])
+  })
 
   it('is idempotent and keeps permissions added by hand', async () => {
     await strapi.query(PERMISSION_UID).create({
       data: { action: 'api::about.about.find', role: role.id },
-    });
-    const before = await actionsOf(role.id);
+    })
+    const before = await actionsOf(role.id)
 
-    expect(await ensureEditorRole(strapi)).toEqual({ roleCreated: false, permissionsGranted: 0 });
-    expect(await strapi.query(ROLE_UID).count({ where: { type: 'editor' } })).toBe(1);
-    expect(await actionsOf(role.id)).toEqual(before);
-  });
+    expect(await ensureEditorRole(strapi)).toEqual({ roleCreated: false, permissionsGranted: 0 })
+    expect(await strapi.query(ROLE_UID).count({ where: { type: 'editor' } })).toBe(1)
+    expect(await actionsOf(role.id)).toEqual(before)
+  })
 
   it('restores a missing permission without touching the rest', async () => {
     await strapi.query(PERMISSION_UID).delete({
       where: { role: role.id, action: 'plugin::micelio.tag.find' },
-    });
+    })
 
-    expect(await ensureEditorRole(strapi)).toEqual({ roleCreated: false, permissionsGranted: 1 });
-    expect(await actionsOf(role.id)).toContain('plugin::micelio.tag.find');
-  });
+    expect(await ensureEditorRole(strapi)).toEqual({ roleCreated: false, permissionsGranted: 1 })
+    expect(await actionsOf(role.id)).toContain('plugin::micelio.tag.find')
+  })
 
   describe('as an editor', () => {
-    let jwt: string;
+    let jwt: string
 
     beforeAll(async () => {
       const user = await strapi.plugin('users-permissions').service('user').add({
@@ -75,9 +75,9 @@ describe('Editor role migration', () => {
         provider: 'local',
         confirmed: true,
         role: role.id,
-      });
-      jwt = strapi.plugin('users-permissions').service('jwt').issue({ id: user.id });
-    });
+      })
+      jwt = strapi.plugin('users-permissions').service('jwt').issue({ id: user.id })
+    })
 
     // `populate=role` also needs `users-permissions.role.find`, which would
     // list every role on /api/users-permissions/roles; that is left to #52.
@@ -85,16 +85,16 @@ describe('Editor role migration', () => {
       const res = await http()
         .get('/api/users/me')
         .set({ Authorization: `Bearer ${jwt}` })
-        .expect(200);
-      expect(res.body.username).toBe('editor');
-    });
+        .expect(200)
+      expect(res.body.username).toBe('editor')
+    })
 
     it('cannot create articles through the API', async () => {
       const res = await http()
         .post('/api/articles')
         .set({ Authorization: `Bearer ${jwt}` })
-        .send({ data: { title: 'Nope' } });
-      expect(res.status).toBe(403);
-    });
-  });
-});
+        .send({ data: { title: 'Nope' } })
+      expect(res.status).toBe(403)
+    })
+  })
+})

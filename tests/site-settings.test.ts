@@ -1,56 +1,56 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
-import request from 'supertest';
-import { setupStrapi, cleanupStrapi } from './strapi';
-import { setPublicPermissions, setRolePermissions } from './helpers/permissions';
-import type { ApiSiteSetting } from './helpers/api-types';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals'
+import request from 'supertest'
+import { setupStrapi, cleanupStrapi } from './strapi'
+import { setPublicPermissions, setRolePermissions } from './helpers/permissions'
+import type { ApiSiteSetting } from './helpers/api-types'
 import {
   neutralSiteSettings,
   revokeSiteSettingPermissions,
   seedSiteSettings,
-} from '../src/migrations/site-settings';
+} from '../src/migrations/site-settings'
 
 // The frontend reads the site's identity and modules (micelio#233, #234)
 // with its custom API token; nobody else reads them.
 
-const SITE_SETTING = 'api::site-setting.site-setting';
-const MODULES = ['newsletter', 'comments', 'accounts', 'drafts', 'fediverse', 'search', 'support'];
+const SITE_SETTING = 'api::site-setting.site-setting'
+const MODULES = ['newsletter', 'comments', 'accounts', 'drafts', 'fediverse', 'search', 'support']
 
 describe('Site settings', () => {
-  let auth: { Authorization: string };
+  let auth: { Authorization: string }
 
-  const http = () => request(strapi.server.httpServer);
+  const http = () => request(strapi.server.httpServer)
 
   async function read(locale?: string, populate: unknown = '*'): Promise<ApiSiteSetting> {
     const res = await http()
       .get('/api/site-setting')
       .query({ populate, ...(locale ? { locale } : {}) })
-      .set(auth);
-    expect(res.status).toBe(200);
-    return res.body.data;
+      .set(auth)
+    expect(res.status).toBe(200)
+    return res.body.data
   }
 
   async function documentId(): Promise<string> {
-    const settings = await strapi.documents(SITE_SETTING).findFirst();
-    return settings!.documentId;
+    const settings = await strapi.documents(SITE_SETTING).findFirst()
+    return settings!.documentId
   }
 
   beforeAll(async () => {
-    await setupStrapi();
+    await setupStrapi()
     const { accessKey } = await strapi.service('admin::api-token').create({
       name: 'frontend',
       type: 'custom',
       lifespan: null,
       permissions: [`${SITE_SETTING}.find`],
-    });
-    auth = { Authorization: `Bearer ${accessKey}` };
-  });
+    })
+    auth = { Authorization: `Bearer ${accessKey}` }
+  })
 
   afterAll(async () => {
-    await cleanupStrapi();
-  });
+    await cleanupStrapi()
+  })
 
   it('returns neutral settings, seeded on boot, to the frontend token', async () => {
-    const settings = await read();
+    const settings = await read()
 
     expect(settings).toMatchObject({
       locale: 'en',
@@ -69,44 +69,44 @@ describe('Site settings', () => {
       defaultOgImage: null,
       // No theme: the frontend keeps its default theme as it is.
       theme: null,
-    });
-    expect(settings.socialLinks).toEqual([]);
+    })
+    expect(settings.socialLinks).toEqual([])
     expect(Object.fromEntries(MODULES.map((name) => [name, settings.modules[name]]))).toEqual(
       Object.fromEntries(MODULES.map((name) => [name, true]))
-    );
-  });
+    )
+  })
 
   it('seeds every configured locale among English and Spanish, only once', async () => {
-    expect(await seedSiteSettings(strapi)).toEqual([]);
+    expect(await seedSiteSettings(strapi)).toEqual([])
 
-    await strapi.plugin('i18n').service('locales').create({ code: 'es', name: 'Spanish (es)' });
-    await strapi.documents(SITE_SETTING).delete({ documentId: await documentId(), locale: '*' });
+    await strapi.plugin('i18n').service('locales').create({ code: 'es', name: 'Spanish (es)' })
+    await strapi.documents(SITE_SETTING).delete({ documentId: await documentId(), locale: '*' })
 
-    process.env.FRONTEND_URL = 'https://example.test';
+    process.env.FRONTEND_URL = 'https://example.test'
     try {
-      expect(await seedSiteSettings(strapi)).toEqual(['en', 'es']);
+      expect(await seedSiteSettings(strapi)).toEqual(['en', 'es'])
     } finally {
-      delete process.env.FRONTEND_URL;
+      delete process.env.FRONTEND_URL
     }
-    expect(await seedSiteSettings(strapi)).toEqual([]);
+    expect(await seedSiteSettings(strapi)).toEqual([])
 
-    const spanish = await read('es');
+    const spanish = await read('es')
     expect(spanish).toMatchObject({
       locale: 'es',
       name: 'Micelio',
       description: 'Un sitio hecho con Micelio',
       url: 'https://example.test',
-    });
-    expect(spanish.socialLinks).toEqual([]);
-  });
+    })
+    expect(spanish.socialLinks).toEqual([])
+  })
 
   it('never seeds anything that identifies BogDev', () => {
     const seeded = JSON.stringify([
       neutralSiteSettings('en', 'en'),
       neutralSiteSettings('es', 'es'),
-    ]);
-    expect(seeded).not.toMatch(/bogdev|bogd3v|ale9420|alejandro|hotmail/i);
-  });
+    ])
+    expect(seeded).not.toMatch(/bogdev|bogd3v|ale9420|alejandro|hotmail/i)
+  })
 
   it('keeps the other modules on when one is turned off', async () => {
     await strapi.documents(SITE_SETTING).update({
@@ -114,14 +114,14 @@ describe('Site settings', () => {
       locale: 'en',
       // @ts-expect-error the generated type requires every module; the defaults fill the rest
       data: { modules: { newsletter: false } },
-    });
+    })
 
-    const { modules } = await read();
-    expect(modules.newsletter).toBe(false);
+    const { modules } = await read()
+    expect(modules.newsletter).toBe(false)
     for (const name of MODULES.filter((module) => module !== 'newsletter')) {
-      expect(modules[name]).toBe(true);
+      expect(modules[name]).toBe(true)
     }
-  });
+  })
 
   describe('theme', () => {
     const VALID_THEME = {
@@ -132,7 +132,7 @@ describe('Site settings', () => {
         { mode: 'dia', color: '#a3410f' },
       ],
       displayFont: 'fraunces',
-    };
+    }
 
     async function saveTheme(theme: unknown) {
       return strapi.documents(SITE_SETTING).update({
@@ -140,40 +140,40 @@ describe('Site settings', () => {
         locale: 'en',
         // @ts-expect-error the cases below include invalid values on purpose
         data: { theme },
-      });
+      })
     }
 
     it('saves a theme for every locale and returns its overrides when populated', async () => {
-      await saveTheme(VALID_THEME);
+      await saveTheme(VALID_THEME)
 
-      const populated = await read('en', { theme: { populate: '*' } });
+      const populated = await read('en', { theme: { populate: '*' } })
       expect(populated.theme).toMatchObject({
         themeId: 'bogota',
         defaultMode: 'dia',
         displayFont: 'fraunces',
-      });
+      })
       expect(populated.theme!.accentOverrides!.map(({ mode, color }) => ({ mode, color }))).toEqual(
         VALID_THEME.accentOverrides
-      );
+      )
 
       // populate=* reaches the theme but not the component nested in it.
-      const shallow = await read();
-      expect(shallow.theme).toMatchObject({ themeId: 'bogota', displayFont: 'fraunces' });
-      expect(shallow.theme!.accentOverrides).toBeUndefined();
+      const shallow = await read()
+      expect(shallow.theme).toMatchObject({ themeId: 'bogota', displayFont: 'fraunces' })
+      expect(shallow.theme!.accentOverrides).toBeUndefined()
 
       // Not localized: the Spanish settings share it.
-      expect((await read('es')).theme).toMatchObject({ themeId: 'bogota' });
-    });
+      expect((await read('es')).theme).toMatchObject({ themeId: 'bogota' })
+    })
 
     it('accepts an empty theme, which keeps the default', async () => {
-      await saveTheme({});
+      await saveTheme({})
       expect((await read('en', { theme: { populate: '*' } })).theme).toMatchObject({
         themeId: null,
         defaultMode: null,
         displayFont: null,
         accentOverrides: [],
-      });
-    });
+      })
+    })
 
     it.each([
       ['a three-digit hex', { accentOverrides: [{ mode: 'noche', color: '#fff' }] }],
@@ -197,31 +197,31 @@ describe('Site settings', () => {
         },
       ],
     ])('rejects %s', async (_case, theme) => {
-      await expect(saveTheme(theme)).rejects.toMatchObject({ name: 'ValidationError' });
-    });
-  });
+      await expect(saveTheme(theme)).rejects.toMatchObject({ name: 'ValidationError' })
+    })
+  })
 
   it('rejects readers without the frontend token', async () => {
-    expect((await http().get('/api/site-setting')).status).toBe(403);
+    expect((await http().get('/api/site-setting')).status).toBe(403)
 
     const { accessKey } = await strapi
       .service('admin::api-token')
-      .create({ name: 'other', type: 'custom', lifespan: null, permissions: [] });
+      .create({ name: 'other', type: 'custom', lifespan: null, permissions: [] })
     const other = await http()
       .get('/api/site-setting')
-      .set({ Authorization: `Bearer ${accessKey}` });
-    expect(other.status).toBe(403);
-  });
+      .set({ Authorization: `Bearer ${accessKey}` })
+    expect(other.status).toBe(403)
+  })
 
   it('revokes every role permission on the site settings', async () => {
-    await setPublicPermissions('site-setting', ['find']);
-    await setRolePermissions('authenticated', 'site-setting', ['find']);
-    expect((await http().get('/api/site-setting')).status).toBe(200);
+    await setPublicPermissions('site-setting', ['find'])
+    await setRolePermissions('authenticated', 'site-setting', ['find'])
+    expect((await http().get('/api/site-setting')).status).toBe(200)
 
-    expect(await revokeSiteSettingPermissions(strapi)).toBe(2);
-    expect(await revokeSiteSettingPermissions(strapi)).toBe(0);
-    expect((await http().get('/api/site-setting')).status).toBe(403);
-  });
+    expect(await revokeSiteSettingPermissions(strapi)).toBe(2)
+    expect(await revokeSiteSettingPermissions(strapi)).toBe(0)
+    expect((await http().get('/api/site-setting')).status).toBe(403)
+  })
 
   it.each([
     ['a site URL that is not http(s)', { url: 'ftp://bogdev.com.co' }],
@@ -290,8 +290,8 @@ describe('Site settings', () => {
         // @ts-expect-error invalid on purpose: the values break the schema
         data,
       })
-    ).rejects.toMatchObject({ name: 'ValidationError' });
-  });
+    ).rejects.toMatchObject({ name: 'ValidationError' })
+  })
 
   describe('security contact', () => {
     beforeEach(async () => {
@@ -299,41 +299,41 @@ describe('Site settings', () => {
         documentId: await documentId(),
         locale: 'en',
         data: { securityContact: '' },
-      });
-    });
+      })
+    })
 
     async function saveContact(securityContact: string): Promise<void> {
       await strapi.documents(SITE_SETTING).update({
         documentId: await documentId(),
         locale: 'en',
         data: { securityContact },
-      });
+      })
     }
 
     it('is empty by default and returned to the frontend token', async () => {
-      expect((await read()).securityContact || null).toBeNull();
-    });
+      expect((await read()).securityContact || null).toBeNull()
+    })
 
     it.each([
       ['a mailto URI', 'mailto:security@example.com'],
       ['a mailto URI with a subject', 'mailto:security@example.com?subject=Report'],
       ['an https URI', 'https://example.com/security'],
     ])('accepts %s and returns it to the frontend token', async (_case, value) => {
-      await saveContact(value);
-      expect((await read()).securityContact).toBe(value);
-    });
+      await saveContact(value)
+      expect((await read()).securityContact).toBe(value)
+    })
 
     it('trims surrounding whitespace', async () => {
-      await saveContact('  https://example.com/security \n');
-      expect((await read()).securityContact).toBe('https://example.com/security');
-    });
+      await saveContact('  https://example.com/security \n')
+      expect((await read()).securityContact).toBe('https://example.com/security')
+    })
 
     it('can be cleared', async () => {
-      await saveContact('https://example.com/security');
-      await saveContact('');
-      expect((await read()).securityContact).toBe('');
-    });
-  });
+      await saveContact('https://example.com/security')
+      await saveContact('')
+      expect((await read()).securityContact).toBe('')
+    })
+  })
 
   describe('privacy jurisdiction', () => {
     async function saveJurisdiction(privacyJurisdiction: string | null): Promise<void> {
@@ -342,43 +342,43 @@ describe('Site settings', () => {
         locale: 'en',
         // @ts-expect-error the generated type is the enum; null clears it
         data: { privacyJurisdiction },
-      });
+      })
     }
 
     it('is declared as a shared enumeration with the single value colombia', () => {
-      const attribute = strapi.contentType(SITE_SETTING).attributes.privacyJurisdiction;
+      const attribute = strapi.contentType(SITE_SETTING).attributes.privacyJurisdiction
 
       expect(attribute).toMatchObject({
         type: 'enumeration',
         enum: ['colombia'],
         pluginOptions: { i18n: { localized: false } },
-      });
-      expect(attribute).not.toHaveProperty('default');
-    });
+      })
+      expect(attribute).not.toHaveProperty('default')
+    })
 
     it('is empty on a fresh instance and returned to the frontend token', async () => {
-      const settings = await read();
+      const settings = await read()
 
-      expect(settings).toHaveProperty('privacyJurisdiction');
-      expect(settings.privacyJurisdiction ?? null).toBeNull();
-    });
+      expect(settings).toHaveProperty('privacyJurisdiction')
+      expect(settings.privacyJurisdiction ?? null).toBeNull()
+    })
 
     it('accepts colombia, returns it and can be cleared', async () => {
-      await saveJurisdiction('colombia');
-      expect((await read()).privacyJurisdiction).toBe('colombia');
+      await saveJurisdiction('colombia')
+      expect((await read()).privacyJurisdiction).toBe('colombia')
 
-      await saveJurisdiction(null);
-      expect((await read()).privacyJurisdiction ?? null).toBeNull();
-    });
+      await saveJurisdiction(null)
+      expect((await read()).privacyJurisdiction ?? null).toBeNull()
+    })
 
     it.each([
       ['an unknown jurisdiction', 'atlantis'],
       ['another case', 'Colombia'],
       ['an empty string', ''],
     ])('rejects %s', async (_case, value) => {
-      await expect(saveJurisdiction(value)).rejects.toMatchObject({ name: 'ValidationError' });
-    });
-  });
+      await expect(saveJurisdiction(value)).rejects.toMatchObject({ name: 'ValidationError' })
+    })
+  })
 
   describe('fediverse profile (#303)', () => {
     // The populate of the frontend's site request (micelio `server/lib/constants.ts`, SITE_POPULATE):
@@ -392,33 +392,33 @@ describe('Site settings', () => {
       modules: true,
       theme: { populate: '*' },
       homePage: { fields: ['slug'] },
-    };
+    }
 
     /** The response as the frontend reads it, without the timestamps every save moves. */
     async function frontendResponse(): Promise<unknown> {
-      const settings = await read('en', FRONTEND_POPULATE);
-      delete settings.updatedAt;
-      delete settings.publishedAt;
-      return settings;
+      const settings = await read('en', FRONTEND_POPULATE)
+      delete settings.updatedAt
+      delete settings.publishedAt
+      return settings
     }
 
     it('leaves the frontend response as it was, and shows the profile only when asked', async () => {
-      const before = await frontendResponse();
+      const before = await frontendResponse()
 
       await strapi.documents(SITE_SETTING).update({
         documentId: await documentId(),
         locale: 'en',
         data: { fediverse: { username: 'news_desk', summary: 'A bio.', discoverable: false } },
-      });
+      })
 
-      expect(JSON.stringify(await frontendResponse())).toBe(JSON.stringify(before));
+      expect(JSON.stringify(await frontendResponse())).toBe(JSON.stringify(before))
       // populate=* reaches the component's fields but not the media inside it.
-      const shallow = await read();
-      expect(shallow.fediverse).toMatchObject({ username: 'news_desk' });
-      expect(shallow.fediverse).not.toHaveProperty('header');
+      const shallow = await read()
+      expect(shallow.fediverse).toMatchObject({ username: 'news_desk' })
+      expect(shallow.fediverse).not.toHaveProperty('header')
       expect(await read('en', { fediverse: true })).toMatchObject({
         fediverse: { username: 'news_desk', summary: 'A bio.', discoverable: false },
-      });
-    });
-  });
-});
+      })
+    })
+  })
+})

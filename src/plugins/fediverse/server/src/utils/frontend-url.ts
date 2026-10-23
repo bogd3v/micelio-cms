@@ -6,10 +6,10 @@
  * without it instead of federating links to another site.
  */
 export function frontendBaseUrl(): string {
-  const value = process.env.FRONTEND_URL?.trim();
-  if (value) return value;
+  const value = process.env.FRONTEND_URL?.trim()
+  if (value) return value
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('FRONTEND_URL is required in production: the URL of the frontend');
+    throw new Error('FRONTEND_URL is required in production: the URL of the frontend')
   }
-  return 'http://localhost:3000';
+  return 'http://localhost:3000'
 }

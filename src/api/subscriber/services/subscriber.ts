@@ -1,6 +1,6 @@
-import { factories } from '@strapi/strapi';
-import { SUBSCRIBER_UID } from '../../../constants/uids';
-import type { LookupField, SubscriberRow } from '../types';
+import { factories } from '@strapi/strapi'
+import { SUBSCRIBER_UID } from '../../../constants/uids'
+import type { LookupField, SubscriberRow } from '../types'
 
 const ROW_FIELDS = [
   'id',
@@ -13,7 +13,7 @@ const ROW_FIELDS = [
   'createdAt',
   'updatedAt',
   'publishedAt',
-];
+]
 
 export default factories.createCoreService(SUBSCRIBER_UID, ({ strapi }) => ({
   /**
@@ -28,7 +28,7 @@ export default factories.createCoreService(SUBSCRIBER_UID, ({ strapi }) => ({
     const row = await strapi.db.query(SUBSCRIBER_UID).findOne({
       select: ROW_FIELDS,
       where: { [field]: value },
-    });
-    return (row as SubscriberRow | null) ?? null;
+    })
+    return (row as SubscriberRow | null) ?? null
   },
-}));
+}))

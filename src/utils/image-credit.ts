@@ -4,37 +4,34 @@
  * `shared.slider` item's `credit`.
  */
 
-import { errors } from '@strapi/utils';
-import type { BodyBlock, ImageCredit } from '../types/blocks';
+import { errors } from '@strapi/utils'
+import type { BodyBlock, ImageCredit } from '../types/blocks'
 
 /** Licenses whose terms require naming the author and linking the work. */
-export const ATTRIBUTION_LICENSES = ['cc-by-4.0', 'cc-by-sa-4.0', 'cc-by-nc-4.0'];
+export const ATTRIBUTION_LICENSES = ['cc-by-4.0', 'cc-by-sa-4.0', 'cc-by-nc-4.0']
 
-const URL_FIELDS = ['authorUrl', 'sourceUrl', 'licenseUrl'] as const;
-const URL_PATTERN = /^https?:\/\/\S+$/;
+const URL_FIELDS = ['authorUrl', 'sourceUrl', 'licenseUrl'] as const
+const URL_PATTERN = /^https?:\/\/\S+$/
 
 /** Every credit in a document's data, with its path for error messages. */
 function creditsOf(data: Record<string, unknown>): [string[], ImageCredit][] {
-  const found: [string[], ImageCredit][] = [];
-  if (data.coverCredit) found.push([['coverCredit'], data.coverCredit as ImageCredit]);
+  const found: [string[], ImageCredit][] = []
+  if (data.coverCredit) found.push([['coverCredit'], data.coverCredit as ImageCredit])
 
-  const blocks = Array.isArray(data.blocks) ? (data.blocks as BodyBlock[]) : [];
+  const blocks = Array.isArray(data.blocks) ? (data.blocks as BodyBlock[]) : []
   blocks.forEach((block, index) => {
     if (block?.__component === 'shared.media' && block.credit) {
-      found.push([['blocks', String(index), 'credit'], block.credit]);
+      found.push([['blocks', String(index), 'credit'], block.credit])
     }
     if (block?.__component === 'shared.slider' && Array.isArray(block.items)) {
       block.items.forEach((item, itemIndex) => {
         if (item?.credit) {
-          found.push([
-            ['blocks', String(index), 'items', String(itemIndex), 'credit'],
-            item.credit,
-          ]);
+          found.push([['blocks', String(index), 'items', String(itemIndex), 'credit'], item.credit])
         }
-      });
+      })
     }
-  });
-  return found;
+  })
+  return found
 }
 
 /**
@@ -46,22 +43,22 @@ function creditsOf(data: Record<string, unknown>): [string[], ImageCredit][] {
 export function assertImageCreditsValid(data: Record<string, unknown>): void {
   for (const [path, credit] of creditsOf(data)) {
     for (const field of URL_FIELDS) {
-      const value = credit[field];
+      const value = credit[field]
       if (value && !URL_PATTERN.test(value)) {
-        const message = `Image credit ${field} "${value}" must be an http(s) URL (${path.join('.')})`;
+        const message = `Image credit ${field} "${value}" must be an http(s) URL (${path.join('.')})`
         throw new errors.ValidationError(message, {
           errors: [{ path: [...path, field], message, name: 'ValidationError' }],
-        });
+        })
       }
     }
 
     if (credit.license && ATTRIBUTION_LICENSES.includes(credit.license)) {
       for (const field of ['author', 'sourceUrl'] as const) {
-        if (credit[field]?.trim()) continue;
-        const message = `Image credit under ${credit.license} needs ${field} (${path.join('.')})`;
+        if (credit[field]?.trim()) continue
+        const message = `Image credit under ${credit.license} needs ${field} (${path.join('.')})`
         throw new errors.ValidationError(message, {
           errors: [{ path: [...path, field], message, name: 'ValidationError' }],
-        });
+        })
       }
     }
   }

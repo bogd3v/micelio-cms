@@ -1,24 +1,24 @@
-import { SEEDED, credit, documents, seoOf, type SeededImages } from './response-fields-seed-base';
+import { SEEDED, credit, documents, seoOf, type SeededImages } from './response-fields-seed-base'
 
-const ARTICLE_UID = 'api::article.article';
-const AUTHOR_UID = 'api::author.author';
-const CATEGORY_UID = 'plugin::micelio.category';
-const TAG_UID = 'plugin::micelio.tag';
+const ARTICLE_UID = 'api::article.article'
+const AUTHOR_UID = 'api::author.author'
+const CATEGORY_UID = 'plugin::micelio.category'
+const TAG_UID = 'plugin::micelio.tag'
 
 /** Document ids of the authors, taxonomy and articles `seedArticles` creates. */
 export interface SeededArticles {
-  articleDocumentId: string;
-  categoryDocumentId: string;
-  tagDocumentId: string;
-  authorDocumentId: string;
+  articleDocumentId: string
+  categoryDocumentId: string
+  tagDocumentId: string
+  authorDocumentId: string
   /** Another published article with a reading order, in the same category. */
-  secondArticleDocumentId: string;
+  secondArticleDocumentId: string
 }
 
 /** Creates an author, a category, a tag and two published articles, one of them with every field and a Spanish translation. */
 export async function seedArticles(images: SeededImages): Promise<SeededArticles> {
-  const { cover, avatar, metaImage, slide: sliderFile } = images;
-  const seo = seoOf(metaImage);
+  const { cover, avatar, metaImage, slide: sliderFile } = images
+  const seo = seoOf(metaImage)
 
   const author = await documents(AUTHOR_UID).create({
     data: {
@@ -27,7 +27,7 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
       bio: 'Bio of the author',
       avatar,
     },
-  });
+  })
 
   const category = await documents(CATEGORY_UID).create({
     data: {
@@ -38,11 +38,11 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
       color: 2,
       order: 3,
     },
-  });
+  })
 
   const tag = await documents(TAG_UID).create({
     data: { name: 'Fields tag', slug: SEEDED.tagSlug },
-  });
+  })
 
   const article = await documents(ARTICLE_UID).create({
     data: {
@@ -92,15 +92,15 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
         },
       ],
     },
-  });
-  await documents(ARTICLE_UID).publish({ documentId: article.documentId });
+  })
+  await documents(ARTICLE_UID).publish({ documentId: article.documentId })
   // A published translation, so `localizations` has an entry.
   await documents(ARTICLE_UID).update({
     documentId: article.documentId,
     locale: 'es',
     data: { title: 'Artículo de campos', slug: 'articulo-de-campos' },
-  });
-  await documents(ARTICLE_UID).publish({ documentId: article.documentId, locale: 'es' });
+  })
+  await documents(ARTICLE_UID).publish({ documentId: article.documentId, locale: 'es' })
 
   const second = await documents(ARTICLE_UID).create({
     data: {
@@ -110,8 +110,8 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
       category: category.documentId,
       pathOrder: 2,
     },
-  });
-  await documents(ARTICLE_UID).publish({ documentId: second.documentId });
+  })
+  await documents(ARTICLE_UID).publish({ documentId: second.documentId })
 
   return {
     articleDocumentId: article.documentId,
@@ -119,5 +119,5 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
     tagDocumentId: tag.documentId,
     authorDocumentId: author.documentId,
     secondArticleDocumentId: second.documentId,
-  };
+  }
 }

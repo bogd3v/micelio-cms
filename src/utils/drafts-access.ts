@@ -1,18 +1,18 @@
-import type { Core } from '@strapi/strapi';
-import { errors } from '@strapi/utils';
-import { EDITOR_ROLE_TYPE } from '../constants/roles';
-import { SECURITY_EVENTS } from '../constants/security-events';
-import type { AccessLogContext } from '../types/security-events';
-import { logAccessRefusal } from './access-log';
+import type { Core } from '@strapi/strapi'
+import { errors } from '@strapi/utils'
+import { EDITOR_ROLE_TYPE } from '../constants/roles'
+import { SECURITY_EVENTS } from '../constants/security-events'
+import type { AccessLogContext } from '../types/security-events'
+import { logAccessRefusal } from './access-log'
 
 /** Document Service actions that return documents to the caller. */
-const READ_ACTIONS = new Set(['findMany', 'findOne', 'findFirst', 'count']);
+const READ_ACTIONS = new Set(['findMany', 'findOne', 'findFirst', 'count'])
 
 type RequestState = {
-  route?: { info?: { type?: string } };
-  auth?: { strategy?: { name?: string } };
-  user?: { role?: { type?: string } };
-};
+  route?: { info?: { type?: string } }
+  auth?: { strategy?: { name?: string } }
+  user?: { role?: { type?: string } }
+}
 
 /**
  * Whether a content API request may read drafts: only a users-permissions
@@ -23,7 +23,7 @@ export function canReadDrafts(state: RequestState): boolean {
   return (
     state.auth?.strategy?.name === 'users-permissions' &&
     state.user?.role?.type === EDITOR_ROLE_TYPE
-  );
+  )
 }
 
 /**
@@ -39,21 +39,21 @@ export function canReadDrafts(state: RequestState): boolean {
  */
 export function restrictDraftsToEditors(strapi: Core.Strapi): void {
   strapi.documents.use(async (context, next) => {
-    const status = (context.params as { status?: unknown }).status;
+    const status = (context.params as { status?: unknown }).status
     if (!READ_ACTIONS.has(context.action) || status === undefined || status === 'published') {
-      return next();
+      return next()
     }
 
-    const state = strapi.requestContext.get()?.state as RequestState | undefined;
+    const state = strapi.requestContext.get()?.state as RequestState | undefined
     if (state?.route?.info?.type === 'content-api' && !canReadDrafts(state)) {
       logAccessRefusal(
         strapi,
         strapi.requestContext.get() as AccessLogContext | undefined,
         SECURITY_EVENTS.accessDraftRefused,
         'draft-requested'
-      );
-      throw new errors.ForbiddenError('Drafts are only available to editors');
+      )
+      throw new errors.ForbiddenError('Drafts are only available to editors')
     }
-    return next();
-  });
+    return next()
+  })
 }

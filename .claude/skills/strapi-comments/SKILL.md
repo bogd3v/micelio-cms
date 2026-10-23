@@ -43,7 +43,7 @@ The comments plugin has its own actions, separate from the content-type permissi
 ```javascript
 await strapi.query('plugin::users-permissions.permission').create({
   data: { action: 'plugin::comments.client.findAllInHierarchy', role: publicRole.id },
-});
+})
 ```
 
 Actions on the content API: `plugin::comments.client.findAllInHierarchy`, `findAllFlat`, `findAllPerAuthor`, `post`, `put`, `removeComment`, `reportAbuse`.

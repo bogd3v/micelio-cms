@@ -1,4 +1,4 @@
-import type { ResponseRoute } from './types';
+import type { ResponseRoute } from './types'
 
 /** The public counters of the fediverse plugin (`src/plugins/fediverse/server/src/routes/index.ts`). */
 export const FEDIVERSE_ROUTES: readonly ResponseRoute[] = [
@@ -44,4 +44,4 @@ export const FEDIVERSE_ROUTES: readonly ResponseRoute[] = [
       meta: { use: 'required', of: { pagination: { use: 'required', of: 'pagination' } } },
     },
   },
-];
+]

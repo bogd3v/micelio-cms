@@ -1,45 +1,45 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import request from 'supertest';
-import { setupStrapi, cleanupStrapi } from './strapi';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import request from 'supertest'
+import { setupStrapi, cleanupStrapi } from './strapi'
 import {
   markdownToPlainText,
   blocksToPlainText,
   snippetAround,
-} from '../src/api/article/utils/plain-text';
-import { backfillArticlePlainText } from '../src/migrations/article-plain-text';
-import type { Modules } from '@strapi/strapi';
-import type { ApiDocument } from './helpers/api-types';
+} from '../src/api/article/utils/plain-text'
+import { backfillArticlePlainText } from '../src/migrations/article-plain-text'
+import type { Modules } from '@strapi/strapi'
+import type { ApiDocument } from './helpers/api-types'
 
-const ARTICLE_UID = 'api::article.article';
+const ARTICLE_UID = 'api::article.article'
 
-type ArticleInput = Modules.Documents.Params.Data.Input<typeof ARTICLE_UID>;
+type ArticleInput = Modules.Documents.Params.Data.Input<typeof ARTICLE_UID>
 
-const richText = (body: string) => ({ __component: 'shared.rich-text' as const, body });
+const richText = (body: string) => ({ __component: 'shared.rich-text' as const, body })
 
 describe('Article plain text and content search', () => {
   const search = (query: Record<string, string>) =>
-    request(strapi.server.httpServer).get('/api/articles/search').query(query);
+    request(strapi.server.httpServer).get('/api/articles/search').query(query)
 
   async function publish(data: ArticleInput) {
-    const draft = await strapi.documents(ARTICLE_UID).create({ data });
-    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
-    return draft;
+    const draft = await strapi.documents(ARTICLE_UID).create({ data })
+    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId })
+    return draft
   }
 
   async function plainTextOf(documentId: string, status: 'draft' | 'published') {
     const row = await strapi.db.query(ARTICLE_UID).findOne({
       where: { documentId, publishedAt: status === 'draft' ? null : { $notNull: true } },
-    });
-    return row.plainText;
+    })
+    return row.plainText
   }
 
   beforeAll(async () => {
-    await setupStrapi();
-  });
+    await setupStrapi()
+  })
 
   afterAll(async () => {
-    await cleanupStrapi();
-  });
+    await cleanupStrapi()
+  })
 
   describe('markdownToPlainText', () => {
     it('never rebuilds a tag or a comment out of nested ones', () => {
@@ -48,31 +48,31 @@ describe('Article plain text and content search', () => {
         '<<b>script>alert(1)',
         '<scr<!-- c -->ipt>alert(1)',
         'a<!<!-- x -->-- y -->b',
-      ];
+      ]
       for (const markdown of inputs) {
-        expect(markdownToPlainText(markdown)).not.toMatch(/<\/?[a-z!]|<!--|--!?>/i);
+        expect(markdownToPlainText(markdown)).not.toMatch(/<\/?[a-z!]|<!--|--!?>/i)
       }
-    });
+    })
 
     it('keeps a < that does not start a tag, and code as written', () => {
-      expect(markdownToPlainText('1 < 2 and 3 > 2')).toBe('1 < 2 and 3 > 2');
-      expect(markdownToPlainText('Map<K, V> and a<=b, c>=d')).toBe('Map<K, V> and a<=b, c>=d');
+      expect(markdownToPlainText('1 < 2 and 3 > 2')).toBe('1 < 2 and 3 > 2')
+      expect(markdownToPlainText('Map<K, V> and a<=b, c>=d')).toBe('Map<K, V> and a<=b, c>=d')
       expect(markdownToPlainText('Use `Array<string>` or <b>bold</b> text')).toBe(
         'Use Array<string> or bold text'
-      );
+      )
       expect(markdownToPlainText('```ts\nconst xs: Array<string> = []\n```\n\n<i>after</i>')).toBe(
         'const xs: Array<string> = []\n\nafter'
-      );
-      expect(markdownToPlainText('a<!-- x > y -->b')).toBe('ab');
-      expect(markdownToPlainText('a <!-- never closed')).toBe('a never closed');
-    });
+      )
+      expect(markdownToPlainText('a<!-- x > y -->b')).toBe('ab')
+      expect(markdownToPlainText('a <!-- never closed')).toBe('a never closed')
+    })
 
     it('bounds the work on hostile nesting and leaves no tag', () => {
-      const nested = `${'<a'.repeat(20_000)}>${'>'.repeat(20_000)}text`;
-      const started = Date.now();
-      expect(markdownToPlainText(nested)).not.toMatch(/<\/?[a-z!]/i);
-      expect(Date.now() - started).toBeLessThan(2_000);
-    });
+      const nested = `${'<a'.repeat(20_000)}>${'>'.repeat(20_000)}text`
+      const started = Date.now()
+      expect(markdownToPlainText(nested)).not.toMatch(/<\/?[a-z!]/i)
+      expect(Date.now() - started).toBeLessThan(2_000)
+    })
 
     it('drops Markdown and HTML syntax but keeps the words and the code', () => {
       const markdown = [
@@ -92,7 +92,7 @@ describe('Article plain text and content search', () => {
         '| a | b |',
         '',
         '<details>oculto</details> y my_snake_case _énfasis_',
-      ].join('\n');
+      ].join('\n')
 
       expect(markdownToPlainText(markdown)).toBe(
         [
@@ -110,8 +110,8 @@ describe('Article plain text and content search', () => {
           '',
           'oculto y my_snake_case énfasis',
         ].join('\n')
-      );
-    });
+      )
+    })
 
     it('reads rich-text and quote blocks in order and ignores media', () => {
       expect(
@@ -120,19 +120,19 @@ describe('Article plain text and content search', () => {
           { __component: 'shared.media', file: 1 },
           { __component: 'shared.quote', title: 'Autora', body: 'Cita *breve*' },
         ])
-      ).toBe('Primero\n\nAutora\n\nCita breve');
-      expect(blocksToPlainText(undefined)).toBe('');
-    });
+      ).toBe('Primero\n\nAutora\n\nCita breve')
+      expect(blocksToPlainText(undefined)).toBe('')
+    })
 
     it('snippetAround cuts at word boundaries around the first match', () => {
-      const text = `${'palabra '.repeat(30)}Soberanía digital ${'resto '.repeat(30)}`;
-      const snippet = snippetAround(text, 'soberanía', 20);
-      expect(snippet?.startsWith('…')).toBe(true);
-      expect(snippet?.endsWith('…')).toBe(true);
-      expect(snippet).toContain('Soberanía digital');
-      expect(snippetAround('nada', 'soberanía')).toBeNull();
-    });
-  });
+      const text = `${'palabra '.repeat(30)}Soberanía digital ${'resto '.repeat(30)}`
+      const snippet = snippetAround(text, 'soberanía', 20)
+      expect(snippet?.startsWith('…')).toBe(true)
+      expect(snippet?.endsWith('…')).toBe(true)
+      expect(snippet).toContain('Soberanía digital')
+      expect(snippetAround('nada', 'soberanía')).toBeNull()
+    })
+  })
 
   describe('plainText field', () => {
     it('is computed on create, copied on publish and recomputed on update', async () => {
@@ -140,51 +140,51 @@ describe('Article plain text and content search', () => {
         title: 'Plain text lifecycle',
         slug: 'plain-text-lifecycle',
         blocks: [richText('Hablemos de **Kubernetes**')],
-      });
-      expect(await plainTextOf(article.documentId, 'draft')).toBe('Hablemos de Kubernetes');
-      expect(await plainTextOf(article.documentId, 'published')).toBe('Hablemos de Kubernetes');
+      })
+      expect(await plainTextOf(article.documentId, 'draft')).toBe('Hablemos de Kubernetes')
+      expect(await plainTextOf(article.documentId, 'published')).toBe('Hablemos de Kubernetes')
 
       await strapi.documents(ARTICLE_UID).update({
         documentId: article.documentId,
         data: { blocks: [richText('Ahora de Podman')] },
-      });
-      expect(await plainTextOf(article.documentId, 'draft')).toBe('Ahora de Podman');
-      expect(await plainTextOf(article.documentId, 'published')).toBe('Hablemos de Kubernetes');
+      })
+      expect(await plainTextOf(article.documentId, 'draft')).toBe('Ahora de Podman')
+      expect(await plainTextOf(article.documentId, 'published')).toBe('Hablemos de Kubernetes')
 
       await strapi.documents(ARTICLE_UID).update({
         documentId: article.documentId,
         data: { title: 'Plain text lifecycle, renamed' },
-      });
-      expect(await plainTextOf(article.documentId, 'draft')).toBe('Ahora de Podman');
-    });
+      })
+      expect(await plainTextOf(article.documentId, 'draft')).toBe('Ahora de Podman')
+    })
 
     it('is not exposed by the public articles API', async () => {
       const article = await publish({
         title: 'Private plain text',
         slug: 'private-plain-text',
         blocks: [richText('secreto')],
-      });
+      })
       const res = await request(strapi.server.httpServer)
         .get(`/api/articles/${article.documentId}`)
-        .set('Authorization', '');
-      expect(res.body?.data?.plainText).toBeUndefined();
-    });
+        .set('Authorization', '')
+      expect(res.body?.data?.plainText).toBeUndefined()
+    })
 
     it('is backfilled for rows saved before the field existed', async () => {
       const article = await publish({
         title: 'Legacy article',
         slug: 'legacy-article',
         blocks: [richText('Texto heredado')],
-      });
+      })
       await strapi.db
         .query(ARTICLE_UID)
-        .updateMany({ where: { documentId: article.documentId }, data: { plainText: null } });
+        .updateMany({ where: { documentId: article.documentId }, data: { plainText: null } })
 
-      expect(await backfillArticlePlainText(strapi)).toBe(2);
-      expect(await plainTextOf(article.documentId, 'published')).toBe('Texto heredado');
-      expect(await backfillArticlePlainText(strapi)).toBe(0);
-    });
-  });
+      expect(await backfillArticlePlainText(strapi)).toBe(2)
+      expect(await plainTextOf(article.documentId, 'published')).toBe('Texto heredado')
+      expect(await backfillArticlePlainText(strapi)).toBe(0)
+    })
+  })
 
   describe('GET /api/articles/search', () => {
     beforeAll(async () => {
@@ -193,112 +193,112 @@ describe('Article plain text and content search', () => {
         slug: 'autoalojamiento-en-casa',
         description: 'Un servidor pequeño para tus datos.',
         blocks: [richText('Instalamos **Nextcloud** sobre una Raspberry Pi.')],
-      });
+      })
       await strapi.documents(ARTICLE_UID).create({
         data: {
           title: 'Borrador sobre Nextcloud',
           slug: 'borrador-nextcloud',
           blocks: [richText('Nextcloud sin publicar')],
         },
-      });
-    });
+      })
+    })
 
     it('searches only titles by default', async () => {
-      const res = await search({ q: 'nextcloud' }).expect(200);
-      expect(res.body.data).toEqual([]);
+      const res = await search({ q: 'nextcloud' }).expect(200)
+      expect(res.body.data).toEqual([])
 
-      const byTitle = await search({ q: 'autoaloja' }).expect(200);
-      expect(byTitle.body.data).toHaveLength(1);
+      const byTitle = await search({ q: 'autoaloja' }).expect(200)
+      expect(byTitle.body.data).toHaveLength(1)
       expect(byTitle.body.data[0]).toMatchObject({
         slug: 'autoalojamiento-en-casa',
         matchedIn: 'title',
-      });
-    });
+      })
+    })
 
     it('finds a word that only appears in the body when content is on', async () => {
-      const res = await search({ q: 'NEXTCLOUD', content: '1' }).expect(200);
+      const res = await search({ q: 'NEXTCLOUD', content: '1' }).expect(200)
 
       expect((res.body.data as ApiDocument[]).map((article) => article.slug)).toEqual([
         'autoalojamiento-en-casa',
-      ]);
+      ])
       expect(res.body.data[0]).toMatchObject({
         matchedIn: 'content',
         snippet: 'Instalamos Nextcloud sobre una Raspberry Pi.',
-      });
-      expect(res.body.data[0].plainText).toBeUndefined();
-    });
+      })
+      expect(res.body.data[0].plainText).toBeUndefined()
+    })
 
     it('matches the description when content is on', async () => {
-      const res = await search({ q: 'servidor pequeño', content: 'true' }).expect(200);
-      expect(res.body.data[0]).toMatchObject({ matchedIn: 'description' });
-    });
+      const res = await search({ q: 'servidor pequeño', content: 'true' }).expect(200)
+      expect(res.body.data[0]).toMatchObject({ matchedIn: 'description' })
+    })
 
     it('treats % and _ in the query as literal characters, not wildcards', async () => {
-      const res = await search({ q: 'Next%loud', content: '1' }).expect(200);
-      expect(res.body.data).toEqual([]);
-      const underscore = await search({ q: 'Nextclo_d', content: '1' }).expect(200);
-      expect(underscore.body.data).toEqual([]);
-    });
+      const res = await search({ q: 'Next%loud', content: '1' }).expect(200)
+      expect(res.body.data).toEqual([])
+      const underscore = await search({ q: 'Nextclo_d', content: '1' }).expect(200)
+      expect(underscore.body.data).toEqual([])
+    })
 
     it('ignores unpublished edits of a published article', async () => {
       const article = await publish({
         title: 'Copias de seguridad con restic',
         slug: 'copias-restic',
         blocks: [richText('Guardamos todo con restic.')],
-      });
+      })
       await strapi.documents(ARTICLE_UID).update({
         documentId: article.documentId,
         data: {
           title: 'Copias de seguridad con borgbackup',
           blocks: [richText('Ahora usamos borgbackup.')],
         },
-      });
+      })
 
-      const edited = await search({ q: 'borgbackup', content: '1' }).expect(200);
-      expect(edited.body.data).toEqual([]);
+      const edited = await search({ q: 'borgbackup', content: '1' }).expect(200)
+      expect(edited.body.data).toEqual([])
 
-      const published = await search({ q: 'restic', content: '1' }).expect(200);
-      expect(published.body.data).toHaveLength(1);
-      expect(published.body.data[0].title).toBe('Copias de seguridad con restic');
-    });
+      const published = await search({ q: 'restic', content: '1' }).expect(200)
+      expect(published.body.data).toHaveLength(1)
+      expect(published.body.data[0].title).toBe('Copias de seguridad con restic')
+    })
 
     it('filters by locale', async () => {
-      const locales = strapi.plugin('i18n').service('locales');
-      await locales.create({ code: 'fr', name: 'French (fr)' });
+      const locales = strapi.plugin('i18n').service('locales')
+      await locales.create({ code: 'fr', name: 'French (fr)' })
       try {
-        const res = await search({ q: 'nextcloud', content: '1', locale: 'fr' }).expect(200);
-        expect(res.body.data).toEqual([]);
+        const res = await search({ q: 'nextcloud', content: '1', locale: 'fr' }).expect(200)
+        expect(res.body.data).toEqual([])
       } finally {
-        const french = await locales.findByCode('fr');
-        await locales.delete({ id: french.id });
+        const french = await locales.findByCode('fr')
+        await locales.delete({ id: french.id })
       }
-      const configured = await search({ q: 'nextcloud', content: '1', locale: 'en' }).expect(200);
-      expect(configured.body.data).toHaveLength(1);
-    });
+      const configured = await search({ q: 'nextcloud', content: '1', locale: 'en' }).expect(200)
+      expect(configured.body.data).toHaveLength(1)
+    })
 
     it('accepts a query of exactly the maximum length', async () => {
-      await search({ q: 'a'.repeat(200) }).expect(200);
-    });
+      await search({ q: 'a'.repeat(200) }).expect(200)
+    })
 
     it('rejects a query longer than the maximum with a 400', async () => {
-      await search({ q: 'a'.repeat(201) }).expect(400);
-      await search({ q: 'a'.repeat(5000) }).expect(400);
-    });
+      await search({ q: 'a'.repeat(201) }).expect(400)
+      await search({ q: 'a'.repeat(5000) }).expect(400)
+    })
 
     it('rejects a locale that the i18n plugin does not configure with a 400', async () => {
-      await search({ q: 'nextcloud', locale: 'de' }).expect(400);
-      await search({ q: 'nextcloud', locale: "es' OR 1=1" }).expect(400);
-      await search({ q: 'nextcloud', locale: '9'.repeat(5000) }).expect(400);
-    });
+      await search({ q: 'nextcloud', locale: 'de' }).expect(400)
+      await search({ q: 'nextcloud', locale: "es' OR 1=1" }).expect(400)
+      await search({ q: 'nextcloud', locale: '9'.repeat(5000) }).expect(400)
+    })
 
     it('answers a limit that is huge, negative or not a number without an error', async () => {
       for (const limit of ['99999999999999999999', '-5', 'abc', '0']) {
-        await search({ q: 'autoaloja', limit }).expect(200);
+        await search({ q: 'autoaloja', limit }).expect(200)
       }
-    });
+    })
 
     it('rejects queries shorter than three characters', async () => {
-      await search({ q: ' ab ' }).expect(400);
-    });
-  });
-});
+      await search({ q: ' ab ' }).expect(400)
+    })
+  })
+})

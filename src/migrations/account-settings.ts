@@ -1,22 +1,22 @@
-import type { Core } from '@strapi/strapi';
-import { SITE_SETTING_UID } from '../constants/uids';
-import { frontendBaseUrl } from '../utils/frontend-url';
+import type { Core } from '@strapi/strapi'
+import { SITE_SETTING_UID } from '../constants/uids'
+import { frontendBaseUrl } from '../utils/frontend-url'
 
-const ROLE_UID = 'plugin::users-permissions.role';
-const PERMISSION_UID = 'plugin::users-permissions.permission';
+const ROLE_UID = 'plugin::users-permissions.role'
+const PERMISSION_UID = 'plugin::users-permissions.permission'
 // DELETE /api/users/me (src/extensions/users-permissions). Never `user.destroy`:
 // that one deletes any user by id. Public has it too so that a request without
 // a JWT reaches the controller and gets a 401; the controller only ever deletes
 // the user of the JWT.
-const DELETE_ME_ACTION = 'plugin::users-permissions.user.destroyMe';
-const DELETE_ME_ROLES = ['public', 'authenticated', 'editor'];
+const DELETE_ME_ACTION = 'plugin::users-permissions.user.destroyMe'
+const DELETE_ME_ROLES = ['public', 'authenticated', 'editor']
 // Marks that the defaults below were written once; from then on the admin
 // panel (Users & Permissions → Advanced settings, Email templates) owns them.
-const MARKER = { type: 'core', name: 'migrations', key: 'account-settings' };
-const VERSION = 1;
+const MARKER = { type: 'core', name: 'migrations', key: 'account-settings' }
+const VERSION = 1
 
 function frontendUrl(path: string): string {
-  return `${frontendBaseUrl().replace(/\/+$/, '')}${path}`;
+  return `${frontendBaseUrl().replace(/\/+$/, '')}${path}`
 }
 
 function advancedSettings() {
@@ -27,15 +27,15 @@ function advancedSettings() {
     email_confirmation: true,
     email_confirmation_redirection: frontendUrl('/account/confirmed'),
     email_reset_password: frontendUrl('/account/reset-password'),
-  };
+  }
 }
 
 // An empty `from` makes users-permissions fall back to the email provider's
 // `defaultFrom` (EMAIL_FROM), so the sender is set per environment.
-const FROM = { name: '', email: '' };
+const FROM = { name: '', email: '' }
 
 /** Name used in the emails when the site settings have none. */
-const FALLBACK_SITE_NAME = 'Micelio';
+const FALLBACK_SITE_NAME = 'Micelio'
 
 /**
  * HTML-escapes the site name. users-permissions renders the templates with
@@ -47,19 +47,19 @@ function escapeHtml(value: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
 }
 
 interface EmailTemplateText {
-  object: string;
-  message: string;
+  object: string
+  message: string
 }
 
-type EmailTemplateTexts = Record<'email_confirmation' | 'reset_password', EmailTemplateText>;
+type EmailTemplateTexts = Record<'email_confirmation' | 'reset_password', EmailTemplateText>
 
 /** Sign-up confirmation and password reset emails, in English or Spanish. */
 export function accountEmailTemplates(siteName: string, language: string): EmailTemplateTexts {
-  const site = escapeHtml(siteName);
+  const site = escapeHtml(siteName)
   if (language === 'es') {
     return {
       email_confirmation: {
@@ -82,7 +82,7 @@ export function accountEmailTemplates(siteName: string, language: string): Email
 
 <p>Si no lo pediste, ignora este mensaje: tu contraseña no cambia.</p>`,
       },
-    };
+    }
   }
   return {
     email_confirmation: {
@@ -105,7 +105,7 @@ export function accountEmailTemplates(siteName: string, language: string): Email
 
 <p>If you didn't ask for it, ignore this message: your password stays the same.</p>`,
     },
-  };
+  }
 }
 
 /**
@@ -113,16 +113,16 @@ export function accountEmailTemplates(siteName: string, language: string): Email
  * `defaultLocale` (seeded before this migration runs), else neutral values.
  */
 async function siteIdentity(strapi: Core.Strapi): Promise<{ name: string; language: string }> {
-  const settings = strapi.documents(SITE_SETTING_UID);
-  const any = (await settings.findFirst()) as { defaultLocale?: string; name?: string } | null;
-  const language = any?.defaultLocale ?? 'en';
-  const localized = (await settings.findFirst({ locale: language })) as { name?: string } | null;
-  return { name: localized?.name || any?.name || FALLBACK_SITE_NAME, language };
+  const settings = strapi.documents(SITE_SETTING_UID)
+  const any = (await settings.findFirst()) as { defaultLocale?: string; name?: string } | null
+  const language = any?.defaultLocale ?? 'en'
+  const localized = (await settings.findFirst({ locale: language })) as { name?: string } | null
+  return { name: localized?.name || any?.name || FALLBACK_SITE_NAME, language }
 }
 
 // `<%= %>` writes its value unescaped, and the username is chosen by whoever
 // signs up, so the earlier default greeting let them put HTML in the email.
-const USERNAME_PLACEHOLDER = /\s*<%=\s*USER\.username\s*%>/g;
+const USERNAME_PLACEHOLDER = /\s*<%=\s*USER\.username\s*%>/g
 
 /**
  * Removes the unescaped username placeholder from the stored email templates,
@@ -130,30 +130,30 @@ const USERNAME_PLACEHOLDER = /\s*<%=\s*USER\.username\s*%>/g;
  * every boot and changes nothing once the placeholder is gone.
  */
 async function removeUsernameFromTemplates(strapi: Core.Strapi): Promise<void> {
-  const pluginStore = strapi.store({ type: 'plugin', name: 'users-permissions' });
-  const email = (await pluginStore.get({ key: 'email' })) as EmailTemplates | null;
-  if (!email) return;
-  let changed = false;
+  const pluginStore = strapi.store({ type: 'plugin', name: 'users-permissions' })
+  const email = (await pluginStore.get({ key: 'email' })) as EmailTemplates | null
+  if (!email) return
+  let changed = false
   for (const template of Object.values(email)) {
-    const message = template?.options?.message;
-    if (typeof message !== 'string') continue;
-    const cleaned = message.replace(USERNAME_PLACEHOLDER, '');
-    if (cleaned === message) continue;
-    template.options.message = cleaned;
-    changed = true;
+    const message = template?.options?.message
+    if (typeof message !== 'string') continue
+    const cleaned = message.replace(USERNAME_PLACEHOLDER, '')
+    if (cleaned === message) continue
+    template.options.message = cleaned
+    changed = true
   }
-  if (!changed) return;
-  await pluginStore.set({ key: 'email', value: email });
-  strapi.log.info('Removed the unescaped username placeholder from the stored email templates.');
+  if (!changed) return
+  await pluginStore.set({ key: 'email', value: email })
+  strapi.log.info('Removed the unescaped username placeholder from the stored email templates.')
 }
 
 type EmailTemplates = Record<
   keyof EmailTemplateTexts,
   { options: Record<string, unknown> & { object: string; message: string } }
->;
+>
 
 /** `settingsApplied`: the settings were written in this run; `permissionsGranted`: permissions created in this run. */
-export type AccountSettingsReport = { settingsApplied: boolean; permissionsGranted: number };
+export type AccountSettingsReport = { settingsApplied: boolean; permissionsGranted: number }
 
 /**
  * Account settings for issue #52.
@@ -171,47 +171,47 @@ export type AccountSettingsReport = { settingsApplied: boolean; permissionsGrant
  *   `ensureEditorRole`.
  */
 export async function applyAccountSettings(strapi: Core.Strapi): Promise<AccountSettingsReport> {
-  const applied = (await strapi.store.get(MARKER)) as { version?: number } | null;
-  const settingsApplied = !applied || (applied.version ?? 0) < VERSION;
+  const applied = (await strapi.store.get(MARKER)) as { version?: number } | null
+  const settingsApplied = !applied || (applied.version ?? 0) < VERSION
 
   if (settingsApplied) {
-    const pluginStore = strapi.store({ type: 'plugin', name: 'users-permissions' });
+    const pluginStore = strapi.store({ type: 'plugin', name: 'users-permissions' })
 
-    const advanced = ((await pluginStore.get({ key: 'advanced' })) ?? {}) as object;
-    await pluginStore.set({ key: 'advanced', value: { ...advanced, ...advancedSettings() } });
+    const advanced = ((await pluginStore.get({ key: 'advanced' })) ?? {}) as object
+    await pluginStore.set({ key: 'advanced', value: { ...advanced, ...advancedSettings() } })
 
     // users-permissions creates the templates in its own bootstrap, before ours.
-    const email = (await pluginStore.get({ key: 'email' })) as EmailTemplates | null;
+    const email = (await pluginStore.get({ key: 'email' })) as EmailTemplates | null
     if (email) {
-      const site = await siteIdentity(strapi);
-      const templates = accountEmailTemplates(site.name, site.language);
+      const site = await siteIdentity(strapi)
+      const templates = accountEmailTemplates(site.name, site.language)
       for (const [name, template] of Object.entries(templates)) {
-        const current = email[name as keyof EmailTemplates];
-        if (current) current.options = { ...current.options, ...template, from: FROM };
+        const current = email[name as keyof EmailTemplates]
+        if (current) current.options = { ...current.options, ...template, from: FROM }
       }
-      await pluginStore.set({ key: 'email', value: email });
+      await pluginStore.set({ key: 'email', value: email })
     }
 
-    await strapi.store.set({ ...MARKER, value: { version: VERSION } });
+    await strapi.store.set({ ...MARKER, value: { version: VERSION } })
   }
 
-  await removeUsernameFromTemplates(strapi);
+  await removeUsernameFromTemplates(strapi)
 
-  let permissionsGranted = 0;
+  let permissionsGranted = 0
   for (const type of DELETE_ME_ROLES) {
     const role = (await strapi.db.query(ROLE_UID).findOne({ where: { type } })) as {
-      id: number;
-    } | null;
-    if (!role) continue;
+      id: number
+    } | null
+    if (!role) continue
     const granted = await strapi.db
       .query(PERMISSION_UID)
-      .count({ where: { role: role.id, action: DELETE_ME_ACTION } });
-    if (granted > 0) continue;
+      .count({ where: { role: role.id, action: DELETE_ME_ACTION } })
+    if (granted > 0) continue
     await strapi.db.query(PERMISSION_UID).create({
       data: { action: DELETE_ME_ACTION, role: role.id },
-    });
-    permissionsGranted += 1;
+    })
+    permissionsGranted += 1
   }
 
-  return { settingsApplied, permissionsGranted };
+  return { settingsApplied, permissionsGranted }
 }

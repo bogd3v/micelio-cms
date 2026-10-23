@@ -7,30 +7,30 @@
  * `docs/FEDIVERSE.md`, "Inbox digest algorithms".
  */
 
-import type { IncomingHttpHeaders } from 'node:http';
-import { isContentDigestCovered } from './inbox-signature-input';
-import type { InboxRefusalReason } from './utils/security-log';
+import type { IncomingHttpHeaders } from 'node:http'
+import { isContentDigestCovered } from './inbox-signature-input'
+import type { InboxRefusalReason } from './utils/security-log'
 
 /** Why the inbox middleware answers `401` to a delivery before Fedify reads it. */
 export interface InboxDigestRefusal {
   /** The `reason` of the `fediverse.inbox.signature-refused` security event. */
-  reason: Extract<InboxRefusalReason, 'digest-algorithm' | 'content-digest-not-covered'>;
+  reason: Extract<InboxRefusalReason, 'digest-algorithm' | 'content-digest-not-covered'>
   /** The `text/plain` response body. */
-  message: string;
+  message: string
   /** The rate-limited `[fediverse]` warning, with no header value in it. */
-  warning: string;
+  warning: string
 }
 
 /** One `algorithm=value` entry of a `Digest` header (RFC 3230). */
 export interface DigestEntry {
   /** The algorithm name, lower case (`sha-256`). */
-  algorithm: string;
+  algorithm: string
   /** The encoded digest as sent, trimmed; empty when the entry has none. */
-  value: string;
+  value: string
 }
 
 /** Algorithms an inbox delivery's `Digest` may use, lower case. */
-const APPROVED_ALGORITHMS: ReadonlySet<string> = new Set(['sha-256', 'sha-512']);
+const APPROVED_ALGORITHMS: ReadonlySet<string> = new Set(['sha-256', 'sha-512'])
 
 /**
  * Splits a `Digest` header into its entries.
@@ -42,11 +42,11 @@ const APPROVED_ALGORITHMS: ReadonlySet<string> = new Set(['sha-256', 'sha-512'])
  * @internal
  */
 export function parseDigestHeader(header: string): DigestEntry[] {
-  const entries: DigestEntry[] = [];
+  const entries: DigestEntry[] = []
   for (const part of header.split(',')) {
-    const entry = part.trim();
-    if (entry === '') continue;
-    const separator = entry.indexOf('=');
+    const entry = part.trim()
+    if (entry === '') continue
+    const separator = entry.indexOf('=')
     entries.push(
       separator < 0
         ? { algorithm: entry.toLowerCase(), value: '' }
@@ -54,9 +54,9 @@ export function parseDigestHeader(header: string): DigestEntry[] {
             algorithm: entry.slice(0, separator).trim().toLowerCase(),
             value: entry.slice(separator + 1).trim(),
           }
-    );
+    )
   }
-  return entries;
+  return entries
 }
 
 /**
@@ -74,7 +74,7 @@ export function parseDigestHeader(header: string): DigestEntry[] {
 export function isInboxDigestAccepted(header: string): boolean {
   return parseDigestHeader(header).some(
     (entry) => APPROVED_ALGORITHMS.has(entry.algorithm) && entry.value !== ''
-  );
+  )
 }
 
 /**
@@ -89,26 +89,26 @@ export function isInboxDigestAccepted(header: string): boolean {
  * Repeated headers are joined with `, `, as Fedify's `Headers.get` does.
  */
 export function inboxDigestRefusal(headers: IncomingHttpHeaders): InboxDigestRefusal | null {
-  const signatureInput = joinHeader(headers['signature-input']);
+  const signatureInput = joinHeader(headers['signature-input'])
   if (signatureInput !== undefined && !isContentDigestCovered(signatureInput)) {
     return {
       reason: 'content-digest-not-covered',
       message: 'The signature must cover the Content-Digest header.',
       warning:
         '[fediverse] refused an RFC 9421 inbox delivery whose signature skips content-digest',
-    };
+    }
   }
-  const digest = joinHeader(headers.digest);
+  const digest = joinHeader(headers.digest)
   if (digest !== undefined && !isInboxDigestAccepted(digest)) {
     return {
       reason: 'digest-algorithm',
       message: 'The Digest header must use SHA-256 or SHA-512.',
       warning: '[fediverse] refused an inbox delivery whose Digest has no SHA-256 or SHA-512 entry',
-    };
+    }
   }
-  return null;
+  return null
 }
 
 function joinHeader(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value.join(', ') : value;
+  return Array.isArray(value) ? value.join(', ') : value
 }

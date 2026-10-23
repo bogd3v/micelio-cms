@@ -13,4 +13,4 @@ export const FEDERATION_SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'X-Frame-Options': 'SAMEORIGIN',
   'Content-Security-Policy': "frame-ancestors 'self'",
   'Referrer-Policy': 'no-referrer',
-};
+}

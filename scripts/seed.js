@@ -1,8 +1,8 @@
-'use strict';
+'use strict'
 
-const fs = require('fs-extra');
-const path = require('path');
-const mime = require('mime-types');
+const fs = require('fs-extra')
+const path = require('path')
+const mime = require('mime-types')
 const {
   categories,
   tags,
@@ -11,24 +11,24 @@ const {
   global,
   about,
   subscribers,
-} = require('../data/data.json');
+} = require('../data/data.json')
 
 async function seedExampleApp() {
-  const shouldImportSeedData = await isFirstRun();
+  const shouldImportSeedData = await isFirstRun()
 
   if (shouldImportSeedData) {
     try {
-      console.log('Setting up the template...');
-      await importSeedData();
-      console.log('Ready to go');
+      console.log('Setting up the template...')
+      await importSeedData()
+      console.log('Ready to go')
     } catch (error) {
-      console.log('Could not import seed data');
-      console.error(error);
+      console.log('Could not import seed data')
+      console.error(error)
     }
   } else {
     console.log(
       'Seed data has already been imported. We cannot reimport unless you clear your database first.'
-    );
+    )
   }
 }
 
@@ -37,10 +37,10 @@ async function isFirstRun() {
     environment: strapi.config.environment,
     type: 'type',
     name: 'setup',
-  });
-  const initHasRun = await pluginStore.get({ key: 'initHasRun' });
-  await pluginStore.set({ key: 'initHasRun', value: true });
-  return !initHasRun;
+  })
+  const initHasRun = await pluginStore.get({ key: 'initHasRun' })
+  await pluginStore.set({ key: 'initHasRun', value: true })
+  return !initHasRun
 }
 
 async function setPublicPermissions(newPermissions) {
@@ -48,42 +48,42 @@ async function setPublicPermissions(newPermissions) {
     where: {
       type: 'public',
     },
-  });
+  })
 
-  const allPermissionsToCreate = [];
+  const allPermissionsToCreate = []
   Object.keys(newPermissions).map((controller) => {
-    const actions = newPermissions[controller];
+    const actions = newPermissions[controller]
     const permissionsToCreate = actions.map((action) => {
       return strapi.query('plugin::users-permissions.permission').create({
         data: {
           action: `api::${controller}.${controller}.${action}`,
           role: publicRole.id,
         },
-      });
-    });
-    allPermissionsToCreate.push(...permissionsToCreate);
-  });
-  await Promise.all(allPermissionsToCreate);
+      })
+    })
+    allPermissionsToCreate.push(...permissionsToCreate)
+  })
+  await Promise.all(allPermissionsToCreate)
 }
 
 function getFileSizeInBytes(filePath) {
-  const stats = fs.statSync(filePath);
-  const fileSizeInBytes = stats['size'];
-  return fileSizeInBytes;
+  const stats = fs.statSync(filePath)
+  const fileSizeInBytes = stats['size']
+  return fileSizeInBytes
 }
 
 function getFileData(fileName) {
-  const filePath = path.join('data', 'uploads', fileName);
-  const size = getFileSizeInBytes(filePath);
-  const ext = fileName.split('.').pop();
-  const mimeType = mime.lookup(ext || '') || '';
+  const filePath = path.join('data', 'uploads', fileName)
+  const size = getFileSizeInBytes(filePath)
+  const ext = fileName.split('.').pop()
+  const mimeType = mime.lookup(ext || '') || ''
 
   return {
     filepath: filePath,
     originalFileName: fileName,
     size,
     mimetype: mimeType,
-  };
+  }
 }
 
 async function uploadFile(file, name) {
@@ -99,138 +99,138 @@ async function uploadFile(file, name) {
           name,
         },
       },
-    });
+    })
 }
 
 async function createEntry({ model, entry }) {
   try {
     return await strapi.documents(`api::${model}.${model}`).create({
       data: entry,
-    });
+    })
   } catch (error) {
-    console.error({ model, entry, error });
+    console.error({ model, entry, error })
   }
 }
 
 async function checkFileExistsBeforeUpload(files) {
-  const existingFiles = [];
-  const uploadedFiles = [];
-  const filesCopy = [...files];
+  const existingFiles = []
+  const uploadedFiles = []
+  const filesCopy = [...files]
 
   for (const fileName of filesCopy) {
     const fileWhereName = await strapi.query('plugin::upload.file').findOne({
       where: {
         name: fileName.replace(/\..*$/, ''),
       },
-    });
+    })
 
     if (fileWhereName) {
-      existingFiles.push(fileWhereName);
+      existingFiles.push(fileWhereName)
     } else {
-      const fileData = getFileData(fileName);
-      const fileNameNoExtension = fileName.split('.').shift();
-      const [file] = await uploadFile(fileData, fileNameNoExtension);
-      uploadedFiles.push(file);
+      const fileData = getFileData(fileName)
+      const fileNameNoExtension = fileName.split('.').shift()
+      const [file] = await uploadFile(fileData, fileNameNoExtension)
+      uploadedFiles.push(file)
     }
   }
-  const allFiles = [...existingFiles, ...uploadedFiles];
-  return allFiles.length === 1 ? allFiles[0] : allFiles;
+  const allFiles = [...existingFiles, ...uploadedFiles]
+  return allFiles.length === 1 ? allFiles[0] : allFiles
 }
 
 async function updateBlocks(blocks) {
-  const updatedBlocks = [];
+  const updatedBlocks = []
   for (const block of blocks) {
     if (block.__component === 'shared.media') {
-      const uploadedFiles = await checkFileExistsBeforeUpload([block.file]);
-      const blockCopy = { ...block };
-      blockCopy.file = uploadedFiles;
-      updatedBlocks.push(blockCopy);
+      const uploadedFiles = await checkFileExistsBeforeUpload([block.file])
+      const blockCopy = { ...block }
+      blockCopy.file = uploadedFiles
+      updatedBlocks.push(blockCopy)
     } else if (block.__component === 'shared.slider') {
-      const existingAndUploadedFiles = await checkFileExistsBeforeUpload(block.files);
+      const existingAndUploadedFiles = await checkFileExistsBeforeUpload(block.files)
       // One slide per image; `files` is the legacy field, so it is left empty.
-      const blockCopy = { ...block };
-      delete blockCopy.files;
-      blockCopy.items = [existingAndUploadedFiles].flat().map((file) => ({ file }));
-      updatedBlocks.push(blockCopy);
+      const blockCopy = { ...block }
+      delete blockCopy.files
+      blockCopy.items = [existingAndUploadedFiles].flat().map((file) => ({ file }))
+      updatedBlocks.push(blockCopy)
     } else {
-      updatedBlocks.push(block);
+      updatedBlocks.push(block)
     }
   }
 
-  return updatedBlocks;
+  return updatedBlocks
 }
 
 async function importArticles() {
-  const allCategories = await strapi.documents('plugin::micelio.category').findMany();
-  const allAuthors = await strapi.documents('api::author.author').findMany();
-  const allTags = await strapi.documents('plugin::micelio.tag').findMany();
+  const allCategories = await strapi.documents('plugin::micelio.category').findMany()
+  const allAuthors = await strapi.documents('api::author.author').findMany()
+  const allTags = await strapi.documents('plugin::micelio.tag').findMany()
 
-  const categoryMap = {};
+  const categoryMap = {}
   allCategories.forEach((cat) => {
-    categoryMap[cat.name] = cat.documentId;
-  });
+    categoryMap[cat.name] = cat.documentId
+  })
 
-  const tagMap = {};
+  const tagMap = {}
   allTags.forEach((tag) => {
-    tagMap[tag.name] = tag.documentId;
-  });
+    tagMap[tag.name] = tag.documentId
+  })
 
-  const authorMap = {};
+  const authorMap = {}
   allAuthors.forEach((auth) => {
-    authorMap[auth.name] = auth.documentId;
-  });
+    authorMap[auth.name] = auth.documentId
+  })
 
   for (const article of articles) {
-    const coverFileName = `${article.slug}.jpg`;
-    const coverFilePath = path.join('data', 'uploads', coverFileName);
-    const coverExists = fs.existsSync(coverFilePath);
-    const cover = coverExists ? await checkFileExistsBeforeUpload([coverFileName]) : null;
+    const coverFileName = `${article.slug}.jpg`
+    const coverFilePath = path.join('data', 'uploads', coverFileName)
+    const coverExists = fs.existsSync(coverFilePath)
+    const cover = coverExists ? await checkFileExistsBeforeUpload([coverFileName]) : null
 
-    const updatedBlocks = await updateBlocks(article.blocks);
+    const updatedBlocks = await updateBlocks(article.blocks)
 
-    const categoryDocumentId = categoryMap[article.category] || null;
-    const authorDocumentId = authorMap[article.author] || null;
+    const categoryDocumentId = categoryMap[article.category] || null
+    const authorDocumentId = authorMap[article.author] || null
 
     const entryData = {
       ...article,
       cover,
       blocks: updatedBlocks,
-    };
-
-    if (categoryDocumentId) {
-      entryData.category = categoryDocumentId;
-    } else {
-      delete entryData.category;
     }
 
-    entryData.tags = (article.tags || []).map((name) => tagMap[name]).filter(Boolean);
+    if (categoryDocumentId) {
+      entryData.category = categoryDocumentId
+    } else {
+      delete entryData.category
+    }
+
+    entryData.tags = (article.tags || []).map((name) => tagMap[name]).filter(Boolean)
 
     if (authorDocumentId) {
-      entryData.author = authorDocumentId;
+      entryData.author = authorDocumentId
     } else {
-      delete entryData.author;
+      delete entryData.author
     }
 
     const created = await createEntry({
       model: 'article',
       entry: entryData,
-    });
+    })
 
     if (created?.documentId) {
       try {
         await strapi.documents('api::article.article').publish({
           documentId: created.documentId,
-        });
+        })
       } catch (error) {
-        console.error({ article: article.slug, error });
+        console.error({ article: article.slug, error })
       }
     }
   }
 }
 
 async function importGlobal() {
-  const favicon = await checkFileExistsBeforeUpload(['favicon.png']);
-  const metaImage = await checkFileExistsBeforeUpload(['default-image.png']);
+  const favicon = await checkFileExistsBeforeUpload(['favicon.png'])
+  const metaImage = await checkFileExistsBeforeUpload(['default-image.png'])
   return createEntry({
     model: 'global',
     entry: {
@@ -241,11 +241,11 @@ async function importGlobal() {
         metaImage,
       },
     },
-  });
+  })
 }
 
 async function importAbout() {
-  const updatedBlocks = await updateBlocks(about.blocks);
+  const updatedBlocks = await updateBlocks(about.blocks)
 
   await createEntry({
     model: 'about',
@@ -253,24 +253,24 @@ async function importAbout() {
       ...about,
       blocks: updatedBlocks,
     },
-  });
+  })
 }
 
 async function importCategories() {
   for (const category of categories) {
-    await createEntry({ model: 'category', entry: category });
+    await createEntry({ model: 'category', entry: category })
   }
 }
 
 async function importTags() {
   for (const tag of tags) {
-    await createEntry({ model: 'tag', entry: tag });
+    await createEntry({ model: 'tag', entry: tag })
   }
 }
 
 async function importAuthors() {
   for (const author of authors) {
-    const avatar = await checkFileExistsBeforeUpload([author.avatar]);
+    const avatar = await checkFileExistsBeforeUpload([author.avatar])
 
     await createEntry({
       model: 'author',
@@ -278,13 +278,13 @@ async function importAuthors() {
         ...author,
         avatar,
       },
-    });
+    })
   }
 }
 
 async function importSubscribers() {
   for (const subscriber of subscribers) {
-    await createEntry({ model: 'subscriber', entry: subscriber });
+    await createEntry({ model: 'subscriber', entry: subscriber })
   }
 }
 
@@ -295,36 +295,36 @@ async function importSeedData() {
     author: ['find', 'findOne'],
     global: ['find', 'findOne'],
     about: ['find', 'findOne'],
-  });
+  })
 
-  await importCategories();
-  await importTags();
-  await importAuthors();
-  await importArticles();
-  await importGlobal();
-  await importAbout();
-  await importSubscribers();
+  await importCategories()
+  await importTags()
+  await importAuthors()
+  await importArticles()
+  await importGlobal()
+  await importAbout()
+  await importSubscribers()
 }
 
 async function main() {
-  const { createStrapi, compileStrapi } = require('@strapi/strapi');
+  const { createStrapi, compileStrapi } = require('@strapi/strapi')
 
-  const appContext = await compileStrapi();
-  const app = await createStrapi(appContext).load();
+  const appContext = await compileStrapi()
+  const app = await createStrapi(appContext).load()
 
-  app.log.level = 'error';
+  app.log.level = 'error'
 
-  await seedExampleApp();
-  await app.destroy();
+  await seedExampleApp()
+  await app.destroy()
 
-  process.exit(0);
+  process.exit(0)
 }
 
-(async () => {
+;(async () => {
   try {
-    await main();
+    await main()
   } catch (error) {
-    console.error(error);
-    process.exit(1);
+    console.error(error)
+    process.exit(1)
   }
-})();
+})()

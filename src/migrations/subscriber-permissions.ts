@@ -1,7 +1,7 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-const PERMISSION_UID = 'plugin::users-permissions.permission';
-const SUBSCRIBER_ACTION_PREFIX = 'api::subscriber.subscriber.';
+const PERMISSION_UID = 'plugin::users-permissions.permission'
+const SUBSCRIBER_ACTION_PREFIX = 'api::subscriber.subscriber.'
 
 /**
  * Removes every users-permissions permission on subscribers. The frontend
@@ -14,12 +14,12 @@ export async function revokeSubscriberPermissions(strapi: Core.Strapi): Promise<
   const permissions = (await strapi.db.query(PERMISSION_UID).findMany({
     select: ['id'],
     where: { action: { $startsWith: SUBSCRIBER_ACTION_PREFIX } },
-  })) as { id: number }[];
-  if (permissions.length === 0) return 0;
+  })) as { id: number }[]
+  if (permissions.length === 0) return 0
 
   await strapi.db.query(PERMISSION_UID).deleteMany({
     where: { id: { $in: permissions.map((permission) => permission.id) } },
-  });
-  await strapi.service('plugin::users-permissions.users-permissions').initialize();
-  return permissions.length;
+  })
+  await strapi.service('plugin::users-permissions.users-permissions').initialize()
+  return permissions.length
 }

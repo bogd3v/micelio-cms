@@ -1,13 +1,13 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
-import type { Context } from 'koa';
-import { FORWARDED_IP_HEADER, FORWARDER_SECRET_HEADER } from '../../constants/rate-limit';
-import { normalizeIp } from '../client-ip';
-import type { Forwarded } from './types';
+import { createHash, timingSafeEqual } from 'node:crypto'
+import type { Context } from 'koa'
+import { FORWARDED_IP_HEADER, FORWARDER_SECRET_HEADER } from '../../constants/rate-limit'
+import { normalizeIp } from '../client-ip'
+import type { Forwarded } from './types'
 
 /** Key the forwarder warns with when a request carries a wrong secret; the runtime routes it to a security event. */
-export const FORWARDER_SECRET_WARN_KEY = 'forwarder-secret';
+export const FORWARDER_SECRET_WARN_KEY = 'forwarder-secret'
 
-const digest = (value: string) => createHash('sha256').update(value).digest();
+const digest = (value: string) => createHash('sha256').update(value).digest()
 
 /** Reads the client address the trusted frontend forwards and strips the forwarding headers. */
 export interface Forwarder {
@@ -17,12 +17,12 @@ export interface Forwarder {
     resolved: string,
     warn: (key: string, message: string) => void,
     useClient?: boolean
-  ): Forwarded;
+  ): Forwarded
 }
 
 function headerValue(value: string | string[] | undefined): string | null {
-  if (typeof value === 'string') return value;
-  return Array.isArray(value) && typeof value[0] === 'string' ? value[0] : null;
+  if (typeof value === 'string') return value
+  return Array.isArray(value) && typeof value[0] === 'string' ? value[0] : null
 }
 
 /**
@@ -34,29 +34,29 @@ function headerValue(value: string | string[] | undefined): string | null {
  * logged. The secret is compared as hashes with `timingSafeEqual`.
  */
 export function createForwarder(secret: string): Forwarder {
-  const expected = secret ? digest(secret) : null;
+  const expected = secret ? digest(secret) : null
 
   return {
     apply(ctx, resolved, warn, useClient = true) {
-      const headers = ctx.req.headers;
-      const provided = headerValue(headers[FORWARDER_SECRET_HEADER]);
-      const claimed = headerValue(headers[FORWARDED_IP_HEADER]);
-      delete headers[FORWARDER_SECRET_HEADER];
-      delete headers[FORWARDED_IP_HEADER];
+      const headers = ctx.req.headers
+      const provided = headerValue(headers[FORWARDER_SECRET_HEADER])
+      const claimed = headerValue(headers[FORWARDED_IP_HEADER])
+      delete headers[FORWARDER_SECRET_HEADER]
+      delete headers[FORWARDED_IP_HEADER]
 
-      const plain = { forwarded: false, clientSupplied: false, ip: resolved };
-      if (!expected || provided === null || !useClient) return plain;
+      const plain = { forwarded: false, clientSupplied: false, ip: resolved }
+      if (!expected || provided === null || !useClient) return plain
       if (!timingSafeEqual(digest(provided), expected)) {
-        warn(FORWARDER_SECRET_WARN_KEY, 'a request sent a wrong forwarder secret, ignoring it');
-        return plain;
+        warn(FORWARDER_SECRET_WARN_KEY, 'a request sent a wrong forwarder secret, ignoring it')
+        return plain
       }
-      if (claimed === null) return { ...plain, forwarded: true };
-      const ip = normalizeIp(claimed);
+      if (claimed === null) return { ...plain, forwarded: true }
+      const ip = normalizeIp(claimed)
       if (!ip) {
-        warn('forwarder-ip', 'the forwarder sent an invalid client address, using the peer');
-        return { ...plain, forwarded: true };
+        warn('forwarder-ip', 'the forwarder sent an invalid client address, using the peer')
+        return { ...plain, forwarded: true }
       }
-      return { forwarded: true, clientSupplied: true, ip };
+      return { forwarded: true, clientSupplied: true, ip }
     },
-  };
+  }
 }

@@ -1,4 +1,4 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
 /**
  * Registers the plugin's two permissions, so roles can be given them in Settings → Roles
@@ -19,5 +19,5 @@ export async function registerPermissionActions(strapi: Core.Strapi): Promise<vo
       uid: 'manage',
       pluginName: 'fediverse',
     },
-  ]);
+  ])
 }

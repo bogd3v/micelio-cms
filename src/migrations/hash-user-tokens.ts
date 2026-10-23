@@ -1,13 +1,13 @@
-import { createHash } from 'node:crypto';
-import type { Core } from '@strapi/strapi';
+import { createHash } from 'node:crypto'
+import type { Core } from '@strapi/strapi'
 
 // Self-contained on purpose (standard, section 6): a migration keeps its own copies.
-const USER_UID = 'plugin::users-permissions.user';
-const TOKEN_COLUMNS = ['confirmationToken', 'resetPasswordToken'] as const;
-const HASHED = /^[0-9a-f]{64}$/;
-const BATCH_SIZE = 100;
+const USER_UID = 'plugin::users-permissions.user'
+const TOKEN_COLUMNS = ['confirmationToken', 'resetPasswordToken'] as const
+const HASHED = /^[0-9a-f]{64}$/
+const BATCH_SIZE = 100
 
-type TokenRow = { id: number } & Partial<Record<(typeof TOKEN_COLUMNS)[number], string | null>>;
+type TokenRow = { id: number } & Partial<Record<(typeof TOKEN_COLUMNS)[number], string | null>>
 
 /**
  * Replaces the plain confirmation tokens and reset codes of readers with their
@@ -21,9 +21,9 @@ type TokenRow = { id: number } & Partial<Record<(typeof TOKEN_COLUMNS)[number], 
  * working and their owners ask for a new one. Never logs a token.
  */
 export async function hashUserTokens(strapi: Core.Strapi): Promise<number> {
-  const users = strapi.db.query(USER_UID);
-  let rewritten = 0;
-  let lastId = 0;
+  const users = strapi.db.query(USER_UID)
+  let rewritten = 0
+  let lastId = 0
 
   for (;;) {
     const rows = (await users.findMany({
@@ -34,20 +34,20 @@ export async function hashUserTokens(strapi: Core.Strapi): Promise<number> {
       },
       orderBy: { id: 'asc' },
       limit: BATCH_SIZE,
-    })) as TokenRow[];
-    if (rows.length === 0) return rewritten;
-    lastId = rows[rows.length - 1].id;
+    })) as TokenRow[]
+    if (rows.length === 0) return rewritten
+    lastId = rows[rows.length - 1].id
 
     for (const row of rows) {
       for (const column of TOKEN_COLUMNS) {
-        const value = row[column];
-        if (typeof value !== 'string' || value === '' || HASHED.test(value)) continue;
+        const value = row[column]
+        if (typeof value !== 'string' || value === '' || HASHED.test(value)) continue
         // Match the value just read: a row that changed since is not overwritten.
         const updated = await users.update({
           where: { id: row.id, [column]: value },
           data: { [column]: createHash('sha256').update(value).digest('hex') },
-        });
-        if (updated) rewritten += 1;
+        })
+        if (updated) rewritten += 1
       }
     }
   }

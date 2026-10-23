@@ -1,7 +1,7 @@
-import { SHARED_BLOCKS } from './shared';
-import type { ResponseRoute, Shape } from './types';
+import { SHARED_BLOCKS } from './shared'
+import type { ResponseRoute, Shape } from './types'
 
-const POSTS_READER = 'server/api/posts/index.get.ts, server/utils/pageSections.ts';
+const POSTS_READER = 'server/api/posts/index.get.ts, server/utils/pageSections.ts'
 
 /** What the unpopulated list response carries, plus the populated relations of a post card. */
 const ARTICLE_CARD: Shape = {
@@ -20,7 +20,7 @@ const ARTICLE_CARD: Shape = {
   pathOrder: 'surplus',
   createdAt: 'surplus',
   updatedAt: 'surplus',
-};
+}
 
 /** The routes of `api::article.article`. */
 export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
@@ -247,4 +247,4 @@ export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
       meta: { use: 'surplus', of: { count: 'surplus' } },
     },
   },
-];
+]

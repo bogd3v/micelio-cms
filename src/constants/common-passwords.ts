@@ -505,4 +505,4 @@ export const COMMON_PASSWORDS: readonly string[] = [
   'doughboy',
   'lollipop',
   'qazwsxed',
-];
+]

@@ -22,25 +22,25 @@ const KEYS = [
   'FEDIVERSE_ENABLED',
   'FEDIVERSE_ACTOR_IDENTIFIER',
   'FEDIVERSE_ACTOR_USERNAME',
-] as const;
+] as const
 
-const saved: Record<string, string | undefined> = {};
+const saved: Record<string, string | undefined> = {}
 
 /** Sets `values` (and clears every other rate-limit variable); `restoreRateLimitEnv` undoes it. */
 export function setRateLimitEnv(values: Partial<Record<(typeof KEYS)[number], string>>): void {
   for (const key of KEYS) {
-    saved[key] = process.env[key];
-    delete process.env[key];
+    saved[key] = process.env[key]
+    delete process.env[key]
   }
-  Object.assign(process.env, values);
+  Object.assign(process.env, values)
 }
 
 export function restoreRateLimitEnv(): void {
   for (const key of KEYS) {
-    if (saved[key] === undefined) delete process.env[key];
-    else process.env[key] = saved[key];
+    if (saved[key] === undefined) delete process.env[key]
+    else process.env[key] = saved[key]
   }
 }
 
 /** Distinct client for the test client: loopback is a trusted proxy under `TRUST_PROXY=private`. */
-export const asClient = (ip: string) => ({ 'X-Forwarded-For': ip });
+export const asClient = (ip: string) => ({ 'X-Forwarded-For': ip })

@@ -6,25 +6,25 @@ const SECRET_VARIABLES = [
   'TRANSFER_TOKEN_SALT',
   'JWT_SECRET',
   'ENCRYPTION_KEY',
-] as const;
+] as const
 
 /** A secret shorter than this is refused in production (`npm run generate:keys` makes 44). */
-const MIN_SECRET_LENGTH = 32;
+const MIN_SECRET_LENGTH = 32
 
 /** Values copied from an example file: `tobemodified`, `toBeModified1`, `changeme`. */
-const PLACEHOLDER = /^(tobemodified|changeme|change-me)\d*$/i;
+const PLACEHOLDER = /^(tobemodified|changeme|change-me)\d*$/i
 
 /** The database password the Strapi and Compose examples used to ship. */
-const EXAMPLE_DATABASE_PASSWORD = 'strapi';
+const EXAMPLE_DATABASE_PASSWORD = 'strapi'
 
-type Env = Record<string, string | undefined>;
+type Env = Record<string, string | undefined>
 
 function weakness(value: string | undefined): string | null {
-  const text = value?.trim() ?? '';
-  if (text === '') return 'not set';
-  if (PLACEHOLDER.test(text)) return 'a placeholder';
-  if (text.length < MIN_SECRET_LENGTH) return `shorter than ${MIN_SECRET_LENGTH} characters`;
-  return null;
+  const text = value?.trim() ?? ''
+  if (text === '') return 'not set'
+  if (PLACEHOLDER.test(text)) return 'a placeholder'
+  if (text.length < MIN_SECRET_LENGTH) return `shorter than ${MIN_SECRET_LENGTH} characters`
+  return null
 }
 
 /**
@@ -41,21 +41,21 @@ function weakness(value: string | undefined): string | null {
  * @throws `Error` listing every offending variable.
  */
 export function assertSecretsConfigured(env: Env = process.env): void {
-  if (env.NODE_ENV !== 'production') return;
+  if (env.NODE_ENV !== 'production') return
 
-  const problems: string[] = [];
+  const problems: string[] = []
   for (const name of SECRET_VARIABLES) {
-    const values = name === 'APP_KEYS' ? (env[name] ?? '').split(',') : [env[name]];
-    const reason = values.map(weakness).find((found) => found !== null);
-    if (reason) problems.push(`${name} is ${reason}`);
+    const values = name === 'APP_KEYS' ? (env[name] ?? '').split(',') : [env[name]]
+    const reason = values.map(weakness).find((found) => found !== null)
+    if (reason) problems.push(`${name} is ${reason}`)
   }
 
   // A connection string carries its own credentials.
   if (env.DATABASE_CLIENT === 'postgres' && !env.DATABASE_URL?.trim()) {
-    const password = env.DATABASE_PASSWORD?.trim() ?? '';
-    if (password === '') problems.push('DATABASE_PASSWORD is not set');
+    const password = env.DATABASE_PASSWORD?.trim() ?? ''
+    if (password === '') problems.push('DATABASE_PASSWORD is not set')
     else if (password === EXAMPLE_DATABASE_PASSWORD) {
-      problems.push('DATABASE_PASSWORD is the example password');
+      problems.push('DATABASE_PASSWORD is the example password')
     }
   }
 
@@ -63,6 +63,6 @@ export function assertSecretsConfigured(env: Env = process.env): void {
     throw new Error(
       `Insecure configuration in production: ${problems.join('; ')}. ` +
         'Generate the keys with `npm run generate:keys` and set a database password of your own.'
-    );
+    )
   }
 }

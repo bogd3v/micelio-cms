@@ -1,5 +1,5 @@
 /** Schemes a URL taken from a remote server may keep: anything else (`javascript:`, `data:`) is dropped. */
-const SAFE_SCHEMES = new Set(['https:', 'http:']);
+const SAFE_SCHEMES = new Set(['https:', 'http:'])
 
 /**
  * A URL taken from a remote server (an actor's avatar), safe to store and to render as a link or an image.
@@ -14,19 +14,19 @@ const SAFE_SCHEMES = new Set(['https:', 'http:']);
  * @returns The normalised URL (`URL.href`), or `null` when the value is not one to keep.
  */
 export function safeRemoteUrl(value: unknown, maxLength: number): string | null {
-  let url: URL;
+  let url: URL
   if (value instanceof URL) {
-    url = value;
+    url = value
   } else if (typeof value === 'string') {
     try {
-      url = new URL(value);
+      url = new URL(value)
     } catch {
-      return null;
+      return null
     }
   } else {
-    return null;
+    return null
   }
-  if (!SAFE_SCHEMES.has(url.protocol)) return null;
-  if (url.username || url.password) return null;
-  return url.href.length <= maxLength ? url.href : null;
+  if (!SAFE_SCHEMES.has(url.protocol)) return null
+  if (url.username || url.password) return null
+  return url.href.length <= maxLength ? url.href : null
 }

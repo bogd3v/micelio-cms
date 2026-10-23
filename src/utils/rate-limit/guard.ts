@@ -1,10 +1,10 @@
-import type { Context } from 'koa';
-import type { RequestGuard } from '../../types/rate-limit';
-import { resolveClientIp } from '../client-ip';
-import { groupKey } from './keys';
-import { setRateLimitHeaders, writeTooManyRequests } from './respond';
-import type { RateLimitRuntime } from './types';
-import { rateLimitState } from './state';
+import type { Context } from 'koa'
+import type { RequestGuard } from '../../types/rate-limit'
+import { resolveClientIp } from '../client-ip'
+import { groupKey } from './keys'
+import { setRateLimitHeaders, writeTooManyRequests } from './respond'
+import type { RateLimitRuntime } from './types'
+import { rateLimitState } from './state'
 
 /**
  * The guard the fediverse plugin calls before Fedify (the plugin's middleware
@@ -16,28 +16,28 @@ import { rateLimitState } from './state';
 export function createRequestGuard(runtime: RateLimitRuntime): RequestGuard {
   return async (ctx: Context, kind) => {
     try {
-      const group = kind === 'inbox' ? 'fediverse-inbox' : 'api';
-      if (!runtime.limiters.rule(group)) return false;
+      const group = kind === 'inbox' ? 'fediverse-inbox' : 'api'
+      if (!runtime.limiters.rule(group)) return false
 
       const { ip } = resolveClientIp(
         runtime.trust,
         ctx.req.socket.remoteAddress,
         ctx.get(runtime.config.proxyIpHeader)
-      );
+      )
       // The root middlewares skip a request the guard already counted.
-      rateLimitState(ctx).checked = true;
+      rateLimitState(ctx).checked = true
 
-      const decision = await runtime.limiters.consume(group, groupKey(ip, '', false));
-      if (!decision) return false;
+      const decision = await runtime.limiters.consume(group, groupKey(ip, '', false))
+      if (!decision) return false
       if (decision.allowed) {
-        setRateLimitHeaders(ctx, decision);
-        return false;
+        setRateLimitHeaders(ctx, decision)
+        return false
       }
-      runtime.events.rejected(ip, group, ctx.path);
-      writeTooManyRequests(ctx, decision);
-      return true;
+      runtime.events.rejected(ip, group, ctx.path)
+      writeTooManyRequests(ctx, decision)
+      return true
     } catch {
-      return false;
+      return false
     }
-  };
+  }
 }

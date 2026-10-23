@@ -93,7 +93,7 @@ Exported functions under `src/` declare their return type (`@typescript-eslint/e
 1. **Use `import type` for type-only imports**:
 
    ```typescript
-   import type { Core } from '@strapi/strapi';
+   import type { Core } from '@strapi/strapi'
    ```
 
 2. **Config functions use typed parameters**:
@@ -101,12 +101,12 @@ Exported functions under `src/` declare their return type (`@typescript-eslint/e
    ```typescript
    const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server => {
      // ...
-   };
+   }
    ```
 
 3. **Default export for config files**:
    ```typescript
-   export default config;
+   export default config
    ```
 
 ### Naming Conventions
@@ -125,16 +125,16 @@ Exported functions under `src/` declare their return type (`@typescript-eslint/e
 
 ```typescript
 // Controller
-import { factories } from '@strapi/strapi';
-export default factories.createCoreController('api::article.article');
+import { factories } from '@strapi/strapi'
+export default factories.createCoreController('api::article.article')
 
 // Service
-import { factories } from '@strapi/strapi';
-export default factories.createCoreService('api::article.article');
+import { factories } from '@strapi/strapi'
+export default factories.createCoreService('api::article.article')
 
 // Router
-import { factories } from '@strapi/strapi';
-export default factories.createCoreRouter('api::article.article');
+import { factories } from '@strapi/strapi'
+export default factories.createCoreRouter('api::article.article')
 ```
 
 **Creating documents** (Strapi 5 style):
@@ -142,9 +142,9 @@ export default factories.createCoreRouter('api::article.article');
 ```typescript
 const draft = await strapi.documents('api::article.article').create({
   data: { title: 'Hello' },
-});
+})
 
-await strapi.documents('api::article.article').publish({ documentId: draft.documentId });
+await strapi.documents('api::article.article').publish({ documentId: draft.documentId })
 ```
 
 **Querying documents**:
@@ -153,7 +153,7 @@ await strapi.documents('api::article.article').publish({ documentId: draft.docum
 const articles = await strapi.documents('api::article.article').findMany({
   filters: { category: { name: 'Tech' } },
   populate: ['cover', 'author'],
-});
+})
 ```
 
 ### Environment Variables
@@ -174,20 +174,20 @@ Catch an error only where it can be handled or given context, log it with `strap
 ```typescript
 // In services/queries - catch, add context and log the cause
 try {
-  await strapi.documents('api::model.model').create({ data });
+  await strapi.documents('api::model.model').create({ data })
 } catch (error) {
   strapi.log.error(
     `Could not create model: ${error instanceof Error ? error.message : String(error)}`
-  );
-  throw error;
+  )
+  throw error
 }
 
 // In standalone scripts - set the exit code
 try {
-  await main();
+  await main()
 } catch (error) {
-  console.error(error);
-  process.exitCode = 1;
+  console.error(error)
+  process.exitCode = 1
 }
 ```
 
@@ -201,7 +201,7 @@ Supports two database clients configured via `DATABASE_CLIENT`:
 const connections = {
   postgres: {/* ... */},
   sqlite: {/* ... */},
-};
+}
 ```
 
 - **Development default**: SQLite

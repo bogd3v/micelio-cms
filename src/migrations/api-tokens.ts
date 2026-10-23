@@ -1,19 +1,19 @@
-import type { Core } from '@strapi/strapi';
-import { READ_ACTIONS as MICELIO_READ_ACTIONS } from '../plugins/micelio/server/src/constants/actions';
+import type { Core } from '@strapi/strapi'
+import { READ_ACTIONS as MICELIO_READ_ACTIONS } from '../plugins/micelio/server/src/constants/actions'
 
-const TOKEN_UID = 'admin::api-token';
+const TOKEN_UID = 'admin::api-token'
 
 /** A Custom API token an instance creates from an environment variable. */
 export interface EnvToken {
   /** Variable holding the access key, shared with whoever uses the token. */
-  env: string;
-  name: string;
-  description: string;
-  permissions: string[];
+  env: string
+  name: string
+  description: string
+  permissions: string[]
 }
 
 /** Name of the frontend server's Custom API token. */
-export const FRONTEND_TOKEN_NAME = 'frontend';
+export const FRONTEND_TOKEN_NAME = 'frontend'
 
 /**
  * What the frontend reads and writes through Strapi, as listed in micelio's
@@ -34,10 +34,10 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'api::subscriber.subscriber.create',
   'api::subscriber.subscriber.update',
   'api::subscriber.subscriber.delete',
-];
+]
 
 /** Name of the static build's Custom API token. */
-export const BUILD_TOKEN_NAME = 'build';
+export const BUILD_TOKEN_NAME = 'build'
 
 /**
  * What a static build reads (micelio ADR 0006, section 7): published content
@@ -51,7 +51,7 @@ export const BUILD_TOKEN_PERMISSIONS = [
   'api::site-setting.site-setting.find',
   'api::page.page.find',
   'api::author.author.find',
-];
+]
 
 /** Definition of the frontend token, created from `FRONTEND_API_TOKEN`. */
 export const FRONTEND_TOKEN: EnvToken = {
@@ -59,7 +59,7 @@ export const FRONTEND_TOKEN: EnvToken = {
   name: FRONTEND_TOKEN_NAME,
   description: 'Frontend server (FRONTEND_API_TOKEN)',
   permissions: FRONTEND_TOKEN_PERMISSIONS,
-};
+}
 
 /** Definition of the static build token, created from `BUILD_API_TOKEN`. */
 export const BUILD_TOKEN: EnvToken = {
@@ -67,26 +67,26 @@ export const BUILD_TOKEN: EnvToken = {
   name: BUILD_TOKEN_NAME,
   description: 'Static build, read-only (BUILD_API_TOKEN)',
   permissions: BUILD_TOKEN_PERMISSIONS,
-};
+}
 
 /** Shortest access key accepted: a guessable token would open the subscribers. */
-const MIN_KEY_LENGTH = 32;
+const MIN_KEY_LENGTH = 32
 
 /** `disabled`: the variable is unset; `created`, `updated`: the token was written; `unchanged`: key and permissions already match. */
-export type EnvTokenReport = 'disabled' | 'created' | 'updated' | 'unchanged';
+export type EnvTokenReport = 'disabled' | 'created' | 'updated' | 'unchanged'
 
 interface TokenRow {
-  id: number;
-  accessKey: string;
-  type: string;
-  permissions?: { action: string }[];
+  id: number
+  accessKey: string
+  type: string
+  permissions?: { action: string }[]
 }
 
 interface TokenService {
-  hash(accessKey: string): string;
-  getByName(name: string): Promise<{ id: number } | null>;
-  create(attributes: Record<string, unknown>): Promise<{ id: number }>;
-  update(id: number, attributes: Record<string, unknown>): Promise<unknown>;
+  hash(accessKey: string): string
+  getByName(name: string): Promise<{ id: number } | null>
+  create(attributes: Record<string, unknown>): Promise<{ id: number }>
+  update(id: number, attributes: Record<string, unknown>): Promise<unknown>
 }
 
 /**
@@ -103,20 +103,20 @@ export async function ensureEnvToken(
   strapi: Core.Strapi,
   token: EnvToken
 ): Promise<EnvTokenReport> {
-  const accessKey = process.env[token.env]?.trim();
-  if (!accessKey) return 'disabled';
+  const accessKey = process.env[token.env]?.trim()
+  if (!accessKey) return 'disabled'
   if (accessKey.length < MIN_KEY_LENGTH) {
-    throw new Error(`${token.env} must be at least ${MIN_KEY_LENGTH} characters long`);
+    throw new Error(`${token.env} must be at least ${MIN_KEY_LENGTH} characters long`)
   }
 
-  const tokens = strapi.service(TOKEN_UID) as unknown as TokenService;
-  const hashed = tokens.hash(accessKey);
+  const tokens = strapi.service(TOKEN_UID) as unknown as TokenService
+  const hashed = tokens.hash(accessKey)
   const keyFields = {
     accessKey: hashed,
     encryptedKey: strapi.service('admin::encryption').encrypt(accessKey),
-  };
+  }
 
-  const existing = await tokens.getByName(token.name);
+  const existing = await tokens.getByName(token.name)
   if (!existing) {
     const created = await tokens.create({
       name: token.name,
@@ -124,35 +124,35 @@ export async function ensureEnvToken(
       type: 'custom',
       lifespan: null,
       permissions: token.permissions,
-    });
-    await strapi.db.query(TOKEN_UID).update({ where: { id: created.id }, data: keyFields });
-    return 'created';
+    })
+    await strapi.db.query(TOKEN_UID).update({ where: { id: created.id }, data: keyFields })
+    return 'created'
   }
 
   const row = (await strapi.db.query(TOKEN_UID).findOne({
     where: { id: existing.id },
     populate: ['permissions'],
-  })) as TokenRow;
-  const actions = (row.permissions ?? []).map((permission) => permission.action).sort();
+  })) as TokenRow
+  const actions = (row.permissions ?? []).map((permission) => permission.action).sort()
   const samePermissions =
     row.type === 'custom' &&
     actions.length === token.permissions.length &&
-    [...token.permissions].sort().every((action, index) => actions[index] === action);
-  if (row.accessKey === hashed && samePermissions) return 'unchanged';
+    [...token.permissions].sort().every((action, index) => actions[index] === action)
+  if (row.accessKey === hashed && samePermissions) return 'unchanged'
 
   if (!samePermissions) {
-    await tokens.update(row.id, { type: 'custom', permissions: token.permissions });
+    await tokens.update(row.id, { type: 'custom', permissions: token.permissions })
   }
   if (row.accessKey !== hashed) {
-    await strapi.db.query(TOKEN_UID).update({ where: { id: row.id }, data: keyFields });
+    await strapi.db.query(TOKEN_UID).update({ where: { id: row.id }, data: keyFields })
   }
-  return 'updated';
+  return 'updated'
 }
 
 /** The frontend's token, from `FRONTEND_API_TOKEN`. */
 export const ensureFrontendToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
-  ensureEnvToken(strapi, FRONTEND_TOKEN);
+  ensureEnvToken(strapi, FRONTEND_TOKEN)
 
 /** The static build's read-only token, from `BUILD_API_TOKEN`. */
 export const ensureBuildToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
-  ensureEnvToken(strapi, BUILD_TOKEN);
+  ensureEnvToken(strapi, BUILD_TOKEN)

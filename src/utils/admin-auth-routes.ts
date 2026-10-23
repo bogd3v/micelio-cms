@@ -1,52 +1,52 @@
-import type { Context } from 'koa';
-import { SECURITY_EVENTS, type SecurityEvent } from '../constants/security-events';
-import type { SecurityReason } from '../types/security-events';
-import { userIdFromState } from './auth-events';
+import type { Context } from 'koa'
+import { SECURITY_EVENTS, type SecurityEvent } from '../constants/security-events'
+import type { SecurityReason } from '../types/security-events'
+import { userIdFromState } from './auth-events'
 
 /** A refused admin sign-in, with the reason when the error tells it. */
 export interface AdminLoginRefusal {
-  reason?: 'invalid-credentials' | 'blocked-account';
+  reason?: 'invalid-credentials' | 'blocked-account'
 }
 
 /** What a route knows about the answer it logs: the thrown error, or the finished context. */
 export interface AdminAnswer {
-  ctx: Context;
-  error?: unknown;
+  ctx: Context
+  error?: unknown
 }
 
 /** One admin route that takes or issues credentials, and the events it writes. */
 export interface AdminAuthRoute {
-  method: string;
+  method: string
   /** Normalised path (lower case, no trailing slash). */
-  path: string;
+  path: string
   /** Event for the answer `successStatus`, or `null` when only refusals are events. */
-  success: SecurityEvent | null;
+  success: SecurityEvent | null
   /** Event for a refused request, or `null` when only successes are events. */
-  failure: SecurityEvent | null;
-  successStatus: number;
+  failure: SecurityEvent | null
+  successStatus: number
   /** Where the user id comes from: the response body, or the signed-in user of the request. */
-  actor: 'body' | 'state';
+  actor: 'body' | 'state'
   /** Whether a 5xx (answered or thrown) is a failure without reason: the route issues credentials. */
-  logUnexpected: boolean;
+  logUnexpected: boolean
   /** `reason` of a failure; only values of the closed set. */
-  reason?: (answer: AdminAnswer) => SecurityReason | undefined;
+  reason?: (answer: AdminAnswer) => SecurityReason | undefined
   /** `false` when the request is not an authentication attempt (no event either way). */
-  isAttempt?: (answer: AdminAnswer) => boolean;
+  isAttempt?: (answer: AdminAnswer) => boolean
 }
 
 /** Strapi answers `501` when the login strategy itself failed unexpectedly. */
-const NOT_IMPLEMENTED = 501;
-const TOO_MANY_REQUESTS = 429;
+const NOT_IMPLEMENTED = 501
+const TOO_MANY_REQUESTS = 429
 /** Names of the errors Strapi throws for a refused request; `strapi::errors` answers them 4xx. */
 const REFUSAL_ERRORS = new Set([
   'ApplicationError',
   'ValidationError',
   'UnauthorizedError',
   'ForbiddenError',
-]);
-const INVALID_CREDENTIALS_MESSAGE = 'Invalid credentials';
-const INACTIVE_MESSAGE = 'User not active';
-const MISSING_REFRESH_MESSAGE = 'Missing refresh token';
+])
+const INVALID_CREDENTIALS_MESSAGE = 'Invalid credentials'
+const INACTIVE_MESSAGE = 'User not active'
+const MISSING_REFRESH_MESSAGE = 'Missing refresh token'
 
 /**
  * Classifies an error thrown by an admin auth route: the refusal to log, or
@@ -62,17 +62,17 @@ const MISSING_REFRESH_MESSAGE = 'Missing refresh token';
  * @internal
  */
 export function adminLoginRefusal(error: unknown): AdminLoginRefusal | null {
-  const { name, message } = (error ?? {}) as { name?: unknown; message?: unknown };
+  const { name, message } = (error ?? {}) as { name?: unknown; message?: unknown }
   if (name === 'RateLimitError' || typeof name !== 'string' || !REFUSAL_ERRORS.has(name)) {
-    return null;
+    return null
   }
   if (name === 'ApplicationError' && message === INVALID_CREDENTIALS_MESSAGE) {
-    return { reason: 'invalid-credentials' };
+    return { reason: 'invalid-credentials' }
   }
   if (name === 'ApplicationError' && message === INACTIVE_MESSAGE) {
-    return { reason: 'blocked-account' };
+    return { reason: 'blocked-account' }
   }
-  return {};
+  return {}
 }
 
 /**
@@ -84,7 +84,7 @@ export function adminLoginRefusal(error: unknown): AdminLoginRefusal | null {
 export function isRefusedStatus(status: number): boolean {
   return (
     (status >= 400 && status < 500 && status !== TOO_MANY_REQUESTS) || status === NOT_IMPLEMENTED
-  );
+  )
 }
 
 /**
@@ -180,22 +180,20 @@ export const ADMIN_AUTH_ROUTES: readonly AdminAuthRoute[] = [
       'currentPassword' in detailsOf(answer) ? 'invalid-credentials' : undefined,
     isAttempt: isPasswordChange,
   },
-];
+]
 
 /** Message of the error a route answered with, thrown or written to the body. */
 function messageOf({ ctx, error }: AdminAnswer): unknown {
-  if (error instanceof Error) return error.message;
-  return (ctx.body as { error?: { message?: unknown } } | null | undefined)?.error?.message;
+  if (error instanceof Error) return error.message
+  return (ctx.body as { error?: { message?: unknown } } | null | undefined)?.error?.message
 }
 
 /** The `details` of the error a route answered with. */
 function detailsOf({ ctx, error }: AdminAnswer): Record<string, unknown> {
   const details =
     (error as { details?: unknown } | null | undefined)?.details ??
-    (ctx.body as { error?: { details?: unknown } } | null | undefined)?.error?.details;
-  return typeof details === 'object' && details !== null
-    ? (details as Record<string, unknown>)
-    : {};
+    (ctx.body as { error?: { details?: unknown } } | null | undefined)?.error?.details
+  return typeof details === 'object' && details !== null ? (details as Record<string, unknown>) : {}
 }
 
 /**
@@ -204,15 +202,15 @@ function detailsOf({ ctx, error }: AdminAnswer): Record<string, unknown> {
  * validation's `details.errors`.
  */
 function refusedFields(answer: AdminAnswer): Set<string> {
-  const details = detailsOf(answer);
-  const fields = new Set(Object.keys(details));
+  const details = detailsOf(answer)
+  const fields = new Set(Object.keys(details))
   if (Array.isArray(details.errors)) {
     for (const entry of details.errors as Array<{ path?: unknown }>) {
-      const path = Array.isArray(entry?.path) ? entry.path[0] : entry?.path;
-      if (typeof path === 'string') fields.add(path.split('.')[0]);
+      const path = Array.isArray(entry?.path) ? entry.path[0] : entry?.path
+      if (typeof path === 'string') fields.add(path.split('.')[0])
     }
   }
-  return fields;
+  return fields
 }
 
 /**
@@ -222,8 +220,8 @@ function refusedFields(answer: AdminAnswer): Set<string> {
  * password, says nothing about the current password and is not an event.
  */
 function isPasswordChange(answer: AdminAnswer): boolean {
-  const { ctx } = answer;
-  const body = (ctx.request as unknown as { body?: Record<string, unknown> }).body;
+  const { ctx } = answer
+  const body = (ctx.request as unknown as { body?: Record<string, unknown> }).body
   if (
     userIdFromState(ctx.state.user) === undefined ||
     typeof body?.currentPassword !== 'string' ||
@@ -231,8 +229,8 @@ function isPasswordChange(answer: AdminAnswer): boolean {
     typeof body.password !== 'string' ||
     body.password === ''
   ) {
-    return false;
+    return false
   }
-  const fields = refusedFields(answer);
-  return fields.has('currentPassword') || !(fields.has('password') || fields.has('email'));
+  const fields = refusedFields(answer)
+  return fields.has('currentPassword') || !(fields.has('password') || fields.has('email'))
 }

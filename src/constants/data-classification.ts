@@ -4,10 +4,10 @@
 // Strapi loads and against that document (ASVS V14.2.4).
 
 /** The three protection levels of `docs/security/data.md`. */
-type DataLevel = 'restricted' | 'personal' | 'public';
+type DataLevel = 'restricted' | 'personal' | 'public'
 
 /** Attributes by name, each with its protection level. */
-type AttributeLevels = Readonly<Record<string, DataLevel>>;
+type AttributeLevels = Readonly<Record<string, DataLevel>>
 
 /**
  * Attributes Strapi adds to every content type. They carry no data of their own,
@@ -21,7 +21,7 @@ export const STRAPI_SYSTEM_ATTRIBUTES: readonly string[] = [
   'updatedBy',
   'locale',
   'localizations',
-];
+]
 
 /**
  * Level of each attribute, by content type UID (the literals are duplicated on
@@ -106,4 +106,4 @@ export const DATA_CLASSIFICATION: Readonly<Record<string, AttributeLevels>> = {
     views30d: 'public',
     syncedAt: 'public',
   },
-};
+}

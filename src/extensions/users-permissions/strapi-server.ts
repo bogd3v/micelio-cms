@@ -1,8 +1,8 @@
 // Adds DELETE /api/users/me so each person can delete their own account
 // (issue #52). Strapi has no such route, and opening `DELETE /api/users/:id`
 // to a role would let it delete anyone.
-import type { Context, Next } from 'koa';
-import { errors } from '@strapi/utils';
+import type { Context, Next } from 'koa'
+import { errors } from '@strapi/utils'
 import {
   wrapChangePasswordEvents,
   wrapDestroyMeEvents,
@@ -11,32 +11,32 @@ import {
   wrapLoginEvents,
   wrapRegisterEvents,
   wrapResetPasswordEvents,
-} from './auth-events';
-import { checkPassword, deleteAccount } from './delete-account';
-import { handleEmailConfirmation, onlyConfirmation } from './email-confirmation';
-import { wrapJwtClaims } from './jwt-claims';
+} from './auth-events'
+import { checkPassword, deleteAccount } from './delete-account'
+import { handleEmailConfirmation, onlyConfirmation } from './email-confirmation'
+import { wrapJwtClaims } from './jwt-claims'
 import {
   SECURITY_ATTRIBUTES,
   wrapJwtService,
   wrapResetPassword,
   wrapUserService,
-} from './reset-security';
+} from './reset-security'
 
-type Route = { method: string; path: string; handler: string; config?: Record<string, unknown> };
+type Route = { method: string; path: string; handler: string; config?: Record<string, unknown> }
 
 /** The plugin exports `auth` as a factory, so a property assigned on it would be ignored. */
 type AuthControllerFactory = (args: {
-  strapi: unknown;
-}) => Record<string, (ctx: Context) => Promise<unknown>>;
+  strapi: unknown
+}) => Record<string, (ctx: Context) => Promise<unknown>>
 
 interface UsersPermissionsPlugin {
   controllers: {
-    user: Record<string, (ctx: Context) => Promise<unknown>>;
-    auth: AuthControllerFactory;
-  };
-  services: Record<string, (args: { strapi: unknown }) => Record<string, never>>;
-  contentTypes: { user: { schema: { attributes: Record<string, unknown> } } };
-  routes: { 'content-api': { routes: Route[] } };
+    user: Record<string, (ctx: Context) => Promise<unknown>>
+    auth: AuthControllerFactory
+  }
+  services: Record<string, (args: { strapi: unknown }) => Record<string, never>>
+  contentTypes: { user: { schema: { attributes: Record<string, unknown> } } }
+  routes: { 'content-api': { routes: Route[] } }
 }
 
 /**
@@ -45,64 +45,64 @@ interface UsersPermissionsPlugin {
  * would get a fresh bucket each time and bypass the limit.
  */
 async function onlyPassword(ctx: Context, next: Next) {
-  const body = (ctx.request as unknown as { body?: { password?: unknown } }).body;
-  (ctx.request as unknown as { body: object }).body = { password: body?.password };
-  await next();
+  const body = (ctx.request as unknown as { body?: { password?: unknown } }).body
+  ;(ctx.request as unknown as { body: object }).body = { password: body?.password }
+  await next()
 }
 
 type SessionUser = {
-  id: number;
-  role?: { id: number; documentId: string; name: string; type: string };
-};
+  id: number
+  role?: { id: number; documentId: string; name: string; type: string }
+}
 
 export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
   // Reset codes expire and a password change revokes older JWTs (GHSA-xfrm-8c63-m3cj).
-  Object.assign(plugin.contentTypes.user.schema.attributes, SECURITY_ATTRIBUTES);
-  plugin.services.user = wrapUserService(plugin.services.user as never) as never;
-  plugin.services.jwt = wrapJwtService(wrapJwtClaims(plugin.services.jwt as never)) as never;
-  const authFactory = plugin.controllers.auth;
+  Object.assign(plugin.contentTypes.user.schema.attributes, SECURITY_ATTRIBUTES)
+  plugin.services.user = wrapUserService(plugin.services.user as never) as never
+  plugin.services.jwt = wrapJwtService(wrapJwtClaims(plugin.services.jwt as never)) as never
+  const authFactory = plugin.controllers.auth
   plugin.controllers.auth = (args) => {
-    const auth = authFactory(args);
+    const auth = authFactory(args)
     // The event wrappers are outermost, so they see the final outcome (ASVS V16.3.1).
-    auth.resetPassword = wrapResetPasswordEvents(strapi, wrapResetPassword(auth.resetPassword));
-    auth.emailConfirmation = wrapEmailConfirmationEvents(strapi, handleEmailConfirmation);
-    auth.callback = wrapLoginEvents(strapi, auth.callback);
-    auth.register = wrapRegisterEvents(strapi, auth.register);
-    auth.forgotPassword = wrapForgotPasswordEvents(strapi, auth.forgotPassword);
-    auth.changePassword = wrapChangePasswordEvents(strapi, auth.changePassword);
-    return auth;
-  };
+    auth.resetPassword = wrapResetPasswordEvents(strapi, wrapResetPassword(auth.resetPassword))
+    auth.emailConfirmation = wrapEmailConfirmationEvents(strapi, handleEmailConfirmation)
+    auth.callback = wrapLoginEvents(strapi, auth.callback)
+    auth.register = wrapRegisterEvents(strapi, auth.register)
+    auth.forgotPassword = wrapForgotPasswordEvents(strapi, auth.forgotPassword)
+    auth.changePassword = wrapChangePasswordEvents(strapi, auth.changePassword)
+    return auth
+  }
 
   // The frontend reads the role of the session user (`role.type === 'editor'`)
   // from /users/me, but populating `role` needs `role.find` on the caller's
   // role, which would list every role to anyone signed in. The authenticated
   // user's own role is already loaded, so add it when the response lacks it.
-  const me = plugin.controllers.user.me;
+  const me = plugin.controllers.user.me
   plugin.controllers.user.me = async (ctx: Context) => {
-    await me(ctx);
-    const role = (ctx.state.user as SessionUser | undefined)?.role;
-    const body = ctx.body as Record<string, unknown> | undefined;
+    await me(ctx)
+    const role = (ctx.state.user as SessionUser | undefined)?.role
+    const body = ctx.body as Record<string, unknown> | undefined
     if (role && body && typeof body === 'object' && !body.role) {
-      const { id, documentId, name, type } = role;
-      ctx.body = { ...body, role: { id, documentId, name, type } };
+      const { id, documentId, name, type } = role
+      ctx.body = { ...body, role: { id, documentId, name, type } }
     }
-  };
+  }
 
   plugin.controllers.user.destroyMe = wrapDestroyMeEvents(strapi, async (ctx: Context) => {
     // Only the user of the JWT, never an id from the request. The Public role
     // has this action only so a request without a JWT gets here and answers
     // 401, as /users/me does, instead of Strapi's 403.
-    const user = ctx.state.user as SessionUser | undefined;
-    if (!user) return ctx.unauthorized();
+    const user = ctx.state.user as SessionUser | undefined
+    if (!user) return ctx.unauthorized()
 
-    const { password } = (ctx.request as unknown as { body: { password?: unknown } }).body;
+    const { password } = (ctx.request as unknown as { body: { password?: unknown } }).body
     if (!(await checkPassword(strapi, user.id, password))) {
-      throw new errors.ValidationError('Invalid password');
+      throw new errors.ValidationError('Invalid password')
     }
 
-    await deleteAccount(strapi, user.id);
-    ctx.status = 204;
-  });
+    await deleteAccount(strapi, user.id)
+    ctx.status = 204
+  })
 
   // First, so `/users/:id` doesn't take `me` as an id.
   plugin.routes['content-api'].routes.unshift({
@@ -113,7 +113,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
       prefix: '',
       middlewares: [onlyPassword, 'plugin::users-permissions.rateLimit'],
     },
-  });
+  })
 
   // POST confirms without a GET (ASVS V3.5.3). Same action as the GET, so the
   // Public role's permission already covers it.
@@ -125,7 +125,7 @@ export default (plugin: UsersPermissionsPlugin): UsersPermissionsPlugin => {
       prefix: '',
       middlewares: [onlyConfirmation, 'plugin::users-permissions.rateLimit'],
     },
-  });
+  })
 
-  return plugin;
-};
+  return plugin
+}

@@ -5,9 +5,9 @@
 // (`git -C ../micelio rev-parse HEAD`); `tests/frontend-queries.test.ts` compares
 // the populate constants with a checkout of micelio when there is one.
 
-const IMAGE = { fields: ['url', 'alternativeText', 'caption', 'width', 'height'] };
-const PAGE_MEDIA = { fields: ['url', 'alternativeText', 'width', 'height', 'mime'] };
-const SITE_IMAGE = { fields: ['url', 'alternativeText', 'width', 'height'] };
+const IMAGE = { fields: ['url', 'alternativeText', 'caption', 'width', 'height'] }
+const PAGE_MEDIA = { fields: ['url', 'alternativeText', 'width', 'height', 'mime'] }
+const SITE_IMAGE = { fields: ['url', 'alternativeText', 'width', 'height'] }
 
 /** `POST_CARD_POPULATE`: a post of a list. */
 export const POST_CARD_POPULATE = {
@@ -16,7 +16,7 @@ export const POST_CARD_POPULATE = {
   author: { fields: ['name'], populate: { avatar: IMAGE } },
   seo: { populate: { metaImage: IMAGE } },
   tags: { fields: ['name', 'slug'] },
-};
+}
 
 /** `ARTICLE_POPULATE`: a whole article. */
 export const ARTICLE_POPULATE = {
@@ -35,7 +35,7 @@ export const ARTICLE_POPULATE = {
   },
   references: true,
   localizations: { fields: ['slug', 'locale', 'publishedAt'] },
-};
+}
 
 /** `ABOUT_POPULATE`: the About page and its blocks. */
 export const ABOUT_POPULATE = {
@@ -59,7 +59,7 @@ export const ABOUT_POPULATE = {
     },
   },
   seo: { populate: { metaImage: IMAGE } },
-};
+}
 
 /** `PAGE_POPULATE`: a page and its sections. */
 export const PAGE_POPULATE = {
@@ -85,7 +85,7 @@ export const PAGE_POPULATE = {
       'section.scene': { populate: { model: PAGE_MEDIA, poster: PAGE_MEDIA } },
     },
   },
-};
+}
 
 /** `SITE_POPULATE`: the site settings. */
 export const SITE_POPULATE = {
@@ -97,10 +97,10 @@ export const SITE_POPULATE = {
   modules: true,
   theme: { populate: '*' },
   homePage: { fields: ['slug'] },
-};
+}
 
 /** `FEED_POPULATE`: the RSS feed, which reads the cover URL and the category name. */
 export const FEED_POPULATE = {
   cover: { fields: ['url'] },
   category: { fields: ['name'] },
-};
+}

@@ -63,25 +63,25 @@ Create `src/api/event/content-types/event/schema.json`:
 Create `src/api/event/controllers/event.ts`:
 
 ```typescript
-import { factories } from '@strapi/strapi';
+import { factories } from '@strapi/strapi'
 
-export default factories.createCoreController('api::event.event');
+export default factories.createCoreController('api::event.event')
 ```
 
 Create `src/api/event/services/event.ts`:
 
 ```typescript
-import { factories } from '@strapi/strapi';
+import { factories } from '@strapi/strapi'
 
-export default factories.createCoreService('api::event.event');
+export default factories.createCoreService('api::event.event')
 ```
 
 Create `src/api/event/routes/event.ts`:
 
 ```typescript
-import { factories } from '@strapi/strapi';
+import { factories } from '@strapi/strapi'
 
-export default factories.createCoreRouter('api::event.event');
+export default factories.createCoreRouter('api::event.event')
 ```
 
 ## Re-use existing components

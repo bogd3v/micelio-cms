@@ -1,7 +1,7 @@
-import type { Core } from '@strapi/strapi';
-import { errors } from '@strapi/utils';
-import type { Context, Next } from 'koa';
-import { isUploadFromUrlEnabled, isUploadFromUrlRequest } from '../utils/upload-from-url';
+import type { Core } from '@strapi/strapi'
+import { errors } from '@strapi/utils'
+import type { Context, Next } from 'koa'
+import { isUploadFromUrlEnabled, isUploadFromUrlRequest } from '../utils/upload-from-url'
 
 /**
  * Answers 403 to `POST /upload/actions/upload-from-urls`, the Media Library
@@ -20,7 +20,7 @@ export default (_config: unknown, _: { strapi: Core.Strapi }) =>
       isUploadFromUrlRequest(ctx.method, ctx.path) &&
       !isUploadFromUrlEnabled(process.env.UPLOAD_FROM_URL_ENABLED)
     ) {
-      throw new errors.ForbiddenError('Importing files from a URL is turned off');
+      throw new errors.ForbiddenError('Importing files from a URL is turned off')
     }
-    return next();
-  };
+    return next()
+  }

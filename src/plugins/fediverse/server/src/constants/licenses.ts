@@ -2,8 +2,8 @@
 
 /** One label per language of the attribution line: `es` for Spanish locales, `en` for the rest. */
 export interface LocalizedLabel {
-  es: string;
-  en: string;
+  es: string
+  en: string
 }
 
 /**
@@ -15,7 +15,7 @@ export const CREDIT_KINDS: Record<string, LocalizedLabel> = {
   illustration: { es: 'Ilustración', en: 'Illustration' },
   diagram: { es: 'Diagrama', en: 'Diagram' },
   screenshot: { es: 'Captura', en: 'Screenshot' },
-};
+}
 
 /**
  * Labels and deed URLs of the credit `license` values. The credit's own
@@ -47,4 +47,4 @@ export const LICENSES: Record<string, { label: LocalizedLabel; url?: string }> =
   },
   permission: { label: { es: 'uso con permiso', en: 'used with permission' } },
   other: { label: { es: 'otra licencia', en: 'other license' } },
-};
+}

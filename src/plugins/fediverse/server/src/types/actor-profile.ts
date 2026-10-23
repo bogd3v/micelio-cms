@@ -2,9 +2,9 @@
 
 /** A row of the profile metadata table, federated as a `PropertyValue` attachment. */
 export interface ActorProfileField {
-  name: string;
+  name: string
   /** Absolute URL, rendered as a link in the profile metadata table. */
-  url: string;
+  url: string
 }
 
 /**
@@ -13,17 +13,17 @@ export interface ActorProfileField {
  */
 export interface ActorProfile {
   /** The handle's `@user` (`preferredUsername`). */
-  username: string;
-  name: string;
+  username: string
+  name: string
   /** Plain text bio; null when no setting, variable or site description gives one. */
-  summary: string | null;
+  summary: string | null
   /** Absolute URL to the actor avatar (global favicon), or null. */
-  iconUrl: string | null;
+  iconUrl: string | null
   /** Absolute URL to the profile header image (site settings, else global fediverseHeader), or null. */
-  headerUrl: string | null;
+  headerUrl: string | null
   /** Whether the actor opts into Mastodon's public directory. */
-  discoverable: boolean;
+  discoverable: boolean
   /** Human-facing page for the actor: the frontend home page. */
-  url: string;
-  fields: ActorProfileField[];
+  url: string
+  fields: ActorProfileField[]
 }

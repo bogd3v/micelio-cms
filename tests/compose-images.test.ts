@@ -1,6 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { describe, expect, it } from '@jest/globals'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 // ADR 0010 section 3 (bogd3v/micelio): the Compose files for trying Micelio default to the `X.Y`
 // of the release they ship with, never to `latest` or to a moving build of `main`. The release
@@ -18,24 +18,24 @@ const IMAGES_PER_FILE: Record<string, number> = {
   'docker-compose.yml': 1,
   'demo/static.env.example': 2,
   'demo/landing.env.example': 2,
-};
-const MICELIO_IMAGE = /ghcr\.io\/[^\s"']*?micelio[\w-]*\}?:([\w.-]+|\$\{[^}]+\})/g;
+}
+const MICELIO_IMAGE = /ghcr\.io\/[^\s"']*?micelio[\w-]*\}?:([\w.-]+|\$\{[^}]+\})/g
 
-const read = (file: string) => readFileSync(join(__dirname, '..', file), 'utf8');
-const [, major, minor] = /^(\d+)\.(\d+)\.\d+/.exec(JSON.parse(read('package.json')).version) ?? [];
-const releaseLine = `${major}.${minor}`;
+const read = (file: string) => readFileSync(join(__dirname, '..', file), 'utf8')
+const [, major, minor] = /^(\d+)\.(\d+)\.\d+/.exec(JSON.parse(read('package.json')).version) ?? []
+const releaseLine = `${major}.${minor}`
 
 describe('Default images of the demo and example files', () => {
   it('reads the release line from package.json', () => {
-    expect(releaseLine).toMatch(/^\d+\.\d+$/);
-  });
+    expect(releaseLine).toMatch(/^\d+\.\d+$/)
+  })
 
   it.each(Object.entries(IMAGES_PER_FILE))(
     '%s names its Micelio images only by the X.Y of package.json',
     (file, count) => {
-      const tags = [...read(file).matchAll(MICELIO_IMAGE)].map((match) => match[1]);
-      expect(tags).toHaveLength(count);
-      for (const tag of tags) expect(tag).toBe(releaseLine);
+      const tags = [...read(file).matchAll(MICELIO_IMAGE)].map((match) => match[1])
+      expect(tags).toHaveLength(count)
+      for (const tag of tags) expect(tag).toBe(releaseLine)
     }
-  );
-});
+  )
+})

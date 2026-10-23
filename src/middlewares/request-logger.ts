@@ -1,10 +1,10 @@
-import { randomUUID } from 'node:crypto';
-import type { Core } from '@strapi/strapi';
-import type { Context, Next } from 'koa';
-import { buildRequestLogMeta } from '../utils/request-context';
-import { securityLogSecret } from '../utils/security-log';
+import { randomUUID } from 'node:crypto'
+import type { Core } from '@strapi/strapi'
+import type { Context, Next } from 'koa'
+import { buildRequestLogMeta } from '../utils/request-context'
+import { securityLogSecret } from '../utils/security-log'
 
-let warnedNoSecret = false;
+let warnedNoSecret = false
 
 /**
  * Logs each request like `strapi::logger` does, without the query string, and
@@ -26,40 +26,40 @@ let warnedNoSecret = false;
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
-    const requestId = randomUUID();
-    ctx.state.requestId = requestId;
-    const start = Date.now();
-    let status: number | undefined;
+    const requestId = randomUUID()
+    ctx.state.requestId = requestId
+    const start = Date.now()
+    let status: number | undefined
     try {
-      await next();
+      await next()
     } catch (error) {
-      status = errorStatus(error);
-      throw error;
+      status = errorStatus(error)
+      throw error
     } finally {
-      const delta = Math.ceil(Date.now() - start);
+      const delta = Math.ceil(Date.now() - start)
       strapi.log.http(
         `${ctx.method} ${ctx.path} (${delta} ms) ${status ?? ctx.status}`,
         buildRequestLogMeta(requestId, ctx.request.ip, ctx.state, hashSecret(strapi))
-      );
+      )
     }
-  };
+  }
 
 /** The status Koa answers an escaped error with. */
 function errorStatus(error: unknown): number {
-  const { status, statusCode } = (error ?? {}) as { status?: unknown; statusCode?: unknown };
-  const code = typeof status === 'number' ? status : statusCode;
-  return typeof code === 'number' && code >= 400 && code <= 599 ? code : 500;
+  const { status, statusCode } = (error ?? {}) as { status?: unknown; statusCode?: unknown }
+  const code = typeof status === 'number' ? status : statusCode
+  return typeof code === 'number' && code >= 400 && code <= 599 ? code : 500
 }
 
 /** The hash key, or `undefined` when `APP_KEYS` is unusable: the line is still written, without a client. */
 function hashSecret(strapi: Core.Strapi): Buffer | undefined {
   try {
-    return securityLogSecret(strapi);
+    return securityLogSecret(strapi)
   } catch {
     if (!warnedNoSecret) {
-      warnedNoSecret = true;
-      strapi.log.warn('request lines carry no client hash: APP_KEYS is missing or empty');
+      warnedNoSecret = true
+      strapi.log.warn('request lines carry no client hash: APP_KEYS is missing or empty')
     }
-    return undefined;
+    return undefined
   }
 }
