@@ -1,5 +1,5 @@
-import { SHARED_BLOCKS } from './shared';
-import type { ResponseRoute, Shape } from './types';
+import { SHARED_BLOCKS } from './shared'
+import type { ResponseRoute, Shape } from './types'
 
 /** Blocks of the About page: what `aboutBlocks` in micelio's `server/lib/publicShapes.ts` lets through. */
 const ABOUT_BLOCKS: Record<string, Shape> = {
@@ -105,7 +105,7 @@ const ABOUT_BLOCKS: Record<string, Shape> = {
       of: { id: 'required', network: 'required', handle: 'required', url: 'required' },
     },
   },
-};
+}
 
 /** Sections of a page: what `parsePage` in micelio's `server/schemas/page.ts` reads; component ids are not read. */
 const PAGE_SECTIONS: Record<string, Shape> = {
@@ -252,7 +252,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     text: 'required',
     id: 'surplus',
   },
-};
+}
 
 /** The routes of the About page and of pages. */
 export const PAGE_ROUTES: readonly ResponseRoute[] = [
@@ -323,4 +323,4 @@ export const PAGE_ROUTES: readonly ResponseRoute[] = [
       meta: { use: 'required', of: { pagination: { use: 'required', of: 'pagination-pages' } } },
     },
   },
-];
+]

@@ -7,17 +7,17 @@
  * unless every signature in it covers `content-digest`. See
  * `docs/FEDIVERSE.md`, "Inbox digest algorithms".
  */
-import { decodeDict } from 'structured-field-values';
+import { decodeDict } from 'structured-field-values'
 
 /** One signature of a `Signature-Input` header, as Fedify would verify it. */
 export interface SignatureInputLabel {
   /** The dictionary key that names the signature (`sig1`). */
-  label: string;
+  label: string
   /** Whether the covered components include `"content-digest"`. */
-  coversContentDigest: boolean;
+  coversContentDigest: boolean
 }
 
-const CONTENT_DIGEST_COMPONENT = 'content-digest';
+const CONTENT_DIGEST_COMPONENT = 'content-digest'
 
 /**
  * Lists the signatures of a `Signature-Input` header with whether each covers
@@ -42,17 +42,17 @@ const CONTENT_DIGEST_COMPONENT = 'content-digest';
  * @internal
  */
 export function parseSignatureInput(header: string): SignatureInputLabel[] | null {
-  let dict: unknown;
+  let dict: unknown
   try {
-    dict = decodeDict(header);
+    dict = decodeDict(header)
   } catch {
     // Fedify reads a header it cannot parse as having no signature and refuses it.
-    return null;
+    return null
   }
-  if (typeof dict !== 'object' || dict === null) return null;
-  const labels: SignatureInputLabel[] = [];
+  if (typeof dict !== 'object' || dict === null) return null
+  const labels: SignatureInputLabel[] = []
   for (const [label, member] of Object.entries(dict)) {
-    if (!isSignatureMember(member)) continue;
+    if (!isSignatureMember(member)) continue
     labels.push({
       label,
       coversContentDigest: member.value.some(
@@ -61,9 +61,9 @@ export function parseSignatureInput(header: string): SignatureInputLabel[] | nul
           typeof component.value === 'string' &&
           component.value === CONTENT_DIGEST_COMPONENT
       ),
-    });
+    })
   }
-  return labels;
+  return labels
 }
 
 /**
@@ -79,16 +79,16 @@ export function parseSignatureInput(header: string): SignatureInputLabel[] | nul
  * body is Fedify's check once the component is covered.
  */
 export function isContentDigestCovered(header: string): boolean {
-  const labels = parseSignatureInput(header);
-  return labels !== null && labels.length > 0 && labels.every((l) => l.coversContentDigest);
+  const labels = parseSignatureInput(header)
+  return labels !== null && labels.length > 0 && labels.every((l) => l.coversContentDigest)
 }
 
 /** A dictionary member Fedify reads as a signature: an inner list with `keyid` and `created`. */
 function isSignatureMember(member: unknown): member is { value: unknown[] } {
-  if (!isRecord(member) || !Array.isArray(member.value) || !isRecord(member.params)) return false;
-  return typeof member.params.keyid === 'string' && typeof member.params.created === 'number';
+  if (!isRecord(member) || !Array.isArray(member.value) || !isRecord(member.params)) return false
+  return typeof member.params.keyid === 'string' && typeof member.params.created === 'number'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null
 }

@@ -1,10 +1,10 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-import type { ArticleFederation } from '../types/federation-panel';
-import { findPublishedArticle, getDefaultLocale } from './articles';
-import { findFederatedArticle } from './federated-articles';
-import { countInteractions } from './interactions';
-import { replyCountsByStatus } from './stats';
+import type { ArticleFederation } from '../types/federation-panel'
+import { findPublishedArticle, getDefaultLocale } from './articles'
+import { findFederatedArticle } from './federated-articles'
+import { countInteractions } from './interactions'
+import { replyCountsByStatus } from './stats'
 
 /**
  * Why "Federate now" is not available for an article, or `null` when it is: only the default
@@ -15,8 +15,8 @@ export async function federateBlocker(
   documentId: string,
   locale: string
 ): Promise<'locale-not-federated' | 'article-not-published' | null> {
-  if (locale !== (await getDefaultLocale(strapi))) return 'locale-not-federated';
-  return (await findPublishedArticle(strapi, documentId)) == null ? 'article-not-published' : null;
+  if (locale !== (await getDefaultLocale(strapi))) return 'locale-not-federated'
+  return (await findPublishedArticle(strapi, documentId)) == null ? 'article-not-published' : null
 }
 
 /**
@@ -35,7 +35,7 @@ export async function describeFederation(
     countInteractions(strapi, documentId),
     replyCountsByStatus(strapi, documentId),
     federateBlocker(strapi, documentId, locale),
-  ]);
+  ])
 
   return {
     documentId,
@@ -52,5 +52,5 @@ export async function describeFederation(
       repliesPending: replies.pending,
     },
     canFederate: blocker ? { allowed: false, code: blocker } : { allowed: true },
-  };
+  }
 }

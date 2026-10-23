@@ -1,9 +1,9 @@
-import type { Core } from '@strapi/strapi';
-import { errors } from '@strapi/utils';
-import type { Context, Next } from 'koa';
-import { AUTHOR_FILTER_KEYS, POPULATE_FILTER_KEYS } from '../constants/comments';
-import { findBlockedFilterKey } from '../utils/comment-author';
-import { isCommentsApiPath } from '../utils/comments-path';
+import type { Core } from '@strapi/strapi'
+import { errors } from '@strapi/utils'
+import type { Context, Next } from 'koa'
+import { AUTHOR_FILTER_KEYS, POPULATE_FILTER_KEYS } from '../constants/comments'
+import { findBlockedFilterKey } from '../utils/comment-author'
+import { isCommentsApiPath } from '../utils/comments-path'
 
 /**
  * Answers 400 to a request to the comments plugin's public API whose `filters`
@@ -22,15 +22,15 @@ import { isCommentsApiPath } from '../utils/comments-path';
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
     if (isCommentsApiPath(ctx.path)) {
-      const query = ctx.query as Record<string, unknown>;
+      const query = ctx.query as Record<string, unknown>
       if ('fields' in query) {
-        strapi.log.warn('[comments] refused a "fields" query parameter on the comments API');
-        throw new errors.ValidationError('"fields" is not allowed in this query');
+        strapi.log.warn('[comments] refused a "fields" query parameter on the comments API')
+        throw new errors.ValidationError('"fields" is not allowed in this query')
       }
       const key =
         findBlockedFilterKey(query.filters, AUTHOR_FILTER_KEYS) ??
-        findBlockedFilterKey(query.populate, POPULATE_FILTER_KEYS);
-      if (key) throw new errors.ValidationError(`"${key}" is not allowed in this query`);
+        findBlockedFilterKey(query.populate, POPULATE_FILTER_KEYS)
+      if (key) throw new errors.ValidationError(`"${key}" is not allowed in this query`)
     }
-    return next();
-  };
+    return next()
+  }

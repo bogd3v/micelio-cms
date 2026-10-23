@@ -1,18 +1,18 @@
-import type { Core } from '@strapi/strapi';
-import type { Context, Next } from 'koa';
-import type { SecurityEvent } from '../constants/security-events';
-import type { SecurityReason } from '../types/security-events';
-import { logAuthEvent, userIdFromBody, userIdFromState } from '../utils/auth-events';
-import { normalizePath } from '../utils/rate-limit/groups';
+import type { Core } from '@strapi/strapi'
+import type { Context, Next } from 'koa'
+import type { SecurityEvent } from '../constants/security-events'
+import type { SecurityReason } from '../types/security-events'
+import { logAuthEvent, userIdFromBody, userIdFromState } from '../utils/auth-events'
+import { normalizePath } from '../utils/rate-limit/groups'
 import {
   ADMIN_AUTH_ROUTES,
   adminLoginRefusal,
   isRefusedStatus,
   type AdminAnswer,
   type AdminAuthRoute,
-} from '../utils/admin-auth-routes';
+} from '../utils/admin-auth-routes'
 
-const INTERNAL_ERROR = 500;
+const INTERNAL_ERROR = 500
 
 /**
  * Logs the admin routes that take or issue credentials (`ADMIN_AUTH_ROUTES`:
@@ -35,30 +35,30 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
     const route = ADMIN_AUTH_ROUTES.find(
       (candidate) =>
         candidate.method === ctx.method.toUpperCase() && candidate.path === normalizePath(ctx.path)
-    );
-    if (!route) return next();
+    )
+    if (!route) return next()
 
     try {
-      await next();
+      await next()
     } catch (error) {
       if (adminLoginRefusal(error)) {
-        logFailure(strapi, route, { ctx, error });
+        logFailure(strapi, route, { ctx, error })
       } else if (route.logUnexpected && isServerError(error)) {
-        logFailure(strapi, route, { ctx, error }, false);
+        logFailure(strapi, route, { ctx, error }, false)
       }
-      throw error;
+      throw error
     }
     if (ctx.status === route.successStatus) {
-      if (!route.success || (route.isAttempt && !route.isAttempt({ ctx }))) return;
+      if (!route.success || (route.isAttempt && !route.isAttempt({ ctx }))) return
       logAuthEvent(strapi, ctx, route.success, {
         actor: route.actor === 'state' ? userIdFromState(ctx.state.user) : userIdFromBody(ctx.body),
-      });
+      })
     } else if (isRefusedStatus(ctx.status)) {
-      logFailure(strapi, route, { ctx });
+      logFailure(strapi, route, { ctx })
     } else if (route.logUnexpected && ctx.status >= INTERNAL_ERROR) {
-      logFailure(strapi, route, { ctx }, false);
+      logFailure(strapi, route, { ctx }, false)
     }
-  };
+  }
 
 /** Writes the route's failure event; `withReason` is off for an unexpected error, which tells nothing. */
 function logFailure(
@@ -67,13 +67,13 @@ function logFailure(
   answer: AdminAnswer,
   withReason = true
 ): void {
-  const event: SecurityEvent | null = route.failure;
-  if (!event || (route.isAttempt && !route.isAttempt(answer))) return;
-  const reason: SecurityReason | undefined = withReason ? route.reason?.(answer) : undefined;
+  const event: SecurityEvent | null = route.failure
+  if (!event || (route.isAttempt && !route.isAttempt(answer))) return
+  const reason: SecurityReason | undefined = withReason ? route.reason?.(answer) : undefined
   logAuthEvent(strapi, answer.ctx, event, {
     reason,
     actor: route.actor === 'state' ? userIdFromState(answer.ctx.state.user) : undefined,
-  });
+  })
 }
 
 /**
@@ -82,6 +82,6 @@ function logFailure(
  * 413, a 404 or the limiter's `RateLimitError` (429) are not.
  */
 function isServerError(error: unknown): boolean {
-  const status = (error as { status?: unknown } | null | undefined)?.status;
-  return (typeof status === 'number' ? status : INTERNAL_ERROR) >= INTERNAL_ERROR;
+  const status = (error as { status?: unknown } | null | undefined)?.status
+  return (typeof status === 'number' ? status : INTERNAL_ERROR) >= INTERNAL_ERROR
 }

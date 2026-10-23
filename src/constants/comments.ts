@@ -1,5 +1,5 @@
 /** Public REST prefix of strapi-plugin-comments. */
-export const COMMENTS_API_PREFIX = '/api/comments/';
+export const COMMENTS_API_PREFIX = '/api/comments/'
 
 /**
  * Comment attributes that identify an author. A public list query may not
@@ -13,10 +13,10 @@ export const AUTHOR_FILTER_KEYS: ReadonlySet<string> = new Set([
   'authorEmail',
   'authorUser',
   'authorAvatar',
-]);
+])
 
 /**
  * Query keys that filter a populated relation. A public query may not use them
  * inside `populate`: they would reach the author attributes of the relation.
  */
-export const POPULATE_FILTER_KEYS: ReadonlySet<string> = new Set(['filters', 'where']);
+export const POPULATE_FILTER_KEYS: ReadonlySet<string> = new Set(['filters', 'where'])

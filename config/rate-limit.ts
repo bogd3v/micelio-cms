@@ -1,6 +1,6 @@
-import type { Core } from '@strapi/strapi';
-import type { RateLimitConfig } from '../src/types/rate-limit';
-import { AUTH_DEFAULT, parseRule as rule, rateLimitEnabled } from '../src/utils/rate-limit/rule';
+import type { Core } from '@strapi/strapi'
+import type { RateLimitConfig } from '../src/types/rate-limit'
+import { AUTH_DEFAULT, parseRule as rule, rateLimitEnabled } from '../src/utils/rate-limit/rule'
 
 /**
  * Application-level rate limiting (docs/RATE_LIMITING.md). Parsed and checked
@@ -29,6 +29,6 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): RateLimitConfig => ({
     api: rule(env('RATE_LIMIT_API'), { points: 600, duration: 60 }),
   },
   token: rule(env('RATE_LIMIT_TOKEN'), { points: 6000, duration: 60 }),
-});
+})
 
-export default config;
+export default config

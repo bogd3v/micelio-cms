@@ -6,11 +6,11 @@
  */
 
 /** Locales the demo content is written in. */
-export type DemoLocale = 'en' | 'es';
-type Localized<T> = Record<DemoLocale, T>;
+export type DemoLocale = 'en' | 'es'
+type Localized<T> = Record<DemoLocale, T>
 
 /** `DemoLocale` values in the order the seed creates them. */
-export const DEMO_LOCALES: DemoLocale[] = ['en', 'es'];
+export const DEMO_LOCALES: DemoLocale[] = ['en', 'es']
 
 /** Name and description of the demo site, per locale. */
 export const DEMO_SITE: Localized<{ name: string; description: string }> = {
@@ -22,24 +22,24 @@ export const DEMO_SITE: Localized<{ name: string; description: string }> = {
     name: 'Notas de campo',
     description: 'Un sitio de demostración hecho con Micelio: notas de una pequeña huerta urbana.',
   },
-};
+}
 
 /** The fictional author of every demo article; `example.com` is a reserved domain. */
-export const DEMO_AUTHOR = { name: 'Alex Moreno', email: 'alex@example.com' };
+export const DEMO_AUTHOR = { name: 'Alex Moreno', email: 'alex@example.com' }
 
 /** The demo's only link: Micelio itself, the project the visitor is trying. */
-export const DEMO_SOCIAL_LINKS = [{ network: 'github', url: 'https://github.com/bogd3v/micelio' }];
+export const DEMO_SOCIAL_LINKS = [{ network: 'github', url: 'https://github.com/bogd3v/micelio' }]
 
 /** A demo category, identified by `slug`, with its localized text. */
 export interface DemoCategory {
-  slug: string;
+  slug: string
   /** Position in the category lists and, without `color`, the rank that picks the color. */
-  order: number;
+  order: number
   /** Shown in the places the theme reserves for the main categories. */
-  featured: boolean;
+  featured: boolean
   /** Pins the color role (1 to 5) instead of following `order`. */
-  color?: number;
-  text: Localized<{ name: string; description: string }>;
+  color?: number
+  text: Localized<{ name: string; description: string }>
 }
 
 /** Categories of the demo site. */
@@ -63,12 +63,12 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
       es: { name: 'Cocina', description: 'Qué cocinar con lo que da la huerta.' },
     },
   },
-];
+]
 
 /** A demo tag, identified by `slug`, with its localized name. */
 export interface DemoTag {
-  slug: string;
-  name: Localized<string>;
+  slug: string
+  name: Localized<string>
 }
 
 /** Tags of the demo site. */
@@ -76,22 +76,22 @@ export const DEMO_TAGS: DemoTag[] = [
   { slug: 'beginners', name: { en: 'Beginners', es: 'Principiantes' } },
   { slug: 'compost', name: { en: 'Compost', es: 'Compost' } },
   { slug: 'seasonal', name: { en: 'Seasonal', es: 'De temporada' } },
-];
+]
 
 type Block =
   | { __component: 'shared.rich-text'; body: string }
-  | { __component: 'shared.quote'; title: string; body: string };
+  | { __component: 'shared.quote'; title: string; body: string }
 
 /** A demo article: `category` and `tags` are slugs of `DEMO_CATEGORIES` and `DEMO_TAGS`. */
 export interface DemoArticle {
-  category: string;
-  tags: string[];
+  category: string
+  tags: string[]
   /** Colors of the generated cover: background and the two shapes. */
-  palette: [string, string, string];
-  text: Localized<{ title: string; slug: string; description: string; blocks: Block[] }>;
+  palette: [string, string, string]
+  text: Localized<{ title: string; slug: string; description: string; blocks: Block[] }>
 }
 
-const richText = (body: string): Block => ({ __component: 'shared.rich-text', body });
+const richText = (body: string): Block => ({ __component: 'shared.rich-text', body })
 
 /** Articles of the demo site. */
 export const DEMO_ARTICLES: DemoArticle[] = [
@@ -238,7 +238,7 @@ La lechuga vieja no se pierde: cocínala con papa y cebolla, licúala y termína
       },
     },
   },
-];
+]
 
 /** Title and body of the demo About page, per locale. */
 export const DEMO_ABOUT: Localized<{ title: string; body: string }> = {
@@ -254,7 +254,7 @@ Change the name, the description and the modules in the admin panel (*Content Ma
 
 Cambia el nombre, la descripción y los módulos en el panel de administración (*Content Manager → Site settings*), y escribe tus propios artículos para reemplazar estos.`,
   },
-};
+}
 
 /** The demo's mark, used as logo and favicon: a sprout in a circle. */
 export const DEMO_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
@@ -263,7 +263,7 @@ export const DEMO_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64"
   <path d="M32 32 C 22 32, 17 25, 18 17 C 27 17, 32 23, 32 32 Z" fill="#ffffff"/>
   <path d="M32 36 C 41 36, 47 30, 46 22 C 37 22, 32 28, 32 36 Z" fill="#e8f0e3"/>
 </svg>
-`;
+`
 
 /** A simple, deterministic cover for an article: a sky, a hill and a sun. */
 export function coverSvg([background, hill, sun]: [string, string, string]): string {
@@ -273,7 +273,7 @@ export function coverSvg([background, hill, sun]: [string, string, string]): str
   <path d="M0 470 C 250 330, 520 360, 760 440 S 1080 520, 1200 430 L 1200 630 L 0 630 Z" fill="${hill}"/>
   <path d="M0 540 C 300 470, 640 500, 1200 520 L 1200 630 L 0 630 Z" fill="${hill}" opacity="0.6"/>
 </svg>
-`;
+`
 }
 
 /** A small square icon for the feature grid and the logo cloud. */
@@ -282,8 +282,8 @@ export function iconSvg(color: string, shape: 'circle' | 'square' | 'triangle'):
     circle: `<circle cx="32" cy="32" r="18" fill="${color}"/>`,
     square: `<rect x="15" y="15" width="34" height="34" rx="6" fill="${color}"/>`,
     triangle: `<path d="M32 12 L54 50 H10 Z" fill="${color}"/>`,
-  }[shape];
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">${mark}</svg>\n`;
+  }[shape]
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">${mark}</svg>\n`
 }
 
 /**
@@ -291,7 +291,7 @@ export function iconSvg(color: string, shape: 'circle' | 'square' | 'triangle'):
  * embedded as a data URI, so the demo needs no binary file.
  */
 export function triangleGltf(): string {
-  const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
+  const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer)
   return JSON.stringify({
     asset: { version: '2.0', generator: 'micelio-cms demo seed' },
     scene: 0,
@@ -315,27 +315,27 @@ export function triangleGltf(): string {
         max: [1, 1, 0],
       },
     ],
-  });
+  })
 }
 
 /** Slug of the showcase page, per locale. */
-export const DEMO_SHOWCASE_SLUG: Localized<string> = { en: 'showcase', es: 'muestra' };
+export const DEMO_SHOWCASE_SLUG: Localized<string> = { en: 'showcase', es: 'muestra' }
 
 /** Media the showcase page uses, uploaded by the seed. */
 export interface ShowcaseMedia {
-  hero: number;
-  icons: [number, number, number];
-  logos: [number, number, number];
-  gallery: number[];
-  poster: number;
-  model: number;
+  hero: number
+  icons: [number, number, number]
+  logos: [number, number, number]
+  gallery: number[]
+  poster: number
+  model: number
   /** documentId of the category the post list shows. */
-  category: string;
+  category: string
 }
 
 interface ShowcaseSection {
-  __component: string;
-  [attribute: string]: unknown;
+  __component: string
+  [attribute: string]: unknown
 }
 
 /**
@@ -343,9 +343,9 @@ interface ShowcaseSection {
  * styles each of them (#75, #84).
  */
 export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): ShowcaseSection[] {
-  const es = locale === 'es';
-  const t = (en: string, spanish: string) => (es ? spanish : en);
-  const blog = es ? '/es/blog' : '/blog';
+  const es = locale === 'es'
+  const t = (en: string, spanish: string) => (es ? spanish : en)
+  const blog = es ? '/es/blog' : '/blog'
   return [
     {
       __component: 'section.hero',
@@ -529,5 +529,5 @@ export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): Show
       title: t('A scene', 'Una escena'),
       text: t('3D loads only when you reach it.', 'El 3D solo carga cuando llegas a él.'),
     },
-  ];
+  ]
 }

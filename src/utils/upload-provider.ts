@@ -1,7 +1,7 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
 /** Upload provider Strapi falls back to; `config/plugins.ts` keeps it when `R2_BUCKET` is unset. */
-const LOCAL_PROVIDER = 'local';
+const LOCAL_PROVIDER = 'local'
 
 /**
  * True when the resolved upload config uses the local provider, which serves
@@ -15,9 +15,9 @@ const LOCAL_PROVIDER = 'local';
  * @param config - `strapi.config.get('plugin::upload')`, possibly undefined.
  */
 export function usesLocalUploadProvider(config: unknown): boolean {
-  if (typeof config !== 'object' || config === null) return true;
-  const provider = (config as { provider?: unknown }).provider;
-  return provider === undefined || provider === LOCAL_PROVIDER;
+  if (typeof config !== 'object' || config === null) return true
+  const provider = (config as { provider?: unknown }).provider
+  return provider === undefined || provider === LOCAL_PROVIDER
 }
 
 /**
@@ -34,10 +34,10 @@ export function warnLocalUploadsInProduction(
   strapi: Pick<Core.Strapi, 'log' | 'config'>,
   env: Record<string, string | undefined> = process.env
 ): void {
-  if (env.NODE_ENV !== 'production') return;
-  if (!usesLocalUploadProvider(strapi.config.get('plugin::upload'))) return;
+  if (env.NODE_ENV !== 'production') return
+  if (!usesLocalUploadProvider(strapi.config.get('plugin::upload'))) return
   strapi.log.warn(
     '[uploads] the local provider serves uploads from the admin origin; ' +
       'use object storage (R2_BUCKET) or another hostname in production'
-  );
+  )
 }

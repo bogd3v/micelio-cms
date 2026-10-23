@@ -1,38 +1,38 @@
-import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
-import request from 'supertest';
-import { setupStrapi, cleanupStrapi } from './strapi';
-import { getPublicRole } from './helpers/permissions';
-import type { ApiComment } from './helpers/api-types';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals'
+import request from 'supertest'
+import { setupStrapi, cleanupStrapi } from './strapi'
+import { getPublicRole } from './helpers/permissions'
+import type { ApiComment } from './helpers/api-types'
 
-const ARTICLE_UID = 'api::article.article';
-const COMMENT_UID = 'plugin::comments.comment';
+const ARTICLE_UID = 'api::article.article'
+const COMMENT_UID = 'plugin::comments.comment'
 
 describe('Public comments API', () => {
-  let relation: string;
+  let relation: string
 
   const commentsAt = async (path: string): Promise<ApiComment[]> => {
-    const res = await request(strapi.server.httpServer).get(path).expect(200);
-    return Array.isArray(res.body) ? res.body : res.body.data;
-  };
+    const res = await request(strapi.server.httpServer).get(path).expect(200)
+    return Array.isArray(res.body) ? res.body : res.body.data
+  }
   const byContent = (items: ApiComment[] = [], content: string) =>
-    items.find((item) => item.content === content);
+    items.find((item) => item.content === content)
 
   beforeAll(async () => {
-    await setupStrapi();
+    await setupStrapi()
 
-    const publicRole = await getPublicRole();
+    const publicRole = await getPublicRole()
     for (const action of ['findAll', 'findAllFlat', 'findAllInHierarchy']) {
       await strapi.query('plugin::users-permissions.permission').create({
         data: { action: `plugin::comments.client.${action}`, role: publicRole.id },
-      });
+      })
     }
-    await strapi.service('plugin::users-permissions.users-permissions').initialize();
+    await strapi.service('plugin::users-permissions.users-permissions').initialize()
 
     const draft = await strapi
       .documents(ARTICLE_UID)
-      .create({ data: { title: 'Thread target', slug: 'thread-target' } });
-    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
-    relation = `${ARTICLE_UID}:${draft.documentId}`;
+      .create({ data: { title: 'Thread target', slug: 'thread-target' } })
+    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId })
+    relation = `${ARTICLE_UID}:${draft.documentId}`
 
     const blog = await strapi.documents(COMMENT_UID).create({
       data: {
@@ -42,7 +42,7 @@ describe('Public comments API', () => {
         authorId: 'blog-reader',
         authorName: 'Blog Reader',
       },
-    });
+    })
     await strapi.documents(COMMENT_UID).create({
       data: {
         content: 'from the fediverse',
@@ -54,7 +54,7 @@ describe('Public comments API', () => {
         fediverseActorHandle: '@ana@mastodon.example',
         threadOf: blog.id,
       },
-    });
+    })
     await strapi.documents(COMMENT_UID).create({
       data: {
         content: 'pending from the fediverse',
@@ -63,7 +63,7 @@ describe('Public comments API', () => {
         fediverseUri: 'https://mastodon.example/users/ana/statuses/2',
         fediverseActorHandle: '@ana@mastodon.example',
       },
-    });
+    })
     await strapi.documents(COMMENT_UID).create({
       data: {
         content: 'rejected from the fediverse',
@@ -72,7 +72,7 @@ describe('Public comments API', () => {
         fediverseUri: 'https://mastodon.example/users/ana/statuses/3',
         fediverseActorHandle: '@ana@mastodon.example',
       },
-    });
+    })
     await strapi.documents(COMMENT_UID).create({
       data: {
         content: 'blocked by a moderator',
@@ -84,115 +84,115 @@ describe('Public comments API', () => {
         fediverseUri: 'https://mastodon.example/users/ana/statuses/4',
         fediverseActorHandle: '@ana@mastodon.example',
       },
-    });
-  });
+    })
+  })
 
   afterAll(async () => {
-    await cleanupStrapi();
-  });
+    await cleanupStrapi()
+  })
 
   it('exposes fediverseActorHandle and fediverseUri on the flat list', async () => {
-    const items = await commentsAt(`/api/comments/${relation}/flat`);
+    const items = await commentsAt(`/api/comments/${relation}/flat`)
 
     expect(byContent(items, 'from the fediverse')).toMatchObject({
       fediverseActorHandle: '@ana@mastodon.example',
       fediverseUri: 'https://mastodon.example/users/ana/statuses/1',
-    });
-    const blog = byContent(items, 'from the blog');
-    expect(blog?.fediverseActorHandle ?? null).toBeNull();
-    expect(blog?.fediverseUri ?? null).toBeNull();
-  });
+    })
+    const blog = byContent(items, 'from the blog')
+    expect(blog?.fediverseActorHandle ?? null).toBeNull()
+    expect(blog?.fediverseUri ?? null).toBeNull()
+  })
 
   it('exposes them on nested replies of the threaded list', async () => {
-    const root = byContent(await commentsAt(`/api/comments/${relation}`), 'from the blog');
+    const root = byContent(await commentsAt(`/api/comments/${relation}`), 'from the blog')
 
     expect(byContent(root?.children, 'from the fediverse')).toMatchObject({
       fediverseActorHandle: '@ana@mastodon.example',
       fediverseUri: 'https://mastodon.example/users/ana/statuses/1',
-    });
-  });
+    })
+  })
 
   it('keeps pending and rejected fediverse replies out of every list', async () => {
-    const flat = await commentsAt(`/api/comments/${relation}/flat`);
-    const tree = await commentsAt(`/api/comments/${relation}`);
+    const flat = await commentsAt(`/api/comments/${relation}/flat`)
+    const tree = await commentsAt(`/api/comments/${relation}`)
     const contents = [...flat, ...tree, ...tree.flatMap((item) => item.children ?? [])].map(
       (item) => item.content
-    );
+    )
 
-    expect(contents).not.toContain('pending from the fediverse');
-    expect(contents).not.toContain('rejected from the fediverse');
-  });
+    expect(contents).not.toContain('pending from the fediverse')
+    expect(contents).not.toContain('rejected from the fediverse')
+  })
 
   it('keeps them out when the path differs in letter case', async () => {
     for (const path of [`/API/Comments/${relation}/flat`, `/api/COMMENTS/${relation}`]) {
-      const res = await request(strapi.server.httpServer).get(path).expect(200);
-      const items: ApiComment[] = Array.isArray(res.body) ? res.body : res.body.data;
+      const res = await request(strapi.server.httpServer).get(path).expect(200)
+      const items: ApiComment[] = Array.isArray(res.body) ? res.body : res.body.data
       const contents = [...items, ...items.flatMap((item) => item.children ?? [])].map(
         (item) => item.content
-      );
-      expect(contents.length).toBeGreaterThan(0);
-      expect(contents).not.toContain('pending from the fediverse');
-      expect(contents).not.toContain('rejected from the fediverse');
+      )
+      expect(contents.length).toBeGreaterThan(0)
+      expect(contents).not.toContain('pending from the fediverse')
+      expect(contents).not.toContain('rejected from the fediverse')
     }
-  });
+  })
 
   it('does not link the original note of a blocked reply', async () => {
-    const items = await commentsAt(`/api/comments/${relation}/flat`);
-    const blocked = byContent(items, 'blocked by a moderator');
+    const items = await commentsAt(`/api/comments/${relation}/flat`)
+    const blocked = byContent(items, 'blocked by a moderator')
 
     // The plugin keeps blocked comments in the list, flagged, for the thread structure.
-    expect(blocked?.blocked).toBe(true);
-    expect(blocked?.fediverseUri).toBeNull();
-    expect(blocked?.fediverseActorHandle).toBeNull();
-  });
+    expect(blocked?.blocked).toBe(true)
+    expect(blocked?.fediverseUri).toBeNull()
+    expect(blocked?.fediverseActorHandle).toBeNull()
+  })
 
   it('sends no reply notification, whatever the guest wrote as name and address', async () => {
     // The plugin looks the super admin up as the sender, and fails without one.
     const superAdmin = await strapi.db
       .query('admin::role')
-      .findOne({ where: { code: 'strapi-super-admin' } });
+      .findOne({ where: { code: 'strapi-super-admin' } })
     await strapi.service('admin::user').create({
       email: 'owner@example.com',
       firstname: 'Owner',
       password: 'Passw0rd!x',
       isActive: true,
       roles: [superAdmin.id],
-    });
+    })
     const send = jest
       .spyOn(strapi.plugin('email').service('email'), 'send')
-      .mockResolvedValue(undefined);
-    const client = strapi.plugin('comments').service('client');
-    const guest = (id: string, name: string, email: string) => ({ id, name, email });
+      .mockResolvedValue(undefined)
+    const client = strapi.plugin('comments').service('client')
+    const guest = (id: string, name: string, email: string) => ({ id, name, email })
 
     const parent = await client.create({
       relation,
       content: 'a guest asks',
       author: guest('guest-victim', 'Victim', 'victim@example.com'),
-    });
+    })
     await client.create({
       relation,
       content: 'a reply',
       threadOf: parent.id,
       author: guest('guest-attacker', '<img src=x onerror=alert(1)>', 'attacker@example.com'),
-    });
+    })
 
-    expect(send).not.toHaveBeenCalled();
-    send.mockRestore();
-  });
+    expect(send).not.toHaveBeenCalled()
+    send.mockRestore()
+  })
 
   it('keeps pending and rejected comments out of a list that omits approvalStatus', async () => {
-    const query = 'omit[0]=approvalStatus&omit[1]=blocked';
+    const query = 'omit[0]=approvalStatus&omit[1]=blocked'
     for (const path of [`/api/comments/${relation}/flat`, `/api/comments/${relation}`]) {
-      const res = await request(strapi.server.httpServer).get(`${path}?${query}`).expect(200);
-      const items: ApiComment[] = Array.isArray(res.body) ? res.body : res.body.data;
+      const res = await request(strapi.server.httpServer).get(`${path}?${query}`).expect(200)
+      const items: ApiComment[] = Array.isArray(res.body) ? res.body : res.body.data
       const contents = [...items, ...items.flatMap((item) => item.children ?? [])].map(
         (item) => item.content
-      );
+      )
 
-      expect(items.every((item) => !('approvalStatus' in item))).toBe(true);
-      expect(contents).toContain('from the blog');
-      expect(contents).not.toContain('pending from the fediverse');
-      expect(contents).not.toContain('rejected from the fediverse');
+      expect(items.every((item) => !('approvalStatus' in item))).toBe(true)
+      expect(contents).toContain('from the blog')
+      expect(contents).not.toContain('pending from the fediverse')
+      expect(contents).not.toContain('rejected from the fediverse')
     }
-  });
-});
+  })
+})

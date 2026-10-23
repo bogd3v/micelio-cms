@@ -1,5 +1,5 @@
 /** The `cause` message undici uses for `redirect: 'error'`; Node 22 and 24 were checked. */
-const UNEXPECTED_REDIRECT = 'unexpected redirect';
+const UNEXPECTED_REDIRECT = 'unexpected redirect'
 
 /**
  * Whether a `fetch` rejection came from `redirect: 'error'` meeting a 3xx.
@@ -12,9 +12,9 @@ const UNEXPECTED_REDIRECT = 'unexpected redirect';
  * contain a hostname with the word. The check is structural, not `instanceof`, because the error can come from another realm.
  */
 export function isRefusedRedirect(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-  const cause = (error as { cause?: unknown }).cause;
-  if (!cause || typeof cause !== 'object') return false;
-  const message = (cause as { message?: unknown }).message;
-  return message === UNEXPECTED_REDIRECT;
+  if (!error || typeof error !== 'object') return false
+  const cause = (error as { cause?: unknown }).cause
+  if (!cause || typeof cause !== 'object') return false
+  const message = (cause as { message?: unknown }).message
+  return message === UNEXPECTED_REDIRECT
 }

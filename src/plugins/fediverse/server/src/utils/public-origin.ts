@@ -12,12 +12,12 @@
  * @returns The origin, without path, or `undefined` when `URL` is unset or not an absolute URL.
  */
 export function publicOrigin(): string | undefined {
-  const value = process.env.URL?.trim();
-  if (!value) return undefined;
+  const value = process.env.URL?.trim()
+  if (!value) return undefined
   try {
-    const { origin } = new URL(value);
-    return origin === 'null' ? undefined : origin;
+    const { origin } = new URL(value)
+    return origin === 'null' ? undefined : origin
   } catch {
-    return undefined;
+    return undefined
   }
 }

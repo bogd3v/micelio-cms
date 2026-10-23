@@ -1,4 +1,4 @@
-const { compileStrapi } = require('@strapi/strapi');
+const { compileStrapi } = require('@strapi/strapi')
 
 /**
  * Compiles the TypeScript sources into `dist/` once per Jest run. Suites then
@@ -7,5 +7,5 @@ const { compileStrapi } = require('@strapi/strapi');
  * JSON.
  */
 module.exports = async function globalSetup() {
-  await compileStrapi();
-};
+  await compileStrapi()
+}

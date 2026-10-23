@@ -1,12 +1,12 @@
 /** Port that speaks TLS from the first byte (SMTPS). */
-const IMPLICIT_TLS_PORT = 465;
+const IMPLICIT_TLS_PORT = 465
 
 /** The TLS options nodemailer needs for an SMTP port. */
 export interface SmtpTlsOptions {
   /** Implicit TLS: the connection is encrypted before any SMTP command. */
-  secure: boolean;
+  secure: boolean
   /** Fail instead of sending in clear when the server does not offer `STARTTLS`. */
-  requireTLS: boolean;
+  requireTLS: boolean
 }
 
 /**
@@ -21,7 +21,7 @@ export interface SmtpTlsOptions {
  * @param requireTls - `SMTP_REQUIRE_TLS` as read from the environment; only the exact value `false` (any case) turns the requirement off.
  */
 export function smtpTlsOptions(port: number, requireTls: string | undefined): SmtpTlsOptions {
-  const secure = port === IMPLICIT_TLS_PORT;
-  const required = (requireTls ?? 'true').trim().toLowerCase() !== 'false';
-  return { secure, requireTLS: required && !secure };
+  const secure = port === IMPLICIT_TLS_PORT
+  const required = (requireTls ?? 'true').trim().toLowerCase() !== 'false'
+  return { secure, requireTLS: required && !secure }
 }

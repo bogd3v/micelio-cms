@@ -1,5 +1,5 @@
-import type { Core } from '@strapi/strapi';
-import type { UmamiConfig } from '../src/types/article-stat';
+import type { Core } from '@strapi/strapi'
+import type { UmamiConfig } from '../src/types/article-stat'
 
 /**
  * Umami (self-hosted analytics). Strapi reads the visitors of each article
@@ -15,6 +15,6 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): UmamiConfig => ({
   syncCron: env('UMAMI_SYNC_CRON', '0 * * * *'),
   // Public dashboard, only for the link in the admin widget
   publicUrl: env('UMAMI_PUBLIC_URL', ''),
-});
+})
 
-export default config;
+export default config

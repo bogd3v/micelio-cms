@@ -1,13 +1,13 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-const SLIDER_UID = 'shared.slider';
-const SLIDE_UID = 'shared.slide';
-const BATCH_SIZE = 50;
+const SLIDER_UID = 'shared.slider'
+const SLIDE_UID = 'shared.slide'
+const BATCH_SIZE = 50
 
 interface SliderRow {
-  id: number;
-  files?: { id: number }[] | null;
-  items?: { id: number }[] | null;
+  id: number
+  files?: { id: number }[] | null
+  items?: { id: number }[] | null
 }
 
 /**
@@ -18,9 +18,9 @@ interface SliderRow {
  * skipped, and `files` is left as it was.
  */
 export async function migrateSliderItems(strapi: Core.Strapi): Promise<number> {
-  const sliders = strapi.db.query(SLIDER_UID);
-  let migrated = 0;
-  let lastId = 0;
+  const sliders = strapi.db.query(SLIDER_UID)
+  let migrated = 0
+  let lastId = 0
 
   for (;;) {
     const rows = (await sliders.findMany({
@@ -29,16 +29,16 @@ export async function migrateSliderItems(strapi: Core.Strapi): Promise<number> {
       populate: { files: { select: ['id'] }, items: { select: ['id'] } },
       orderBy: { id: 'asc' },
       limit: BATCH_SIZE,
-    })) as SliderRow[];
-    if (rows.length === 0) return migrated;
-    lastId = rows[rows.length - 1].id;
+    })) as SliderRow[]
+    if (rows.length === 0) return migrated
+    lastId = rows[rows.length - 1].id
 
     for (const row of rows) {
-      if ((row.items?.length ?? 0) > 0 || !row.files?.length) continue;
+      if ((row.items?.length ?? 0) > 0 || !row.files?.length) continue
 
-      const slides: { id: number }[] = [];
+      const slides: { id: number }[] = []
       for (const file of row.files) {
-        slides.push(await strapi.db.query(SLIDE_UID).create({ data: { file: file.id } }));
+        slides.push(await strapi.db.query(SLIDE_UID).create({ data: { file: file.id } }))
       }
       await sliders.update({
         where: { id: row.id },
@@ -48,8 +48,8 @@ export async function migrateSliderItems(strapi: Core.Strapi): Promise<number> {
             __pivot: { field: 'items', component_type: SLIDE_UID },
           })),
         },
-      });
-      migrated += 1;
+      })
+      migrated += 1
     }
   }
 }

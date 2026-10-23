@@ -3,7 +3,7 @@
  * `/articles/search` is registered ahead of the core `/articles/:id` route.
  */
 
-import { ARTICLE_UID } from '../../../constants/uids';
+import { ARTICLE_UID } from '../../../constants/uids'
 
 export default {
   routes: [
@@ -14,4 +14,4 @@ export default {
       config: { auth: false },
     },
   ],
-};
+}

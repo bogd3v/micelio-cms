@@ -75,7 +75,7 @@ npm run seed:example      # optional sample content
 ## Checks
 
 ```bash
-npm run check             # typecheck, lint, format:check and tests (a real Strapi per suite on an isolated SQLite file)
+npm run check             # typecheck, lint, format:check, tests (a real Strapi per suite on an isolated SQLite file), lint:licenses and lint:standard
 ```
 
 CI runs the same checks plus `npm run build` and `reuse lint` on every pull request to `main`.

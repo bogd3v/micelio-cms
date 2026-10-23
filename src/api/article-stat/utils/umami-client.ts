@@ -1,49 +1,49 @@
-import type { UmamiConfig, WebsiteTotals } from '../../../types/article-stat';
-import { isRefusedRedirect } from '../../../utils/refused-redirect';
+import type { UmamiConfig, WebsiteTotals } from '../../../types/article-stat'
+import { isRefusedRedirect } from '../../../utils/refused-redirect'
 
 /** Umami's own default page size for metrics. */
-const PAGE_SIZE = 500;
-const TIMEOUT_MS = 15_000;
+const PAGE_SIZE = 500
+const TIMEOUT_MS = 15_000
 
 /** Visitors of one URL path, as Umami reports them. */
 export interface PathVisitors {
   /** URL path without the query string. */
-  path: string;
+  path: string
   /** Distinct sessions that viewed the path in the range. */
-  visitors: number;
+  visitors: number
 }
 
 /** Whether the Umami URL, website id and API key are all set; narrows `config` when true. */
 export function isUmamiConfigured(config: UmamiConfig | undefined): config is UmamiConfig {
-  return Boolean(config?.url && config.websiteId && config.apiKey);
+  return Boolean(config?.url && config.websiteId && config.apiKey)
 }
 
 async function getJson<T>(config: UmamiConfig, url: URL): Promise<T> {
-  let response: Response;
+  let response: Response
   try {
     response = await fetch(url, {
       headers: { Authorization: `Bearer ${config.apiKey}`, Accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
       redirect: 'error',
-    });
+    })
   } catch (error) {
     if (isRefusedRedirect(error)) {
       throw new Error(
         `Umami answered with a redirect for ${url.pathname}, which is refused; set UMAMI_URL to the final address`
-      );
+      )
     }
-    throw error;
+    throw error
   }
   if (!response.ok) {
-    throw new Error(`Umami answered ${response.status} for ${url.pathname}`);
+    throw new Error(`Umami answered ${response.status} for ${url.pathname}`)
   }
-  return (await response.json()) as T;
+  return (await response.json()) as T
 }
 
 /** Umami 3 answers plain numbers; older versions wrapped them in `{ value }`. */
 function numberOf(value: unknown): number {
-  const raw = value && typeof value === 'object' ? (value as { value?: unknown }).value : value;
-  return Number(raw) || 0;
+  const raw = value && typeof value === 'object' ? (value as { value?: unknown }).value : value
+  return Number(raw) || 0
 }
 
 /** Whole-site visitors and page views in [startAt, endAt] (ms), from `/api/websites/:id/stats`. */
@@ -51,13 +51,13 @@ export async function fetchWebsiteTotals(
   config: UmamiConfig,
   range: { startAt: number; endAt: number }
 ): Promise<WebsiteTotals> {
-  const url = new URL(`/api/websites/${encodeURIComponent(config.websiteId)}/stats`, config.url);
+  const url = new URL(`/api/websites/${encodeURIComponent(config.websiteId)}/stats`, config.url)
   url.search = new URLSearchParams({
     startAt: String(range.startAt),
     endAt: String(range.endAt),
-  }).toString();
-  const stats = await getJson<Record<string, unknown>>(config, url);
-  return { visitors: numberOf(stats.visitors), pageviews: numberOf(stats.pageviews) };
+  }).toString()
+  const stats = await getJson<Record<string, unknown>>(config, url)
+  return { visitors: numberOf(stats.visitors), pageviews: numberOf(stats.pageviews) }
 }
 
 /**
@@ -69,22 +69,19 @@ export async function fetchPathVisitors(
   config: UmamiConfig,
   range: { startAt: number; endAt: number }
 ): Promise<PathVisitors[]> {
-  const result: PathVisitors[] = [];
+  const result: PathVisitors[] = []
   for (let offset = 0; ; offset += PAGE_SIZE) {
-    const url = new URL(
-      `/api/websites/${encodeURIComponent(config.websiteId)}/metrics`,
-      config.url
-    );
+    const url = new URL(`/api/websites/${encodeURIComponent(config.websiteId)}/metrics`, config.url)
     url.search = new URLSearchParams({
       type: 'path',
       startAt: String(range.startAt),
       endAt: String(range.endAt),
       limit: String(PAGE_SIZE),
       offset: String(offset),
-    }).toString();
+    }).toString()
 
-    const page = await getJson<{ x: string; y: number | string }[]>(config, url);
-    for (const row of page) result.push({ path: row.x, visitors: Number(row.y) || 0 });
-    if (page.length < PAGE_SIZE) return result;
+    const page = await getJson<{ x: string; y: number | string }[]>(config, url)
+    for (const row of page) result.push({ path: row.x, visitors: Number(row.y) || 0 })
+    if (page.length < PAGE_SIZE) return result
   }
 }

@@ -1,24 +1,24 @@
-import type { SECURITY_REASONS } from '../constants/security-events';
-import type { AppKeyHost } from '../utils/app-key-secret';
+import type { SECURITY_REASONS } from '../constants/security-events'
+import type { AppKeyHost } from '../utils/app-key-secret'
 
 /** Whether a security event happened (`success`) or was refused or failed (`failure`). */
-export type SecurityOutcome = 'success' | 'failure';
+export type SecurityOutcome = 'success' | 'failure'
 
 /** The part of a Koa context (or a policy context wrapping one) that a refusal log reads. */
 export interface AccessLogContext {
-  state?: { user?: { id?: unknown } } & Record<string, unknown>;
-  request?: { ip?: string; path?: string };
+  state?: { user?: { id?: unknown } } & Record<string, unknown>
+  request?: { ip?: string; path?: string }
 }
 
 interface SecurityLogger {
-  info(message: string, meta?: Record<string, unknown>): void;
-  warn(message: string, meta?: Record<string, unknown>): void;
+  info(message: string, meta?: Record<string, unknown>): void
+  warn(message: string, meta?: Record<string, unknown>): void
 }
 
 /** The part of Strapi the security log reads: the logger and the app keys. */
 export interface SecurityLogHost extends AppKeyHost {
-  log: SecurityLogger;
+  log: SecurityLogger
 }
 
 /** A value of the closed `reason` set of a security event. */
-export type SecurityReason = (typeof SECURITY_REASONS)[number];
+export type SecurityReason = (typeof SECURITY_REASONS)[number]

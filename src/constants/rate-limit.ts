@@ -1,21 +1,21 @@
-import type { RateLimitGroupName } from '../types/rate-limit';
+import type { RateLimitGroupName } from '../types/rate-limit'
 
 /** Headers the frontend sends so the CMS limits its users, not its one IP. */
-export const FORWARDER_SECRET_HEADER = 'x-micelio-forwarder-secret';
+export const FORWARDER_SECRET_HEADER = 'x-micelio-forwarder-secret'
 /** Header carrying the visitor address the frontend saw; trusted only with a valid secret. */
-export const FORWARDED_IP_HEADER = 'x-micelio-client-ip';
+export const FORWARDED_IP_HEADER = 'x-micelio-client-ip'
 
 /** `RATE_LIMIT_FORWARDER_SECRET` must be at least this long. */
-export const MIN_FORWARDER_SECRET_LENGTH = 32;
+export const MIN_FORWARDER_SECRET_LENGTH = 32
 
 /** Forwarded requests of one peer count in a bucket this many times the api limit. */
-export const FORWARDER_CEILING_FACTOR = 20;
+export const FORWARDER_CEILING_FACTOR = 20
 
 /** Database lookups of unknown bearers one client may trigger per minute. */
-export const TOKEN_LOOKUP_LIMIT = { points: 60, duration: 60 } as const;
+export const TOKEN_LOOKUP_LIMIT = { points: 60, duration: 60 } as const
 
 /** Table of the database store (src/migrations/rate-limit-table.ts). */
-export const RATE_LIMIT_TABLE = 'micelio_rate_limits';
+export const RATE_LIMIT_TABLE = 'micelio_rate_limits'
 
 /** Groups whose counters live in the shared store when `RATE_LIMIT_STORE=database`. */
 export const SHARED_GROUPS: readonly RateLimitGroupName[] = [
@@ -27,12 +27,12 @@ export const SHARED_GROUPS: readonly RateLimitGroupName[] = [
   'comments',
   'upload',
   'fediverse-inbox',
-];
+]
 
 /** Paths never limited (compared after normalisation). */
-export const EXEMPT_PATHS = ['/_health', '/favicon.ico'] as const;
+export const EXEMPT_PATHS = ['/_health', '/favicon.ico'] as const
 /** Path prefixes never limited (compared after normalisation). */
-export const EXEMPT_PREFIXES = ['/uploads/'] as const;
+export const EXEMPT_PREFIXES = ['/uploads/'] as const
 
 /** Admin routes that take credentials: limited by client IP, the rest of /admin is exempt. */
 export const ADMIN_AUTH_PATHS = [
@@ -41,7 +41,7 @@ export const ADMIN_AUTH_PATHS = [
   '/admin/reset-password',
   '/admin/register-admin',
   '/admin/register',
-] as const;
+] as const
 
 /**
  * Admin-panel API prefixes outside `/admin` (plugins' admin routes), exempt
@@ -61,20 +61,20 @@ export const ADMIN_API_PREFIXES = [
   '/seo',
   '/comments',
   '/article-stats',
-] as const;
+] as const
 
 /** Routes that send an email to the address in the body (group `auth-email`). */
 export const AUTH_EMAIL_PATHS = [
   '/api/auth/forgot-password',
   '/api/auth/send-email-confirmation',
   '/api/auth/local/register',
-] as const;
+] as const
 
 /** Login by identifier and password: also limited per account, not only per client. */
-export const AUTH_LOCAL_PATH = '/api/auth/local';
+export const AUTH_LOCAL_PATH = '/api/auth/local'
 
 /** Admin sign-in: also limited per account, not only per client. */
-export const ADMIN_LOGIN_PATH = '/admin/login';
+export const ADMIN_LOGIN_PATH = '/admin/login'
 
 /** `/api/auth/*` routes keyed by their exact path; any other one shares one key. */
 export const AUTH_KEY_PATHS = [
@@ -87,10 +87,10 @@ export const AUTH_KEY_PATHS = [
   '/api/auth/email-confirmation',
   '/api/auth/refresh',
   '/api/auth/logout',
-] as const;
+] as const
 
 /** Path of the MCP endpoint, limited in the `api` group. */
-export const MCP_PATH = '/mcp';
+export const MCP_PATH = '/mcp'
 
 /** Message of the 429 response body. */
-export const RATE_LIMIT_MESSAGE = 'Too many requests, please try again later.';
+export const RATE_LIMIT_MESSAGE = 'Too many requests, please try again later.'

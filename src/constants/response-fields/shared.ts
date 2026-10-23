@@ -1,4 +1,4 @@
-import type { Shape } from './types';
+import type { Shape } from './types'
 
 /**
  * Objects that several routes return, by name. `media-card` is a file with
@@ -126,7 +126,7 @@ export const SHARED_SHAPES: Record<string, Shape> = {
   'link-about': { id: 'required', label: 'required', url: 'required', variant: 'required' },
   'link-section': { label: 'required', url: 'required', id: 'surplus' },
   'relation-slug': { slug: 'required', id: 'surplus', documentId: 'surplus' },
-};
+}
 
 /** The blocks that articles and the About page share, by `__component`. */
 export const SHARED_BLOCKS: Record<string, Shape> = {
@@ -153,4 +153,4 @@ export const SHARED_BLOCKS: Record<string, Shape> = {
     },
     files: { use: 'required', of: 'media-card' },
   },
-};
+}

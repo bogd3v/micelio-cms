@@ -1,82 +1,82 @@
-import type { Core } from '@strapi/strapi';
-import { checkArticleCitations } from './api/article/utils/check-citations';
-import { blocksToPlainText } from './api/article/utils/plain-text';
-import { backfillArticlePlainText } from './migrations/article-plain-text';
-import { backfillCommentLocale } from './migrations/comment-locale';
-import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
-import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
-import { revokeSubscriberPermissions } from './migrations/subscriber-permissions';
-import { hashSubscriberTokens } from './migrations/hash-subscriber-tokens';
-import { ensureEditorRole } from './migrations/editor-role';
-import { applyAccountSettings } from './migrations/account-settings';
-import { migrateSliderItems } from './migrations/slider-items';
-import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings';
-import { ensureAuthorLocales } from './migrations/author-locales';
-import { seedDemoContent } from './migrations/demo-seed';
-import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens';
-import { revokePagePermissions } from './migrations/page-permissions';
-import { ensureRateLimitTable } from './migrations/rate-limit-table';
-import { hashUserTokens } from './migrations/hash-user-tokens';
+import type { Core } from '@strapi/strapi'
+import { checkArticleCitations } from './api/article/utils/check-citations'
+import { blocksToPlainText } from './api/article/utils/plain-text'
+import { backfillArticlePlainText } from './migrations/article-plain-text'
+import { backfillCommentLocale } from './migrations/comment-locale'
+import { consolidateCategories, hasChanges } from './migrations/consolidate-categories'
+import { grantPublicTagPermissions } from './migrations/public-tag-permissions'
+import { revokeSubscriberPermissions } from './migrations/subscriber-permissions'
+import { hashSubscriberTokens } from './migrations/hash-subscriber-tokens'
+import { ensureEditorRole } from './migrations/editor-role'
+import { applyAccountSettings } from './migrations/account-settings'
+import { migrateSliderItems } from './migrations/slider-items'
+import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
+import { ensureAuthorLocales } from './migrations/author-locales'
+import { seedDemoContent } from './migrations/demo-seed'
+import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens'
+import { revokePagePermissions } from './migrations/page-permissions'
+import { ensureRateLimitTable } from './migrations/rate-limit-table'
+import { hashUserTokens } from './migrations/hash-user-tokens'
 import {
   ABOUT_UID,
   ARTICLE_STAT_UID,
   ARTICLE_UID,
   PAGE_UID,
   SITE_SETTING_UID,
-} from './constants/uids';
-import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
-import type { UmamiConfig } from './types/article-stat';
-import { assertImageCreditsValid } from './utils/image-credit';
-import { assertAccentOverridesValid } from './utils/site-theme';
-import { assertSecurityContactValid } from './utils/site-security-contact';
-import { assertTimezoneValid } from './utils/site-timezone';
-import { createAuthorsForLocale, registerAuthorLocalesMiddleware } from './utils/author-locales';
-import { assertPageSectionsValid } from './utils/page-sections';
-import { registerRebuildHook } from './utils/rebuild-hook';
-import { restrictDraftsToEditors } from './utils/drafts-access';
-import { assertFrontendUrlConfigured } from './utils/frontend-url';
-import { assertSecretsConfigured } from './utils/secrets';
-import { assertUpstreamsUseTls } from './utils/plain-http';
-import { installForwardedTrust } from './utils/forwarded-trust';
-import { parseRetentionDays, scheduleUnconfirmedPurge } from './utils/unconfirmed-purge';
-import { warnLocalUploadsInProduction } from './utils/upload-provider';
+} from './constants/uids'
+import { isUmamiConfigured } from './api/article-stat/utils/umami-client'
+import type { UmamiConfig } from './types/article-stat'
+import { assertImageCreditsValid } from './utils/image-credit'
+import { assertAccentOverridesValid } from './utils/site-theme'
+import { assertSecurityContactValid } from './utils/site-security-contact'
+import { assertTimezoneValid } from './utils/site-timezone'
+import { createAuthorsForLocale, registerAuthorLocalesMiddleware } from './utils/author-locales'
+import { assertPageSectionsValid } from './utils/page-sections'
+import { registerRebuildHook } from './utils/rebuild-hook'
+import { restrictDraftsToEditors } from './utils/drafts-access'
+import { assertFrontendUrlConfigured } from './utils/frontend-url'
+import { assertSecretsConfigured } from './utils/secrets'
+import { assertUpstreamsUseTls } from './utils/plain-http'
+import { installForwardedTrust } from './utils/forwarded-trust'
+import { parseRetentionDays, scheduleUnconfirmedPurge } from './utils/unconfirmed-purge'
+import { warnLocalUploadsInProduction } from './utils/upload-provider'
 import {
   destroyRateLimit,
   getClientIpSettings,
   registerRateLimit,
-} from './utils/rate-limit/runtime';
+} from './utils/rate-limit/runtime'
 
 /** Unsubscribes the rebuild hook; set while it is registered. */
-let stopRebuildHook: (() => void) | null = null;
+let stopRebuildHook: (() => void) | null = null
 /** Unsubscribes the author-locale lifecycle; set while it is registered. */
-let stopAuthorLocales: (() => void) | null = null;
+let stopAuthorLocales: (() => void) | null = null
 
 export default {
   /** Before init: Document Service middlewares and extra admin routes. */
   register({ strapi }: { strapi: Core.Strapi }): void {
     // Links in emails, analytics paths and the site settings' URL point to the
     // frontend; in production there is no default to fall back on.
-    assertFrontendUrlConfigured();
+    assertFrontendUrlConfigured()
     // Keys and salts copied from an example file are public.
-    assertSecretsConfigured();
+    assertSecretsConfigured()
     // Umami and the rebuild hook receive a credential: no plain http to a public host.
-    assertUpstreamsUseTls();
+    assertUpstreamsUseTls()
     // A bad retention would silently keep or purge personal data: stop the boot.
-    parseRetentionDays(process.env.UNCONFIRMED_RETENTION_DAYS);
+    parseRetentionDays(process.env.UNCONFIRMED_RETENTION_DAYS)
     // Production should not serve uploads from the admin origin (local provider).
-    warnLocalUploadsInProduction(strapi);
+    warnLocalUploadsInProduction(strapi)
     if (process.env.SMTP_HOST && !process.env.EMAIL_FROM) {
       strapi.log.warn(
         "[email] EMAIL_FROM is not set: emails go out from no-reply@ the frontend's host"
-      );
+      )
     }
 
     // Client IP, rate limits and the fediverse inbox guard (global:: middlewares
     // in config/middlewares.ts); a no-op with RATE_LIMIT_ENABLED=false.
-    registerRateLimit(strapi);
+    registerRateLimit(strapi)
     // ctx.protocol and ctx.host follow the forwarded headers only from trusted peers.
-    const clientIp = getClientIpSettings(strapi);
-    if (clientIp) installForwardedTrust(strapi.server.app, clientIp);
+    const clientIp = getClientIpSettings(strapi)
+    if (clientIp) installForwardedTrust(strapi.server.app, clientIp)
 
     // Rejects citations without a reference, and keeps the article's
     // searchable plain text in step with its body.
@@ -86,16 +86,16 @@ export default {
         (context.action === 'create' || context.action === 'update')
       ) {
         const params = context.params as {
-          documentId?: string;
-          locale?: string;
-          data?: Record<string, unknown>;
-        };
-        await checkArticleCitations(strapi, params);
-        const data = params.data;
-        if (data && 'blocks' in data) data.plainText = blocksToPlainText(data.blocks);
+          documentId?: string
+          locale?: string
+          data?: Record<string, unknown>
+        }
+        await checkArticleCitations(strapi, params)
+        const data = params.data
+        if (data && 'blocks' in data) data.plainText = blocksToPlainText(data.blocks)
       }
-      return next();
-    });
+      return next()
+    })
 
     // Rejects image credits that break their license's attribution terms.
     strapi.documents.use(async (context, next) => {
@@ -103,11 +103,11 @@ export default {
         (context.uid === ARTICLE_UID || context.uid === ABOUT_UID) &&
         (context.action === 'create' || context.action === 'update')
       ) {
-        const data = (context.params as { data?: Record<string, unknown> }).data;
-        if (data) assertImageCreditsValid(data);
+        const data = (context.params as { data?: Record<string, unknown> }).data
+        if (data) assertImageCreditsValid(data)
       }
-      return next();
-    });
+      return next()
+    })
 
     // Rejects a post list with both a category and a tag, and a scene whose
     // model is not a glTF file.
@@ -116,11 +116,11 @@ export default {
         context.uid === PAGE_UID &&
         (context.action === 'create' || context.action === 'update')
       ) {
-        const data = (context.params as { data?: Record<string, unknown> }).data;
-        if (data) await assertPageSectionsValid(strapi, data);
+        const data = (context.params as { data?: Record<string, unknown> }).data
+        if (data) await assertPageSectionsValid(strapi, data)
       }
-      return next();
-    });
+      return next()
+    })
 
     // Rejects incomplete accent overrides, two overrides for one mode, an unknown timezone
     // and a malformed security contact.
@@ -129,21 +129,21 @@ export default {
         context.uid === SITE_SETTING_UID &&
         (context.action === 'create' || context.action === 'update')
       ) {
-        const data = (context.params as { data?: Record<string, unknown> }).data;
+        const data = (context.params as { data?: Record<string, unknown> }).data
         if (data) {
-          assertAccentOverridesValid(data);
-          assertTimezoneValid(data);
-          assertSecurityContactValid(data);
+          assertAccentOverridesValid(data)
+          assertTimezoneValid(data)
+          assertSecurityContactValid(data)
         }
       }
-      return next();
-    });
+      return next()
+    })
 
     // Every author exists in every locale, so articles can link to it in theirs.
-    registerAuthorLocalesMiddleware(strapi);
+    registerAuthorLocalesMiddleware(strapi)
 
     // Only editors may read drafts through the content API (?status=draft).
-    restrictDraftsToEditors(strapi);
+    restrictDraftsToEditors(strapi)
 
     // Admin API route (admin session required) for the visitors widget on the
     // admin homepage (src/admin). Routes under src/api are always registered as
@@ -160,7 +160,7 @@ export default {
           info: { apiName: 'article-stat', type: 'admin' },
         },
       ],
-    });
+    })
   },
 
   /**
@@ -169,117 +169,117 @@ export default {
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }): Promise<void> {
     // First: nothing below may touch an author or an article before they match.
-    const authorLocales = await ensureAuthorLocales(strapi);
+    const authorLocales = await ensureAuthorLocales(strapi)
     if (authorLocales.created > 0 || authorLocales.relinked > 0) {
-      strapi.log.info(`[authors] ${JSON.stringify(authorLocales)}`);
+      strapi.log.info(`[authors] ${JSON.stringify(authorLocales)}`)
     }
 
     // A locale added later gets a localization of every author.
-    stopAuthorLocales?.();
+    stopAuthorLocales?.()
     stopAuthorLocales = strapi.db.lifecycles.subscribe({
       models: ['plugin::i18n.locale'],
       async afterCreate(event) {
-        const code = (event.result as { code?: string } | undefined)?.code;
-        if (!code) return;
-        const created = await createAuthorsForLocale(strapi, code);
-        if (created > 0) strapi.log.info(`[authors] created ${created} localizations in ${code}`);
+        const code = (event.result as { code?: string } | undefined)?.code
+        if (!code) return
+        const created = await createAuthorsForLocale(strapi, code)
+        if (created > 0) strapi.log.info(`[authors] created ${created} localizations in ${code}`)
       },
-    });
+    })
 
-    const report = await consolidateCategories(strapi);
+    const report = await consolidateCategories(strapi)
     if (hasChanges(report)) {
-      strapi.log.info(`[categories] consolidated: ${JSON.stringify(report)}`);
+      strapi.log.info(`[categories] consolidated: ${JSON.stringify(report)}`)
     }
     if (report.untouched.length > 0) {
-      strapi.log.warn(`[categories] not part of the redesign: ${report.untouched.join(', ')}`);
+      strapi.log.warn(`[categories] not part of the redesign: ${report.untouched.join(', ')}`)
     }
 
-    const filled = await backfillArticlePlainText(strapi);
-    if (filled > 0) strapi.log.info(`[articles] filled the plain text of ${filled} rows`);
+    const filled = await backfillArticlePlainText(strapi)
+    if (filled > 0) strapi.log.info(`[articles] filled the plain text of ${filled} rows`)
 
-    const sliders = await migrateSliderItems(strapi);
-    if (sliders > 0) strapi.log.info(`[sliders] copied files into items for ${sliders} sliders`);
+    const sliders = await migrateSliderItems(strapi)
+    if (sliders > 0) strapi.log.info(`[sliders] copied files into items for ${sliders} sliders`)
 
-    const localized = await backfillCommentLocale(strapi);
-    if (localized > 0) strapi.log.info(`[comments] set the locale of ${localized} comments`);
+    const localized = await backfillCommentLocale(strapi)
+    if (localized > 0) strapi.log.info(`[comments] set the locale of ${localized} comments`)
 
-    const tagPermissions = await grantPublicTagPermissions(strapi);
+    const tagPermissions = await grantPublicTagPermissions(strapi)
     if (tagPermissions > 0) {
-      strapi.log.info(`[tags] granted ${tagPermissions} public read permissions`);
+      strapi.log.info(`[tags] granted ${tagPermissions} public read permissions`)
     }
 
-    const subscriberPermissions = await revokeSubscriberPermissions(strapi);
+    const subscriberPermissions = await revokeSubscriberPermissions(strapi)
     if (subscriberPermissions > 0) {
-      strapi.log.info(`[subscribers] revoked ${subscriberPermissions} role permissions`);
+      strapi.log.info(`[subscribers] revoked ${subscriberPermissions} role permissions`)
     }
 
-    const subscriberTokens = await hashSubscriberTokens(strapi);
-    if (subscriberTokens > 0) strapi.log.info(`[subscribers] hashed ${subscriberTokens} tokens`);
+    const subscriberTokens = await hashSubscriberTokens(strapi)
+    if (subscriberTokens > 0) strapi.log.info(`[subscribers] hashed ${subscriberTokens} tokens`)
 
-    const siteLocales = await seedSiteSettings(strapi);
+    const siteLocales = await seedSiteSettings(strapi)
     if (siteLocales.length > 0) {
-      strapi.log.info(`[site-settings] created neutral settings in ${siteLocales.join(', ')}`);
+      strapi.log.info(`[site-settings] created neutral settings in ${siteLocales.join(', ')}`)
     }
     // After the site settings exist: the demo replaces their neutral values.
-    const demo = await seedDemoContent(strapi);
+    const demo = await seedDemoContent(strapi)
     if (demo !== 'disabled' && demo !== 'already-applied') {
-      strapi.log.info(`[demo] ${demo}`);
+      strapi.log.info(`[demo] ${demo}`)
     }
 
     for (const [name, ensure] of [
       ['frontend', ensureFrontendToken],
       ['build', ensureBuildToken],
     ] as const) {
-      const report = await ensure(strapi);
+      const report = await ensure(strapi)
       if (report === 'created' || report === 'updated') {
-        strapi.log.info(`[api-tokens] ${report} the ${name} API token`);
+        strapi.log.info(`[api-tokens] ${report} the ${name} API token`)
       }
     }
 
-    const pagePermissions = await revokePagePermissions(strapi);
+    const pagePermissions = await revokePagePermissions(strapi)
     if (pagePermissions > 0) {
-      strapi.log.info(`[pages] revoked ${pagePermissions} role permissions`);
+      strapi.log.info(`[pages] revoked ${pagePermissions} role permissions`)
     }
 
-    const siteSettingPermissions = await revokeSiteSettingPermissions(strapi);
+    const siteSettingPermissions = await revokeSiteSettingPermissions(strapi)
     if (siteSettingPermissions > 0) {
-      strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`);
+      strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`)
     }
 
-    const editor = await ensureEditorRole(strapi);
+    const editor = await ensureEditorRole(strapi)
     if (editor.roleCreated || editor.permissionsGranted > 0) {
-      strapi.log.info(`[roles] editor: ${JSON.stringify(editor)}`);
+      strapi.log.info(`[roles] editor: ${JSON.stringify(editor)}`)
     }
 
     // After the Editor role exists: it also gets DELETE /api/users/me.
-    const accounts = await applyAccountSettings(strapi);
+    const accounts = await applyAccountSettings(strapi)
     if (accounts.settingsApplied || accounts.permissionsGranted > 0) {
-      strapi.log.info(`[accounts] ${JSON.stringify(accounts)}`);
+      strapi.log.info(`[accounts] ${JSON.stringify(accounts)}`)
     }
 
     if (await ensureRateLimitTable(strapi)) {
-      strapi.log.info('[rate-limit] created the table of the database store');
+      strapi.log.info('[rate-limit] created the table of the database store')
     }
 
-    const hashedTokens = await hashUserTokens(strapi);
-    if (hashedTokens > 0) strapi.log.info(`[accounts] hashed ${hashedTokens} reader tokens`);
+    const hashedTokens = await hashUserTokens(strapi)
+    if (hashedTokens > 0) strapi.log.info(`[accounts] hashed ${hashedTokens} reader tokens`)
 
-    scheduleUmamiSync(strapi);
+    scheduleUmamiSync(strapi)
     // Daily only, not at boot: a deploy never deletes data before the operator can look.
-    scheduleUnconfirmedPurge(strapi, parseRetentionDays(process.env.UNCONFIRMED_RETENTION_DAYS));
+    scheduleUnconfirmedPurge(strapi, parseRetentionDays(process.env.UNCONFIRMED_RETENTION_DAYS))
 
     // Static and landing sites rebuild when published content changes.
-    stopRebuildHook = registerRebuildHook(strapi);
+    stopRebuildHook = registerRebuildHook(strapi)
   },
 
   async destroy({ strapi }: { strapi: Core.Strapi }): Promise<void> {
-    await destroyRateLimit(strapi);
-    stopRebuildHook?.();
-    stopAuthorLocales?.();
-    stopAuthorLocales = null;
-    stopRebuildHook = null;
+    await destroyRateLimit(strapi)
+    stopRebuildHook?.()
+    stopAuthorLocales?.()
+    stopAuthorLocales = null
+    stopRebuildHook = null
   },
-};
+}
 
 /**
  * Syncs article visitors from Umami every `UMAMI_SYNC_CRON` and once right
@@ -287,17 +287,17 @@ export default {
  * A failure only logs: the previous counts stay until the next run.
  */
 function scheduleUmamiSync(strapi: Core.Strapi) {
-  const config = strapi.config.get<UmamiConfig>('umami');
-  if (!strapi.config.get<boolean>('server.cron.enabled') || !isUmamiConfigured(config)) return;
+  const config = strapi.config.get<UmamiConfig>('umami')
+  if (!strapi.config.get<boolean>('server.cron.enabled') || !isUmamiConfigured(config)) return
 
   const run = async () => {
     try {
-      const report = await strapi.service(ARTICLE_STAT_UID).sync();
-      strapi.log.info(`[umami] synced article visitors: ${JSON.stringify(report)}`);
+      const report = await strapi.service(ARTICLE_STAT_UID).sync()
+      strapi.log.info(`[umami] synced article visitors: ${JSON.stringify(report)}`)
     } catch (error) {
-      strapi.log.warn(`[umami] sync failed, keeping the previous counts: ${error}`);
+      strapi.log.warn(`[umami] sync failed, keeping the previous counts: ${error}`)
     }
-  };
-  strapi.cron.add({ umamiSync: { task: run, options: { rule: config.syncCron } } });
-  void run();
+  }
+  strapi.cron.add({ umamiSync: { task: run, options: { rule: config.syncCron } } })
+  void run()
 }

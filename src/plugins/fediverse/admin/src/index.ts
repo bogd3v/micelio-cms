@@ -1,14 +1,14 @@
-import type { ContentManagerPlugin } from '@strapi/content-manager/strapi-admin';
-import { Earth } from '@strapi/icons';
-import type { StrapiApp } from '@strapi/strapi/admin';
+import type { ContentManagerPlugin } from '@strapi/content-manager/strapi-admin'
+import { Earth } from '@strapi/icons'
+import type { StrapiApp } from '@strapi/strapi/admin'
 
-import { FederationPanel } from './components/FederationPanel';
-import { READ_PERMISSION } from './permissions';
-import en from './translations/en.json';
-import es from './translations/es.json';
+import { FederationPanel } from './components/FederationPanel'
+import { READ_PERMISSION } from './permissions'
+import en from './translations/en.json'
+import es from './translations/es.json'
 
 /** The admin strings of the plugin by locale; `src/admin/app.tsx` hands them to Strapi. */
-export const fediverseTranslations: Record<'en' | 'es', Record<string, string>> = { en, es };
+export const fediverseTranslations: Record<'en' | 'es', Record<string, string>> = { en, es }
 
 /**
  * Adds the federation panel to the side column of the article edit view.
@@ -20,8 +20,8 @@ export const fediverseTranslations: Record<'en' | 'es', Record<string, string>> 
  * federation is off by the routes it cannot reach.
  */
 export function registerFederationPanel(app: Pick<StrapiApp, 'getPlugin'>): void {
-  const { apis } = app.getPlugin('content-manager');
-  (apis as ContentManagerPlugin['config']['apis']).addEditViewSidePanel([FederationPanel]);
+  const { apis } = app.getPlugin('content-manager')
+  ;(apis as ContentManagerPlugin['config']['apis']).addEditViewSidePanel([FederationPanel])
 }
 
 /**
@@ -39,5 +39,5 @@ export function registerFediversePage(app: Pick<StrapiApp, 'addMenuLink'>): void
     intlLabel: { id: 'fediverse.page.menu', defaultMessage: 'Fediverse' },
     permissions: [READ_PERMISSION],
     Component: () => import('./pages/FediversePage'),
-  });
+  })
 }

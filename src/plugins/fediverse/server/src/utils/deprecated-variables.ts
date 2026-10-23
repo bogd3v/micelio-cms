@@ -4,7 +4,7 @@ const DEPRECATED_ACTOR_VARIABLES = [
   ['FEDIVERSE_ACTOR_NAME', 'Display name'],
   ['FEDIVERSE_ACTOR_SUMMARY', 'Summary'],
   ['FEDIVERSE_ACTOR_SOURCE_URL', 'Source URL'],
-] as const;
+] as const
 
 /**
  * Writes one warning per deprecated `FEDIVERSE_ACTOR_*` variable that is set, naming the site
@@ -16,13 +16,13 @@ export function warnDeprecatedActorVariables(
   log: { warn(message: string): void },
   env: NodeJS.ProcessEnv = process.env
 ): string[] {
-  const warned: string[] = [];
+  const warned: string[] = []
   for (const [name, field] of DEPRECATED_ACTOR_VARIABLES) {
-    if (!env[name]?.trim()) continue;
+    if (!env[name]?.trim()) continue
     log.warn(
       `[fediverse] ${name} is deprecated: set "${field}" under Site settings > Fediverse profile instead. The variable still works as a fallback`
-    );
-    warned.push(name);
+    )
+    warned.push(name)
   }
-  return warned;
+  return warned
 }

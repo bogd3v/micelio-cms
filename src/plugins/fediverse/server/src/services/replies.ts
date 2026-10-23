@@ -1,11 +1,11 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-import { ARTICLE_UID, COMMENT_UID } from '../constants/uids';
-import type { IncomingReply, IngestResult, ReplyContext, ReplyParent } from '../types/replies';
-import { findPublishedArticle, getDefaultLocale, resolveArticleId } from './articles';
-import { isActorBlocked } from './followers';
+import { ARTICLE_UID, COMMENT_UID } from '../constants/uids'
+import type { IncomingReply, IngestResult, ReplyContext, ReplyParent } from '../types/replies'
+import { findPublishedArticle, getDefaultLocale, resolveArticleId } from './articles'
+import { isActorBlocked } from './followers'
 
-const MAX_CONTENT_LENGTH = 5000;
+const MAX_CONTENT_LENGTH = 5000
 
 const NAMED_ENTITIES: Record<string, string> = {
   amp: '&',
@@ -14,38 +14,38 @@ const NAMED_ENTITIES: Record<string, string> = {
   quot: '"',
   apos: "'",
   nbsp: ' ',
-};
+}
 
 function decodeEntities(text: string): string {
   return text.replace(/&(?:#(\d+)|#x([0-9a-f]+)|([a-z]+));/gi, (match, dec, hex, name) => {
-    if (name) return NAMED_ENTITIES[name.toLowerCase()] ?? match;
-    const code = dec ? Number.parseInt(dec, 10) : Number.parseInt(hex, 16);
-    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
-  });
+    if (name) return NAMED_ENTITIES[name.toLowerCase()] ?? match
+    const code = dec ? Number.parseInt(dec, 10) : Number.parseInt(hex, 16)
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match
+  })
 }
 
 /** An HTML comment. */
-const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+const HTML_COMMENT = /<!--[\s\S]*?-->/g
 
 /**
  * Something that reads as an HTML tag: a name followed by whitespace, `/` or
  * `>`, or a `<!` declaration. A `<` followed by anything else (`1 < 2`,
  * `Map<K, V>`) is text.
  */
-const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g;
+const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g
 
 /** A tag start with no `>` left to close it, removed when stripping keeps rebuilding tags. */
-const TAG_START = /<(?=[A-Za-z/!])/g;
+const TAG_START = /<(?=[A-Za-z/!])/g
 
 /** A comment opener with no `-->` after it, which no other pattern removes. */
-const COMMENT_OPEN = /<!--/g;
+const COMMENT_OPEN = /<!--/g
 
 /** Passes of tag stripping before the tag starts that remain are dropped. */
-const MAX_STRIP_PASSES = 4;
+const MAX_STRIP_PASSES = 4
 
 /** One pass: complete comments, tags, then a comment opener that was never closed. */
 function removeMarkup(text: string): string {
-  return text.replace(HTML_COMMENT, '').replace(HTML_TAG, '').replace(COMMENT_OPEN, '');
+  return text.replace(HTML_COMMENT, '').replace(HTML_TAG, '').replace(COMMENT_OPEN, '')
 }
 
 /**
@@ -55,13 +55,13 @@ function removeMarkup(text: string): string {
  * hostile nesting; what then remains of a tag start is dropped.
  */
 function stripTags(text: string): string {
-  let current = text;
+  let current = text
   for (let pass = 0; pass < MAX_STRIP_PASSES; pass++) {
-    const next = removeMarkup(current);
-    if (next === current) return next;
-    current = next;
+    const next = removeMarkup(current)
+    if (next === current) return next
+    current = next
   }
-  return removeMarkup(current.replace(TAG_START, ''));
+  return removeMarkup(current.replace(TAG_START, ''))
 }
 
 /**
@@ -76,13 +76,13 @@ export function htmlToPlainText(html: string): string {
     html
       .replace(/<\s*br\s*\/?\s*>/gi, '\n')
       .replace(/<\/\s*(?:p|div|li|blockquote|h[1-6])\s*>/gi, '\n\n')
-  );
+  )
 
   return decodeEntities(text)
     .replace(/\r\n?/g, '\n')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    .trim()
 }
 
 /**
@@ -92,8 +92,8 @@ export function htmlToPlainText(html: string): string {
 export function stripLeadingMentions(text: string, usernames: string | string[]): string {
   const names = (Array.isArray(usernames) ? usernames : [usernames])
     .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('|');
-  return text.replace(new RegExp(`^(?:@(?:${names})(?:@[\\w.-]+)?\\s+)+`, 'i'), '').trim();
+    .join('|')
+  return text.replace(new RegExp(`^(?:@(?:${names})(?:@[\\w.-]+)?\\s+)+`, 'i'), '').trim()
 }
 
 /**
@@ -102,49 +102,49 @@ export function stripLeadingMentions(text: string, usernames: string | string[])
  * there is nothing to store and the reply is ignored.
  */
 export function toCommentContent(html: string, usernames: string | string[]): string {
-  return stripLeadingMentions(htmlToPlainText(html), usernames).slice(0, MAX_CONTENT_LENGTH);
+  return stripLeadingMentions(htmlToPlainText(html), usernames).slice(0, MAX_CONTENT_LENGTH)
 }
 
 interface CommentRow {
-  documentId: string;
-  related?: string | null;
-  authorId?: string | null;
-  content?: string | null;
+  documentId: string
+  related?: string | null
+  authorId?: string | null
+  content?: string | null
 }
 
 /** An `ignored` result with its reason. */
-export const ignored = (reason: string): IngestResult => ({ status: 'ignored', reason });
+export const ignored = (reason: string): IngestResult => ({ status: 'ignored', reason })
 
 // The generated types for plugin content types don't include the comments
 // plugin's attributes (or our extension's), so type the document service by hand.
 interface CommentDocuments {
-  findFirst(params: { filters: Record<string, unknown> }): Promise<unknown>;
-  create(params: { data: Record<string, unknown> }): Promise<unknown>;
-  update(params: { documentId: string; data: Record<string, unknown> }): Promise<unknown>;
+  findFirst(params: { filters: Record<string, unknown> }): Promise<unknown>
+  create(params: { data: Record<string, unknown> }): Promise<unknown>
+  update(params: { documentId: string; data: Record<string, unknown> }): Promise<unknown>
 }
 
 function comments(strapi: Core.Strapi): CommentDocuments {
-  return strapi.documents(COMMENT_UID) as unknown as CommentDocuments;
+  return strapi.documents(COMMENT_UID) as unknown as CommentDocuments
 }
 
 async function findCommentByUri(strapi: Core.Strapi, uri: string): Promise<CommentRow | null> {
   return (await comments(strapi).findFirst({
     filters: { fediverseUri: uri },
-  })) as CommentRow | null;
+  })) as CommentRow | null
 }
 
 async function findCommentByNoteUri(strapi: Core.Strapi, uri: string): Promise<CommentRow | null> {
   return (await comments(strapi).findFirst({
     filters: { fediverseNoteUri: uri },
-  })) as CommentRow | null;
+  })) as CommentRow | null
 }
 
 /** Why a reply whose `inReplyTo` matches nothing stored is ignored by `ingestReply`. */
-export const NOT_OUR_CONVERSATION = 'not a reply to one of our articles';
+export const NOT_OUR_CONVERSATION = 'not a reply to one of our articles'
 
 /** The documentId of the comment stored for a remote note, or `null`. */
 export async function findStoredReply(strapi: Core.Strapi, uri: string): Promise<string | null> {
-  return (await findCommentByUri(strapi, uri))?.documentId ?? null;
+  return (await findCommentByUri(strapi, uri))?.documentId ?? null
 }
 
 /**
@@ -157,19 +157,19 @@ export async function findReplyParent(
   inReplyTo: string,
   context: ReplyContext
 ): Promise<ReplyParent | null> {
-  const articleId = await resolveArticleId(strapi, inReplyTo, context.parseArticleUri);
-  if (articleId) return { articleId, parentDocumentId: null };
+  const articleId = await resolveArticleId(strapi, inReplyTo, context.parseArticleUri)
+  if (articleId) return { articleId, parentDocumentId: null }
 
   // A reply to a remote comment, or to a moderator's own reply (whose note id is not public).
   const parent =
-    (await findCommentByUri(strapi, inReplyTo)) ?? (await findCommentByNoteUri(strapi, inReplyTo));
-  const related = parent?.related ?? '';
-  const separator = related.lastIndexOf(':');
+    (await findCommentByUri(strapi, inReplyTo)) ?? (await findCommentByNoteUri(strapi, inReplyTo))
+  const related = parent?.related ?? ''
+  const separator = related.lastIndexOf(':')
   if (parent && related.slice(0, separator) === ARTICLE_UID) {
-    return { articleId: related.slice(separator + 1), parentDocumentId: parent.documentId };
+    return { articleId: related.slice(separator + 1), parentDocumentId: parent.documentId }
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -184,8 +184,8 @@ export async function storeReply(
   parent: ReplyParent,
   context: ReplyContext
 ): Promise<IngestResult> {
-  const content = toCommentContent(reply.contentHtml, context.actorUsernames);
-  if (!content) return ignored('empty after sanitizing');
+  const content = toCommentContent(reply.contentHtml, context.actorUsernames)
+  if (!content) return ignored('empty after sanitizing')
 
   const created = (await comments(strapi).create({
     data: {
@@ -201,9 +201,9 @@ export async function storeReply(
       fediverseActorHandle: reply.handle ?? undefined,
       ...(parent.parentDocumentId ? { threadOf: parent.parentDocumentId } : {}),
     },
-  })) as CommentRow;
+  })) as CommentRow
 
-  return { status: 'applied', documentId: created.documentId };
+  return { status: 'applied', documentId: created.documentId }
 }
 
 /**
@@ -217,16 +217,16 @@ export async function ingestReply(
   reply: IncomingReply,
   context: ReplyContext
 ): Promise<IngestResult> {
-  if (await isActorBlocked(strapi, reply.actorId)) return ignored('actor is blocked');
-  if (await findCommentByUri(strapi, reply.uri)) return ignored('already stored');
+  if (await isActorBlocked(strapi, reply.actorId)) return ignored('actor is blocked')
+  if (await findCommentByUri(strapi, reply.uri)) return ignored('already stored')
 
-  const parent = await findReplyParent(strapi, reply.inReplyTo, context);
-  if (!parent) return ignored(NOT_OUR_CONVERSATION);
+  const parent = await findReplyParent(strapi, reply.inReplyTo, context)
+  if (!parent) return ignored(NOT_OUR_CONVERSATION)
   if ((await findPublishedArticle(strapi, parent.articleId)) == null) {
-    return ignored('article is not published');
+    return ignored('article is not published')
   }
 
-  return storeReply(strapi, reply, parent, context);
+  return storeReply(strapi, reply, parent, context)
 }
 
 /**
@@ -238,19 +238,19 @@ export async function updateReply(
   update: { uri: string; actorId: string; contentHtml: string },
   context: ReplyContext
 ): Promise<IngestResult> {
-  const comment = await findCommentByUri(strapi, update.uri);
-  if (!comment) return ignored('unknown reply');
-  if (comment.authorId !== update.actorId) return ignored('not the reply author');
+  const comment = await findCommentByUri(strapi, update.uri)
+  if (!comment) return ignored('unknown reply')
+  if (comment.authorId !== update.actorId) return ignored('not the reply author')
 
-  const content = toCommentContent(update.contentHtml, context.actorUsernames);
-  if (!content) return ignored('empty after sanitizing');
-  if (content === comment.content) return ignored('content unchanged');
+  const content = toCommentContent(update.contentHtml, context.actorUsernames)
+  if (!content) return ignored('empty after sanitizing')
+  if (content === comment.content) return ignored('content unchanged')
 
   await comments(strapi).update({
     documentId: comment.documentId,
     data: { content, approvalStatus: 'PENDING' },
-  });
-  return { status: 'applied', documentId: comment.documentId };
+  })
+  return { status: 'applied', documentId: comment.documentId }
 }
 
 /** Marks the comment for a deleted remote Note as removed (kept for the thread structure). */
@@ -258,10 +258,10 @@ export async function removeReply(
   strapi: Core.Strapi,
   removal: { uri: string; actorId: string }
 ): Promise<IngestResult> {
-  const comment = await findCommentByUri(strapi, removal.uri);
-  if (!comment) return ignored('unknown reply');
-  if (comment.authorId !== removal.actorId) return ignored('not the reply author');
+  const comment = await findCommentByUri(strapi, removal.uri)
+  if (!comment) return ignored('unknown reply')
+  if (comment.authorId !== removal.actorId) return ignored('not the reply author')
 
-  await comments(strapi).update({ documentId: comment.documentId, data: { removed: true } });
-  return { status: 'applied', documentId: comment.documentId };
+  await comments(strapi).update({ documentId: comment.documentId, data: { removed: true } })
+  return { status: 'applied', documentId: comment.documentId }
 }

@@ -2,51 +2,51 @@
  * article-stat service: visitors per article translation, synced from Umami.
  */
 
-import { factories } from '@strapi/strapi';
-import { ARTICLE_STAT_UID, ARTICLE_UID } from '../../../constants/uids';
+import { factories } from '@strapi/strapi'
+import { ARTICLE_STAT_UID, ARTICLE_UID } from '../../../constants/uids'
 import type {
   PopularArticle,
   PopularOptions,
   StatsSummary,
   SyncReport,
   UmamiConfig,
-} from '../../../types/article-stat';
-import { parseFrontendArticlePath } from '../../../utils/frontend-url';
+} from '../../../types/article-stat'
+import { parseFrontendArticlePath } from '../../../utils/frontend-url'
 import {
   fetchPathVisitors,
   fetchWebsiteTotals,
   isUmamiConfigured,
   type PathVisitors,
-} from '../utils/umami-client';
+} from '../utils/umami-client'
 
 /** Number of articles `popular` returns when the caller gives no usable limit. */
-export const POPULAR_DEFAULT_LIMIT = 5;
+export const POPULAR_DEFAULT_LIMIT = 5
 /** Largest number of articles `popular` returns; a higher limit is clamped to it. */
-export const POPULAR_MAX_LIMIT = 50;
-const DAY_MS = 24 * 60 * 60 * 1000;
-const RECENT_WINDOW_MS = 30 * DAY_MS;
-const SUMMARY_TOP = 5;
+export const POPULAR_MAX_LIMIT = 50
+const DAY_MS = 24 * 60 * 60 * 1000
+const RECENT_WINDOW_MS = 30 * DAY_MS
+const SUMMARY_TOP = 5
 
 interface StatRow {
-  id: number;
-  articleDocumentId: string;
-  articleLocale: string;
-  views: number | null;
-  views30d: number | null;
-  syncedAt: string | null;
+  id: number
+  articleDocumentId: string
+  articleLocale: string
+  views: number | null
+  views30d: number | null
+  syncedAt: string | null
 }
 
 interface ArticleRow {
-  documentId: string;
-  slug: string | null;
-  title: string | null;
-  description: string | null;
-  publishedAt: string | null;
-  locale: string | null;
-  category?: { slug: string | null; name: string | null } | null;
+  documentId: string
+  slug: string | null
+  title: string | null
+  description: string | null
+  publishedAt: string | null
+  locale: string | null
+  category?: { slug: string | null; name: string | null } | null
 }
 
-const keyOf = (documentId: string, locale: string) => `${documentId}\u0000${locale}`;
+const keyOf = (documentId: string, locale: string) => `${documentId}\u0000${locale}`
 
 export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
   /**
@@ -55,89 +55,89 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
    * Umami isn't configured; throws when Umami fails, leaving the rows as they were.
    */
   async sync(now = Date.now()): Promise<SyncReport | null> {
-    const config = strapi.config.get<UmamiConfig>('umami');
-    if (!isUmamiConfigured(config)) return null;
+    const config = strapi.config.get<UmamiConfig>('umami')
+    if (!isUmamiConfigured(config)) return null
 
     const [allTime, recent] = await Promise.all([
       fetchPathVisitors(config, { startAt: 0, endAt: now }),
       fetchPathVisitors(config, { startAt: now - RECENT_WINDOW_MS, endAt: now }),
-    ]);
+    ])
 
     // Published translations by locale + slug. db.query returns draft and
     // published rows; only the published ones have publishedAt.
     const published = (await strapi.db.query(ARTICLE_UID).findMany({
       select: ['documentId', 'slug', 'locale'],
       where: { publishedAt: { $notNull: true } },
-    })) as { documentId: string; slug: string | null; locale: string }[];
-    const byPath = new Map<string, string>();
-    const counts = new Map<string, { views: number; views30d: number }>();
+    })) as { documentId: string; slug: string | null; locale: string }[]
+    const byPath = new Map<string, string>()
+    const counts = new Map<string, { views: number; views30d: number }>()
     for (const row of published) {
-      if (!row.slug) continue;
-      const key = keyOf(row.documentId, row.locale);
-      byPath.set(`${row.locale}\u0000${row.slug}`, key);
-      counts.set(key, { views: 0, views30d: 0 });
+      if (!row.slug) continue
+      const key = keyOf(row.documentId, row.locale)
+      byPath.set(`${row.locale}\u0000${row.slug}`, key)
+      counts.set(key, { views: 0, views30d: 0 })
     }
 
-    let matchedPaths = 0;
-    let otherPaths = 0;
+    let matchedPaths = 0
+    let otherPaths = 0
     const add = (rows: PathVisitors[], field: 'views' | 'views30d') => {
       for (const { path, visitors } of rows) {
-        const parsed = parseFrontendArticlePath(path);
-        const key = parsed && byPath.get(`${parsed.locale}\u0000${parsed.slug}`);
+        const parsed = parseFrontendArticlePath(path)
+        const key = parsed && byPath.get(`${parsed.locale}\u0000${parsed.slug}`)
         if (!key) {
-          if (field === 'views') otherPaths += 1;
-          continue;
+          if (field === 'views') otherPaths += 1
+          continue
         }
-        if (field === 'views') matchedPaths += 1;
+        if (field === 'views') matchedPaths += 1
         // `/blog/x` and `/blog/x/` are separate paths in Umami: add them up.
-        counts.get(key)![field] += visitors;
+        counts.get(key)![field] += visitors
       }
-    };
-    add(allTime, 'views');
-    add(recent, 'views30d');
+    }
+    add(allTime, 'views')
+    add(recent, 'views30d')
 
-    const syncedAt = new Date(now).toISOString();
-    const stats = strapi.db.query(ARTICLE_STAT_UID);
-    const existing = (await stats.findMany({ orderBy: { id: 'asc' } })) as StatRow[];
-    const seen = new Set<string>();
-    const stale: number[] = [];
+    const syncedAt = new Date(now).toISOString()
+    const stats = strapi.db.query(ARTICLE_STAT_UID)
+    const existing = (await stats.findMany({ orderBy: { id: 'asc' } })) as StatRow[]
+    const seen = new Set<string>()
+    const stale: number[] = []
 
     for (const row of existing) {
-      const key = keyOf(row.articleDocumentId, row.articleLocale);
-      const next = counts.get(key);
+      const key = keyOf(row.articleDocumentId, row.articleLocale)
+      const next = counts.get(key)
       // Unpublished or deleted articles, and duplicates of a key already seen.
       if (!next || seen.has(key)) {
-        stale.push(row.id);
-        continue;
+        stale.push(row.id)
+        continue
       }
-      seen.add(key);
-      await stats.update({ where: { id: row.id }, data: { ...next, syncedAt } });
+      seen.add(key)
+      await stats.update({ where: { id: row.id }, data: { ...next, syncedAt } })
     }
     for (const [key, next] of counts) {
-      if (seen.has(key)) continue;
-      const [articleDocumentId, articleLocale] = key.split('\u0000');
-      await stats.create({ data: { articleDocumentId, articleLocale, ...next, syncedAt } });
+      if (seen.has(key)) continue
+      const [articleDocumentId, articleLocale] = key.split('\u0000')
+      await stats.create({ data: { articleDocumentId, articleLocale, ...next, syncedAt } })
     }
-    if (stale.length > 0) await stats.deleteMany({ where: { id: { $in: stale } } });
+    if (stale.length > 0) await stats.deleteMany({ where: { id: { $in: stale } } })
 
-    return { articles: counts.size, matchedPaths, otherPaths };
+    return { articles: counts.size, matchedPaths, otherPaths }
   },
 
   /** Published articles of a locale, most visited first; articles without visitors are left out. */
   async popular({ locale, period = '30d', limit = POPULAR_DEFAULT_LIMIT }: PopularOptions = {}) {
     const resolvedLocale =
-      locale || (await strapi.plugin('i18n').service('locales').getDefaultLocale());
-    const column = period === 'all' ? 'views' : 'views30d';
+      locale || (await strapi.plugin('i18n').service('locales').getDefaultLocale())
+    const column = period === 'all' ? 'views' : 'views30d'
 
     const stats = (await strapi.db.query(ARTICLE_STAT_UID).findMany({
       where: { articleLocale: resolvedLocale, [column]: { $gt: 0 } },
       orderBy: [{ [column]: 'desc' }, { id: 'asc' }],
-    })) as StatRow[];
+    })) as StatRow[]
     const syncedAt = stats.reduce<string | null>(
       (latest, row) => (row.syncedAt && (!latest || row.syncedAt > latest) ? row.syncedAt : latest),
       null
-    );
-    if (stats.length === 0) return { data: [], locale: resolvedLocale, syncedAt };
+    )
+    if (stats.length === 0) return { data: [], locale: resolvedLocale, syncedAt }
 
     const articles = (await strapi.documents(ARTICLE_UID).findMany({
       status: 'published',
@@ -145,13 +145,13 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
       fields: ['slug', 'title', 'description', 'publishedAt', 'locale'],
       populate: { category: { fields: ['slug', 'name'] } },
       filters: { documentId: { $in: stats.map((row) => row.articleDocumentId) } },
-    })) as unknown as ArticleRow[];
-    const byId = new Map(articles.map((article) => [article.documentId, article]));
+    })) as unknown as ArticleRow[]
+    const byId = new Map(articles.map((article) => [article.documentId, article]))
 
-    const data: PopularArticle[] = [];
+    const data: PopularArticle[] = []
     for (const row of stats) {
-      const article = byId.get(row.articleDocumentId);
-      if (!article) continue;
+      const article = byId.get(row.articleDocumentId)
+      if (!article) continue
       data.push({
         documentId: article.documentId,
         slug: article.slug,
@@ -163,10 +163,10 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
           ? { slug: article.category.slug, name: article.category.name }
           : null,
         views: row[column] ?? 0,
-      });
-      if (data.length >= Math.min(Math.max(1, limit), POPULAR_MAX_LIMIT)) break;
+      })
+      if (data.length >= Math.min(Math.max(1, limit), POPULAR_MAX_LIMIT)) break
     }
-    return { data, locale: resolvedLocale, syncedAt };
+    return { data, locale: resolvedLocale, syncedAt }
   },
 
   /**
@@ -175,19 +175,19 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
    * last 7 and 30 days, read live from Umami. A failing Umami only drops the totals.
    */
   async summary(now = Date.now()): Promise<StatsSummary> {
-    const config = strapi.config.get<UmamiConfig>('umami');
-    const configured = isUmamiConfigured(config);
+    const config = strapi.config.get<UmamiConfig>('umami')
+    const configured = isUmamiConfigured(config)
 
     const stats = (await strapi.db.query(ARTICLE_STAT_UID).findMany({
       where: { views30d: { $gt: 0 } },
       orderBy: [{ views30d: 'desc' }, { id: 'asc' }],
-    })) as StatRow[];
+    })) as StatRow[]
     const syncedAt = stats.reduce<string | null>(
       (latest, row) => (row.syncedAt && (!latest || row.syncedAt > latest) ? row.syncedAt : latest),
       null
-    );
+    )
 
-    const titles = new Map<string, string | null>();
+    const titles = new Map<string, string | null>()
     if (stats.length > 0) {
       const rows = (await strapi.db.query(ARTICLE_UID).findMany({
         select: ['documentId', 'locale', 'title'],
@@ -195,8 +195,8 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
           publishedAt: { $notNull: true },
           documentId: { $in: stats.map((row) => row.articleDocumentId) },
         },
-      })) as { documentId: string; locale: string; title: string | null }[];
-      for (const row of rows) titles.set(keyOf(row.documentId, row.locale), row.title);
+      })) as { documentId: string; locale: string; title: string | null }[]
+      for (const row of rows) titles.set(keyOf(row.documentId, row.locale), row.title)
     }
     const top = stats
       .filter((row) => titles.has(keyOf(row.articleDocumentId, row.articleLocale)))
@@ -206,26 +206,26 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
         locale: row.articleLocale,
         title: titles.get(keyOf(row.articleDocumentId, row.articleLocale)) ?? null,
         views30d: row.views30d ?? 0,
-      }));
+      }))
 
-    let totals: StatsSummary['totals'] = null;
+    let totals: StatsSummary['totals'] = null
     if (configured) {
       try {
         const [last7d, last30d] = await Promise.all([
           fetchWebsiteTotals(config, { startAt: now - 7 * DAY_MS, endAt: now }),
           fetchWebsiteTotals(config, { startAt: now - RECENT_WINDOW_MS, endAt: now }),
-        ]);
-        totals = { last7d, last30d };
+        ])
+        totals = { last7d, last30d }
       } catch (error) {
-        strapi.log.warn(`[umami] could not read the site totals: ${error}`);
+        strapi.log.warn(`[umami] could not read the site totals: ${error}`)
       }
     }
 
     const dashboardUrl =
       configured && config.publicUrl
         ? new URL(`/websites/${encodeURIComponent(config.websiteId)}`, config.publicUrl).href
-        : null;
+        : null
 
-    return { configured, top, totals, syncedAt, dashboardUrl };
+    return { configured, top, totals, syncedAt, dashboardUrl }
   },
-}));
+}))

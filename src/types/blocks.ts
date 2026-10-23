@@ -6,24 +6,24 @@
 
 /** Attribution of an image: its license, author and the pages that prove them. */
 export interface ImageCredit {
-  license?: string | null;
-  author?: string | null;
-  authorUrl?: string | null;
-  sourceUrl?: string | null;
-  licenseUrl?: string | null;
+  license?: string | null
+  author?: string | null
+  authorUrl?: string | null
+  sourceUrl?: string | null
+  licenseUrl?: string | null
 }
 
 /** A block of the article body; which fields are filled depends on `__component`. */
 export interface BodyBlock {
-  __component?: string;
+  __component?: string
   /** `shared.rich-text` and `shared.quote`. */
-  body?: string | null;
+  body?: string | null
   /** `shared.quote`. */
-  title?: string | null;
+  title?: string | null
   /** `shared.media` and `shared.playground`. */
-  caption?: string | null;
+  caption?: string | null
   /** `shared.media`. */
-  credit?: ImageCredit | null;
+  credit?: ImageCredit | null
   /** `shared.slider`. */
-  items?: { credit?: ImageCredit | null }[] | null;
+  items?: { credit?: ImageCredit | null }[] | null
 }

@@ -1,6 +1,6 @@
-import type { Core } from '@strapi/strapi';
-import { RATE_LIMIT_TABLE } from '../constants/rate-limit';
-import type { RateLimitConfig } from '../types/rate-limit';
+import type { Core } from '@strapi/strapi'
+import { RATE_LIMIT_TABLE } from '../constants/rate-limit'
+import type { RateLimitConfig } from '../types/rate-limit'
 
 /**
  * Creates the table of the database rate limit store, with the columns
@@ -10,16 +10,16 @@ import type { RateLimitConfig } from '../types/rate-limit';
  * Returns whether the table was created.
  */
 export async function ensureRateLimitTable(strapi: Core.Strapi): Promise<boolean> {
-  const config = strapi.config.get<RateLimitConfig | undefined>('rate-limit');
-  if (!config?.enabled || config.store !== 'database') return false;
-  if (strapi.db.dialect.client !== 'postgres') return false;
+  const config = strapi.config.get<RateLimitConfig | undefined>('rate-limit')
+  if (!config?.enabled || config.store !== 'database') return false
+  if (strapi.db.dialect.client !== 'postgres') return false
 
   // Race-safe when several instances boot together: IF NOT EXISTS, and the
   // table-already-exists error of a concurrent create is swallowed too.
-  const schemaName = strapi.db.getSchemaName();
-  const table = schemaName ? `"${schemaName}"."${RATE_LIMIT_TABLE}"` : `"${RATE_LIMIT_TABLE}"`;
-  const exists = await strapi.db.getSchemaConnection().hasTable(RATE_LIMIT_TABLE);
-  if (exists) return false;
+  const schemaName = strapi.db.getSchemaName()
+  const table = schemaName ? `"${schemaName}"."${RATE_LIMIT_TABLE}"` : `"${RATE_LIMIT_TABLE}"`
+  const exists = await strapi.db.getSchemaConnection().hasTable(RATE_LIMIT_TABLE)
+  if (exists) return false
   try {
     await strapi.db.connection.raw(
       `CREATE TABLE IF NOT EXISTS ${table} (
@@ -27,11 +27,11 @@ export async function ensureRateLimitTable(strapi: Core.Strapi): Promise<boolean
         points integer NOT NULL DEFAULT 0,
         expire bigint
       )`
-    );
+    )
   } catch (error) {
-    const code = (error as { code?: string }).code;
-    if (code !== '42P07' && code !== '23505') throw error;
-    return false;
+    const code = (error as { code?: string }).code
+    if (code !== '42P07' && code !== '23505') throw error
+    return false
   }
-  return true;
+  return true
 }

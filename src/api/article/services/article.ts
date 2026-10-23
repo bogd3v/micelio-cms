@@ -2,69 +2,69 @@
  * article service.
  */
 
-import { factories } from '@strapi/strapi';
-import { ARTICLE_UID } from '../../../constants/uids';
-import { snippetAround } from '../utils/plain-text';
-import type { DraftSummary } from '../../../types/article-drafts';
+import { factories } from '@strapi/strapi'
+import { ARTICLE_UID } from '../../../constants/uids'
+import { snippetAround } from '../utils/plain-text'
+import type { DraftSummary } from '../../../types/article-drafts'
 
 /** Shortest query, in characters, that the search accepts. */
-export const SEARCH_MIN_LENGTH = 3;
+export const SEARCH_MIN_LENGTH = 3
 /** Longest query the search accepts, in UTF-16 code units (`String.length`); a longer one is a 400. */
-export const SEARCH_MAX_LENGTH = 200;
+export const SEARCH_MAX_LENGTH = 200
 /** Number of results `search` returns when the caller gives no usable limit. */
-export const SEARCH_DEFAULT_LIMIT = 10;
+export const SEARCH_DEFAULT_LIMIT = 10
 /** Largest number of results `search` returns; a higher limit is clamped to it. */
-export const SEARCH_MAX_LIMIT = 50;
+export const SEARCH_MAX_LIMIT = 50
 
 /** Parameters of the article search. */
 export interface SearchOptions {
   /** Text to look for, matched case-insensitively as a substring. */
-  query: string;
+  query: string
   /** Restricts the search to one locale; all locales when omitted. */
-  locale?: string;
+  locale?: string
   /** Also search the description and the body, not only the title. */
-  content?: boolean;
+  content?: boolean
   /**
    * Results to return, between 1 and `SEARCH_MAX_LIMIT`.
    *
    * @defaultValue `SEARCH_DEFAULT_LIMIT`
    */
-  limit?: number;
+  limit?: number
 }
 
 /** The field of an article where a search query matched. */
-export type SearchMatch = 'title' | 'description' | 'content';
+export type SearchMatch = 'title' | 'description' | 'content'
 
 interface SearchRow {
-  documentId: string;
-  slug: string | null;
-  title: string | null;
-  description: string | null;
-  plainText: string | null;
-  publishedAt: string | null;
-  locale: string | null;
-  category?: { slug: string | null; name: string | null } | null;
+  documentId: string
+  slug: string | null
+  title: string | null
+  description: string | null
+  plainText: string | null
+  publishedAt: string | null
+  locale: string | null
+  category?: { slug: string | null; name: string | null } | null
 }
 
 interface DraftRow {
-  documentId: string;
-  title: string | null;
-  slug: string | null;
-  locale: string | null;
-  updatedAt: string;
-  category?: { name: string | null; slug: string | null } | null;
-  author?: { name: string | null } | null;
+  documentId: string
+  title: string | null
+  slug: string | null
+  locale: string | null
+  updatedAt: string
+  category?: { name: string | null; slug: string | null } | null
+  author?: { name: string | null } | null
 }
 
 interface PublishedRow {
-  documentId: string;
-  locale: string | null;
-  updatedAt: string;
-  publishedAt: string;
+  documentId: string
+  locale: string | null
+  updatedAt: string
+  publishedAt: string
 }
 
 const versionKey = (row: { documentId: string; locale: string | null }) =>
-  `${row.documentId}:${row.locale ?? ''}`;
+  `${row.documentId}:${row.locale ?? ''}`
 
 export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
   /**
@@ -73,9 +73,9 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
    * plain-text snippet around the match.
    */
   async search({ query, locale, content = false, limit = SEARCH_DEFAULT_LIMIT }: SearchOptions) {
-    const term = query.trim();
-    const fields: SearchMatch[] = content ? ['title', 'description', 'content'] : ['title'];
-    const column = (field: SearchMatch) => (field === 'content' ? 'plainText' : field);
+    const term = query.trim()
+    const fields: SearchMatch[] = content ? ['title', 'description', 'content'] : ['title']
+    const column = (field: SearchMatch) => (field === 'content' ? 'plainText' : field)
 
     const rows = (await strapi.documents(ARTICLE_UID).findMany({
       status: 'published',
@@ -85,14 +85,14 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
       filters: { $or: fields.map((field) => ({ [column(field)]: { $containsi: term } })) },
       sort: 'publishedAt:desc',
       limit: Math.min(Math.max(1, limit), SEARCH_MAX_LIMIT),
-    })) as unknown as SearchRow[];
+    })) as unknown as SearchRow[]
 
     // `$containsi` is a LIKE without escaping, so `%` and `_` in the query act as
     // wildcards: rows that only matched through them are dropped here.
     return rows.flatMap((row) => {
       for (const field of fields) {
-        const snippet = snippetAround(row[column(field)] ?? '', term);
-        if (snippet === null) continue;
+        const snippet = snippetAround(row[column(field)] ?? '', term)
+        if (snippet === null) continue
         return [
           {
             documentId: row.documentId,
@@ -105,10 +105,10 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
             matchedIn: field,
             snippet,
           },
-        ];
+        ]
       }
-      return [];
-    });
+      return []
+    })
   },
 
   /**
@@ -126,22 +126,22 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
       fields: ['title', 'slug', 'locale', 'updatedAt'],
       populate: { category: { fields: ['name', 'slug'] }, author: { fields: ['name'] } },
       sort: 'updatedAt:desc',
-    })) as unknown as DraftRow[];
-    if (drafts.length === 0) return [];
+    })) as unknown as DraftRow[]
+    if (drafts.length === 0) return []
 
     const published = (await strapi.documents(ARTICLE_UID).findMany({
       status: 'published',
       locale: locale ?? '*',
       fields: ['locale', 'updatedAt', 'publishedAt'],
       filters: { documentId: { $in: [...new Set(drafts.map((draft) => draft.documentId))] } },
-    })) as unknown as PublishedRow[];
-    const publishedByKey = new Map(published.map((row) => [versionKey(row), row]));
+    })) as unknown as PublishedRow[]
+    const publishedByKey = new Map(published.map((row) => [versionKey(row), row]))
 
     return drafts.flatMap((draft): DraftSummary[] => {
-      const version = publishedByKey.get(versionKey(draft));
+      const version = publishedByKey.get(versionKey(draft))
       const modified =
-        version && new Date(draft.updatedAt).getTime() > new Date(version.updatedAt).getTime();
-      if (version && !modified) return [];
+        version && new Date(draft.updatedAt).getTime() > new Date(version.updatedAt).getTime()
+      if (version && !modified) return []
       return [
         {
           documentId: draft.documentId,
@@ -156,7 +156,7 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
             : null,
           author: draft.author ? { name: draft.author.name } : null,
         },
-      ];
-    });
+      ]
+    })
   },
-}));
+}))

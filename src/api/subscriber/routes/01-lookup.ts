@@ -6,7 +6,7 @@
  * gets (src/migrations/api-tokens.ts); no role has it.
  */
 
-import { SUBSCRIBER_UID } from '../../../constants/uids';
+import { SUBSCRIBER_UID } from '../../../constants/uids'
 
 export default {
   routes: [
@@ -16,4 +16,4 @@ export default {
       handler: `${SUBSCRIBER_UID}.lookup`,
     },
   ],
-};
+}

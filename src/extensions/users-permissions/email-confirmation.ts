@@ -1,16 +1,16 @@
 // /api/auth/email-confirmation (issue #178, ASVS V3.5.3): the POST confirms an
 // account; the GET only redirects to the frontend, so a mail scanner that
 // opens the link cannot spend the token.
-import type { Context, Next } from 'koa';
-import { errors } from '@strapi/utils';
-import { hashUserToken } from '../../utils/user-token';
+import type { Context, Next } from 'koa'
+import { errors } from '@strapi/utils'
+import { hashUserToken } from '../../utils/user-token'
 
-const USER_UID = 'plugin::users-permissions.user';
+const USER_UID = 'plugin::users-permissions.user'
 
 /** What Strapi's `generateConfirmationToken` produces: 20 random bytes, hex. */
-const TOKEN_PATTERN = /^[0-9a-f]{40}$/;
+const TOKEN_PATTERN = /^[0-9a-f]{40}$/
 
-type ConfirmationBody = { confirmation?: unknown };
+type ConfirmationBody = { confirmation?: unknown }
 
 /**
  * Keeps only `confirmation` in the body before the rate limiter, which keys
@@ -18,9 +18,9 @@ type ConfirmationBody = { confirmation?: unknown };
  * get a fresh bucket each time and bypass the limit.
  */
 export async function onlyConfirmation(ctx: Context, next: Next): Promise<void> {
-  const body = (ctx.request as unknown as { body?: ConfirmationBody }).body;
-  (ctx.request as unknown as { body: object }).body = { confirmation: body?.confirmation };
-  await next();
+  const body = (ctx.request as unknown as { body?: ConfirmationBody }).body
+  ;(ctx.request as unknown as { body: object }).body = { confirmation: body?.confirmation }
+  await next()
 }
 
 /**
@@ -37,20 +37,20 @@ export async function onlyConfirmation(ctx: Context, next: Next): Promise<void> 
  * @throws `ValidationError` ("Invalid token", HTTP 400) when the token is malformed, unknown or already used.
  */
 export async function confirmEmailByPost(ctx: Context): Promise<void> {
-  const body = (ctx.request as unknown as { body?: ConfirmationBody }).body;
-  const confirmation = body?.confirmation;
+  const body = (ctx.request as unknown as { body?: ConfirmationBody }).body
+  const confirmation = body?.confirmation
 
   if (typeof confirmation !== 'string' || !TOKEN_PATTERN.test(confirmation)) {
-    throw new errors.ValidationError('Invalid token');
+    throw new errors.ValidationError('Invalid token')
   }
 
   const updated = await strapi.db.query(USER_UID).update({
     where: { confirmationToken: hashUserToken(confirmation) },
     data: { confirmed: true, confirmationToken: null },
-  });
-  if (!updated) throw new errors.ValidationError('Invalid token');
+  })
+  if (!updated) throw new errors.ValidationError('Invalid token')
 
-  ctx.status = 204;
+  ctx.status = 204
 }
 
 /**
@@ -69,27 +69,27 @@ export async function confirmEmailByPost(ctx: Context): Promise<void> {
 export async function redirectToConfirmation(ctx: Context): Promise<void> {
   const settings = (await strapi
     .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
-    .get()) as { email_confirmation_redirection?: unknown } | null;
-  const target = settings?.email_confirmation_redirection;
+    .get()) as { email_confirmation_redirection?: unknown } | null
+  const target = settings?.email_confirmation_redirection
 
-  let location = '/';
+  let location = '/'
   try {
     if (typeof target === 'string') {
-      const url = new URL(target);
+      const url = new URL(target)
       if (url.protocol === 'http:' || url.protocol === 'https:') {
-        const token = ctx.query.confirmation;
+        const token = ctx.query.confirmation
         url.searchParams.set(
           'confirmation',
           typeof token === 'string' && TOKEN_PATTERN.test(token) ? token : ''
-        );
-        location = url.toString();
+        )
+        location = url.toString()
       }
     }
   } catch {
     // Empty or relative target: there is no frontend to send the visitor to.
   }
-  ctx.redirect(location);
-  ctx.status = 303;
+  ctx.redirect(location)
+  ctx.status = 303
 }
 
 /**
@@ -103,7 +103,7 @@ export async function redirectToConfirmation(ctx: Context): Promise<void> {
  * other caller, is not installed), so nothing else can.
  */
 export async function handleEmailConfirmation(ctx: Context): Promise<unknown> {
-  if (ctx.method === 'POST') return confirmEmailByPost(ctx);
-  if (ctx.method === 'GET' || ctx.method === 'HEAD') return redirectToConfirmation(ctx);
-  return ctx.methodNotAllowed();
+  if (ctx.method === 'POST') return confirmEmailByPost(ctx)
+  if (ctx.method === 'GET' || ctx.method === 'HEAD') return redirectToConfirmation(ctx)
+  return ctx.methodNotAllowed()
 }

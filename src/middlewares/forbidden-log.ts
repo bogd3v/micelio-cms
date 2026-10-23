@@ -1,7 +1,7 @@
-import type { Core } from '@strapi/strapi';
-import type { Context, Next } from 'koa';
-import { SECURITY_EVENTS } from '../constants/security-events';
-import { isRefusalLogged, logAccessRefusal } from '../utils/access-log';
+import type { Core } from '@strapi/strapi'
+import type { Context, Next } from 'koa'
+import { SECURITY_EVENTS } from '../constants/security-events'
+import { isRefusalLogged, logAccessRefusal } from '../utils/access-log'
 
 /**
  * Logs an `access.forbidden` security event for every request that ends in
@@ -16,7 +16,7 @@ import { isRefusalLogged, logAccessRefusal } from '../utils/access-log';
  */
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
-    await next();
-    if (ctx.status !== 403 || isRefusalLogged(ctx)) return;
-    logAccessRefusal(strapi, ctx, SECURITY_EVENTS.accessForbidden);
-  };
+    await next()
+    if (ctx.status !== 403 || isRefusalLogged(ctx)) return
+    logAccessRefusal(strapi, ctx, SECURITY_EVENTS.accessForbidden)
+  }

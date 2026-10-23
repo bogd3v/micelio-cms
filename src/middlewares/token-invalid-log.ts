@@ -1,11 +1,11 @@
-import type { Core } from '@strapi/strapi';
-import type { Context, Next } from 'koa';
-import { AUTH_EVENT_LOGGED_STATE, SECURITY_EVENTS } from '../constants/security-events';
-import { MCP_PATH } from '../constants/rate-limit';
-import { logAuthEvent } from '../utils/auth-events';
-import { normalizePath } from '../utils/rate-limit/groups';
+import type { Core } from '@strapi/strapi'
+import type { Context, Next } from 'koa'
+import { AUTH_EVENT_LOGGED_STATE, SECURITY_EVENTS } from '../constants/security-events'
+import { MCP_PATH } from '../constants/rate-limit'
+import { logAuthEvent } from '../utils/auth-events'
+import { normalizePath } from '../utils/rate-limit/groups'
 
-const UNAUTHORIZED = 401;
+const UNAUTHORIZED = 401
 
 /**
  * Logs `auth.token.invalid` for every request that sent an `Authorization`
@@ -31,22 +31,22 @@ const UNAUTHORIZED = 401;
 export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
   async (ctx: Context, next: Next): Promise<void> => {
     try {
-      await next();
+      await next()
     } catch (error) {
-      if (isUnauthorizedError(error)) logIfPresented(strapi, ctx);
-      throw error;
+      if (isUnauthorizedError(error)) logIfPresented(strapi, ctx)
+      throw error
     }
-    if (ctx.status === UNAUTHORIZED) logIfPresented(strapi, ctx);
-  };
+    if (ctx.status === UNAUTHORIZED) logIfPresented(strapi, ctx)
+  }
 
 function logIfPresented(strapi: Core.Strapi, ctx: Context): void {
-  if (ctx.state[AUTH_EVENT_LOGGED_STATE] || !ctx.get('authorization')) return;
-  if (ctx.state.isAuthenticated === true) return;
+  if (ctx.state[AUTH_EVENT_LOGGED_STATE] || !ctx.get('authorization')) return
+  if (ctx.state.isAuthenticated === true) return
   // `/mcp` is `auth: false` too, but it checks the bearer itself: its 401 is a refused token.
-  if (ctx.state.route?.config?.auth === false && normalizePath(ctx.path) !== MCP_PATH) return;
-  logAuthEvent(strapi, ctx, SECURITY_EVENTS.authTokenInvalid, { reason: 'invalid-token' });
+  if (ctx.state.route?.config?.auth === false && normalizePath(ctx.path) !== MCP_PATH) return
+  logAuthEvent(strapi, ctx, SECURITY_EVENTS.authTokenInvalid, { reason: 'invalid-token' })
 }
 
 function isUnauthorizedError(error: unknown): boolean {
-  return (error as { name?: unknown } | null | undefined)?.name === 'UnauthorizedError';
+  return (error as { name?: unknown } | null | undefined)?.name === 'UnauthorizedError'
 }

@@ -1,4 +1,4 @@
-import type { ResponseRoute } from './types';
+import type { ResponseRoute } from './types'
 
 /** The routes of authors, the global single type and the site settings. */
 export const SITE_ROUTES: readonly ResponseRoute[] = [
@@ -122,4 +122,4 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
       meta: { use: 'surplus', of: 'meta-single' },
     },
   },
-];
+]

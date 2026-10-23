@@ -1,17 +1,17 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-import { generateCryptoKeyPair, importJwk } from '@fedify/fedify';
+import { generateCryptoKeyPair, importJwk } from '@fedify/fedify'
 
 import {
   decryptText,
   encryptText,
   isEncryptedEnvelope,
   type EncryptedEnvelope,
-} from '../utils/key-encryption';
+} from '../utils/key-encryption'
 
-type PluginStore = Awaited<ReturnType<Core.Strapi['store']>>;
+type PluginStore = Awaited<ReturnType<Core.Strapi['store']>>
 
-const STORE_KEY = 'keyPairs';
+const STORE_KEY = 'keyPairs'
 
 interface StoredKeyPair {
   /**
@@ -19,24 +19,24 @@ interface StoredKeyPair {
    * (`<actorUri>#main-key`, `<actorUri>#key-2`, ...) from the array order,
    * so this is informational only.
    */
-  name: string;
-  publicJwk: JsonWebKey;
+  name: string
+  publicJwk: JsonWebKey
   /** Encrypted with `ENCRYPTION_KEY`; plain only when written without a key (outside production). */
-  privateJwk: JsonWebKey | EncryptedEnvelope;
-  algorithm: string;
-  generatedAt: string;
+  privateJwk: JsonWebKey | EncryptedEnvelope
+  algorithm: string
+  generatedAt: string
 }
 
 interface ActorKeyPairResult {
-  publicKey: CryptoKey;
-  privateKey: CryptoKey;
+  publicKey: CryptoKey
+  privateKey: CryptoKey
 }
 
 /**
  * Algorithm of a newly generated pair. RSA is what HTTP signatures need: Fedify
  * signs requests with the first RSASSA-PKCS1-v1_5 key (`docs/security/keys.md`).
  */
-const NEW_KEY_ALGORITHM = 'RSASSA-PKCS1-v1_5';
+const NEW_KEY_ALGORITHM = 'RSASSA-PKCS1-v1_5'
 
 function isStoredKeyPairs(value: unknown): value is StoredKeyPair[] {
   return (
@@ -50,7 +50,7 @@ function isStoredKeyPairs(value: unknown): value is StoredKeyPair[] {
         entry.publicJwk != null &&
         entry.privateJwk != null
     )
-  );
+  )
 }
 
 /**
@@ -65,19 +65,19 @@ function isStoredKeyPairs(value: unknown): value is StoredKeyPair[] {
  * @throws `TypeError` for a key type Fedify does not support.
  */
 async function importStoredJwk(jwk: JsonWebKey, type: 'public' | 'private'): Promise<CryptoKey> {
-  return importJwk(jwk.kty === 'RSA' && jwk.alg == null ? { ...jwk, alg: 'RS256' } : jwk, type);
+  return importJwk(jwk.kty === 'RSA' && jwk.alg == null ? { ...jwk, alg: 'RS256' } : jwk, type)
 }
 
 async function getStore(strapi: Core.Strapi): Promise<PluginStore> {
-  return strapi.store({ type: 'plugin', name: 'fediverse' });
+  return strapi.store({ type: 'plugin', name: 'fediverse' })
 }
 
-let warnedPlainKey = false;
+let warnedPlainKey = false
 
 /** The raw `ENCRYPTION_KEY`, read the way Strapi's own encryption service reads it. */
 export function configuredEncryptionKey(strapi: Core.Strapi): string | null {
-  const value: unknown = strapi.config.get('admin.secrets.encryptionKey');
-  return typeof value === 'string' && value !== '' ? value : null;
+  const value: unknown = strapi.config.get('admin.secrets.encryptionKey')
+  return typeof value === 'string' && value !== '' ? value : null
 }
 
 /**
@@ -85,22 +85,22 @@ export function configuredEncryptionKey(strapi: Core.Strapi): string | null {
  * is nothing to rewrite (already encrypted, or no `ENCRYPTION_KEY`).
  */
 function sealPlainEntries(strapi: Core.Strapi, entries: StoredKeyPair[]): StoredKeyPair[] | null {
-  const key = configuredEncryptionKey(strapi);
-  if (entries.every((entry) => isEncryptedEnvelope(entry.privateJwk))) return null;
+  const key = configuredEncryptionKey(strapi)
+  if (entries.every((entry) => isEncryptedEnvelope(entry.privateJwk))) return null
   if (!key) {
     if (!warnedPlainKey) {
-      warnedPlainKey = true;
+      warnedPlainKey = true
       strapi.log.warn(
         '[fediverse] ENCRYPTION_KEY is not set: the actor private key is stored unencrypted'
-      );
+      )
     }
-    return null;
+    return null
   }
   return entries.map((entry) =>
     isEncryptedEnvelope(entry.privateJwk)
       ? entry
       : { ...entry, privateJwk: encryptText(JSON.stringify(entry.privateJwk), key) }
-  );
+  )
 }
 
 /**
@@ -114,13 +114,13 @@ function sealPlainEntries(strapi: Core.Strapi, entries: StoredKeyPair[]): Stored
  * identity, does not change.
  */
 export async function encryptStoredActorKeys(strapi: Core.Strapi): Promise<void> {
-  const store = await getStore(strapi);
-  const stored: unknown = await store.get({ key: STORE_KEY });
-  if (!isStoredKeyPairs(stored)) return;
-  const sealed = sealPlainEntries(strapi, stored);
-  if (!sealed) return;
-  await store.set({ key: STORE_KEY, value: sealed });
-  strapi.log.info('[fediverse] encrypted the stored actor private key with ENCRYPTION_KEY');
+  const store = await getStore(strapi)
+  const stored: unknown = await store.get({ key: STORE_KEY })
+  if (!isStoredKeyPairs(stored)) return
+  const sealed = sealPlainEntries(strapi, stored)
+  if (!sealed) return
+  await store.set({ key: STORE_KEY, value: sealed })
+  strapi.log.info('[fediverse] encrypted the stored actor private key with ENCRYPTION_KEY')
 }
 
 /**
@@ -139,11 +139,11 @@ export async function encryptStoredActorKeys(strapi: Core.Strapi): Promise<void>
  * private key cannot be decrypted. The store is left as it was.
  */
 export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPairResult[]> {
-  const store = await getStore(strapi);
-  const stored: unknown = await store.get({ key: STORE_KEY });
+  const store = await getStore(strapi)
+  const stored: unknown = await store.get({ key: STORE_KEY })
 
   if (isStoredKeyPairs(stored)) {
-    const key = configuredEncryptionKey(strapi);
+    const key = configuredEncryptionKey(strapi)
     const pairs = await Promise.all(
       stored.map(async (entry) => ({
         publicKey: await importStoredJwk(entry.publicJwk, 'public'),
@@ -154,31 +154,31 @@ export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPai
           'private'
         ),
       }))
-    );
-    const sealed = sealPlainEntries(strapi, stored);
-    if (sealed) await store.set({ key: STORE_KEY, value: sealed });
-    return pairs;
+    )
+    const sealed = sealPlainEntries(strapi, stored)
+    if (sealed) await store.set({ key: STORE_KEY, value: sealed })
+    return pairs
   }
 
   // No persisted key pairs (first boot, or store wiped): generate one.
-  const generated = await generateCryptoKeyPair(NEW_KEY_ALGORITHM);
-  const privateJwk = await crypto.subtle.exportKey('jwk', generated.privateKey);
+  const generated = await generateCryptoKeyPair(NEW_KEY_ALGORITHM)
+  const privateJwk = await crypto.subtle.exportKey('jwk', generated.privateKey)
   const entry: StoredKeyPair = {
     name: 'main-key',
     publicJwk: await crypto.subtle.exportKey('jwk', generated.publicKey),
     privateJwk,
     algorithm: generated.publicKey.algorithm.name,
     generatedAt: new Date().toISOString(),
-  };
-  await store.set({ key: STORE_KEY, value: sealPlainEntries(strapi, [entry]) ?? [entry] });
-  strapi.log.info('[fediverse] generated and persisted a new actor key pair');
+  }
+  await store.set({ key: STORE_KEY, value: sealPlainEntries(strapi, [entry]) ?? [entry] })
+  strapi.log.info('[fediverse] generated and persisted a new actor key pair')
 
   return [
     {
       publicKey: await importStoredJwk(entry.publicJwk, 'public'),
       privateKey: await importStoredJwk(privateJwk, 'private'),
     },
-  ];
+  ]
 }
 
 /**
@@ -189,20 +189,20 @@ export async function getActorKeyPairs(strapi: Core.Strapi): Promise<ActorKeyPai
  * @throws `ActorKeyDecryptionError`, naming `ENCRYPTION_KEY`, when a private key cannot be decrypted.
  */
 export async function verifyStoredActorKey(strapi: Core.Strapi): Promise<'ok' | 'missing'> {
-  const store = await getStore(strapi);
-  const stored: unknown = await store.get({ key: STORE_KEY });
-  if (!isStoredKeyPairs(stored)) return 'missing';
-  const key = configuredEncryptionKey(strapi);
+  const store = await getStore(strapi)
+  const stored: unknown = await store.get({ key: STORE_KEY })
+  if (!isStoredKeyPairs(stored)) return 'missing'
+  const key = configuredEncryptionKey(strapi)
   for (const entry of stored) {
-    await importStoredJwk(entry.publicJwk, 'public');
+    await importStoredJwk(entry.publicJwk, 'public')
     await importStoredJwk(
       isEncryptedEnvelope(entry.privateJwk)
         ? (JSON.parse(decryptText(entry.privateJwk, key)) as JsonWebKey)
         : entry.privateJwk,
       'private'
-    );
+    )
   }
-  return 'ok';
+  return 'ok'
 }
 
 /**
@@ -212,19 +212,19 @@ export async function verifyStoredActorKey(strapi: Core.Strapi): Promise<'ok' | 
 export async function getStoredKeyPairEntries(
   strapi: Core.Strapi
 ): Promise<StoredKeyPair[] | null> {
-  const store = await getStore(strapi);
-  const stored: unknown = await store.get({ key: STORE_KEY });
-  return isStoredKeyPairs(stored) ? stored : null;
+  const store = await getStore(strapi)
+  const stored: unknown = await store.get({ key: STORE_KEY })
+  return isStoredKeyPairs(stored) ? stored : null
 }
 
 export default (): {
-  encryptStoredActorKeys: typeof encryptStoredActorKeys;
-  getActorKeyPairs: typeof getActorKeyPairs;
-  verifyStoredActorKey: typeof verifyStoredActorKey;
-  getStoredKeyPairEntries: typeof getStoredKeyPairEntries;
+  encryptStoredActorKeys: typeof encryptStoredActorKeys
+  getActorKeyPairs: typeof getActorKeyPairs
+  verifyStoredActorKey: typeof verifyStoredActorKey
+  getStoredKeyPairEntries: typeof getStoredKeyPairEntries
 } => ({
   encryptStoredActorKeys,
   getActorKeyPairs,
   verifyStoredActorKey,
   getStoredKeyPairEntries,
-});
+})

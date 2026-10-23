@@ -1,13 +1,13 @@
-import type { Core } from '@strapi/strapi';
-import { COMMENT_UID } from '../constants/uids';
-import { isCommentsApiPath } from '../utils/comments-path';
+import type { Core } from '@strapi/strapi'
+import { COMMENT_UID } from '../constants/uids'
+import { isCommentsApiPath } from '../utils/comments-path'
 
-const HIDDEN_STATUSES = new Set(['PENDING', 'REJECTED']);
+const HIDDEN_STATUSES = new Set(['PENDING', 'REJECTED'])
 
 function isHidden(value: unknown, hiddenIds: ReadonlySet<number> = new Set()): boolean {
-  if (value == null || typeof value !== 'object') return false;
-  const { approvalStatus, id } = value as { approvalStatus?: string; id?: unknown };
-  return HIDDEN_STATUSES.has(approvalStatus ?? '') || (typeof id === 'number' && hiddenIds.has(id));
+  if (value == null || typeof value !== 'object') return false
+  const { approvalStatus, id } = value as { approvalStatus?: string; id?: unknown }
+  return HIDDEN_STATUSES.has(approvalStatus ?? '') || (typeof id === 'number' && hiddenIds.has(id))
 }
 
 /**
@@ -17,16 +17,16 @@ function isHidden(value: unknown, hiddenIds: ReadonlySet<number> = new Set()): b
  */
 function collectIds(value: unknown, ids: Set<number>): void {
   if (Array.isArray(value)) {
-    for (const item of value) collectIds(item, ids);
-    return;
+    for (const item of value) collectIds(item, ids)
+    return
   }
-  if (value == null || typeof value !== 'object') return;
-  const node = value as { id?: unknown; data?: unknown; children?: unknown; threadOf?: unknown };
-  if (typeof node.id === 'number') ids.add(node.id);
-  if (typeof node.threadOf === 'number') ids.add(node.threadOf);
-  else if (node.threadOf != null) collectIds(node.threadOf, ids);
-  if ('data' in node) collectIds(node.data, ids);
-  if ('children' in node) collectIds(node.children, ids);
+  if (value == null || typeof value !== 'object') return
+  const node = value as { id?: unknown; data?: unknown; children?: unknown; threadOf?: unknown }
+  if (typeof node.id === 'number') ids.add(node.id)
+  if (typeof node.threadOf === 'number') ids.add(node.threadOf)
+  else if (node.threadOf != null) collectIds(node.threadOf, ids)
+  if ('data' in node) collectIds(node.data, ids)
+  if ('children' in node) collectIds(node.children, ids)
 }
 
 /**
@@ -43,20 +43,20 @@ export function pruneHiddenComments<T>(value: T, hiddenIds?: ReadonlySet<number>
   if (Array.isArray(value)) {
     return value
       .filter((item) => !isHidden(item, hiddenIds))
-      .map((item) => pruneHiddenComments(item, hiddenIds)) as T;
+      .map((item) => pruneHiddenComments(item, hiddenIds)) as T
   }
   if (value != null && typeof value === 'object') {
-    const node: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    if ('data' in node) node.data = pruneHiddenComments(node.data, hiddenIds);
-    if ('children' in node) node.children = pruneHiddenComments(node.children, hiddenIds);
+    const node: Record<string, unknown> = { ...(value as Record<string, unknown>) }
+    if ('data' in node) node.data = pruneHiddenComments(node.data, hiddenIds)
+    if ('children' in node) node.children = pruneHiddenComments(node.children, hiddenIds)
     // The parent of a visible reply may itself be hidden: it must not leak through `threadOf`.
-    const parent = node.threadOf;
+    const parent = node.threadOf
     if (typeof parent === 'number' ? hiddenIds?.has(parent) : isHidden(parent, hiddenIds)) {
-      node.threadOf = null;
+      node.threadOf = null
     }
-    return node as T;
+    return node as T
   }
-  return value;
+  return value
 }
 
 /**
@@ -74,22 +74,22 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
     ctx: { method: string; path: string; status: number; body?: unknown; notFound: () => void },
     next: () => Promise<unknown>
   ): Promise<void> => {
-    await next();
+    await next()
 
-    if (ctx.method !== 'GET' || !isCommentsApiPath(ctx.path)) return;
-    if (ctx.status !== 200 || ctx.body == null) return;
+    if (ctx.method !== 'GET' || !isCommentsApiPath(ctx.path)) return
+    if (ctx.status !== 200 || ctx.body == null) return
 
-    const ids = new Set<number>();
-    collectIds(ctx.body, ids);
+    const ids = new Set<number>()
+    collectIds(ctx.body, ids)
     const hidden = (await strapi.db.query(COMMENT_UID).findMany({
       select: ['id'],
       where: { id: { $in: [...ids] }, approvalStatus: { $in: [...HIDDEN_STATUSES] } },
-    })) as { id: number }[];
-    const hiddenIds = new Set(hidden.map((row) => row.id));
+    })) as { id: number }[]
+    const hiddenIds = new Set(hidden.map((row) => row.id))
 
     if (isHidden(ctx.body, hiddenIds)) {
-      ctx.notFound();
-      return;
+      ctx.notFound()
+      return
     }
-    ctx.body = pruneHiddenComments(ctx.body, hiddenIds);
-  };
+    ctx.body = pruneHiddenComments(ctx.body, hiddenIds)
+  }

@@ -9,7 +9,7 @@
  * followers by that URI, so it must never change, and it has no default: a
  * default would silently become the URI of every instance that forgot it.
  */
-export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER?.trim() ?? '';
+export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER?.trim() ?? ''
 
 /**
  * The `user` of the public handle `@user@domain`, from the environment.
@@ -21,7 +21,7 @@ export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER?.trim() ?
  * Unlike the identifier it can change: WebFinger maps it to the identifier,
  * so the account keeps its URI and followers.
  */
-export const ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME?.trim() ?? '';
+export const ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME?.trim() ?? ''
 
 /**
  * Stops the boot when the actor's identifier is not configured: it is
@@ -33,6 +33,6 @@ export function assertActorConfigured(identifier: string = ACTOR_IDENTIFIER): vo
   if (!identifier) {
     throw new Error(
       '[fediverse] FEDIVERSE_ACTOR_IDENTIFIER must be set while FEDIVERSE_ENABLED=true'
-    );
+    )
   }
 }

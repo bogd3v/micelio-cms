@@ -1,11 +1,11 @@
-import type { Core } from '@strapi/strapi';
-import { ARTICLE_UID } from '../../../constants/uids';
-import { assertReferencesValid } from './citations';
+import type { Core } from '@strapi/strapi'
+import { ARTICLE_UID } from '../../../constants/uids'
+import { assertReferencesValid } from './citations'
 
 interface ArticleRow {
-  locale?: string | null;
-  blocks?: unknown;
-  references?: unknown;
+  locale?: string | null
+  blocks?: unknown
+  references?: unknown
 }
 
 /**
@@ -19,8 +19,8 @@ export async function checkArticleCitations(
   strapi: Core.Strapi,
   params: { documentId?: string; locale?: string; data?: Record<string, unknown> }
 ): Promise<void> {
-  const data = params.data;
-  if (!data || !('blocks' in data || 'references' in data)) return;
+  const data = params.data
+  if (!data || !('blocks' in data || 'references' in data)) return
 
   const rows = params.documentId
     ? ((await strapi.db.query(ARTICLE_UID).findMany({
@@ -28,18 +28,18 @@ export async function checkArticleCitations(
         where: { documentId: params.documentId, publishedAt: null },
         populate: { blocks: true, references: true },
       })) as ArticleRow[])
-    : [];
+    : []
 
   const locale =
-    params.locale ?? (await strapi.plugin('i18n').service('locales').getDefaultLocale());
-  const current = rows.find((row) => row.locale === locale);
+    params.locale ?? (await strapi.plugin('i18n').service('locales').getDefaultLocale())
+  const current = rows.find((row) => row.locale === locale)
 
   const references =
-    'references' in data ? data.references : (current?.references ?? rows[0]?.references);
-  const blocksByLocale = ['blocks' in data ? data.blocks : current?.blocks];
+    'references' in data ? data.references : (current?.references ?? rows[0]?.references)
+  const blocksByLocale = ['blocks' in data ? data.blocks : current?.blocks]
   if ('references' in data) {
-    for (const row of rows) if (row.locale !== locale) blocksByLocale.push(row.blocks);
+    for (const row of rows) if (row.locale !== locale) blocksByLocale.push(row.blocks)
   }
 
-  assertReferencesValid(blocksByLocale, references);
+  assertReferencesValid(blocksByLocale, references)
 }

@@ -1,4 +1,4 @@
-import { DEV_FRONTEND_URL } from './frontend-url';
+import { DEV_FRONTEND_URL } from './frontend-url'
 
 /**
  * The browser origins allowed by CORS (`strapi::cors`).
@@ -17,15 +17,15 @@ export function corsOrigins(
   configured: readonly string[] | undefined,
   frontendUrl: string | undefined
 ): string[] {
-  const listed = (configured ?? []).map((origin) => origin.trim()).filter(Boolean);
-  if (listed.length > 0) return listed;
+  const listed = (configured ?? []).map((origin) => origin.trim()).filter(Boolean)
+  if (listed.length > 0) return listed
   const value =
-    frontendUrl?.trim() || (process.env.NODE_ENV === 'production' ? '' : DEV_FRONTEND_URL);
+    frontendUrl?.trim() || (process.env.NODE_ENV === 'production' ? '' : DEV_FRONTEND_URL)
   try {
-    const { origin } = new URL(value);
-    return origin === 'null' ? [] : [origin];
+    const { origin } = new URL(value)
+    return origin === 'null' ? [] : [origin]
   } catch {
-    return [];
+    return []
   }
 }
 
@@ -34,5 +34,5 @@ export function corsOrigins(
  * call: only to origins that are listed, never to a wildcard that reflects any page.
  */
 export function corsAllowsCredentials(origins: readonly string[]): boolean {
-  return origins.length > 0 && !origins.includes('*');
+  return origins.length > 0 && !origins.includes('*')
 }

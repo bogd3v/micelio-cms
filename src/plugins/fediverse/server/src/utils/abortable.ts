@@ -7,15 +7,15 @@
  * The work itself is not cancelled: it runs on until its own timeout, but nobody waits for it.
  */
 export async function untilAborted<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
-  signal.throwIfAborted();
-  let onAbort = (): void => undefined;
+  signal.throwIfAborted()
+  let onAbort = (): void => undefined
   const aborted = new Promise<never>((_resolve, reject) => {
-    onAbort = () => reject(signal.reason);
-    signal.addEventListener('abort', onAbort, { once: true });
-  });
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
   try {
-    return await Promise.race([work, aborted]);
+    return await Promise.race([work, aborted])
   } finally {
-    signal.removeEventListener('abort', onAbort);
+    signal.removeEventListener('abort', onAbort)
   }
 }

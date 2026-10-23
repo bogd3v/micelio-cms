@@ -1,10 +1,10 @@
-import type { ResponseRoute, Shape } from './types';
+import type { ResponseRoute, Shape } from './types'
 
 const COMMENTS_READER =
-  'server/api/comments/*.get.ts, server/api/comments/index.post.ts (`toPublicComment`)';
+  'server/api/comments/*.get.ts, server/api/comments/index.post.ts (`toPublicComment`)'
 
 /** The author of a comment: no email, whatever the caller (`src/middlewares/strip-comment-author-email.ts`). */
-const COMMENT_AUTHOR: Shape = { id: 'required', name: 'required', avatar: 'required' };
+const COMMENT_AUTHOR: Shape = { id: 'required', name: 'required', avatar: 'required' }
 
 /** The keys of a comment common to the three comment routes. */
 const COMMENT: Shape = {
@@ -22,10 +22,10 @@ const COMMENT: Shape = {
   author: { use: 'required', of: COMMENT_AUTHOR },
   publishedAt: 'surplus',
   locale: 'surplus',
-};
+}
 
 /** The parent of a reply: only its id, which is what the frontend reads (`stripPrivateCommentFields`). */
-const THREAD_PARENT: Shape = { id: 'required' };
+const THREAD_PARENT: Shape = { id: 'required' }
 
 /** The subscriber row, as `find`, `create` and `update` return it. */
 const SUBSCRIBER_FIELDS: Shape = {
@@ -39,7 +39,7 @@ const SUBSCRIBER_FIELDS: Shape = {
   createdAt: 'surplus',
   updatedAt: 'surplus',
   publishedAt: 'surplus',
-};
+}
 
 /** The routes of the comments plugin, the signed-in user and the subscribers. */
 export const ACCOUNT_ROUTES: readonly ResponseRoute[] = [
@@ -250,4 +250,4 @@ export const ACCOUNT_ROUTES: readonly ResponseRoute[] = [
       meta: { use: 'surplus', of: {} },
     },
   },
-];
+]

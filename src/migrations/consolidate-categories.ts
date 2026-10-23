@@ -1,40 +1,40 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-const CATEGORY_UID = 'plugin::micelio.category';
-const ARTICLE_UID = 'api::article.article';
+const CATEGORY_UID = 'plugin::micelio.category'
+const ARTICLE_UID = 'api::article.article'
 
 /** Locales the categories are translated into. Spanish is the blog's own language. */
-export const CATEGORY_LOCALES = ['es', 'en'] as const;
+export const CATEGORY_LOCALES = ['es', 'en'] as const
 /** A locale of `CATEGORY_LOCALES`. */
-export type CategoryLocale = (typeof CATEGORY_LOCALES)[number];
+export type CategoryLocale = (typeof CATEGORY_LOCALES)[number]
 
 interface CategoryText {
-  name: string;
-  description: string;
+  name: string
+  description: string
 }
 
 /** A category the consolidation leaves in place, with its translations and the old slugs it absorbs. */
 export interface CategoryTarget {
-  slug: string;
-  featured: boolean;
-  order: number;
+  slug: string
+  featured: boolean
+  order: number
   /** Localized fields, per locale. */
-  text: Record<CategoryLocale, CategoryText>;
-  sources: string[];
+  text: Record<CategoryLocale, CategoryText>
+  sources: string[]
 }
 
 /** What `consolidateCategories` changed in one run, by category slug unless noted. */
 export interface ConsolidationReport {
-  created: string[];
-  updated: string[];
+  created: string[]
+  updated: string[]
   /** `<slug>:<locale>` of every localization created or brought in sync. */
-  localized: string[];
-  merged: Record<string, string>;
-  removed: string[];
-  uncategorized: number;
+  localized: string[]
+  merged: Record<string, string>
+  removed: string[]
+  uncategorized: number
   /** Article rows moved to the category of their own locale. */
-  relinked: number;
-  untouched: string[];
+  relinked: number
+  untouched: string[]
 }
 
 /**
@@ -128,99 +128,99 @@ export const CATEGORY_TARGETS: CategoryTarget[] = [
     },
     sources: ['linux', 'foss'],
   },
-];
+]
 
 /** Legacy categories that stop existing; their articles are left without a category. */
-export const REMOVED_CATEGORIES = ['tutorial'];
+export const REMOVED_CATEGORIES = ['tutorial']
 
 interface CategoryRow {
-  id: number;
-  documentId: string;
-  locale: string | null;
-  name: string | null;
-  slug: string | null;
-  description: string | null;
-  featured: boolean | null;
-  order: number | null;
+  id: number
+  documentId: string
+  locale: string | null
+  name: string | null
+  slug: string | null
+  description: string | null
+  featured: boolean | null
+  order: number | null
 }
 
 /** Every row (one per locale) of a category document. */
 interface CategoryDocument {
-  documentId: string;
+  documentId: string
   /** The row in the default locale, or the first one: what matching looks at. */
-  main: CategoryRow;
-  rows: CategoryRow[];
+  main: CategoryRow
+  rows: CategoryRow[]
 }
 
-type CategoryFields = Pick<CategoryTarget, 'slug' | 'order'> & CategoryText;
+type CategoryFields = Pick<CategoryTarget, 'slug' | 'order'> & CategoryText
 
 function fieldsOf(target: CategoryTarget, locale: CategoryLocale): CategoryFields {
-  const { slug, order } = target;
-  return { slug, order, ...target.text[locale] };
+  const { slug, order } = target
+  return { slug, order, ...target.text[locale] }
 }
 
 function isInSync(row: CategoryRow, fields: CategoryFields): boolean {
   return (Object.keys(fields) as (keyof CategoryFields)[]).every(
     (field) => row[field] === fields[field]
-  );
+  )
 }
 
 function keyOf(category: CategoryRow): string {
-  return (category.slug || category.name || '').trim().toLowerCase();
+  return (category.slug || category.name || '').trim().toLowerCase()
 }
 
 /** Whether a category key is one of the redesign's or a legacy name one of them absorbs. */
 function isTargetOrSource(key: string): boolean {
-  return CATEGORY_TARGETS.some((target) => target.slug === key || target.sources.includes(key));
+  return CATEGORY_TARGETS.some((target) => target.slug === key || target.sources.includes(key))
 }
 
 function labelOf(category: CategoryRow): string {
-  return category.name || category.slug || String(category.id);
+  return category.name || category.slug || String(category.id)
 }
 
 function isCategoryLocale(code: string): code is CategoryLocale {
-  return (CATEGORY_LOCALES as readonly string[]).includes(code);
+  return (CATEGORY_LOCALES as readonly string[]).includes(code)
 }
 
 interface JoinTable {
-  name: string;
-  articleColumn: string;
-  categoryColumn: string;
+  name: string
+  articleColumn: string
+  categoryColumn: string
 }
 
 function joinTableOf(strapi: Core.Strapi): JoinTable {
   const attribute = strapi.db.metadata.get(ARTICLE_UID).attributes.category as {
-    joinTable?: { name: string; joinColumn: { name: string }; inverseJoinColumn: { name: string } };
-  };
+    joinTable?: { name: string; joinColumn: { name: string }; inverseJoinColumn: { name: string } }
+  }
   if (!attribute.joinTable) {
-    throw new Error('consolidate-categories: article.category has no join table');
+    throw new Error('consolidate-categories: article.category has no join table')
   }
   return {
     name: attribute.joinTable.name,
     articleColumn: attribute.joinTable.joinColumn.name,
     categoryColumn: attribute.joinTable.inverseJoinColumn.name,
-  };
+  }
 }
 
 async function loadDocuments(strapi: Core.Strapi, defaultLocale: string) {
   const rows = (await strapi.db.query(CATEGORY_UID).findMany({
     select: ['id', 'documentId', 'locale', 'name', 'slug', 'description', 'featured', 'order'],
     orderBy: { id: 'asc' },
-  })) as CategoryRow[];
+  })) as CategoryRow[]
 
-  const documents = new Map<string, CategoryDocument>();
+  const documents = new Map<string, CategoryDocument>()
   for (const row of rows) {
-    const document = documents.get(row.documentId);
+    const document = documents.get(row.documentId)
     if (!document) {
-      documents.set(row.documentId, { documentId: row.documentId, main: row, rows: [row] });
-      continue;
+      documents.set(row.documentId, { documentId: row.documentId, main: row, rows: [row] })
+      continue
     }
-    document.rows.push(row);
+    document.rows.push(row)
     if (row.locale === defaultLocale && document.main.locale !== defaultLocale) {
-      document.main = row;
+      document.main = row
     }
   }
-  return [...documents.values()];
+  return [...documents.values()]
 }
 
 /**
@@ -229,9 +229,9 @@ async function loadDocuments(strapi: Core.Strapi, defaultLocale: string) {
  * so English articles still point at the Spanish row.
  */
 async function relinkByLocale(strapi: Core.Strapi, joinTable: JoinTable): Promise<number> {
-  const knex = strapi.db.connection;
-  const articleTable = strapi.db.metadata.get(ARTICLE_UID).tableName;
-  const categoryTable = strapi.db.metadata.get(CATEGORY_UID).tableName;
+  const knex = strapi.db.connection
+  const articleTable = strapi.db.metadata.get(ARTICLE_UID).tableName
+  const categoryTable = strapi.db.metadata.get(CATEGORY_UID).tableName
 
   const links = (await knex(joinTable.name)
     .join(
@@ -249,20 +249,20 @@ async function relinkByLocale(strapi: Core.Strapi, joinTable: JoinTable): Promis
       `${joinTable.name}.id as linkId`,
       'article.locale as locale',
       'category.document_id as documentId'
-    )) as { linkId: number; locale: string; documentId: string }[];
+    )) as { linkId: number; locale: string; documentId: string }[]
 
-  let relinked = 0;
+  let relinked = 0
   for (const link of links) {
     const target = await knex(categoryTable)
       .where({ document_id: link.documentId, locale: link.locale })
-      .first('id');
-    if (!target) continue;
+      .first('id')
+    if (!target) continue
     await knex(joinTable.name)
       .where('id', link.linkId)
-      .update({ [joinTable.categoryColumn]: target.id });
-    relinked += 1;
+      .update({ [joinTable.categoryColumn]: target.id })
+    relinked += 1
   }
-  return relinked;
+  return relinked
 }
 
 /**
@@ -285,83 +285,83 @@ export async function consolidateCategories(strapi: Core.Strapi): Promise<Consol
     uncategorized: 0,
     relinked: 0,
     untouched: [],
-  };
-  const categories = strapi.documents(CATEGORY_UID);
-  const joinTable = joinTableOf(strapi);
-  const knex = strapi.db.connection;
-  const localesService = strapi.plugin('i18n').service('locales');
+  }
+  const categories = strapi.documents(CATEGORY_UID)
+  const joinTable = joinTableOf(strapi)
+  const knex = strapi.db.connection
+  const localesService = strapi.plugin('i18n').service('locales')
 
-  const defaultLocale: string = await localesService.getDefaultLocale();
+  const defaultLocale: string = await localesService.getDefaultLocale()
   // Spanish content goes in the default locale unless it is English itself.
-  const mainLocale: CategoryLocale = defaultLocale === 'en' ? 'en' : 'es';
+  const mainLocale: CategoryLocale = defaultLocale === 'en' ? 'en' : 'es'
   const otherLocales = ((await localesService.find()) as { code: string }[])
     .map((locale) => locale.code)
-    .filter((code): code is CategoryLocale => isCategoryLocale(code) && code !== defaultLocale);
+    .filter((code): code is CategoryLocale => isCategoryLocale(code) && code !== defaultLocale)
 
-  const existing = await loadDocuments(strapi, defaultLocale);
+  const existing = await loadDocuments(strapi, defaultLocale)
   // BogDev's redesign, not Micelio's: only an instance that already has one of
   // these categories (or a legacy name they absorb) is consolidated. A new
   // instance keeps its own categories and never gets BogDev's (#74).
-  if (!existing.some(({ main }) => isTargetOrSource(keyOf(main)))) return report;
-  const claimed = new Set<string>();
+  if (!existing.some(({ main }) => isTargetOrSource(keyOf(main)))) return report
+  const claimed = new Set<string>()
 
   for (const target of CATEGORY_TARGETS) {
     const matches = existing.filter(
       ({ main }) => keyOf(main) === target.slug || target.sources.includes(keyOf(main))
-    );
+    )
     const keeper =
       matches.find(({ main }) => main.slug === target.slug) ??
       matches.find(({ main }) => keyOf(main) === target.slug) ??
-      matches[0];
+      matches[0]
 
-    let documentId: string;
-    let keeperId: number;
+    let documentId: string
+    let keeperId: number
     // `featured` is set when the document is created or consolidated for the first time (its
     // `order` is still empty); after that it is the editor's. Existing documents got the flag
     // of their former `pillar` from the boot migration `category-pillar-to-featured`.
     const mainFields = {
       ...fieldsOf(target, mainLocale),
       ...(target.featured && (!keeper || keeper.main.order == null) ? { featured: true } : {}),
-    };
+    }
     if (keeper) {
-      documentId = keeper.documentId;
-      keeperId = keeper.main.id;
+      documentId = keeper.documentId
+      keeperId = keeper.main.id
       if (!isInSync(keeper.main, mainFields)) {
-        await categories.update({ documentId, locale: defaultLocale, data: mainFields });
-        report.updated.push(target.slug);
+        await categories.update({ documentId, locale: defaultLocale, data: mainFields })
+        report.updated.push(target.slug)
       }
     } else {
-      const created = await categories.create({ locale: defaultLocale, data: mainFields });
-      documentId = created.documentId;
-      keeperId = created.id as number;
-      report.created.push(target.slug);
+      const created = await categories.create({ locale: defaultLocale, data: mainFields })
+      documentId = created.documentId
+      keeperId = created.id as number
+      report.created.push(target.slug)
     }
 
     for (const locale of otherLocales) {
-      const fields = fieldsOf(target, locale);
-      const row = keeper?.rows.find((entry) => entry.locale === locale);
-      if (row && isInSync(row, fields)) continue;
+      const fields = fieldsOf(target, locale)
+      const row = keeper?.rows.find((entry) => entry.locale === locale)
+      if (row && isInSync(row, fields)) continue
       // Updating a locale the document does not have yet creates that localization.
-      await categories.update({ documentId, locale, data: fields });
-      report.localized.push(`${target.slug}:${locale}`);
+      await categories.update({ documentId, locale, data: fields })
+      report.localized.push(`${target.slug}:${locale}`)
     }
 
     for (const match of matches) {
-      claimed.add(match.documentId);
-      if (match.documentId === documentId) continue;
+      claimed.add(match.documentId)
+      if (match.documentId === documentId) continue
       await knex(joinTable.name)
         .whereIn(
           joinTable.categoryColumn,
           match.rows.map((row) => row.id)
         )
-        .update({ [joinTable.categoryColumn]: keeperId });
-      await categories.delete({ documentId: match.documentId, locale: '*' });
-      report.merged[labelOf(match.main)] = target.slug;
+        .update({ [joinTable.categoryColumn]: keeperId })
+      await categories.delete({ documentId: match.documentId, locale: '*' })
+      report.merged[labelOf(match.main)] = target.slug
     }
   }
 
   for (const document of existing) {
-    if (claimed.has(document.documentId)) continue;
+    if (claimed.has(document.documentId)) continue
     if (REMOVED_CATEGORIES.includes(keyOf(document.main))) {
       report.uncategorized += Number(
         await knex(joinTable.name)
@@ -370,17 +370,17 @@ export async function consolidateCategories(strapi: Core.Strapi): Promise<Consol
             document.rows.map((row) => row.id)
           )
           .del()
-      );
-      await categories.delete({ documentId: document.documentId, locale: '*' });
-      report.removed.push(labelOf(document.main));
+      )
+      await categories.delete({ documentId: document.documentId, locale: '*' })
+      report.removed.push(labelOf(document.main))
     } else {
-      report.untouched.push(labelOf(document.main));
+      report.untouched.push(labelOf(document.main))
     }
   }
 
-  report.relinked = await relinkByLocale(strapi, joinTable);
+  report.relinked = await relinkByLocale(strapi, joinTable)
 
-  return report;
+  return report
 }
 
 /** Whether the run created, updated, localized, merged, removed or relinked anything. */
@@ -392,5 +392,5 @@ export function hasChanges(report: ConsolidationReport): boolean {
     Object.keys(report.merged).length > 0 ||
     report.removed.length > 0 ||
     report.relinked > 0
-  );
+  )
 }

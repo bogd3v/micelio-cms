@@ -1,47 +1,47 @@
-import type { TrustProxy, RateLimitConfig } from '../../types/rate-limit';
-import type { TokenResolver } from './api-token';
-import type { Forwarder } from './forwarder';
-import type { RateLimitLogger } from './log';
-import type { Limiters } from './stores';
+import type { TrustProxy, RateLimitConfig } from '../../types/rate-limit'
+import type { TokenResolver } from './api-token'
+import type { Forwarder } from './forwarder'
+import type { RateLimitLogger } from './log'
+import type { Limiters } from './stores'
 
 /** What a forwarder decided about one request. */
 export interface Forwarded {
   /** The frontend identified itself with the shared secret. */
-  forwarded: boolean;
+  forwarded: boolean
   /** The request also named a valid client: its buckets, not a token's, apply. */
-  clientSupplied: boolean;
+  clientSupplied: boolean
   /** Client address to count: the forwarded one when valid, else `resolved`. */
-  ip: string;
+  ip: string
 }
 
 /** What resolving the client address needs; present even with rate limiting off. */
 export interface ClientIpSettings {
-  trust: TrustProxy;
+  trust: TrustProxy
   /** `PROXY_IP_HEADER`. */
-  header: string;
+  header: string
   /** Logs a warning, at most once a minute per `key`. Never pass an address or an email. */
-  warn(key: string, message: string): void;
+  warn(key: string, message: string): void
 }
 
 /** Everything the middlewares and the fediverse guard share, built once on register. */
 export interface RateLimitRuntime extends ClientIpSettings {
-  config: RateLimitConfig;
+  config: RateLimitConfig
   /** Keys the HMACs of emails and of the shared store's keys. */
-  secret: Buffer;
-  limiters: Limiters;
-  tokens: TokenResolver;
-  forwarder: Forwarder;
+  secret: Buffer
+  limiters: Limiters
+  tokens: TokenResolver
+  forwarder: Forwarder
   /** Security events of the limiter (rejections, wrong forwarder secret). */
-  events: RateLimitLogger;
+  events: RateLimitLogger
 }
 
 /** Outcome of counting one request. */
 export interface RateLimitDecision {
-  allowed: boolean;
-  limit: number;
-  remaining: number;
+  allowed: boolean
+  limit: number
+  remaining: number
   /** Seconds until the window resets (and when to retry, if not allowed). */
-  resetSeconds: number;
+  resetSeconds: number
   /** `RateLimit-Policy` value, e.g. `10;w=60`. */
-  policy: string;
+  policy: string
 }

@@ -4,14 +4,13 @@
 
 ## Checks: `ci.yml`
 
-`.github/workflows/ci.yml` is a reusable workflow, also run on every pull request to `main` or `develop`. It runs these jobs in parallel:
+`.github/workflows/ci.yml` is a reusable workflow, also run on every pull request to `main` or `develop`. Its one job, `check`, calls `check.yml` of `bogd3v/micelio-engineering` (pinned by commit SHA; [its documentation](https://github.com/bogd3v/micelio-engineering/blob/main/docs/workflows.md)), which runs:
 
-- `checks`: `npm audit --audit-level=critical`, typecheck, lint and format.
-- `reuse`: `reuse lint`, the licence headers and `REUSE.toml`.
-- `test`: the Jest suites, in two shards.
-- `build`: `npm run build`.
+- `Checks`: `npm audit --audit-level=critical`, typecheck, lint, format, the Jest suites (not sharded), `lint:licenses` and `lint:standard`.
+- `REUSE`: `reuse lint`, the licence headers and `REUSE.toml`.
+- `Build`: `npm run build`.
 
-A final job named `ci` passes only when all of them do. That name is the check the ruleset of `main` requires, so keep it when you add a job, and add the new job to its `needs`. `codeql.yml`, `scorecard.yml` and `dco.yml` run beside it.
+A final job, `Check`, passes only when all of them did or were skipped by an input. Reported as `check / Check`, it is the check the ruleset "Protect main" requires. `dco.yml` and `scorecard.yml` call the reusable `dco.yml` and `scorecard.yml` the same way (the DCO check is reported as `dco / Signed-off-by`); `codeql.yml` (`analyze`), `contract.yml` and `release.yml` are this repository's own. Raise the pinned SHA in a pull request when the reusable workflows change.
 
 A finding of `npm audit` that cannot be fixed yet goes in `docs/DEPENDENCY_RISKS.md` with its reason, never silenced without one.
 
@@ -49,6 +48,7 @@ The job builds the `production` image of the commit, loads it into the runner's 
 - **When it runs:** on every pull request to `main` or `develop`, on every push to `main`, and by hand (`workflow_dispatch`, with an optional `frontend_ref` that replaces the two frontends below). There is no `paths` filter: a required check from a workflow that a filter skips never reports and blocks the pull request.
 - **Which frontend:** two jobs of a matrix, `Contract Tests (latest)` and `Contract Tests (previous)`: the latest stable release of `bogd3v/micelio` and the newest release of the previous MINOR, because the CMS of a release line must also serve the frontend of the previous MINOR (standard, section 7; ADR 0010 in `bogd3v/micelio`). `scripts/release/frontend-refs.mjs` picks them from the frontend's tags (dated snapshots and release candidates are ignored); on the first release line there is only `latest`. Each job prints its ref and commit in the log and the step summary. A `frontend_ref` given by hand replaces both (one job, `override`), for example to check a frontend branch or a ref known to be incompatible. The CMS image is built in each job (the layer cache is shared), so the two lines run in parallel and one failing does not cancel the other.
 - **Why a checkout and not the frontend's reusable workflow:** a called workflow checks out the caller's repository, so it would try to build this CMS as the frontend.
+- **Why `cms/` and `frontend/` side by side:** Vite resolves a tsconfig by walking up from each source file. With the frontend checked out inside the CMS, the walk reaches the CMS's `tsconfig.json`, whose `extends: "@micelio/tsconfig"` the job never installs, and the frontend build fails with `TSCONFIG_ERROR`. Keeping them as siblings also keeps the frontend out of the image's build context.
 - **It does not gate `deploy`, but it gates merging.** `Contract Tests (latest)` and `Contract Tests (previous)` are meant to be required checks of the ruleset "Protect main" (standard, section 15); the maintainer adds them there once this workflow has reported on a pull request. The names are those of the matrix jobs, so the ruleset lists both; `Frontend refs` is not required.
 - **Cost:** the two matrix jobs run in parallel and take 3.5 to 4.6 minutes each (mean 4.1 minutes over 14 pull request runs, 2026-10-13 to 2026-10-19), so a pull request waits about 4 to 5 minutes and uses about 8 runner minutes. Measure again with `gh run list --workflow contract.yml`.
 - **Dependabot and fork pull requests:** their `GITHUB_TOKEN` is read-only, so `packages: write` is not granted. The Postgres copy in GHCR is then only read, and `scripts/ci/mirror-image.sh` falls back to Docker Hub when the copy is missing.

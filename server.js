@@ -1,2 +1,2 @@
-const strapi = require('@strapi/strapi');
-strapi.createStrapi().start();
+const strapi = require('@strapi/strapi')
+strapi.createStrapi().start()

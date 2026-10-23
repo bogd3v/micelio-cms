@@ -1,8 +1,8 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-const ROLE_UID = 'plugin::users-permissions.role';
-const PERMISSION_UID = 'plugin::users-permissions.permission';
-const ACTIONS = ['plugin::micelio.tag.find', 'plugin::micelio.tag.findOne'];
+const ROLE_UID = 'plugin::users-permissions.role'
+const PERMISSION_UID = 'plugin::users-permissions.permission'
+const ACTIONS = ['plugin::micelio.tag.find', 'plugin::micelio.tag.findOne']
 
 /**
  * Lets the public role read tags, as it reads categories. The frontend asks
@@ -13,19 +13,19 @@ const ACTIONS = ['plugin::micelio.tag.find', 'plugin::micelio.tag.findOne'];
  */
 export async function grantPublicTagPermissions(strapi: Core.Strapi): Promise<number> {
   const role = (await strapi.db.query(ROLE_UID).findOne({ where: { type: 'public' } })) as {
-    id: number;
-  } | null;
-  if (!role) return 0;
+    id: number
+  } | null
+  if (!role) return 0
 
   const existing = (await strapi.db.query(PERMISSION_UID).findMany({
     select: ['action'],
     where: { role: role.id, action: { $in: ACTIONS } },
-  })) as { action: string }[];
-  const granted = new Set(existing.map((permission) => permission.action));
-  const missing = ACTIONS.filter((action) => !granted.has(action));
+  })) as { action: string }[]
+  const granted = new Set(existing.map((permission) => permission.action))
+  const missing = ACTIONS.filter((action) => !granted.has(action))
 
   for (const action of missing) {
-    await strapi.db.query(PERMISSION_UID).create({ data: { action, role: role.id } });
+    await strapi.db.query(PERMISSION_UID).create({ data: { action, role: role.id } })
   }
-  return missing.length;
+  return missing.length
 }

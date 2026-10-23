@@ -2,66 +2,66 @@
 
 /** `config/umami.ts`: connection to the Umami instance; the sync is off while `url` is empty. */
 export interface UmamiConfig {
-  url: string;
-  websiteId: string;
-  apiKey: string;
-  syncCron: string;
-  publicUrl: string;
+  url: string
+  websiteId: string
+  apiKey: string
+  syncCron: string
+  publicUrl: string
 }
 
 /** `30d`: visitors of the last 30 days; `all`: since Umami started counting. */
-export type PopularPeriod = '30d' | 'all';
+export type PopularPeriod = '30d' | 'all'
 
 /** Options of `popular`. */
 export interface PopularOptions {
-  locale?: string;
-  period?: PopularPeriod;
-  limit?: number;
+  locale?: string
+  period?: PopularPeriod
+  limit?: number
 }
 
 /** An article of the most-read list, with the fields a card needs. */
 export interface PopularArticle {
-  documentId: string;
-  slug: string | null;
-  title: string | null;
-  description: string | null;
-  publishedAt: string | null;
-  locale: string | null;
-  category: { slug: string | null; name: string | null } | null;
+  documentId: string
+  slug: string | null
+  title: string | null
+  description: string | null
+  publishedAt: string | null
+  locale: string | null
+  category: { slug: string | null; name: string | null } | null
   /** Unique visitors (distinct Umami sessions) of the article's path. */
-  views: number;
+  views: number
 }
 
 /** What one Umami sync wrote. */
 export interface SyncReport {
   /** Published article translations whose counts were written. */
-  articles: number;
+  articles: number
   /** Umami paths that point to one of them. */
-  matchedPaths: number;
+  matchedPaths: number
   /** Umami paths that aren't an article (home, blog list, about…). */
-  otherPaths: number;
+  otherPaths: number
 }
 
 /** Visitors and page views of the whole site over one window. */
 export interface WebsiteTotals {
-  visitors: number;
-  pageviews: number;
+  visitors: number
+  pageviews: number
 }
 
 /** What the admin homepage widget shows. */
 export interface StatsSummary {
   /** Whether Umami is configured at all. */
-  configured: boolean;
+  configured: boolean
   /** Most visited article translations of the last 30 days, every locale. */
   top: {
-    documentId: string;
-    locale: string;
-    title: string | null;
-    views30d: number;
-  }[];
+    documentId: string
+    locale: string
+    title: string | null
+    views30d: number
+  }[]
   /** Whole site, read live from Umami; null when it isn't configured or fails. */
-  totals: { last7d: WebsiteTotals; last30d: WebsiteTotals } | null;
-  syncedAt: string | null;
+  totals: { last7d: WebsiteTotals; last30d: WebsiteTotals } | null
+  syncedAt: string | null
   /** Umami's dashboard for the website, when `UMAMI_PUBLIC_URL` is set. */
-  dashboardUrl: string | null;
+  dashboardUrl: string | null
 }

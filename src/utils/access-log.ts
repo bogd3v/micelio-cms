@@ -1,15 +1,15 @@
-import type { SECURITY_REASONS, SecurityEvent } from '../constants/security-events';
-import type { AccessLogContext, SecurityLogHost } from '../types/security-events';
-import { hashIdentifier, logSecurityEvent, securityLogSecret } from './security-log';
+import type { SECURITY_REASONS, SecurityEvent } from '../constants/security-events'
+import type { AccessLogContext, SecurityLogHost } from '../types/security-events'
+import { hashIdentifier, logSecurityEvent, securityLogSecret } from './security-log'
 
 /** Key in `ctx.state` that marks a refusal already written, so the generic 403 log skips it. */
-const LOGGED_KEY = 'securityRefusalLogged';
+const LOGGED_KEY = 'securityRefusalLogged'
 
 /** Reasons a refusal can carry: the subset of `SECURITY_REASONS` that describes an access refusal. */
 type AccessRefusalReason = Extract<
   (typeof SECURITY_REASONS)[number],
   'not-editor' | 'draft-requested'
->;
+>
 
 /**
  * Writes the security event for a refused request and marks the request as
@@ -28,22 +28,22 @@ export function logAccessRefusal(
   event: SecurityEvent,
   reason?: AccessRefusalReason
 ): void {
-  let client: string | undefined;
+  let client: string | undefined
   try {
-    const ip = ctx?.request?.ip;
-    if (ip) client = hashIdentifier(ip, securityLogSecret(strapi));
+    const ip = ctx?.request?.ip
+    if (ip) client = hashIdentifier(ip, securityLogSecret(strapi))
   } catch {
     // No app keys: the event is still worth writing, only without the client hash.
   }
   try {
-    const id = ctx?.state?.user?.id;
+    const id = ctx?.state?.user?.id
     logSecurityEvent(strapi, event, {
       actor: typeof id === 'number' ? id : undefined,
       client,
       path: ctx?.request?.path,
       reason,
-    });
-    if (ctx?.state) ctx.state[LOGGED_KEY] = true;
+    })
+    if (ctx?.state) ctx.state[LOGGED_KEY] = true
   } catch {
     // Logging is best effort; the refusal itself is already decided.
   }
@@ -51,5 +51,5 @@ export function logAccessRefusal(
 
 /** Whether {@link logAccessRefusal} already wrote a line for this request. */
 export function isRefusalLogged(ctx: AccessLogContext): boolean {
-  return ctx.state?.[LOGGED_KEY] === true;
+  return ctx.state?.[LOGGED_KEY] === true
 }

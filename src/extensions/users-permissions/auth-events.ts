@@ -2,21 +2,21 @@
 // Each wrapper calls the original action, writes one event from its outcome and
 // hands back the same result or throws the same error: the answer, which does
 // not tell whether an account exists, never changes.
-import type { Context } from 'koa';
-import type { Core } from '@strapi/strapi';
-import { SECURITY_EVENTS } from '../../constants/security-events';
-import { logAuthEvent, userIdFromBody, userIdFromState } from '../../utils/auth-events';
+import type { Context } from 'koa'
+import type { Core } from '@strapi/strapi'
+import { SECURITY_EVENTS } from '../../constants/security-events'
+import { logAuthEvent, userIdFromBody, userIdFromState } from '../../utils/auth-events'
 
-type Action = (ctx: Context, ...rest: unknown[]) => Promise<unknown>;
+type Action = (ctx: Context, ...rest: unknown[]) => Promise<unknown>
 
 /** Messages of the plugin's `callback` that tell a refusal apart. */
-const BLOCKED_MESSAGE = 'Your account has been blocked by an administrator';
-const INVALID_MESSAGE = 'Invalid identifier or password';
-const UNCONFIRMED_MESSAGE = 'Your account email is not confirmed';
-const INVALID_CODE_MESSAGE = 'Incorrect code provided';
-const INVALID_TOKEN_MESSAGE = 'Invalid token';
-const WRONG_CURRENT_PASSWORD_MESSAGE = 'The provided current password is invalid';
-const WRONG_DELETION_PASSWORD_MESSAGE = 'Invalid password';
+const BLOCKED_MESSAGE = 'Your account has been blocked by an administrator'
+const INVALID_MESSAGE = 'Invalid identifier or password'
+const UNCONFIRMED_MESSAGE = 'Your account email is not confirmed'
+const INVALID_CODE_MESSAGE = 'Incorrect code provided'
+const INVALID_TOKEN_MESSAGE = 'Invalid token'
+const WRONG_CURRENT_PASSWORD_MESSAGE = 'The provided current password is invalid'
+const WRONG_DELETION_PASSWORD_MESSAGE = 'Invalid password'
 
 /**
  * Wraps `callback` (sign-in) to log `auth.login.success` with the user id, or
@@ -27,20 +27,20 @@ const WRONG_DELETION_PASSWORD_MESSAGE = 'Invalid password';
  */
 export function wrapLoginEvents(strapi: Core.Strapi, callback: Action): Action {
   return async (ctx, ...rest) => {
-    let result: unknown;
+    let result: unknown
     try {
-      result = await callback(ctx, ...rest);
+      result = await callback(ctx, ...rest)
     } catch (error) {
       logAuthEvent(strapi, ctx, SECURITY_EVENTS.authLoginFailure, {
         reason: failureReason(error),
-      });
-      throw error;
+      })
+      throw error
     }
     logAuthEvent(strapi, ctx, SECURITY_EVENTS.authLoginSuccess, {
       actor: userIdFromBody(ctx.body),
-    });
-    return result;
-  };
+    })
+    return result
+  }
 }
 
 /**
@@ -54,16 +54,16 @@ export function wrapLoginEvents(strapi: Core.Strapi, callback: Action): Action {
  */
 export function wrapRegisterEvents(strapi: Core.Strapi, register: Action): Action {
   return async (ctx, ...rest) => {
-    let result: unknown;
+    let result: unknown
     try {
-      result = await register(ctx, ...rest);
+      result = await register(ctx, ...rest)
     } catch (error) {
-      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authRegisterFailure);
-      throw error;
+      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authRegisterFailure)
+      throw error
     }
-    logAuthEvent(strapi, ctx, SECURITY_EVENTS.authRegister, { actor: userIdFromBody(ctx.body) });
-    return result;
-  };
+    logAuthEvent(strapi, ctx, SECURITY_EVENTS.authRegister, { actor: userIdFromBody(ctx.body) })
+    return result
+  }
 }
 
 /**
@@ -73,10 +73,10 @@ export function wrapRegisterEvents(strapi: Core.Strapi, register: Action): Actio
  */
 export function wrapForgotPasswordEvents(strapi: Core.Strapi, forgotPassword: Action): Action {
   return async (ctx, ...rest) => {
-    const result = await forgotPassword(ctx, ...rest);
-    logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordResetRequested);
-    return result;
-  };
+    const result = await forgotPassword(ctx, ...rest)
+    logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordResetRequested)
+    return result
+  }
 }
 
 /**
@@ -87,20 +87,20 @@ export function wrapForgotPasswordEvents(strapi: Core.Strapi, forgotPassword: Ac
  */
 export function wrapResetPasswordEvents(strapi: Core.Strapi, resetPassword: Action): Action {
   return async (ctx, ...rest) => {
-    let result: unknown;
+    let result: unknown
     try {
-      result = await resetPassword(ctx, ...rest);
+      result = await resetPassword(ctx, ...rest)
     } catch (error) {
       logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordResetFailure, {
         reason: messageOf(error) === INVALID_CODE_MESSAGE ? 'invalid-code' : undefined,
-      });
-      throw error;
+      })
+      throw error
     }
     logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordResetCompleted, {
       actor: userIdFromBody(ctx.body),
-    });
-    return result;
-  };
+    })
+    return result
+  }
 }
 
 /**
@@ -111,22 +111,22 @@ export function wrapResetPasswordEvents(strapi: Core.Strapi, resetPassword: Acti
  */
 export function wrapEmailConfirmationEvents(strapi: Core.Strapi, confirm: Action): Action {
   return async (ctx, ...rest) => {
-    let result: unknown;
+    let result: unknown
     try {
-      result = await confirm(ctx, ...rest);
+      result = await confirm(ctx, ...rest)
     } catch (error) {
       if (ctx.method === 'POST') {
         logAuthEvent(strapi, ctx, SECURITY_EVENTS.authEmailConfirmationFailure, {
           reason: messageOf(error) === INVALID_TOKEN_MESSAGE ? 'invalid-token' : undefined,
-        });
+        })
       }
-      throw error;
+      throw error
     }
     if (ctx.method === 'POST' && ctx.status === 204) {
-      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authEmailConfirmed);
+      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authEmailConfirmed)
     }
-    return result;
-  };
+    return result
+  }
 }
 
 /**
@@ -139,25 +139,25 @@ export function wrapEmailConfirmationEvents(strapi: Core.Strapi, confirm: Action
  */
 export function wrapChangePasswordEvents(strapi: Core.Strapi, changePassword: Action): Action {
   return async (ctx, ...rest) => {
-    const actor = userIdFromState(ctx.state.user);
-    let result: unknown;
+    const actor = userIdFromState(ctx.state.user)
+    let result: unknown
     try {
-      result = await changePassword(ctx, ...rest);
+      result = await changePassword(ctx, ...rest)
     } catch (error) {
       if (actor !== undefined) {
         logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordChangeFailure, {
           actor,
           reason:
             messageOf(error) === WRONG_CURRENT_PASSWORD_MESSAGE ? 'invalid-credentials' : undefined,
-        });
+        })
       }
-      throw error;
+      throw error
     }
     if (actor !== undefined) {
-      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordChangeSuccess, { actor });
+      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authPasswordChangeSuccess, { actor })
     }
-    return result;
-  };
+    return result
+  }
 }
 
 /**
@@ -171,10 +171,10 @@ export function wrapChangePasswordEvents(strapi: Core.Strapi, changePassword: Ac
  */
 export function wrapDestroyMeEvents(strapi: Core.Strapi, destroyMe: Action): Action {
   return async (ctx, ...rest) => {
-    const actor = userIdFromState(ctx.state.user);
-    let result: unknown;
+    const actor = userIdFromState(ctx.state.user)
+    let result: unknown
     try {
-      result = await destroyMe(ctx, ...rest);
+      result = await destroyMe(ctx, ...rest)
     } catch (error) {
       if (actor !== undefined) {
         logAuthEvent(strapi, ctx, SECURITY_EVENTS.authAccountDeletionFailure, {
@@ -183,27 +183,27 @@ export function wrapDestroyMeEvents(strapi: Core.Strapi, destroyMe: Action): Act
             messageOf(error) === WRONG_DELETION_PASSWORD_MESSAGE
               ? 'invalid-credentials'
               : undefined,
-        });
+        })
       }
-      throw error;
+      throw error
     }
     if (actor !== undefined && ctx.status === 204) {
-      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authAccountDeletionSuccess, { actor });
+      logAuthEvent(strapi, ctx, SECURITY_EVENTS.authAccountDeletionSuccess, { actor })
     }
-    return result;
-  };
+    return result
+  }
 }
 
 function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : '';
+  return error instanceof Error ? error.message : ''
 }
 
 function failureReason(
   error: unknown
 ): 'invalid-credentials' | 'blocked-account' | 'unconfirmed-account' | undefined {
-  const message = messageOf(error);
-  if (message === INVALID_MESSAGE) return 'invalid-credentials';
-  if (message === BLOCKED_MESSAGE) return 'blocked-account';
-  if (message === UNCONFIRMED_MESSAGE) return 'unconfirmed-account';
-  return undefined;
+  const message = messageOf(error)
+  if (message === INVALID_MESSAGE) return 'invalid-credentials'
+  if (message === BLOCKED_MESSAGE) return 'blocked-account'
+  if (message === UNCONFIRMED_MESSAGE) return 'unconfirmed-account'
+  return undefined
 }

@@ -1,4 +1,4 @@
-import type { SecurityOutcome } from '../types/security-events';
+import type { SecurityOutcome } from '../types/security-events'
 
 /**
  * Catalogue of security events written by `logSecurityEvent` (issue #180,
@@ -50,10 +50,10 @@ export const SECURITY_EVENTS = {
   rateLimitForwarderSecretInvalid: 'rate-limit.forwarder-secret.invalid',
   /** A fediverse inbox request was refused: its signature did not verify, its `Digest` named no approved algorithm, or its RFC 9421 signature skipped `content-digest`. */
   fediverseInboxSignatureRefused: 'fediverse.inbox.signature-refused',
-} as const;
+} as const
 
 /** A name from {@link SECURITY_EVENTS}. */
-export type SecurityEvent = (typeof SECURITY_EVENTS)[keyof typeof SECURITY_EVENTS];
+export type SecurityEvent = (typeof SECURITY_EVENTS)[keyof typeof SECURITY_EVENTS]
 
 /**
  * Closed set of values for the `reason` field: a free-text reason could carry
@@ -74,10 +74,10 @@ export const SECURITY_REASONS = [
   'draft-requested',
   'missing-permission',
   'rate-limited',
-] as const;
+] as const
 
 /** `ctx.state` key set once a request has written an authentication event, so no later layer logs it again. */
-export const AUTH_EVENT_LOGGED_STATE = 'authEventLogged';
+export const AUTH_EVENT_LOGGED_STATE = 'authEventLogged'
 
 /** Outcome of each event, which also decides the log level (`info` or `warn`). */
 export const SECURITY_EVENT_OUTCOMES: Readonly<Record<SecurityEvent, SecurityOutcome>> = {
@@ -103,4 +103,4 @@ export const SECURITY_EVENT_OUTCOMES: Readonly<Record<SecurityEvent, SecurityOut
   'rate-limit.rejected': 'failure',
   'rate-limit.forwarder-secret.invalid': 'failure',
   'fediverse.inbox.signature-refused': 'failure',
-};
+}

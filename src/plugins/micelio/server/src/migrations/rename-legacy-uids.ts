@@ -1,32 +1,32 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
 // Self-contained on purpose (standard, section 6): this migration keeps its own constants so it
 // keeps working after the rest of the plugin changes.
 const LEGACY_TO_PLUGIN: Record<string, string> = {
   'api::category.category': 'plugin::micelio.category',
   'api::tag.tag': 'plugin::micelio.tag',
-};
-const CONFIGURATION_KEY_PREFIX = 'plugin_content_manager_configuration_content_types::';
+}
+const CONFIGURATION_KEY_PREFIX = 'plugin_content_manager_configuration_content_types::'
 
 /** Rows of a content type whose `action` names a content API action, and the relation that owns them. */
 const ACTION_TABLES = [
   { uid: 'plugin::users-permissions.permission', owner: 'role' },
   { uid: 'admin::api-token-permission', owner: 'token' },
-] as const;
+] as const
 
 /** How many rows each place changed. */
 export interface RenameReport {
   /** Role and API token permissions (`api::category.category.find` to `plugin::micelio.category.find`). */
-  actions: number;
+  actions: number
   /** Admin role permissions whose subject is the content type. */
-  subjects: number;
+  subjects: number
   /** Content manager layouts stored under the old UID. */
-  layouts: number;
+  layouts: number
 }
 
 interface Row {
-  id: number;
-  [key: string]: unknown;
+  id: number
+  [key: string]: unknown
 }
 
 /**
@@ -43,23 +43,21 @@ interface Row {
  * exist yet (a fresh database) has nothing to migrate.
  */
 export async function renameLegacyUids(strapi: Core.Strapi): Promise<RenameReport> {
-  const report: RenameReport = { actions: 0, subjects: 0, layouts: 0 };
+  const report: RenameReport = { actions: 0, subjects: 0, layouts: 0 }
   for (const [legacy, current] of Object.entries(LEGACY_TO_PLUGIN)) {
     for (const { uid, owner } of ACTION_TABLES) {
-      report.actions += await renameActions(strapi, uid, owner, legacy, current);
+      report.actions += await renameActions(strapi, uid, owner, legacy, current)
     }
-    report.subjects += await renameSubjects(strapi, legacy, current);
-    report.layouts += await renameLayouts(strapi, legacy, current);
+    report.subjects += await renameSubjects(strapi, legacy, current)
+    report.layouts += await renameLayouts(strapi, legacy, current)
   }
-  return report;
+  return report
 }
 
 /** Whether the table of a content type exists: a fresh database has none before the first sync. */
 async function hasTable(strapi: Core.Strapi, uid: string): Promise<boolean> {
-  const tableName = strapi.db.metadata.get(uid)?.tableName as string | undefined;
-  return (
-    Boolean(tableName) && (await strapi.db.getSchemaConnection().hasTable(tableName as string))
-  );
+  const tableName = strapi.db.metadata.get(uid)?.tableName as string | undefined
+  return Boolean(tableName) && (await strapi.db.getSchemaConnection().hasTable(tableName as string))
 }
 
 async function renameActions(
@@ -69,25 +67,25 @@ async function renameActions(
   legacy: string,
   current: string
 ): Promise<number> {
-  if (!(await hasTable(strapi, uid))) return 0;
+  if (!(await hasTable(strapi, uid))) return 0
   const rows = (await strapi.db.query(uid).findMany({
     where: { action: { $startsWith: `${legacy}.` } },
     populate: { [owner]: { select: ['id'] } },
-  })) as (Row & { action: string })[];
+  })) as (Row & { action: string })[]
 
   for (const row of rows) {
-    const action = `${current}${row.action.slice(legacy.length)}`;
-    const ownerRow = row[owner] as Row | null;
+    const action = `${current}${row.action.slice(legacy.length)}`
+    const ownerRow = row[owner] as Row | null
     const twin = ownerRow
       ? await strapi.db.query(uid).findOne({ where: { action, [owner]: ownerRow.id } })
-      : null;
+      : null
     if (twin) {
-      await strapi.db.query(uid).delete({ where: { id: row.id } });
+      await strapi.db.query(uid).delete({ where: { id: row.id } })
     } else {
-      await strapi.db.query(uid).update({ where: { id: row.id }, data: { action } });
+      await strapi.db.query(uid).update({ where: { id: row.id }, data: { action } })
     }
   }
-  return rows.length;
+  return rows.length
 }
 
 async function renameSubjects(
@@ -95,26 +93,26 @@ async function renameSubjects(
   legacy: string,
   current: string
 ): Promise<number> {
-  const uid = 'admin::permission';
-  if (!(await hasTable(strapi, uid))) return 0;
+  const uid = 'admin::permission'
+  if (!(await hasTable(strapi, uid))) return 0
   const rows = (await strapi.db.query(uid).findMany({
     where: { subject: legacy },
     populate: { role: { select: ['id'] } },
-  })) as (Row & { action: string; role: Row | null })[];
+  })) as (Row & { action: string; role: Row | null })[]
 
   for (const row of rows) {
     const twin = row.role
       ? await strapi.db
           .query(uid)
           .findOne({ where: { action: row.action, subject: current, role: row.role.id } })
-      : null;
+      : null
     if (twin) {
-      await strapi.db.query(uid).delete({ where: { id: row.id } });
+      await strapi.db.query(uid).delete({ where: { id: row.id } })
     } else {
-      await strapi.db.query(uid).update({ where: { id: row.id }, data: { subject: current } });
+      await strapi.db.query(uid).update({ where: { id: row.id }, data: { subject: current } })
     }
   }
-  return rows.length;
+  return rows.length
 }
 
 /**
@@ -126,23 +124,23 @@ async function renameLayouts(
   legacy: string,
   current: string
 ): Promise<number> {
-  const uid = 'strapi::core-store';
-  if (!(await hasTable(strapi, uid))) return 0;
+  const uid = 'strapi::core-store'
+  if (!(await hasTable(strapi, uid))) return 0
   const rows = (await strapi.db.query(uid).findMany({
     where: { key: { $startsWith: CONFIGURATION_KEY_PREFIX } },
-  })) as (Row & { key: string; value: string | null })[];
+  })) as (Row & { key: string; value: string | null })[]
 
-  let changed = 0;
+  let changed = 0
   for (const row of rows) {
-    const key = row.key.split(legacy).join(current);
-    const value = row.value?.split(legacy).join(current) ?? row.value;
-    if (key === row.key && value === row.value) continue;
-    changed += 1;
+    const key = row.key.split(legacy).join(current)
+    const value = row.value?.split(legacy).join(current) ?? row.value
+    if (key === row.key && value === row.value) continue
+    changed += 1
     if (key !== row.key && (await strapi.db.query(uid).findOne({ where: { key } }))) {
-      await strapi.db.query(uid).delete({ where: { id: row.id } });
+      await strapi.db.query(uid).delete({ where: { id: row.id } })
     } else {
-      await strapi.db.query(uid).update({ where: { id: row.id }, data: { key, value } });
+      await strapi.db.query(uid).update({ where: { id: row.id }, data: { key, value } })
     }
   }
-  return changed;
+  return changed
 }

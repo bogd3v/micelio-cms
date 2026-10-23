@@ -1,11 +1,11 @@
-import type { Core } from '@strapi/strapi';
-import { READER_JWT_AUDIENCE } from '../src/constants/jwt';
-import { limitsAuth } from '../src/utils/rate-limit/rule';
-import { createPasswordValidator, parseBannedWords } from '../src/utils/password-rules';
-import { smtpTlsOptions } from '../src/utils/smtp';
+import type { Core } from '@strapi/strapi'
+import { READER_JWT_AUDIENCE } from '../src/constants/jwt'
+import { limitsAuth } from '../src/utils/rate-limit/rule'
+import { createPasswordValidator, parseBannedWords } from '../src/utils/password-rules'
+import { smtpTlsOptions } from '../src/utils/smtp'
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => {
-  const r2Bucket = env('R2_BUCKET');
+  const r2Bucket = env('R2_BUCKET')
 
   const uploadConfig = r2Bucket
     ? {
@@ -36,15 +36,15 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         provider: 'local',
         providerOptions: {},
         sizeLimit: 250 * 1024 * 1024,
-      };
+      }
 
   // Without SMTP_HOST Strapi keeps its default `sendmail` provider, which can't
   // deliver from a container: account confirmation and reset emails need SMTP.
-  const smtpHost = env('SMTP_HOST');
-  const smtpPort = env.int('SMTP_PORT', 587);
+  const smtpHost = env('SMTP_HOST')
+  const smtpPort = env.int('SMTP_PORT', 587)
   // EMAIL_FROM has no site-specific default: without it, emails go out from
   // no-reply@ the frontend's host, and register() warns when SMTP is on.
-  const emailFrom = env('EMAIL_FROM') || `no-reply@${frontendHost(env('FRONTEND_URL'))}`;
+  const emailFrom = env('EMAIL_FROM') || `no-reply@${frontendHost(env('FRONTEND_URL'))}`
   const emailConfig = smtpHost
     ? {
         provider: 'nodemailer',
@@ -56,11 +56,11 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         },
         settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom },
       }
-    : { settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom } };
+    : { settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom } }
 
   // Our limiter replaces the users-permissions one, but only while it limits
   // the auth group: with RATE_LIMIT_AUTH=0 the plugin's own stays, so auth is never open.
-  const ownAuthLimit = limitsAuth(env);
+  const ownAuthLimit = limitsAuth(env)
 
   return {
     fediverse: {
@@ -143,16 +143,16 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         },
       },
     },
-  };
-};
+  }
+}
 
 /** Host of the frontend for the fallback sender, `localhost` when unknown. */
 function frontendHost(frontendUrl: string | undefined): string {
   try {
-    return new URL(frontendUrl ?? '').hostname || 'localhost';
+    return new URL(frontendUrl ?? '').hostname || 'localhost'
   } catch {
-    return 'localhost';
+    return 'localhost'
   }
 }
 
-export default config;
+export default config

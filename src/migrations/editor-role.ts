@@ -1,12 +1,12 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-const ROLE_UID = 'plugin::users-permissions.role';
-const PERMISSION_UID = 'plugin::users-permissions.permission';
+const ROLE_UID = 'plugin::users-permissions.role'
+const PERMISSION_UID = 'plugin::users-permissions.permission'
 const EDITOR = {
   name: 'Editor',
   type: 'editor',
   description: 'Puede ver borradores en el sitio',
-};
+}
 // Read-only: editors review drafts on the site with `?status=draft`; creating,
 // editing and publishing stays in the admin panel. Tags are included because
 // the frontend populates them on every article and Strapi rejects the whole
@@ -26,10 +26,10 @@ const ACTIONS = [
   'plugin::upload.content-api.find',
   'plugin::upload.content-api.findOne',
   'plugin::users-permissions.user.me',
-];
+]
 
 /** Whether the role was created in this run and how many permissions were added. */
-export type EditorRoleReport = { roleCreated: boolean; permissionsGranted: number };
+export type EditorRoleReport = { roleCreated: boolean; permissionsGranted: number }
 
 /**
  * Creates the users-permissions Editor role (issue #53) and grants it read
@@ -39,22 +39,22 @@ export type EditorRoleReport = { roleCreated: boolean; permissionsGranted: numbe
  */
 export async function ensureEditorRole(strapi: Core.Strapi): Promise<EditorRoleReport> {
   let role = (await strapi.db.query(ROLE_UID).findOne({ where: { type: EDITOR.type } })) as {
-    id: number;
-  } | null;
-  const roleCreated = !role;
+    id: number
+  } | null
+  const roleCreated = !role
   if (!role) {
-    role = (await strapi.db.query(ROLE_UID).create({ data: EDITOR })) as { id: number };
+    role = (await strapi.db.query(ROLE_UID).create({ data: EDITOR })) as { id: number }
   }
 
   const existing = (await strapi.db.query(PERMISSION_UID).findMany({
     select: ['action'],
     where: { role: role.id, action: { $in: ACTIONS } },
-  })) as { action: string }[];
-  const granted = new Set(existing.map((permission) => permission.action));
-  const missing = ACTIONS.filter((action) => !granted.has(action));
+  })) as { action: string }[]
+  const granted = new Set(existing.map((permission) => permission.action))
+  const missing = ACTIONS.filter((action) => !granted.has(action))
 
   for (const action of missing) {
-    await strapi.db.query(PERMISSION_UID).create({ data: { action, role: role.id } });
+    await strapi.db.query(PERMISSION_UID).create({ data: { action, role: role.id } })
   }
-  return { roleCreated, permissionsGranted: missing.length };
+  return { roleCreated, permissionsGranted: missing.length }
 }

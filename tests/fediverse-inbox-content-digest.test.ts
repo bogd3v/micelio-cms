@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, jest } from '@jest/globals';
-import { setupStrapi, cleanupStrapi, serverHost } from './strapi';
-import { createRemoteActor, type RemoteActor } from './helpers/remote-actor';
-import { waitUntil } from './helpers/wait-until';
-import { SECURITY_REASONS } from '../src/constants/security-events';
+import { describe, it, expect, beforeAll, afterAll, afterEach, jest } from '@jest/globals'
+import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
+import { createRemoteActor, type RemoteActor } from './helpers/remote-actor'
+import { waitUntil } from './helpers/wait-until'
+import { SECURITY_REASONS } from '../src/constants/security-events'
 import {
   isContentDigestCovered,
   parseSignatureInput,
-} from '../src/plugins/fediverse/server/src/inbox-signature-input';
+} from '../src/plugins/fediverse/server/src/inbox-signature-input'
 
-const PARAMS = ';created=1700000000;keyid="https://remote.example.com/actor#main-key"';
+const PARAMS = ';created=1700000000;keyid="https://remote.example.com/actor#main-key"'
 
 describe('parseSignatureInput', () => {
   it('lists every signature label with whether it covers content-digest', () => {
@@ -19,8 +19,8 @@ describe('parseSignatureInput', () => {
     ).toEqual([
       { label: 'sig1', coversContentDigest: true },
       { label: 'sig2', coversContentDigest: false },
-    ]);
-  });
+    ])
+  })
 
   it('skips the members Fedify does not treat as signatures', () => {
     expect(
@@ -34,16 +34,16 @@ describe('parseSignatureInput', () => {
           `sig5=("@method")${PARAMS}`,
         ].join(', ')
       )
-    ).toEqual([{ label: 'sig5', coversContentDigest: false }]);
-  });
+    ).toEqual([{ label: 'sig5', coversContentDigest: false }])
+  })
 
   it.each(['sig1=(', 'sig1=("content-digest"', '("content-digest")', 'sig1=("a")garbage'])(
     'answers null for the malformed header %j',
     (header) => {
-      expect(parseSignatureInput(header)).toBeNull();
+      expect(parseSignatureInput(header)).toBeNull()
     }
-  );
-});
+  )
+})
 
 describe('isContentDigestCovered', () => {
   it.each([
@@ -54,8 +54,8 @@ describe('isContentDigestCovered', () => {
     `sig1=("content-digest")${PARAMS}, other=("@method");keyid="k"`,
     `sig1=("content-digest");keyid="k";created=1;alg="rsa-v1_5-sha256";tag="x"`,
   ])('accepts %j', (header) => {
-    expect(isContentDigestCovered(header)).toBe(true);
-  });
+    expect(isContentDigestCovered(header)).toBe(true)
+  })
 
   it.each([
     [`sig1=("@method" "date")${PARAMS}`, 'no label covers it'],
@@ -68,15 +68,15 @@ describe('isContentDigestCovered', () => {
     ['', 'the header is empty'],
     ['sig1=("content-digest"', 'the header is malformed'],
   ])('refuses %j: %s', (header) => {
-    expect(isContentDigestCovered(header)).toBe(false);
-  });
-});
+    expect(isContentDigestCovered(header)).toBe(false)
+  })
+})
 
 describe('Fediverse inbox RFC 9421 Content-Digest coverage', () => {
-  let host: string;
-  let actorUrl: string;
-  let remote: RemoteActor;
-  let followCount = 0;
+  let host: string
+  let actorUrl: string
+  let remote: RemoteActor
+  let followCount = 0
 
   const follow = () => ({
     '@context': 'https://www.w3.org/ns/activitystreams',
@@ -84,32 +84,32 @@ describe('Fediverse inbox RFC 9421 Content-Digest coverage', () => {
     type: 'Follow',
     actor: remote.actorUrl,
     object: actorUrl,
-  });
+  })
   const followerRow = () =>
-    strapi.db.query('plugin::fediverse.follower').findOne({ where: { actorId: remote.actorUrl } });
-  const accepts = () => remote.inboxDeliveries.filter((activity) => activity.type === 'Accept');
+    strapi.db.query('plugin::fediverse.follower').findOne({ where: { actorId: remote.actorUrl } })
+  const accepts = () => remote.inboxDeliveries.filter((activity) => activity.type === 'Accept')
 
   beforeAll(async () => {
-    process.env.FEDIVERSE_ENABLED = 'true';
-    process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog';
-    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev';
-    await setupStrapi();
-    host = serverHost();
-    actorUrl = `http://${host}/fediverse/user/devbog`;
-    remote = await createRemoteActor({ preferredUsername: 'content-digest-test' });
-  });
+    process.env.FEDIVERSE_ENABLED = 'true'
+    process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
+    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
+    await setupStrapi()
+    host = serverHost()
+    actorUrl = `http://${host}/fediverse/user/devbog`
+    remote = await createRemoteActor({ preferredUsername: 'content-digest-test' })
+  })
 
   afterAll(async () => {
-    await remote?.close();
-    await cleanupStrapi();
-  });
+    await remote?.close()
+    await cleanupStrapi()
+  })
 
   afterEach(async () => {
     await strapi.db
       .query('plugin::fediverse.follower')
-      .deleteMany({ where: { actorId: remote.actorUrl } });
-    remote.inboxDeliveries.length = 0;
-  });
+      .deleteMany({ where: { actorId: remote.actorUrl } })
+    remote.inboxDeliveries.length = 0
+  })
 
   it.each([
     ['the actor inbox', () => `${actorUrl}/inbox`],
@@ -117,25 +117,25 @@ describe('Fediverse inbox RFC 9421 Content-Digest coverage', () => {
   ])(
     'refuses an RFC 9421 Follow whose signature does not cover content-digest on %s',
     async (_label, inbox) => {
-      const warnings: { message: string; meta: unknown }[] = [];
+      const warnings: { message: string; meta: unknown }[] = []
       const spy = jest.spyOn(strapi.log, 'warn').mockImplementation(((
         message: unknown,
         meta: unknown
       ) => {
-        warnings.push({ message: String(message), meta });
-        return strapi.log;
-      }) as never);
-      let res: Response;
+        warnings.push({ message: String(message), meta })
+        return strapi.log
+      }) as never)
+      let res: Response
       try {
         res = await remote.postSignedActivity(inbox(), follow(), {
           rfc9421: { coverContentDigest: false },
-        });
+        })
       } finally {
-        spy.mockRestore();
+        spy.mockRestore()
       }
 
-      expect(res.status).toBe(401);
-      expect(await res.text()).toBe('The signature must cover the Content-Digest header.');
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('The signature must cover the Content-Digest header.')
       expect(warnings).toContainEqual({
         message: 'security: fediverse.inbox.signature-refused',
         meta: expect.objectContaining({
@@ -143,21 +143,21 @@ describe('Fediverse inbox RFC 9421 Content-Digest coverage', () => {
           outcome: 'failure',
           reason: 'content-digest-not-covered',
         }),
-      });
-      expect(SECURITY_REASONS).toContain('content-digest-not-covered');
-      expect(await followerRow()).toBeNull();
-      expect(accepts()).toEqual([]);
+      })
+      expect(SECURITY_REASONS).toContain('content-digest-not-covered')
+      expect(await followerRow()).toBeNull()
+      expect(accepts()).toEqual([])
     }
-  );
+  )
 
   it.each([
     ['an RFC 9421 signature that covers content-digest', { rfc9421: {} }],
     ['a draft-cavage signature', undefined],
   ])('accepts a signed Follow with %s', async (_label, options) => {
-    const res = await remote.postSignedActivity(`${actorUrl}/inbox`, follow(), options);
+    const res = await remote.postSignedActivity(`${actorUrl}/inbox`, follow(), options)
 
-    expect(res.status).toBe(202);
-    await waitUntil(followerRow);
-    await waitUntil(() => accepts().length > 0);
-  });
-});
+    expect(res.status).toBe(202)
+    await waitUntil(followerRow)
+    await waitUntil(() => accepts().length > 0)
+  })
+})

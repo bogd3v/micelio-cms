@@ -1,7 +1,7 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi'
 
-const COMMENT_UID = 'plugin::comments.comment';
-const ARTICLE_RELATION_PREFIX = 'api::article.article:';
+const COMMENT_UID = 'plugin::comments.comment'
+const ARTICLE_RELATION_PREFIX = 'api::article.article:'
 
 /**
  * Gives article comments saved before comments were split by language the
@@ -11,10 +11,10 @@ const ARTICLE_RELATION_PREFIX = 'api::article.article:';
  * have a locale are left alone.
  */
 export async function backfillCommentLocale(strapi: Core.Strapi): Promise<number> {
-  const locale = (await strapi.plugin('i18n').service('locales').getDefaultLocale()) as string;
+  const locale = (await strapi.plugin('i18n').service('locales').getDefaultLocale()) as string
   const { count } = await strapi.db.query(COMMENT_UID).updateMany({
     where: { related: { $startsWith: ARTICLE_RELATION_PREFIX }, locale: { $null: true } },
     data: { locale },
-  });
-  return count;
+  })
+  return count
 }

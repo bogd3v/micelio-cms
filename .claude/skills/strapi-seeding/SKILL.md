@@ -40,11 +40,11 @@ async function importEvents() {
     const created = await createEntry({
       model: 'event',
       entry: event,
-    });
+    })
 
     // Publish draft-enabled content types so they are visible on the public API
     if (created?.documentId) {
-      await strapi.documents('api::event.event').publish({ documentId: created.documentId });
+      await strapi.documents('api::event.event').publish({ documentId: created.documentId })
     }
   }
 }
@@ -56,7 +56,7 @@ async function importEvents() {
 await setPublicPermissions({
   // existing permissions...
   event: ['find', 'findOne'],
-});
+})
 ```
 
 4. Call `await importEvents()` inside `importSeedData()`.

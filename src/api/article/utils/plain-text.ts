@@ -3,38 +3,38 @@
  * words a reader sees (including code) and drops Markdown and HTML syntax.
  */
 
-import type { BodyBlock } from '../../../types/blocks';
-import { CITATION_PATTERN } from './citations';
+import type { BodyBlock } from '../../../types/blocks'
+import { CITATION_PATTERN } from './citations'
 
 /** Hard cap so a huge article can't bloat every row it is copied into. */
-export const MAX_PLAIN_TEXT_LENGTH = 100_000;
+export const MAX_PLAIN_TEXT_LENGTH = 100_000
 
 /** An HTML comment. */
-const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+const HTML_COMMENT = /<!--[\s\S]*?-->/g
 
 /**
  * Something that reads as an HTML tag: a name followed by whitespace, `/` or
  * `>`, or a `<!` declaration. A `<` followed by anything else (`1 < 2`,
  * `Map<K, V>`) is text.
  */
-const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g;
+const HTML_TAG = /<\/?[A-Za-z][A-Za-z0-9-]*(?:[\s/][^>]*)?>|<![^>]*>/g
 
 /** A tag start with no `>` left to close it, removed when stripping keeps rebuilding tags. */
-const TAG_START = /<(?=[A-Za-z/!])/g;
+const TAG_START = /<(?=[A-Za-z/!])/g
 
 /** A comment opener with no `-->` after it, which no other pattern removes. */
-const COMMENT_OPEN = /<!--/g;
+const COMMENT_OPEN = /<!--/g
 
 /** Passes of tag stripping before the tag starts that remain are dropped. */
-const MAX_STRIP_PASSES = 4;
+const MAX_STRIP_PASSES = 4
 
 /** A fenced code block (to the end of the text when it is not closed) or an inline code span. */
 const CODE =
-  /^[ \t]*(?:```|~~~)[^\n]*\n[\s\S]*?(?:^[ \t]*(?:```|~~~)[^\n]*$|(?![\s\S]))|`+[^`\n]+`+/gm;
+  /^[ \t]*(?:```|~~~)[^\n]*\n[\s\S]*?(?:^[ \t]*(?:```|~~~)[^\n]*$|(?![\s\S]))|`+[^`\n]+`+/gm
 
 /** One pass: complete comments, tags, then a comment opener that was never closed. */
 function removeMarkup(text: string): string {
-  return text.replace(HTML_COMMENT, '').replace(HTML_TAG, '').replace(COMMENT_OPEN, '');
+  return text.replace(HTML_COMMENT, '').replace(HTML_TAG, '').replace(COMMENT_OPEN, '')
 }
 
 /**
@@ -44,24 +44,24 @@ function removeMarkup(text: string): string {
  * hostile nesting; what then remains of a tag start is dropped.
  */
 function stripHtml(text: string): string {
-  let current = text;
+  let current = text
   for (let pass = 0; pass < MAX_STRIP_PASSES; pass++) {
-    const next = removeMarkup(current);
-    if (next === current) return next;
-    current = next;
+    const next = removeMarkup(current)
+    if (next === current) return next
+    current = next
   }
-  return removeMarkup(current.replace(TAG_START, ''));
+  return removeMarkup(current.replace(TAG_START, ''))
 }
 
 /** Strips the HTML of a Markdown text but leaves code, where `<` is what the author wrote. */
 function stripHtmlOutsideCode(markdown: string): string {
-  let result = '';
-  let last = 0;
+  let result = ''
+  let last = 0
   for (const match of markdown.matchAll(CODE)) {
-    result += stripHtml(markdown.slice(last, match.index)) + match[0];
-    last = match.index + match[0].length;
+    result += stripHtml(markdown.slice(last, match.index)) + match[0]
+    last = match.index + match[0].length
   }
-  return result + stripHtml(markdown.slice(last));
+  return result + stripHtml(markdown.slice(last))
 }
 
 /**
@@ -104,7 +104,7 @@ export function markdownToPlainText(markdown: string): string {
       .replace(/ *\n */g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
-  );
+  )
 }
 
 /**
@@ -113,24 +113,24 @@ export function markdownToPlainText(markdown: string): string {
  * flood search results and their snippets.
  */
 export function blocksToPlainText(blocks: unknown): string {
-  if (!Array.isArray(blocks)) return '';
+  if (!Array.isArray(blocks)) return ''
 
-  const parts: string[] = [];
+  const parts: string[] = []
   for (const block of blocks as BodyBlock[]) {
-    if (block == null || typeof block !== 'object') continue;
+    if (block == null || typeof block !== 'object') continue
     if (block.__component === 'shared.rich-text' && block.body) {
-      parts.push(markdownToPlainText(block.body));
+      parts.push(markdownToPlainText(block.body))
     } else if (block.__component === 'shared.quote') {
-      if (block.title) parts.push(block.title.trim());
-      if (block.body) parts.push(markdownToPlainText(block.body));
+      if (block.title) parts.push(block.title.trim())
+      if (block.body) parts.push(markdownToPlainText(block.body))
     } else if (block.__component === 'shared.playground' && block.caption) {
-      parts.push(block.caption.trim());
+      parts.push(block.caption.trim())
     }
   }
   return parts
     .filter((part) => part.length > 0)
     .join('\n\n')
-    .slice(0, MAX_PLAIN_TEXT_LENGTH);
+    .slice(0, MAX_PLAIN_TEXT_LENGTH)
 }
 
 /**
@@ -140,20 +140,20 @@ export function blocksToPlainText(blocks: unknown): string {
  * before wrapping the match in markup.
  */
 export function snippetAround(text: string, query: string, radius = 80): string | null {
-  const flat = text.replace(/\s+/g, ' ').trim();
-  const index = flat.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
-  if (index === -1) return null;
+  const flat = text.replace(/\s+/g, ' ').trim()
+  const index = flat.toLocaleLowerCase().indexOf(query.toLocaleLowerCase())
+  if (index === -1) return null
 
-  let start = Math.max(0, index - radius);
-  let end = Math.min(flat.length, index + query.length + radius);
+  let start = Math.max(0, index - radius)
+  let end = Math.min(flat.length, index + query.length + radius)
   if (start > 0) {
-    const space = flat.indexOf(' ', start);
-    if (space !== -1 && space < index) start = space + 1;
+    const space = flat.indexOf(' ', start)
+    if (space !== -1 && space < index) start = space + 1
   }
   if (end < flat.length) {
-    const space = flat.lastIndexOf(' ', end);
-    if (space > index + query.length) end = space;
+    const space = flat.lastIndexOf(' ', end)
+    if (space > index + query.length) end = space
   }
 
-  return `${start > 0 ? '…' : ''}${flat.slice(start, end)}${end < flat.length ? '…' : ''}`;
+  return `${start > 0 ? '…' : ''}${flat.slice(start, end)}${end < flat.length ? '…' : ''}`
 }

@@ -7,7 +7,7 @@
  */
 
 /** Where the frontend runs when `FRONTEND_URL` is unset outside production. */
-export const DEV_FRONTEND_URL = 'http://localhost:3000';
+export const DEV_FRONTEND_URL = 'http://localhost:3000'
 
 /**
  * The frontend's base URL (`FRONTEND_URL`). Outside production it defaults to
@@ -16,47 +16,47 @@ export const DEV_FRONTEND_URL = 'http://localhost:3000';
  * sending links to another site.
  */
 export function frontendBaseUrl(): string {
-  const value = process.env.FRONTEND_URL?.trim();
-  if (value) return value;
+  const value = process.env.FRONTEND_URL?.trim()
+  if (value) return value
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('FRONTEND_URL is required in production: the URL of the frontend');
+    throw new Error('FRONTEND_URL is required in production: the URL of the frontend')
   }
-  return DEV_FRONTEND_URL;
+  return DEV_FRONTEND_URL
 }
 
 /** Fails the boot when `FRONTEND_URL` is missing in production or is not a URL. */
 export function assertFrontendUrlConfigured(): void {
-  const value = frontendBaseUrl();
+  const value = frontendBaseUrl()
   try {
-    new URL(value);
+    new URL(value)
   } catch {
-    throw new Error(`FRONTEND_URL is not a valid URL: "${value}"`);
+    throw new Error(`FRONTEND_URL is not a valid URL: "${value}"`)
   }
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /** Slug and locale of a frontend article path, or null if it isn't one. */
 export function parseFrontendArticlePath(
   pathname: string
 ): { slug: string; locale: string } | null {
-  const base = new URL(frontendBaseUrl());
-  const template = process.env.FRONTEND_ARTICLE_PATH ?? '/blog/{slug}';
-  const [before, after] = template.split('{slug}');
-  const basePath = base.pathname.replace(/\/+$/, '');
+  const base = new URL(frontendBaseUrl())
+  const template = process.env.FRONTEND_ARTICLE_PATH ?? '/blog/{slug}'
+  const [before, after] = template.split('{slug}')
+  const basePath = base.pathname.replace(/\/+$/, '')
   const pattern = new RegExp(
     `^${escapeRegExp(basePath)}(?:/([A-Za-z]{2}(?:-[A-Za-z]{2})?))?${escapeRegExp(before)}([^/]+)${escapeRegExp(after ?? '')}/?$`
-  );
-  const match = pattern.exec(pathname);
-  if (!match) return null;
+  )
+  const match = pattern.exec(pathname)
+  if (!match) return null
 
-  let slug: string;
+  let slug: string
   try {
-    slug = decodeURIComponent(match[2]);
+    slug = decodeURIComponent(match[2])
   } catch {
-    return null;
+    return null
   }
-  return { locale: match[1] ?? process.env.FRONTEND_DEFAULT_LOCALE ?? 'en', slug };
+  return { locale: match[1] ?? process.env.FRONTEND_DEFAULT_LOCALE ?? 'en', slug }
 }

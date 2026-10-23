@@ -1,4 +1,4 @@
-import type { ResponseRoute } from './types';
+import type { ResponseRoute } from './types'
 
 /** The routes of categories and tags. */
 export const TAXONOMY_ROUTES: readonly ResponseRoute[] = [
@@ -58,4 +58,4 @@ export const TAXONOMY_ROUTES: readonly ResponseRoute[] = [
       meta: { use: 'surplus', of: { pagination: { use: 'surplus', of: 'pagination-unread' } } },
     },
   },
-];
+]

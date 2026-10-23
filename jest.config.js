@@ -7,7 +7,7 @@ const ESM_PACKAGES = [
   'dom-serializer',
   'domelementtype',
   'entities',
-];
+]
 
 /** @type {import('jest').Config} */
 module.exports = {
@@ -35,4 +35,4 @@ module.exports = {
   transformIgnorePatterns: [
     `node_modules/(?!(?:[^/]+/node_modules/)*(?:${ESM_PACKAGES.join('|')})/)`,
   ],
-};
+}
