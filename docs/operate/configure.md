@@ -193,6 +193,8 @@ While enabled, `FEDIVERSE_ACTOR_IDENTIFIER` has no default: without it the plugi
 
 Deprecated, still read as fallbacks (a later `0.y` removes them): `FEDIVERSE_ACTOR_USERNAME` → Username, `FEDIVERSE_ACTOR_NAME` → Display name, `FEDIVERSE_ACTOR_SUMMARY` → Summary, `FEDIVERSE_ACTOR_SOURCE_URL` → Source URL. Each one that is set logs one warning at boot that names the setting. Move the value into the site settings, then delete the variable. The `fediverseHeader` of Global is deprecated the same way (use the header of the Fediverse profile).
 
+**Author credit on Mastodon link cards.** The actor lists the host of `FRONTEND_URL`, and `FEDIVERSE_HANDLE_HOST` when set, in its `attributionDomains`, so Mastodon shows the blog's account on the card of a shared article. It works only when the site's canonical URL (the site settings' URL, or the frontend's `NUXT_PUBLIC_SITE_URL`) is on one of those hosts or a subdomain of them. A restart that changes them sends an `Update(Person)` to the followers. Details and how to check it: `docs/FEDIVERSE.md`, "Author attribution".
+
 ### A handle on the site's domain (`FEDIVERSE_HANDLE_HOST`)
 
 By default the handle is `@blog@cms.example.com`, the host of `URL`, because the actor lives on the CMS. To show `@blog@example.com` instead, set `FEDIVERSE_HANDLE_HOST=example.com` and make the site domain forward WebFinger to the CMS. Every id stays on the CMS origin (the actor, its inbox, outbox and key ids do not change), so no follower is lost.

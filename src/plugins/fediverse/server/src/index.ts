@@ -20,6 +20,7 @@ import { subscribeReplies, unsubscribeReplies } from './services/reply-publisher
 import statsService from './services/stats'
 import {
   subscribe as subscribePublisher,
+  syncProfileAtBoot,
   unsubscribe as unsubscribePublisher,
 } from './services/publisher'
 import { configureFedifyLogging, resetFedifyLogging } from './utils/fedify-logging'
@@ -57,6 +58,7 @@ const plugin = {
     await registerPermissionActions(strapi)
     // After the migrations: a message left by the previous run is delivered from here on.
     startFederationQueue(strapi)
+    await syncProfileAtBoot(strapi)
   },
 
   async destroy({ strapi }: { strapi: Core.Strapi }): Promise<void> {

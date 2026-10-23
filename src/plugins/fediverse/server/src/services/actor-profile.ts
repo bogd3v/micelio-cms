@@ -3,6 +3,7 @@ import type { Core } from '@strapi/strapi'
 import { ACTOR_IDENTIFIER, ACTOR_USERNAME } from '../constants/actor'
 import { GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids'
 import type { ActorProfile } from '../types/actor-profile'
+import { attributionDomains } from '../utils/attribution-domains'
 import { frontendBaseUrl } from '../utils/frontend-url'
 
 const DEFAULT_NAME = 'Micelio'
@@ -105,6 +106,7 @@ export async function getActorUsernames(strapi: Core.Strapi): Promise<string[]> 
  *   icon     ← global.favicon (resolved against the actor URL)
  *   header   ← fediverse.header → global.fediverseHeader (resolved against the actor URL)
  *   fields   ← Blog (FRONTEND_URL) and Código (fediverse.sourceUrl → FEDIVERSE_ACTOR_SOURCE_URL → this repository)
+ *   attributionDomains ← the host of FRONTEND_URL and FEDIVERSE_HANDLE_HOST (utils/attribution-domains.ts)
  *
  * `discoverable` is true unless the component says otherwise. `about.title` is deliberately not
  * a fallback: it's the About page heading ("Acerca de este blog"), not a name. The `FEDIVERSE_ACTOR_*`
@@ -155,6 +157,7 @@ export async function getActorProfile(strapi: Core.Strapi, baseUrl: string): Pro
       { name: 'Blog', url },
       { name: 'Código', url: sourceUrl },
     ],
+    attributionDomains: attributionDomains(),
   }
 }
 
