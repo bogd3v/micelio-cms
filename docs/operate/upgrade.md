@@ -46,7 +46,7 @@ The first boot moves what Strapi stored under the old UIDs, before any plugin bo
 
 With the fediverse plugin on, an article is now federated as a `Note` (the title in bold, the excerpt and the link) unless the site settings say otherwise: Site settings → Fediverse profile → Object type. Before, a site that never set it sent an `Article`. Nothing is re-sent at the upgrade: the new type goes out with the next publish or update of an article, and remote servers keep the type they stored until then. To keep sending `Article`, set Object type to `Article` before the first publish after the upgrade. There is no migration and nothing else to do.
 
-## Upgrading to 0.4: categories lose `key`, `bird` and `pillar`
+## Upgrading to 0.5: categories lose `key`, `bird` and `pillar`
 
 The category no longer has the attributes `key`, `bird` and `pillar` (use `featured`, `order` and `color`). A request that names them in `fields`, `filters` or `sort` is answered with 400, so run frontend 0.4 or later against this CMS. On the first boot the CMS copies `pillar` to `featured` for every category that has it, before Strapi drops the column; nothing else is needed. It is a boot migration that cannot be undone, so back up first (step 2): going back means the previous image and a restore. The migration is a file in `database/migrations/` that Strapi runs only when `runMigrations` is on in the database settings (the default); do not turn it off for this upgrade, or the `pillar` values are lost.
 
