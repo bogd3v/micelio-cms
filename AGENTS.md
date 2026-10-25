@@ -8,6 +8,16 @@ This is a **Strapi 5** CMS backend project. Below are conventions and commands f
 
 The rules shared by every Micelio repository live in [`docs/engineering-standard.md`](docs/engineering-standard.md). This repository follows standard version 1.5 (`standard: 1.5`; `npm run lint:standard` checks the copy against the hashes bundled in `@micelio/eslint-config`). This file adds what is specific to this repository (stack, commands, folders, naming) and may tighten the standard, never relax it. When the two disagree, the standard wins.
 
+## The factory
+
+Work moves through the gates of the Micelio factory: [`docs/factory.md`](https://github.com/bogd3v/micelio-engineering/blob/main/docs/factory.md) in `micelio-engineering`. The worker proves each acceptance criterion and the verifier re-creates the run, on a clean copy of the worktree:
+
+- `git init && git add -A` in the copy (`lint:ee` scans only the files git tracks, so untracked ones are not counted) and create `.env` from `.env.example`: the six values of `npm run generate:keys` (32 characters or more), `DATABASE_PASSWORD` (never `strapi`), `URL` and `FRONTEND_URL`, no `PORT`. Never print or commit it, and remove it before `npm run check`: a `.env` changes the fediverse tests.
+- `docker compose up --build` (`docker-compose.yml`: the `production` image and PostgreSQL 18) is ready when `GET /_health` answers `204`; `docker compose down -v` removes it.
+- `npm ci && npm run check` runs in the `node:22` image (`.nvmrc`), the copy mounted (`:z` on SELinux). A container that runs as root needs `git config --global --add safe.directory /app` (the mount point) first, or git refuses the copy.
+
+`.claude/agents/{planner,master,worker,reviewer,verifier}.md`, the skills `ship-pr`, `blind-review` and `verify-pr` and `.github/pull_request_template.md` are copies of `micelio-engineering/template/`: fix them there.
+
 ## Build Commands
 
 ```bash
@@ -98,19 +108,6 @@ Exported functions declare their return type (`@typescript-eslint/explicit-modul
    import type { Core } from '@strapi/strapi'
    ```
 
-2. **Config functions use typed parameters**:
-
-   ```typescript
-   const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server => {
-     // ...
-   }
-   ```
-
-3. **Default export for config files**:
-   ```typescript
-   export default config
-   ```
-
 ### Naming Conventions
 
 | Item                 | Convention          | Example                  |
@@ -123,22 +120,6 @@ Exported functions declare their return type (`@typescript-eslint/explicit-modul
 
 ### Strapi API Patterns
 
-**Core CRUD boilerplate (controllers/services/routes)**:
-
-```typescript
-// Controller
-import { factories } from '@strapi/strapi'
-export default factories.createCoreController('api::article.article')
-
-// Service
-import { factories } from '@strapi/strapi'
-export default factories.createCoreService('api::article.article')
-
-// Router
-import { factories } from '@strapi/strapi'
-export default factories.createCoreRouter('api::article.article')
-```
-
 **Creating documents** (Strapi 5 style):
 
 ```typescript
@@ -147,15 +128,6 @@ const draft = await strapi.documents('api::article.article').create({
 })
 
 await strapi.documents('api::article.article').publish({ documentId: draft.documentId })
-```
-
-**Querying documents**:
-
-```typescript
-const articles = await strapi.documents('api::article.article').findMany({
-  filters: { category: { name: 'Tech' } },
-  populate: ['cover', 'author'],
-})
 ```
 
 ### Environment Variables
@@ -208,27 +180,6 @@ const connections = {
 
 - **Development default**: SQLite
 - **Production**: PostgreSQL 18 (`DATABASE_URL`)
-
----
-
-## Adding New Content Types
-
-1. Generate via Strapi CLI: `npm run strapi generate`
-2. Or manually create in `src/api/<name>/`:
-   - `controllers/`, `routes/`, `services/` (use core factories)
-   - Schema JSON in content type folder
-3. Set public permissions in admin panel or via seed script
-
----
-
-## Working with the Seed Script
-
-The `scripts/seed.js` file demonstrates:
-
-- Using `strapi.documents()` for document operations
-- File uploads via `strapi.plugin('upload').service('upload')`
-- Setting public permissions programmatically
-- Plugin store for tracking state
 
 ---
 

@@ -18,12 +18,21 @@ The main session acts as **tech lead / orchestrator**. It splits the work, hands
 | `devops`          | sonnet | Dockerfile, CI and image workflows, demo compose, dependencies                                       |
 | `docs-writer`     | haiku  | `docs/architecture/*.md`, `CLAUDE.md` table, `AGENTS.md`, `docs/*.md`, skills, issue Progress drafts |
 
+### Factory roles
+
+Work that runs through the Micelio factory ([`docs/factory.md`](https://github.com/bogd3v/micelio-engineering/blob/main/docs/factory.md)) uses the five prompts copied from `micelio-engineering` (`planner`, `master`, `worker`, `reviewer`, `verifier`; synced files, never edited here). The roster above does the work inside a role.
+
+| Role       | Gate | Hard limits (on top of the list below)                                                                                                                                             |
+| ---------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reviewer` | 3    | A new agent with no context from the worker; reads the diff, never edits, never reads the worker's session; findings are Blocking, Important or Suggestion, each with `path:line`  |
+| `verifier` | 4    | A new agent with a shell, no context from the worker, never reads the reviewer's findings; works on a clean copy, never in the worktree; never accepts a number it did not produce |
+
 **Escalation:** if an agent fails the same task twice, or the problem is exceptionally hard (concurrency, a subtle regression, a contract that touches both repos), relaunch it with `model: opus`; `model: fable` only as a last resort, and say in the summary why. Never start with the most expensive model.
 
 ## Where the plan lives
 
 - Work is tracked in GitHub issues; fediverse work in the `fediverse-federation` milestone (phases 0–5) with `docs/FEDIVERSE.md` as the living tracker. Cross-repository planning is micelio's epic #408 (engineering foundations).
-- `CLAUDE.md` holds the pitfalls and a "before you touch X, read Y" table; the architecture notes and non-obvious findings are in `docs/architecture/` and the subsystem documents it points to. Read the relevant one before changing an area.
+- `CLAUDE.md` holds the pitfalls and the "before you touch X, read Y" table; read the document it points to before changing an area.
 - The operator's documentation is in `docs/operate/`; the CI and image pipeline is in `docs/architecture/ci-pipeline.md`.
 
 ## Cross-repo contract (`micelio-cms` ↔ `micelio`)
@@ -43,7 +52,7 @@ Clone both repos side by side (`../micelio`) so agents can read the other side o
 4. **Verify** — `qa-tester` runs the relevant suites. Auth, permissions, tokens, user input, CSP, new dependencies → also `security`.
 5. **Review** — `code-reviewer` reviews the full diff. Blocking findings go back to the implementer; after two rounds, escalate or ask the user.
 6. **Document** — `docs-writer` updates the docs listed for this repo and the issue's Progress section draft.
-7. **Ship** — the orchestrator itself prepares branch, commits and PR following the repo's skill, and asks the user before pushing.
+7. **Ship** — the orchestrator prepares the branch and the PR; commit and push follow the `ship-pr` skill and the sign-off rule of `docs/factory.md`.
 8. **Close** — summary for the user: what changed, what was tested (real numbers), risks, decisions pending.
 
 ## Delegation rules
@@ -72,7 +81,3 @@ The `strapi` MCP server points at **production** (the URL in `.mcp.json`). It is
 - Schema, permissions and code changes still go through a PR: the MCP is for content only.
 - It shows only what the Admin API token's admin role may do: content types, fields and locales the role lacks have no tool, field or locale enum. A missing tool usually means the role needs that permission in the admin panel (Settings → Administration Panel → Roles), not a code change. It has no file upload: media is uploaded in the admin panel, then linked by its numeric id.
 - After a role change, reconnect with `/mcp`. The tool schemas the session already loaded can stay stale (a missing field or locale) while the server accepts them; a single read in that locale tells which. Update responses list relations as empty (`"articles": []`) even when they are kept: check relations with a `get_*`.
-
-## Cost guide
-
-- Reading and mapping → haiku. Writing code and tests → sonnet. Judgment (design, review, security) → opus. Fable only for justified escalation.
