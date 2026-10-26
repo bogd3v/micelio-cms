@@ -32,6 +32,14 @@ Frontend 0.2.0 or later looks a token up by its hash first and falls back to the
 
 In a rolling deploy, stop the old CMS instances first: an old image keeps writing and looking up plain tokens until the new image has booted, and none of them should run next to a migrated database. The rewrites are irreversible; a rollback restores the code, not the plain values.
 
+## Upgrading with the preview: the frontend token gains `plugin::micelio.preview.draft`
+
+Once the plugin that serves the preview is installed, the `frontend` token that the CMS creates from `FRONTEND_API_TOKEN` gets `plugin::micelio.preview.draft` on the next boot (`src/migrations/api-tokens.ts` resets the token to its list), with nothing to do by hand; the log says `[api-tokens] updated the frontend API token` once. The preview's exchange (`plugin::micelio.preview.exchange`) is not added: a site that turns the preview on grants it.
+
+The action exists only when that plugin is installed; this distribution's own `micelio` plugin does not register it. Without it the boot leaves the action out, logs a warning that names it, and does not fail; the boot after the plugin is installed adds it.
+
+A `frontend` token created by hand needs the permission added under Settings → API Tokens → Plugin: Micelio. The release that makes publish refuse a page it could not measure (bogd3v/micelio-plugin-core#46) says so again, because without the permission that publish is refused.
+
 ## Upgrading to 0.5: category and tag move into the `micelio` plugin
 
 Categories and tags are now content types of the local plugin `micelio` (`src/plugins/micelio/`): their UIDs change from `api::category.category` and `api::tag.tag` to `plugin::micelio.category` and `plugin::micelio.tag`. The URLs do not change (`/api/categories`, `/api/tags`), the tables and their rows stay where they are, and the frontend needs no change.

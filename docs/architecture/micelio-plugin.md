@@ -9,7 +9,7 @@
 - **Routes.** A plugin's content-api routes are served under `/api/<plugin>/…`. Each router passes `prefix: ''` to `createCoreRouter`, which keeps `/api/categories` and `/api/tags`.
 - **Types.** `strapi.documents('plugin::micelio.category')` only compiles once `types/generated/contentTypes.d.ts` knows the plugin. Regenerate it with `NODE_ENV=test npx strapi ts:generate-types` (without `NODE_ENV=test` the command stops on missing `APP_KEYS`).
 - **i18n and the content manager** behave as for an `api::` type. `pluginOptions['content-manager'].visible: false` hides a type from the content manager.
-- **Permissions.** Actions are `plugin::micelio.<type>.<action>`. The plugin exports `READ_ACTIONS` (`src/plugins/micelio/server/src/constants/actions.ts`) and `src/migrations/api-tokens.ts` spreads it into `FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS`: the host keeps one list per token (it must match micelio's `docs/security.md`), the plugin owns its UIDs.
+- **Permissions.** Actions are `plugin::micelio.<type>.<action>`. The plugin exports `READ_ACTIONS` (`src/plugins/micelio/server/src/constants/actions.ts`) and `src/migrations/api-tokens.ts` spreads it into `FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS`: the host keeps one list per token (it must match micelio's `docs/security.md`), the plugin owns its UIDs. The one exception is `plugin::micelio.preview.draft`, which the local plugin does not register: it comes from `micelio-plugin-core`, which shares the plugin name `micelio` and replaces this plugin when installed. `ensureEnvToken` leaves that optional action out of the token until some plugin registers it.
 
 ## The rename migration
 
