@@ -29,6 +29,10 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'plugin::comments.client.findAllInHierarchy',
   'plugin::comments.client.findAllFlat',
   'plugin::comments.client.post',
+  // The preview's system grant (micelio ADR 0019): the CMS measures a draft at publish through the
+  // frontend, which reads it with this token, even when the preview is off. Never `.exchange`: that
+  // stays an opt-in of the sites that turn the preview on.
+  'plugin::micelio.preview.draft',
   'api::subscriber.subscriber.find',
   'api::subscriber.subscriber.lookup',
   'api::subscriber.subscriber.create',
@@ -72,6 +76,9 @@ export const BUILD_TOKEN: EnvToken = {
 /** Shortest access key accepted: a guessable token would open the subscribers. */
 const MIN_KEY_LENGTH = 32
 
+/** Actions a token may do without: a plugin older than the permission does not register them. Any other unregistered action stops the boot. */
+const OPTIONAL_ACTIONS = new Set(['plugin::micelio.preview.draft'])
+
 /** `disabled`: the variable is unset; `created`, `updated`: the token was written; `unchanged`: key and permissions already match. */
 export type EnvTokenReport = 'disabled' | 'created' | 'updated' | 'unchanged'
 
@@ -98,6 +105,13 @@ interface TokenService {
  * (the frontend's `NUXT_STRAPI_API_TOKEN`, a build's secret) without a
  * manual step, and resets permissions someone widened. Unset, it does
  * nothing: production keeps its tokens created by hand. Idempotent.
+ *
+ * @remarks
+ * Strapi refuses a token that names an action no installed plugin registers.
+ * An optional action that is not registered (a plugin older than the permission,
+ * or not installed) is left out and logged as a warning, so the boot does not
+ * stop; the token gets it on the first boot after the plugin registers it. Any
+ * other unregistered action makes Strapi refuse the token, and the boot stops.
  */
 export async function ensureEnvToken(
   strapi: Core.Strapi,
@@ -108,6 +122,17 @@ export async function ensureEnvToken(
   if (accessKey.length < MIN_KEY_LENGTH) {
     throw new Error(`${token.env} must be at least ${MIN_KEY_LENGTH} characters long`)
   }
+
+  const registered = new Set<string>(strapi.contentAPI.permissions.providers.action.keys())
+  const skipped = token.permissions.filter(
+    (action) => OPTIONAL_ACTIONS.has(action) && !registered.has(action)
+  )
+  if (skipped.length > 0) {
+    strapi.log.warn(
+      `[api-tokens] the ${token.name} API token leaves out actions no plugin registers: ${skipped.join(', ')}`
+    )
+  }
+  const permissions = token.permissions.filter((action) => !skipped.includes(action))
 
   const tokens = strapi.service(TOKEN_UID) as unknown as TokenService
   const hashed = tokens.hash(accessKey)
@@ -123,7 +148,7 @@ export async function ensureEnvToken(
       description: token.description,
       type: 'custom',
       lifespan: null,
-      permissions: token.permissions,
+      permissions,
     })
     await strapi.db.query(TOKEN_UID).update({ where: { id: created.id }, data: keyFields })
     return 'created'
@@ -136,12 +161,12 @@ export async function ensureEnvToken(
   const actions = (row.permissions ?? []).map((permission) => permission.action).sort()
   const samePermissions =
     row.type === 'custom' &&
-    actions.length === token.permissions.length &&
-    [...token.permissions].sort().every((action, index) => actions[index] === action)
+    actions.length === permissions.length &&
+    [...permissions].sort().every((action, index) => actions[index] === action)
   if (row.accessKey === hashed && samePermissions) return 'unchanged'
 
   if (!samePermissions) {
-    await tokens.update(row.id, { type: 'custom', permissions: token.permissions })
+    await tokens.update(row.id, { type: 'custom', permissions })
   }
   if (row.accessKey !== hashed) {
     await strapi.db.query(TOKEN_UID).update({ where: { id: row.id }, data: keyFields })
