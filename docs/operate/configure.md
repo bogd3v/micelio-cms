@@ -32,7 +32,8 @@ DATABASE_SSL=false
 UPLOAD_PATH=/app/public/uploads
 
 # The frontend: links in emails, analytics paths, federated links and the
-# site settings' URL. Without it a production boot stops with an error.
+# site settings' URL, and the one origin the admin may frame for the preview.
+# Without it a production boot stops with an error.
 FRONTEND_URL=https://example.com
 ```
 
@@ -60,6 +61,8 @@ STRAPI_REMOTE_TRANSFER_ENABLED=false   # Strapi's remote data transfer; off by d
 Reader passwords need 8 or more characters, may not be one of the 3000 most common passwords or in a local list of 45,986 breached ones (no password leaves the server), and may not contain `micelio`, `strapi` or a word of `PASSWORD_BANNED_WORDS` (comma separated, 4 or more characters each: set the site and organisation names). The check runs on sign-up, reset and change; an existing password is not re-checked. Admin passwords follow Strapi's own rules. Details in `docs/security/authentication.md`.
 
 Without `CORS_ORIGINS` only the origin of `FRONTEND_URL` is allowed (browsers fetch 3D scene models from the CMS, and that is the one page that needs it). List more origins, comma separated, when the site is also served from another one, such as `www` and the bare domain. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed. Credentials (cookies, `Authorization`) are allowed only to listed origins: `CORS_ORIGINS=*` still reflects any origin, without credentials.
+
+`FRONTEND_URL` is also the origin the admin may frame for the preview: the admin's CSP carries `frame-src 'self'` plus the scheme, host and port of `FRONTEND_URL` (its path is dropped), and no other origin. The preview of the builder (`@micelio/strapi-plugin-core`) loads the site in an iframe of the admin, and without that origin the browser refuses the frame. Unset outside production, or not an `http(s)` URL, the admin frames only itself.
 
 `STRAPI_REMOTE_TRANSFER_ENABLED` is off by default. Strapi enables its remote data transfer unless told otherwise: with a transfer token created in the admin panel (`TRANSFER_TOKEN_SALT` signs them), another Strapi instance can pull or push the whole database over `/admin/transfer`. Nothing in these guides uses it: back up with `pg_dump` and the uploads volume ([Backup](backup.md)). Set it to `true` only for the time of a migration between instances, then back to `false`; with it off those routes answer `404`. Local `strapi export` and `strapi import` need no setting.
 
