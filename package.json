@@ -37,7 +37,8 @@
     "test": "jest --forceExit",
     "test:handles": "jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:upgrade": "node scripts/upgrade-check/index.mjs"
   },
   "dependencies": {
     "@fedify/fedify": "2.4.4",

@@ -15,6 +15,7 @@ Work moves through the gates of the Micelio factory: [`docs/factory.md`](https:/
 - `git init && git add -A` in the copy (`lint:ee` scans only the files git tracks, so untracked ones are not counted) and create `.env` from `.env.example`: the six values of `npm run generate:keys` (32 characters or more), `DATABASE_PASSWORD` (never `strapi`), `URL` and `FRONTEND_URL`, no `PORT`. Never print or commit it, and remove it before `npm run check`: a `.env` changes the fediverse tests.
 - `docker compose up --build` (`docker-compose.yml`: the `production` image and PostgreSQL 18) is ready when `GET /_health` answers `204`; `docker compose down -v` removes it.
 - `npm ci && npm run check` runs in the `node:22` image (`.nvmrc`), the copy mounted (`:z` on SELinux). A container that runs as root needs `git config --global --add safe.directory /app` (the mount point) first, or git refuses the copy.
+- `npm run test:upgrade` drives the host's Docker, so inside the `node:22` container it needs the socket and the CLI: `docker run --rm --network host --security-opt label=disable -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker:ro -v /usr/libexec/docker/cli-plugins:/root/.docker/cli-plugins:ro -v <copy>:/app:z -w /app node:22 npm run test:upgrade` (the `Dockerfile` needs buildx, hence the plugins folder; `label=disable` lets SELinux allow the socket). Run it on a clean copy (it needs no `node_modules`); with `--network host` it reaches the ports it publishes on `127.0.0.1`, and it uses its own names and random ports, so it can run beside other stacks.
 
 `.claude/agents/{planner,master,worker,reviewer,verifier}.md`, the skills `ship-pr`, `blind-review` and `verify-pr` and `.github/pull_request_template.md` are copies of `micelio-engineering/template/`: fix them there.
 
@@ -45,6 +46,7 @@ npm run test           # Run Jest test suite
 npm run test:watch     # Run Jest in watch mode
 npm run test:handles    # Serial run with --detectOpenHandles, to find leaked handles
 npm run test:coverage  # Run Jest with coverage report
+npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (needs Docker; not in check)
 ```
 
 ### Node.js Requirements
