@@ -18,7 +18,7 @@ jobs:
   check:
     permissions:
       contents: read
-    uses: bogd3v/micelio-engineering/.github/workflows/check.yml@3693c82f3ed517705c4db27180662d28458f0458 # main
+    uses: bogd3v/micelio-engineering/.github/workflows/check.yml@0ce60010c72b13625ec223db96901e6b498c3409 # main
     with:
       licenses: true
       standard: true
