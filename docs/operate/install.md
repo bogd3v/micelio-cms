@@ -36,6 +36,8 @@ Put a TLS-terminating proxy in front if the CMS is public, and tell the CMS how 
 
 A multi-stage build keeps the final image small: it holds the compiled JavaScript (`dist/config`, `dist/src`), the admin build (`dist/build`), the fediverse plugin's bundle, `database/` and `scripts/`, and no source or dev dependencies. It runs under `tini` as the unprivileged `node` user; `docker-entrypoint.sh` first fixes the ownership of `/app/public/uploads` and `/app/.tmp`, so a volume created as root still works. The port is 1337. The health check uses busybox `wget`, because the image has no `curl`.
 
+It also carries `sanitize-html`, the server-side sanitiser for HTML built from content. The host check of `@micelio/strapi-plugin-core` (`html-sanitiser`, a required check) loads it from the project and refuses to boot without it. The CMS itself does not sanitise anything with it yet; it is there for the plugins.
+
 ## Next
 
 [Configure](configure.md) every variable, [back up](backup.md) before you put real content in, and read [Upgrade](upgrade.md) before the first update. When something fails, see [Troubleshooting](troubleshooting.md).
