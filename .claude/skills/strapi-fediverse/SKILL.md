@@ -37,7 +37,7 @@ The site is an ActivityPub actor (`@blog@<api domain>`) served by a local Strapi
 
 Outside the plugin: `src/extensions/comments/strapi-server.ts` (adds `fediverseUri`, `fediverseActorHandle`) and `src/middlewares/hide-unapproved-comments.ts`.
 
-The plugin is its own TypeScript project bundled by esbuild (`npm run build:fediverse`, run by the `pre*` hooks). After editing plugin code, rebuild before using `npx jest` directly.
+The plugin is its own TypeScript project bundled by esbuild (`npm run build:fediverse`, run by the `pre*` hooks). After editing plugin code, rebuild (`npm run build:fediverse && npm run build:micelio`) before using `npx jest` directly.
 
 ## Environment variables
 
@@ -88,7 +88,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 
 ```bash
 npm test                     # all suites, SQLite, one database file per Jest worker
-npx jest tests/fediverse-phase3.test.ts --forceExit   # one suite (run npm run build:fediverse first)
+npx jest tests/fediverse-phase3.test.ts --forceExit   # one suite (run npm run build:fediverse && npm run build:micelio first)
 TEST_DATABASE_URL=postgres://user:pass@127.0.0.1:5432/postgres npm test   # PostgreSQL, as in production
 ```
 

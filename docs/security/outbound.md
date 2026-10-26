@@ -94,7 +94,7 @@ Used only with an Enterprise licence that includes the AI feature (`node_modules
 ### Links and images the admin panel offers
 
 - `market.strapi.io` (Marketplace menu entry, `node_modules/@strapi/admin/dist/admin/admin/src/hooks/useMenu.js:56-61`), `billing.strapi.io` (upsell banners and the trial notice), `docs.strapi.io` and `strapi.io`: links that open when clicked. No request is made by the page itself.
-- `market-assets.strapi.io` is allowed for images and media by the admin's Content Security Policy (`config/middlewares.ts:39`, `:46`). Whether the admin loads an image from it at runtime was not traced.
+- `market-assets.strapi.io` is allowed for images and media by the admin's Content Security Policy (`config/middlewares.ts:51`, `:58`). Whether the admin loads an image from it at runtime was not traced.
 
 ## Uploads by URL
 

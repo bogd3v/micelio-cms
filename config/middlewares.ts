@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi'
+import { frontendFrameOrigin } from '../src/utils/frame-origin'
 import { corsAllowsCredentials, corsOrigins as corsOriginsFrom } from '../src/utils/cors-origins'
 
 /** Origin of the public media host (R2), so the admin can show uploads. */
@@ -13,6 +14,7 @@ function mediaOriginsFrom(baseUrl: string | undefined): string[] {
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => {
   const mediaOrigins = mediaOriginsFrom(env('R2_BASE_URL'))
+  const frameOrigin = frontendFrameOrigin(env('FRONTEND_URL'))
   const corsOrigins = corsOriginsFrom(env.array('CORS_ORIGINS', []), env('FRONTEND_URL'))
   return [
     // Not strapi::logger: it logs the query string (emails, tokens).
@@ -38,6 +40,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
           directives: {
             // No <base> element is needed; 'none' blocks the tag-injection route.
             'base-uri': ["'none'"],
+            // The preview of the builder frames the frontend (ADR-0019, section 5): its
+            // origin only. Unset or not an http(s) URL, the admin frames nothing else.
+            'frame-src': ["'self'", ...(frameOrigin ? [frameOrigin] : [])],
             'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
             'img-src': [
               "'self'",
