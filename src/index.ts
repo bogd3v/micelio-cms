@@ -12,6 +12,8 @@ import { applyAccountSettings } from './migrations/account-settings'
 import { migrateSliderItems } from './migrations/slider-items'
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
 import { ensureAuthorLocales } from './migrations/author-locales'
+import { assignPagesToDefaultSite } from './migrations/page-site'
+import { grantEditorsPageSite } from './migrations/admin-page-site'
 import { seedDemoContent } from './migrations/demo-seed'
 import { ensureDefaultSiteUrl } from './migrations/default-site-url'
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens'
@@ -175,6 +177,10 @@ export default {
       strapi.log.info(`[authors] ${JSON.stringify(authorLocales)}`)
     }
 
+    // Before anything reads pages through the content API, which serves only the rows of a site.
+    const pageSites = await assignPagesToDefaultSite(strapi)
+    if (pageSites > 0) strapi.log.info(`[pages] gave ${pageSites} rows the default site`)
+
     // A locale added later gets a localization of every author.
     stopAuthorLocales?.()
     stopAuthorLocales = strapi.db.lifecycles.subscribe({
@@ -254,6 +260,11 @@ export default {
     if (editor.roleCreated || editor.permissionsGranted > 0) {
       strapi.log.info(`[roles] editor: ${JSON.stringify(editor)}`)
     }
+
+    // The admin roles Editor and Author pick the site of the pages they create.
+    const adminSites = await grantEditorsPageSite(strapi)
+    if (adminSites > 0)
+      strapi.log.info(`[roles] gave the admin roles ${adminSites} site permissions`)
 
     // After the Editor role exists: it also gets DELETE /api/users/me.
     const accounts = await applyAccountSettings(strapi)

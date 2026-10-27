@@ -77,14 +77,18 @@ describe('Rebuild hook', () => {
   })
 
   it('does not fire when a draft is saved', async () => {
-    const draft = await documents(PAGE_UID).create({ data: { title: 'Draft', slug: 'draft' } })
+    const draft = await documents(PAGE_UID).create({
+      data: { title: 'Draft', slug: 'draft', site: await defaultSiteRelation(strapi) },
+    })
     await documents(PAGE_UID).update({ documentId: draft.documentId, data: { title: 'Draft 2' } })
     await quiet()
     expect(received).toHaveLength(0)
   })
 
   it('fires once for changes published within the debounce window', async () => {
-    const page = await documents(PAGE_UID).create({ data: { title: 'Landing', slug: 'landing' } })
+    const page = await documents(PAGE_UID).create({
+      data: { title: 'Landing', slug: 'landing', site: await defaultSiteRelation(strapi) },
+    })
     const article = await documents(ARTICLE_UID).create({
       data: { title: 'Post', slug: 'post' },
     })
@@ -105,7 +109,7 @@ describe('Rebuild hook', () => {
   it('fires on unpublish and on delete', async () => {
     const page = await documents(PAGE_UID).create({
       status: 'published',
-      data: { title: 'Gone', slug: 'gone' },
+      data: { title: 'Gone', slug: 'gone', site: await defaultSiteRelation(strapi) },
     })
     await waitUntil(() => received.length > 0)
     received.length = 0
@@ -190,7 +194,10 @@ describe('Rebuild hook', () => {
   it('retries a failing hook and never fails the publish', async () => {
     answers = [500, 503]
     await expect(
-      documents(PAGE_UID).create({ status: 'published', data: { title: 'Retry', slug: 'retry' } })
+      documents(PAGE_UID).create({
+        status: 'published',
+        data: { title: 'Retry', slug: 'retry', site: await defaultSiteRelation(strapi) },
+      })
     ).resolves.toBeTruthy()
 
     await waitUntil(() => received.length === 3)

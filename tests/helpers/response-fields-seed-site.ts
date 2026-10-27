@@ -7,6 +7,7 @@ import {
   type SeededImages,
 } from './response-fields-seed-base'
 import type { SeededArticles } from './response-fields-seed-articles'
+import { defaultSiteRelation } from '../../src/utils/default-site'
 
 const ABOUT_UID = 'api::about.about'
 const GLOBAL_UID = 'api::global.global'
@@ -29,6 +30,7 @@ export async function seedSite(
     data: {
       title: 'Fields page',
       slug: SEEDED.pageSlug,
+      site: await defaultSiteRelation(strapi),
       seo,
       sections: [
         {

@@ -24,15 +24,26 @@ describe('Pages', () => {
       findOne(params: Data): Promise<Data | null>
     }
   let counter = 0
-  const createPage = (sections: Data[], extra: Data = {}) =>
+  const createPage = async (sections: Data[], extra: Data = {}) =>
     pages().create({
-      data: { title: `Page ${++counter}`, slug: `page-${counter}`, sections, ...extra },
+      data: {
+        title: `Page ${++counter}`,
+        slug: `page-${counter}`,
+        sections,
+        site: await defaultSiteRelation(strapi),
+        ...extra,
+      },
     })
   // Drafts may be incomplete, as everywhere in Strapi: the rules apply on publish.
-  const publishPage = (sections: Data[]) =>
+  const publishPage = async (sections: Data[]) =>
     pages().create({
       status: 'published',
-      data: { title: `Page ${++counter}`, slug: `page-${counter}`, sections },
+      data: {
+        title: `Page ${++counter}`,
+        slug: `page-${counter}`,
+        sections,
+        site: await defaultSiteRelation(strapi),
+      },
     })
 
   async function upload(name: string, content: string, mimetype: string): Promise<number> {
@@ -157,7 +168,7 @@ describe('Pages', () => {
   it('allows the same slug in each language but not twice in one', async () => {
     const english = await pages().create({
       status: 'published',
-      data: { title: 'Welcome', slug: 'welcome' },
+      data: { title: 'Welcome', slug: 'welcome', site: await defaultSiteRelation(strapi) },
     })
     await expect(
       strapi.documents(PAGE_UID).update({
@@ -168,14 +179,17 @@ describe('Pages', () => {
       } as never)
     ).resolves.toBeTruthy()
     await expect(
-      pages().create({ status: 'published', data: { title: 'Again', slug: 'welcome' } })
+      pages().create({
+        status: 'published',
+        data: { title: 'Again', slug: 'welcome', site: await defaultSiteRelation(strapi) },
+      })
     ).rejects.toMatchObject({ name: 'ValidationError' })
   })
 
   it("is the site's home page, in each language's version, when the settings point at it", async () => {
     const english = await pages().create({
       status: 'published',
-      data: { title: 'Home', slug: 'home' },
+      data: { title: 'Home', slug: 'home', site: await defaultSiteRelation(strapi) },
     })
     await strapi.documents(PAGE_UID).update({
       documentId: english.documentId,
@@ -216,7 +230,10 @@ describe('Pages', () => {
 
   describe('access', () => {
     it('lets the frontend and the build read published pages', async () => {
-      await pages().create({ status: 'published', data: { title: 'Open', slug: 'open' } })
+      await pages().create({
+        status: 'published',
+        data: { title: 'Open', slug: 'open', site: await defaultSiteRelation(strapi) },
+      })
       for (const key of [FRONTEND_KEY, BUILD_KEY]) {
         const res = await http().get('/api/pages').query({ populate: '*' }).set(bearer(key))
         expect(res.status).toBe(200)
