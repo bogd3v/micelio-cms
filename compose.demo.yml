@@ -93,12 +93,15 @@ services:
     # the frontend uses for API calls and for image links.
     network_mode: service:cms
     # The image is distroless (no shell): a few lines of Node load the token,
-    # then start the Nuxt server as the image does.
+    # then start the Nuxt server as the image does. With `-e`, argv[1] is not
+    # the server's entry file, and the frontend finds its built-in theme store
+    # from that file, so it is set before the import.
     entrypoint:
       - /nodejs/bin/node
       - -e
       - >-
         const fs = require('fs');
+        process.argv[1] = '/app/.output/server/index.mjs';
         for (const line of fs.readFileSync('/secrets/frontend.env', 'utf8').split('\n')) {
           const match = /^([A-Z_][A-Z0-9_]*)='(.*)'$$/.exec(line);
           if (match) process.env[match[1]] = match[2];
