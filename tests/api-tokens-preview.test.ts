@@ -5,6 +5,7 @@ import {
   ensureFrontendToken,
   FRONTEND_TOKEN,
   FRONTEND_TOKEN_PERMISSIONS,
+  PREVIEW_FRONTEND_TOKEN_PERMISSIONS,
 } from '../src/migrations/api-tokens'
 
 // The frontend token carries the preview's draft action (micelio ADR 0019, amendment of
@@ -22,8 +23,9 @@ describe('Frontend token and the preview draft action', () => {
 
   beforeAll(async () => {
     process.env.FRONTEND_API_TOKEN = ACCESS_KEY
-    // A boot that is not the demo: the exchange is the demo's grant alone (compose.demo.yml).
+    // A boot that is neither the demo nor an opt-in: the exchange is the grant of those two alone.
     delete process.env.MICELIO_DEMO
+    delete process.env.MICELIO_PREVIEW
     await setupStrapi()
     warn = jest.spyOn(strapi.log, 'warn') as unknown as typeof warn
   })
@@ -70,7 +72,7 @@ describe('Frontend token and the preview draft action', () => {
     expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[api-tokens]'))
   })
 
-  it('grants the exchange only to the demo, not to the static or landing profiles', async () => {
+  it('grants the exchange to the demo, not to the static or landing profiles', async () => {
     try {
       for (const profile of ['static', 'landing', 'false', '']) {
         process.env.MICELIO_DEMO = profile
@@ -88,6 +90,97 @@ describe('Frontend token and the preview draft action', () => {
     } finally {
       delete process.env.MICELIO_DEMO
     }
+  })
+
+  it('grants the exchange to a site that sets MICELIO_PREVIEW=true, and keeps it on a second boot', async () => {
+    try {
+      process.env.MICELIO_PREVIEW = 'true'
+      expect(await ensureFrontendToken(strapi)).toBe('updated')
+      expect(await actionsOfToken()).toEqual([...PREVIEW_FRONTEND_TOKEN_PERMISSIONS].sort())
+      expect(await actionsOfToken()).toContain(EXCHANGE)
+      expect(await ensureFrontendToken(strapi)).toBe('unchanged')
+      expect(await actionsOfToken()).toContain(EXCHANGE)
+    } finally {
+      delete process.env.MICELIO_PREVIEW
+    }
+  })
+
+  it('creates the token with the exchange when the switch is on from the first boot', async () => {
+    try {
+      await strapi.db.query(TOKEN_UID).deleteMany({ where: { name: 'frontend' } })
+      process.env.MICELIO_PREVIEW = 'true'
+      expect(await ensureFrontendToken(strapi)).toBe('created')
+      expect(await actionsOfToken()).toContain(EXCHANGE)
+    } finally {
+      delete process.env.MICELIO_PREVIEW
+    }
+  })
+
+  it('removes the exchange when the switch is off or unset, as it resets any widened token', async () => {
+    process.env.MICELIO_PREVIEW = 'true'
+    await ensureFrontendToken(strapi)
+    expect(await actionsOfToken()).toContain(EXCHANGE)
+
+    delete process.env.MICELIO_PREVIEW
+    expect(await ensureFrontendToken(strapi)).toBe('updated')
+    expect(await actionsOfToken()).toEqual([...FRONTEND_TOKEN_PERMISSIONS].sort())
+
+    // An operator adds the exchange by hand under Settings → API Tokens: the next boot removes it.
+    const tokens = strapi.service(TOKEN_UID) as unknown as {
+      getByName(name: string): Promise<{ id: number }>
+      update(id: number, attributes: Record<string, unknown>): Promise<unknown>
+    }
+    const { id } = await tokens.getByName('frontend')
+    await tokens.update(id, { permissions: [...FRONTEND_TOKEN_PERMISSIONS, EXCHANGE] })
+    expect(await actionsOfToken()).toContain(EXCHANGE)
+
+    expect(await ensureFrontendToken(strapi)).toBe('updated')
+    expect(await actionsOfToken()).not.toContain(EXCHANGE)
+  })
+
+  it('treats any MICELIO_PREVIEW value but "true" as off', async () => {
+    try {
+      for (const value of ['false', 'TRUE', 'True', '1', 'yes', 'on', ' true', 'true ', '']) {
+        // Each value starts from a token that has the exchange, so it also proves it removes it.
+        process.env.MICELIO_PREVIEW = 'true'
+        await ensureFrontendToken(strapi)
+        expect(await actionsOfToken()).toContain(EXCHANGE)
+
+        process.env.MICELIO_PREVIEW = value
+        await ensureFrontendToken(strapi)
+        expect([value, await actionsOfToken()]).toEqual([
+          value,
+          [...FRONTEND_TOKEN_PERMISSIONS].sort(),
+        ])
+      }
+    } finally {
+      delete process.env.MICELIO_PREVIEW
+    }
+  })
+
+  it('grants the exchange with both switches on, and to a static or landing demo that opts in', async () => {
+    try {
+      for (const demo of ['true', 'static', 'landing']) {
+        process.env.MICELIO_DEMO = demo
+        process.env.MICELIO_PREVIEW = 'true'
+        await ensureFrontendToken(strapi)
+        expect([demo, await actionsOfToken()]).toEqual([
+          demo,
+          [...PREVIEW_FRONTEND_TOKEN_PERMISSIONS].sort(),
+        ])
+      }
+    } finally {
+      delete process.env.MICELIO_DEMO
+      delete process.env.MICELIO_PREVIEW
+    }
+  })
+
+  it('does not widen the token with the switch beyond the exchange', () => {
+    expect(
+      PREVIEW_FRONTEND_TOKEN_PERMISSIONS.filter(
+        (action) => !FRONTEND_TOKEN_PERMISSIONS.includes(action)
+      )
+    ).toEqual([EXCHANGE])
   })
 
   it('stops on an action no plugin registers, as on every other one', async () => {

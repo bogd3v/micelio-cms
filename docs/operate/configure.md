@@ -282,13 +282,29 @@ Publishing returns as soon as the activities are queued; the CMS delivers them i
 
 **Rollback:** set `FEDIVERSE_ENABLED=false` and restart. The routes and hooks disappear; the tables, followers and key pair stay in the database, and the comments-visibility middleware keeps hiding pending comments. Remote servers that still know the actor get 404s until it is enabled again.
 
+## Preview
+
+<a id="preview"></a>
+
+The builder's preview shows a draft page on the frontend, in a frame of the admin. It is off until the operator turns it on, in three places; the steps of the plugin are in its [preview guide](https://github.com/bogd3v/micelio-plugin-core/blob/main/docs/operate/preview.md).
+
+```env
+MICELIO_PREVIEW=false   # true gives the frontend token the preview's exchange on every boot
+```
+
+1. **This CMS.** Set `MICELIO_PREVIEW=true` together with `FRONTEND_API_TOKEN`. On every boot `src/migrations/api-tokens.ts` then adds `plugin::micelio.preview.exchange` to the `frontend` token (the frontend trades an admin's one-use token for a grant with it). Only the exact string `true` turns it on; `false`, `TRUE`, `1` or anything else is off, and then the boot removes the exchange from the token, a hand-added one included. Adding it by hand under Settings → API Tokens does not last: the token is reset to its list on every boot. Without `FRONTEND_API_TOKEN` the token is yours and you add the exchange by hand (Plugin: Micelio). The switch grants the exchange and nothing else.
+2. **The frontend.** Set `NUXT_PREVIEW_ADMIN_ORIGIN` to the origin of the admin (the scheme, host and port of this CMS's `URL`). It needs a frontend image that has the `/_preview` route: `micelio` 0.6 or `edge`. Without it the frontend's preview is off.
+3. **The admin's frame.** `FRONTEND_URL` must be the frontend's origin: the admin's `frame-src` carries it ([Security](#security)). Give each site a `url` in the admin, and the roles that preview the permission **Preview drafts on the frontend** (Settings → Roles → Plugins → Micelio).
+
+Restart the CMS after setting the switch. Turning it off and restarting removes the exchange again. The demo sets its own grant (`MICELIO_DEMO=true`, below) and needs none of this.
+
 ## Seeding
 
 ```env
 MICELIO_DEMO=false   # seeds a bilingual demo site once on an empty database (compose.demo.yml)
 ```
 
-With `true` and `FRONTEND_API_TOKEN` set, `MICELIO_DEMO` also gives the `frontend` token the preview's exchange (`plugin::micelio.preview.exchange`) on every boot, whatever the database holds, so the preview works out of the box. Never set it on a real site: it widens the token, and the seed's refusal on an instance with articles does not stop the grant. `static` and `landing` do not grant it.
+With `true` and `FRONTEND_API_TOKEN` set, `MICELIO_DEMO` also gives the `frontend` token the preview's exchange (`plugin::micelio.preview.exchange`) on every boot, whatever the database holds, so the preview works out of the box. Never set it on a real site: it widens the token, and the seed's refusal on an instance with articles does not stop the grant. A real site that wants the preview sets [`MICELIO_PREVIEW`](#preview) instead. `static` and `landing` do not grant it.
 
 ## Generate the Strapi keys
 
