@@ -3,18 +3,19 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Folders whose content types declare a content table: `<dir>/<name>/content-types/<type>/schema.json`, or `<dir>/<type>/schema.json` for the plugin.
-const SCHEMA_ROOTS = [
-  { dir: 'src/api', nested: 'content-types' },
-  { dir: 'src/plugins/micelio/server/src/content-types', nested: null },
-];
+// Folders whose content types declare a content table: `<dir>/<name>/content-types/<type>/schema.json`.
+const SCHEMA_ROOTS = [{ dir: 'src/api', nested: 'content-types' }];
+
+// Content tables of the core plugin (`@micelio/strapi-plugin-core`) that this tree does not declare:
+// category and tag, which the released image stores in the same tables.
+const CORE_COLLECTIONS = ['categories', 'tags'];
 
 /** Prefix of the core-store keys that hold the content manager configuration of each content type. */
 const CONTENT_MANAGER_KEY_PREFIX = 'plugin_content_manager_configuration_content_types::';
 
-/** Reads the `collectionName` of every content type the repository declares, sorted. */
+/** Reads the `collectionName` of every content type the repository declares, and the core plugin's, sorted. */
 export function readCollectionNames(root) {
-  const names = [];
+  const names = [...CORE_COLLECTIONS];
   for (const { dir, nested } of SCHEMA_ROOTS) {
     const base = join(root, dir);
     if (!existsSync(base)) continue;

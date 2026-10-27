@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import { setupStrapi, cleanupStrapi } from './strapi'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 type DraftUid = 'api::article.article' | 'api::page.page'
 type Uid =
@@ -29,8 +30,14 @@ describe('Slugs that are dot segments', () => {
   })
 
   const create = async (uid: Uid, titleField: string, slug: string) => {
+    const site = await defaultSiteRelation(strapi)
     const doc = await strapi.documents(uid).create({
-      data: { [titleField]: `Slug ${slug}`, slug },
+      // Category and tag belong to a site; the other types take no such attribute.
+      data: {
+        [titleField]: `Slug ${slug}`,
+        slug,
+        ...(uid.startsWith('plugin::micelio.') ? { site } : {}),
+      },
     })
     created.push({ uid, documentId: doc.documentId })
     return doc

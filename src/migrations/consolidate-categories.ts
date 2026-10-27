@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi'
+import { defaultSiteRelation } from '../utils/default-site'
 
 const CATEGORY_UID = 'plugin::micelio.category'
 const ARTICLE_UID = 'api::article.article'
@@ -331,7 +332,12 @@ export async function consolidateCategories(strapi: Core.Strapi): Promise<Consol
         report.updated.push(target.slug)
       }
     } else {
-      const created = await categories.create({ locale: defaultLocale, data: mainFields })
+      // Category belongs to a site, and a boot step has no request to take it from.
+      const site = await defaultSiteRelation(strapi)
+      const created = await categories.create({
+        locale: defaultLocale,
+        data: { ...mainFields, site },
+      })
       documentId = created.documentId
       keeperId = created.id as number
       report.created.push(target.slug)

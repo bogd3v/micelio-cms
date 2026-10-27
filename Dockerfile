@@ -37,13 +37,11 @@ RUN mkdir -p /app/.tmp /app/public/uploads && chown node:node /app/.tmp /app/pub
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist/config ./config
 COPY --from=build /app/dist/src ./src
-# Local plugins are excluded from the server tsc compile (tsconfig excludes
-# src/plugins/**) and ship their own esbuild dist: only the bundle and the
+# The fediverse plugin is excluded from the server tsc compile (tsconfig excludes
+# src/plugins/**) and ships its own esbuild dist: only the bundle and the
 # package.json that points at it are needed at runtime.
 COPY --from=build /app/src/plugins/fediverse/package.json ./src/plugins/fediverse/package.json
 COPY --from=build /app/src/plugins/fediverse/dist ./src/plugins/fediverse/dist
-COPY --from=build /app/src/plugins/micelio/package.json ./src/plugins/micelio/package.json
-COPY --from=build /app/src/plugins/micelio/dist ./src/plugins/micelio/dist
 COPY --from=build /app/dist/build ./build
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/database ./database

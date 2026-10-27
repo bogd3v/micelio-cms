@@ -79,7 +79,7 @@ npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (need
 │   ├── extensions/      # Plugin extensions
 │   ├── middlewares/     # Global Koa middlewares
 │   ├── migrations/      # One-off data migrations run from bootstrap
-│   ├── plugins/         # Local plugins (fediverse and micelio: own constants/, types/, utils/)
+│   ├── plugins/         # Local plugin (fediverse: own constants/, types/, utils/)
 │   ├── types/           # Shared TypeScript types
 │   ├── utils/           # Shared helpers
 │   └── index.ts         # Application lifecycle hooks
@@ -95,7 +95,7 @@ npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (need
 - `npm run lint` runs `scripts/check-placement.mjs`: a type or constant imported by two or more files of `src/` must live in `src/types/`, `src/constants/` or the `types.ts` / `constants.ts` of its feature folder. It skips `src/migrations/` and the fediverse plugin.
 - A type that is a service's contract (its inputs and outputs) goes in `types/`; row shapes private to one query stay in that file.
 - `src/migrations/` is self-contained on purpose: each migration keeps its own constants so it keeps working after the code it migrated away from changes.
-- The fediverse plugin mirrors this layout under `src/plugins/fediverse/server/src/` and **never imports from the root `src/`**: it is a separate TypeScript project bundled by esbuild. The `micelio` plugin (`category` and `tag`, UIDs `plugin::micelio.*`) is bundled the same way and never imports from the root either; the host imports only its `constants/actions.ts`, which has no runtime imports.
+- The fediverse plugin mirrors this layout under `src/plugins/fediverse/server/src/` and **never imports from the root `src/`**: it is a separate TypeScript project bundled by esbuild. The `micelio` plugin (`category`, `tag`, sites, the host check; UIDs `plugin::micelio.*`) is the npm package `@micelio/strapi-plugin-core`, not code of this repository: `config/plugins.ts` enables it, `src/extensions/micelio/strapi-server.ts` adds the host's side of its types, and the host imports from `@micelio/strapi-plugin-core/strapi-server` (`docs/architecture/micelio-plugin.md`).
 
 ---
 

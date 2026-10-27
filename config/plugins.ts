@@ -69,7 +69,6 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     },
     micelio: {
       enabled: true,
-      resolve: './src/plugins/micelio',
     },
     upload: {
       // No site needs HTML in the media library, and a served HTML file is

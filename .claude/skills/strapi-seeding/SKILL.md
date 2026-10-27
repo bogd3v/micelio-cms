@@ -18,7 +18,7 @@ This project uses `scripts/seed.js` to populate a fresh database with sample art
 
 1. Checks a plugin store flag `initHasRun` to avoid re-importing on a non-empty database.
 2. Sets public permissions via `setPublicPermissions(...)`.
-3. Imports categories, authors, articles, global settings, and about content.
+3. Imports categories, tags, authors, articles, global settings, and about content. Categories and tags belong to a site, and a script has no request to take it from, so they go to the default site that `@micelio/strapi-plugin-core` creates at boot (`defaultSiteRelation` in `scripts/seed.js`, `src/utils/default-site.ts` in the server).
 4. Uploads media files referenced in `data/uploads/` and attaches them to entries.
 
 ## Run the seed

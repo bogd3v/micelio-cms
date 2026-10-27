@@ -9,8 +9,7 @@ import {
 
 // The frontend token carries the preview's draft action (micelio ADR 0019, amendment of
 // 2026-10-25): the CMS measures a draft at publish through the frontend, which reads it with this
-// token. The plugin that registers the action is not installed in this repository yet, so the
-// suite stands in for it where the action must exist.
+// token. `@micelio/strapi-plugin-core` registers the action, so the boot creates the token with it.
 
 const TOKEN_UID = 'admin::api-token'
 const DRAFT = 'plugin::micelio.preview.draft'
@@ -19,10 +18,12 @@ const ACCESS_KEY = 'preview-frontend-token-0123456789abcdef0123456789'
 
 describe('Frontend token and the preview draft action', () => {
   const saved = { ...process.env }
+  let warn: jest.SpiedFunction<typeof console.warn>
 
   beforeAll(async () => {
     process.env.FRONTEND_API_TOKEN = ACCESS_KEY
     await setupStrapi()
+    warn = jest.spyOn(strapi.log, 'warn') as unknown as typeof warn
   })
 
   afterAll(async () => {
@@ -39,42 +40,36 @@ describe('Frontend token and the preview draft action', () => {
     return token.permissions.map(({ action }: { action: string }) => action).sort()
   }
 
+  it('registers the draft action in the content API, and the exchange too', () => {
+    const registered = [...strapi.contentAPI.permissions.providers.action.keys()]
+    expect(registered).toContain(DRAFT)
+    expect(registered).toContain(EXCHANGE)
+  })
+
   it('lists the draft action and never the exchange', () => {
     expect(FRONTEND_TOKEN_PERMISSIONS).toContain(DRAFT)
     expect(FRONTEND_TOKEN_PERMISSIONS).not.toContain(EXCHANGE)
   })
 
-  it('boots without the action when no plugin registers it, and says so', async () => {
-    const warn = jest.spyOn(strapi.log, 'warn')
-    await strapi.db.query(TOKEN_UID).deleteMany({ where: { name: 'frontend' } })
-
-    expect(await ensureFrontendToken(strapi)).toBe('created')
-    expect(await actionsOfToken()).not.toContain(DRAFT)
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining(DRAFT))
-
-    expect(await ensureFrontendToken(strapi)).toBe('unchanged')
-  })
-
-  it('adds the action to a token that lacks it once a plugin registers it, then reports unchanged', async () => {
-    const provider = strapi.contentAPI.permissions.providers.action
-    const keys = provider.keys()
-    jest.spyOn(provider, 'keys').mockReturnValue([...keys, DRAFT])
-
-    expect(await actionsOfToken()).not.toContain(DRAFT)
-    expect(await ensureFrontendToken(strapi)).toBe('updated')
-
+  it('gives the token created from FRONTEND_API_TOKEN every listed action, with no warning', async () => {
     const actions = await actionsOfToken()
     expect(actions).toContain(DRAFT)
     expect(actions).not.toContain(EXCHANGE)
     expect(actions).toEqual([...FRONTEND_TOKEN_PERMISSIONS].sort())
-
-    expect(await ensureFrontendToken(strapi)).toBe('unchanged')
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[api-tokens]'))
   })
 
-  it('still stops on an unregistered action that is not optional, and does not warn about it', async () => {
+  it('creates the token again with the draft action, then reports unchanged', async () => {
+    await strapi.db.query(TOKEN_UID).deleteMany({ where: { name: 'frontend' } })
+
+    expect(await ensureFrontendToken(strapi)).toBe('created')
+    expect(await actionsOfToken()).toContain(DRAFT)
+    expect(await ensureFrontendToken(strapi)).toBe('unchanged')
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[api-tokens]'))
+  })
+
+  it('stops on an action no plugin registers, as on every other one', async () => {
     const unregistered = 'plugin::comments.client.unregistered'
-    const warn = jest.spyOn(strapi.log, 'warn')
-    warn.mockClear()
 
     await expect(
       ensureEnvToken(strapi, {
@@ -82,7 +77,5 @@ describe('Frontend token and the preview draft action', () => {
         permissions: [...FRONTEND_TOKEN_PERMISSIONS, unregistered],
       })
     ).rejects.toThrow('Unknown permissions provided')
-
-    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining(unregistered))
   })
 })

@@ -4,6 +4,7 @@ import { setupStrapi, cleanupStrapi } from './strapi'
 import { getPublicRole, setPublicPermissions } from './helpers/permissions'
 import { grantPublicTagPermissions } from '../src/migrations/public-tag-permissions'
 import type { ApiDocument } from './helpers/api-types'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 const ARTICLE_UID = 'api::article.article'
 const TAG_UID = 'plugin::micelio.tag'
@@ -47,8 +48,11 @@ describe('Tags', () => {
     }
 
     // One tag in both languages: the slug is shared, the name is translated.
+    const site = await defaultSiteRelation(strapi)
     vue = (
-      await strapi.documents(TAG_UID).create({ locale: 'es', data: { name: 'Vue', slug: 'vue' } })
+      await strapi
+        .documents(TAG_UID)
+        .create({ locale: 'es', data: { name: 'Vue', slug: 'vue', site } })
     ).documentId
     await strapi
       .documents(TAG_UID)
@@ -56,7 +60,7 @@ describe('Tags', () => {
     const privacy = (
       await strapi
         .documents(TAG_UID)
-        .create({ locale: 'es', data: { name: 'Privacidad', slug: 'privacidad' } })
+        .create({ locale: 'es', data: { name: 'Privacidad', slug: 'privacidad', site } })
     ).documentId
 
     articles.vue = await article('vue', { tags: [vue] })

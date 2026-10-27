@@ -1,6 +1,7 @@
 import path from 'path'
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals'
 import { setupStrapi, cleanupStrapi } from './strapi'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 const CATEGORY = 'plugin::micelio.category'
 const TABLE = 'categories'
@@ -64,11 +65,12 @@ describe('category pillar to featured migration', () => {
     }
     await strapi.db.query(CATEGORY).deleteMany({})
     const documents = strapi.documents(CATEGORY)
-    await documents.create({ data: { name: 'Pillar', slug: 'pillar', featured: false } })
-    await documents.create({ data: { name: 'Plain', slug: 'plain', featured: false } })
-    await documents.create({ data: { name: 'Kept', slug: 'kept', featured: true } })
-    await documents.create({ data: { name: 'Both', slug: 'both', featured: true } })
-    await documents.create({ data: { name: 'Unset', slug: 'unset' } })
+    const site = await defaultSiteRelation(strapi)
+    await documents.create({ data: { name: 'Pillar', slug: 'pillar', featured: false, site } })
+    await documents.create({ data: { name: 'Plain', slug: 'plain', featured: false, site } })
+    await documents.create({ data: { name: 'Kept', slug: 'kept', featured: true, site } })
+    await documents.create({ data: { name: 'Both', slug: 'both', featured: true, site } })
+    await documents.create({ data: { name: 'Unset', slug: 'unset', site } })
     await knex()(TABLE).where({ slug: 'unset' }).update({ featured: null })
     await knex()('strapi_migrations').where('name', MIGRATION_FILE).del()
   })

@@ -6,6 +6,7 @@ import request from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { setPublicPermissions } from './helpers/permissions'
 import { revokePagePermissions } from '../src/migrations/page-permissions'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 // Pages built from the section catalog (#75, micelio ADR 0005 section 11).
 
@@ -122,12 +123,13 @@ describe('Pages', () => {
   })
 
   it('rejects a post list with both a category and a tag, even as a draft', async () => {
+    const site = await defaultSiteRelation(strapi)
     const category = await strapi
       .documents('plugin::micelio.category')
-      .create({ data: { name: 'Garden', slug: 'garden' } })
+      .create({ data: { name: 'Garden', slug: 'garden', site } })
     const tag = await strapi
       .documents('plugin::micelio.tag')
-      .create({ data: { name: 'Compost', slug: 'compost' } })
+      .create({ data: { name: 'Compost', slug: 'compost', site } })
     const section = { __component: 'section.post-list', category: category.documentId }
 
     await expect(createPage([section])).resolves.toBeTruthy()

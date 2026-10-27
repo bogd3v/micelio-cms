@@ -25,9 +25,9 @@ npm run generate:keys    # print Strapi secrets to stdout; writes no file
 npm run seed:example     # run scripts/seed.js
 ```
 
-Run a single test file: `npm test -- tests/fediverse.test.ts` (matches `**/tests/**/*.test.[jt]s`). `npx jest <file>` skips the `pretest` hook, which builds the fediverse and `micelio` plugin bundles; run `npm run build:fediverse && npm run build:micelio` first if you use it.
+Run a single test file: `npm test -- tests/fediverse.test.ts` (matches `**/tests/**/*.test.[jt]s`). `npx jest <file>` skips the `pretest` hook, which builds the fediverse plugin bundle; run `npm run build:fediverse` first if you use it.
 
-**`build:fediverse` and `build:micelio` run automatically** as `pre*` hooks (`predev`, `predevelop`, `prebuild`, `pretest`) — `build:fediverse` esbuild-bundles `src/plugins/fediverse/server/src/index.ts` into `src/plugins/fediverse/dist/strapi-server.js`. This is necessary because the fediverse plugin is its own TypeScript project (`src/plugins/fediverse/tsconfig.json`), excluded from the root `tsconfig.json` compilation, and depends on ESM-only packages (`@fedify/*`) that Strapi's own CJS build pipeline can't handle directly. If you edit plugin source and don't see changes, check that this bundle step ran.
+**`build:fediverse` runs automatically** as a `pre*` hook (`predev`, `predevelop`, `prebuild`, `pretest`); it esbuild-bundles `src/plugins/fediverse/server/src/index.ts` into `src/plugins/fediverse/dist/strapi-server.js`. This is necessary because the fediverse plugin is its own TypeScript project (`src/plugins/fediverse/tsconfig.json`), excluded from the root `tsconfig.json` compilation, and depends on ESM-only packages (`@fedify/*`) that Strapi's own CJS build pipeline can't handle directly. If you edit plugin source and don't see changes, check that this bundle step ran.
 
 ## Pitfalls to know before any change
 
@@ -53,7 +53,7 @@ Run a single test file: `npm test -- tests/fediverse.test.ts` (matches `**/tests
 | Site settings, theme, modules                      | `docs/architecture/site-settings.md`                                               |
 | Authors                                            | `docs/architecture/authors.md`                                                     |
 | Categories                                         | `docs/architecture/categories.md`                                                  |
-| The `micelio` plugin (category, tag)               | `docs/architecture/micelio-plugin.md`                                              |
+| The core plugin (category, tag, sites, host check) | `docs/architecture/micelio-plugin.md`                                              |
 | Pages, sections, rebuild hook                      | `docs/architecture/pages.md`                                                       |
 | Demo instance, new instances, API tokens           | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`                        |
 | Playground blocks                                  | `docs/architecture/playground-blocks.md`                                           |

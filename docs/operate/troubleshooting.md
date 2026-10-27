@@ -6,6 +6,10 @@
 
 In production a missing required value stops the boot with a message that names it. Read the first lines of the log and compare with [Configure](configure.md#required). The common ones are `APP_KEYS` and the other Strapi keys, the database settings and `FRONTEND_URL`.
 
+## The container stops with a failed host check
+
+In production the core plugin stops the boot when a required check fails, and the error names each one (`node`, `database`, `security-middlewares`, `content-security-policy`, `html-sanitiser`, `upload-provider`) with its fix. Run `docker compose exec strapi npx micelio doctor` on a running node (or the same command in a one-off container with the production variables) to see every check; the image passes all six, so a failure means the configuration was changed: `config/middlewares.ts`, `config/database.ts` or `config/plugins.ts`. See [Install](install.md#the-host-check).
+
 ## The health check never passes
 
 `GET /_health` answers `204` once the server is listening, outside `/api` and with no permissions.
