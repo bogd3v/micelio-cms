@@ -22,6 +22,8 @@ describe('Frontend token and the preview draft action', () => {
 
   beforeAll(async () => {
     process.env.FRONTEND_API_TOKEN = ACCESS_KEY
+    // A boot that is not the demo: the exchange is the demo's grant alone (compose.demo.yml).
+    delete process.env.MICELIO_DEMO
     await setupStrapi()
     warn = jest.spyOn(strapi.log, 'warn') as unknown as typeof warn
   })
@@ -66,6 +68,26 @@ describe('Frontend token and the preview draft action', () => {
     expect(await actionsOfToken()).toContain(DRAFT)
     expect(await ensureFrontendToken(strapi)).toBe('unchanged')
     expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[api-tokens]'))
+  })
+
+  it('grants the exchange only to the demo, not to the static or landing profiles', async () => {
+    try {
+      for (const profile of ['static', 'landing', 'false', '']) {
+        process.env.MICELIO_DEMO = profile
+        await ensureFrontendToken(strapi)
+        expect(await actionsOfToken()).not.toContain(EXCHANGE)
+      }
+
+      process.env.MICELIO_DEMO = 'true'
+      expect(await ensureFrontendToken(strapi)).toBe('updated')
+      expect(await actionsOfToken()).toContain(EXCHANGE)
+
+      delete process.env.MICELIO_DEMO
+      expect(await ensureFrontendToken(strapi)).toBe('updated')
+      expect(await actionsOfToken()).toEqual([...FRONTEND_TOKEN_PERMISSIONS].sort())
+    } finally {
+      delete process.env.MICELIO_DEMO
+    }
   })
 
   it('stops on an action no plugin registers, as on every other one', async () => {

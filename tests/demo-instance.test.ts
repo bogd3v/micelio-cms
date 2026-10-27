@@ -5,7 +5,8 @@ import { seedDemoContent } from '../src/migrations/demo-seed'
 import {
   ensureFrontendToken,
   FRONTEND_TOKEN_NAME,
-  FRONTEND_TOKEN_PERMISSIONS,
+  DEMO_FRONTEND_TOKEN_PERMISSIONS,
+  PREVIEW_EXCHANGE_ACTION,
   BUILD_TOKEN_NAME,
   BUILD_TOKEN_PERMISSIONS,
 } from '../src/migrations/api-tokens'
@@ -242,8 +243,18 @@ describe('Demo instance', () => {
       })
       expect(token.type).toBe('custom')
       expect(token.permissions.map(({ action }: { action: string }) => action).sort()).toEqual(
-        [...FRONTEND_TOKEN_PERMISSIONS].sort()
+        [...DEMO_FRONTEND_TOKEN_PERMISSIONS].sort()
       )
+    })
+
+    it('gives the demo frontend token the preview exchange, so the preview works out of the box', async () => {
+      const token = await strapi.db.query(TOKEN_UID).findOne({
+        where: { name: FRONTEND_TOKEN_NAME },
+        populate: ['permissions'],
+      })
+      const actions = token.permissions.map(({ action }: { action: string }) => action)
+      expect(actions).toContain(PREVIEW_EXCHANGE_ACTION)
+      expect(actions).toContain('plugin::micelio.preview.draft')
     })
 
     it('is idempotent, and follows a new key or missing permissions', async () => {

@@ -14,6 +14,7 @@ docker compose -f compose.demo.yml up
 
 - Blog: <http://localhost:3000>, in English and Spanish (three articles, two categories, an About page).
 - Admin: <http://localhost:1337/admin>. Strapi asks you to create the first administrator on the first visit.
+- Preview: from 0.6 the preview is on. In the admin open a draft page (Content Manager → Page), save it, press **Preview** in the header and the draft shows in a frame that reloads after each save. Chromium and Firefox show it in place; Safari needs **Open in a new tab**, because it refuses the cookie in a frame of another site.
 - `docker compose -f compose.demo.yml down` stops it and keeps the data; add `-v` to delete everything.
 
 The first run generates Strapi's keys, the database password and the frontend's API token into a volume (`scripts/demo-secrets.js`), and the CMS seeds the demo content once (`MICELIO_DEMO=true`). Ports are bound to `127.0.0.1`: it is a demo, not a deployment.

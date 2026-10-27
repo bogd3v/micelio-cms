@@ -288,6 +288,8 @@ Publishing returns as soon as the activities are queued; the CMS delivers them i
 MICELIO_DEMO=false   # seeds a bilingual demo site once on an empty database (compose.demo.yml)
 ```
 
+With `true` and `FRONTEND_API_TOKEN` set, `MICELIO_DEMO` also gives the `frontend` token the preview's exchange (`plugin::micelio.preview.exchange`) on every boot, whatever the database holds, so the preview works out of the box. Never set it on a real site: it widens the token, and the seed's refusal on an instance with articles does not stop the grant. `static` and `landing` do not grant it.
+
 ## Generate the Strapi keys
 
 What each key signs or encrypts, and what a rotation breaks, is in [keys.md](../security/keys.md).

@@ -110,6 +110,10 @@ services:
     environment:
       NUXT_PUBLIC_STRAPI_URL: http://localhost:1337
       NUXT_PUBLIC_SITE_URL: http://localhost:3000
+      # Turns the preview on: the one origin that may frame a draft, the admin
+      # as the browser opens it. The CMS gives the demo's frontend token the
+      # exchange permission (MICELIO_DEMO=true).
+      NUXT_PREVIEW_ADMIN_ORIGIN: http://localhost:1337
     volumes:
       - demo-secrets:/secrets:ro
     depends_on:
