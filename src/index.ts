@@ -13,6 +13,7 @@ import { migrateSliderItems } from './migrations/slider-items'
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
 import { ensureAuthorLocales } from './migrations/author-locales'
 import { seedDemoContent } from './migrations/demo-seed'
+import { ensureDefaultSiteUrl } from './migrations/default-site-url'
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens'
 import { revokePagePermissions } from './migrations/page-permissions'
 import { ensureRateLimitTable } from './migrations/rate-limit-table'
@@ -225,6 +226,9 @@ export default {
     if (demo !== 'disabled' && demo !== 'already-applied') {
       strapi.log.info(`[demo] ${demo}`)
     }
+    // After the site settings and the demo: it reads their URL for the core's default site.
+    const siteUrl = await ensureDefaultSiteUrl(strapi)
+    if (siteUrl) strapi.log.info(`[sites] set the url of the default site to ${siteUrl}`)
 
     for (const [name, ensure] of [
       ['frontend', ensureFrontendToken],
