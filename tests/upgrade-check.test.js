@@ -10,7 +10,7 @@ import {
 } from '../scripts/upgrade-check/counts.mjs'
 
 describe('upgrade check', () => {
-  it('reads the collection names from the schemas, plugin content types included', () => {
+  it('reads the collection names from the schemas and adds the core plugin collections', () => {
     const names = readCollectionNames(process.cwd())
     expect(names).toEqual(expect.arrayContaining(['articles', 'pages', 'authors', 'site_settings']))
     expect(names).toEqual(expect.arrayContaining(['categories', 'tags']))

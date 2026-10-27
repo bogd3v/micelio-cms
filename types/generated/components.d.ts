@@ -214,6 +214,141 @@ export interface AboutTopics extends Struct.ComponentSchema {
   }
 }
 
+export interface MicelioEditorialEditorial extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_editorial_editorials'
+  info: {
+    description: 'Where the entry is in the editorial workflow (ADR-0017, section 5). It changes only through a transition'
+    displayName: 'Editorial'
+    icon: 'check'
+  }
+  attributes: {
+    publishAt: Schema.Attribute.DateTime
+    publishedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>
+    reviewedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>
+    state: Schema.Attribute.Enumeration<['draft', 'in_review', 'scheduled', 'published']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'draft'>
+  }
+}
+
+export interface MicelioSiteAccentOverride extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_site_accent_overrides'
+  info: {
+    description: "Accent color for one of the theme's modes. The frontend adjusts it if it fails contrast"
+    displayName: 'Accent override'
+    icon: 'paint'
+  }
+  attributes: {
+    color: Schema.Attribute.String & Schema.Attribute.Required
+    mode: Schema.Attribute.String & Schema.Attribute.Required
+  }
+}
+
+export interface MicelioSiteAuthor extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_site_authors'
+  info: {
+    description: 'Who writes the site'
+    displayName: 'Author'
+    icon: 'user'
+  }
+  attributes: {
+    name: Schema.Attribute.String & Schema.Attribute.Required
+    url: Schema.Attribute.String
+  }
+}
+
+export interface MicelioSiteFediverse extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_site_fediverses'
+  info: {
+    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity"
+    displayName: 'Fediverse profile'
+    icon: 'globe'
+  }
+  attributes: {
+    discoverable: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>
+    displayName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100
+      }>
+    header: Schema.Attribute.Media<'images'>
+    objectType: Schema.Attribute.Enumeration<['article', 'note']> &
+      Schema.Attribute.DefaultTo<'note'>
+    sourceUrl: Schema.Attribute.String
+    summary: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500
+      }>
+    username: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 30
+      }>
+  }
+}
+
+export interface MicelioSiteModules extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_site_modules'
+  info: {
+    description: 'Features the frontend turns on. All of them are on unless turned off here'
+    displayName: 'Modules'
+    icon: 'puzzle'
+  }
+  attributes: {
+    accounts: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>
+    comments: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>
+    drafts: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>
+    fediverse: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>
+    newsletter: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>
+    search: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>
+    support: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>
+  }
+}
+
+export interface MicelioSiteSocialLink extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_site_social_links'
+  info: {
+    description: 'A profile of the site on another network'
+    displayName: 'Social link'
+    icon: 'link'
+  }
+  attributes: {
+    network: Schema.Attribute.Enumeration<
+      ['github', 'gitlab', 'codeberg', 'linkedin', 'mastodon', 'bluesky', 'x', 'website']
+    > &
+      Schema.Attribute.Required
+    url: Schema.Attribute.String & Schema.Attribute.Required
+  }
+}
+
+export interface MicelioSiteTheme extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_site_themes'
+  info: {
+    description: 'Installed theme and its bounded overrides (micelio ADR 0005). Empty fields use the theme as it is'
+    displayName: 'Theme'
+    icon: 'brush'
+  }
+  attributes: {
+    accentOverrides: Schema.Attribute.Component<'micelio-site.accent-override', true>
+    defaultMode: Schema.Attribute.String
+    displayFont: Schema.Attribute.Enumeration<
+      ['archivo', 'fraunces', 'bricolage-grotesque', 'newsreader', 'space-grotesk']
+    >
+    themeDigest: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 128
+      }>
+    themeId: Schema.Attribute.String
+    themeVersion: Schema.Attribute.String
+  }
+}
+
 export interface SectionCta extends Struct.ComponentSchema {
   collectionName: 'components_section_ctas'
   info: {
@@ -961,6 +1096,13 @@ declare module '@strapi/strapi' {
       'about.statement': AboutStatement
       'about.topic': AboutTopic
       'about.topics': AboutTopics
+      'micelio-editorial.editorial': MicelioEditorialEditorial
+      'micelio-site.accent-override': MicelioSiteAccentOverride
+      'micelio-site.author': MicelioSiteAuthor
+      'micelio-site.fediverse': MicelioSiteFediverse
+      'micelio-site.modules': MicelioSiteModules
+      'micelio-site.social-link': MicelioSiteSocialLink
+      'micelio-site.theme': MicelioSiteTheme
       'section.cta': SectionCta
       'section.faq': SectionFaq
       'section.faq-item': SectionFaqItem

@@ -27,16 +27,28 @@ A node is the CMS image, a PostgreSQL database and a place for the uploads. Any 
 3. **Generate the secrets.** `node scripts/generate-keys.js` prints the six Strapi values; keep them in your secret store, not in the repository.
 4. **Set the environment.** The required variables are in [Configure](configure.md#required). A production boot stops with a message that names a missing required value.
 5. **Mount the uploads.** Give the container a persistent volume at `/app/public/uploads` (the default `UPLOAD_PATH`), or set the `R2_*` variables to use an S3-compatible bucket instead. Without either, uploaded files disappear when the container is replaced. The local volume serves files from the same origin as the admin panel, which suits development and small setups; in production prefer the bucket (or another hostname), and see the Media section of `configure.md`. The CMS logs a warning at boot when production uses the local volume.
-6. **Start the container** and wait for `GET /_health` to answer `204`. The image's `HEALTHCHECK` probes the same route, and its start period covers a slow first boot.
+6. **Start the container** and wait for `GET /_health` to answer `204`. The image's `HEALTHCHECK` probes the same route, and its start period covers a slow first boot. In production the host check of the core plugin runs first and stops the boot when a required check fails (see [The host check](#the-host-check)).
 7. **Create the first administrator** at `/admin`, then turn on only the modules whose services you have set up, in the site settings.
 
 Put a TLS-terminating proxy in front if the CMS is public, and tell the CMS how many proxies there are (`TRUST_PROXY`, see [Configure](configure.md#rate-limiting)). The CMS's public URL goes in `URL`, the frontend's in `FRONTEND_URL`.
+
+### The host check
+
+`@micelio/strapi-plugin-core` verifies what a plugin cannot set, the Node version, PostgreSQL, the security middlewares, the Content Security Policy, a server-side HTML sanitiser and an upload provider, and **refuses to boot in production** when a required check fails (`node`, `database`, `security-middlewares`, `content-security-policy`, `html-sanitiser` or `upload-provider`); the error names each failed check and its fix. The image of this repository passes all six. Outside production a failed check is a warning in the log.
+
+To run the checks on demand, with the variables the container runs with:
+
+```bash
+docker compose exec strapi npx micelio doctor
+```
+
+It prints every check as `pass`, `fail` or `skip` and exits with `1` when a required check fails. Replace `strapi` with the name of the CMS service in your Compose file. The admin shows the same report in the **Micelio** menu, under Status (**Run again** refreshes it). The checks, their fixes and the two optional ones (`frontend-release-line`, `preview-frame-src`) are in the plugin's [host check](https://github.com/bogd3v/micelio-plugin-core/blob/main/docs/operate/host-check.md).
 
 ### What the image contains
 
 A multi-stage build keeps the final image small: it holds the compiled JavaScript (`dist/config`, `dist/src`), the admin build (`dist/build`), the fediverse plugin's bundle, `database/` and `scripts/`, and no source or dev dependencies. It runs under `tini` as the unprivileged `node` user; `docker-entrypoint.sh` first fixes the ownership of `/app/public/uploads` and `/app/.tmp`, so a volume created as root still works. The port is 1337. The health check uses busybox `wget`, because the image has no `curl`.
 
-It also carries `sanitize-html`, the server-side sanitiser for HTML built from content. The host check of `@micelio/strapi-plugin-core` (`html-sanitiser`, a required check) loads it from the project and refuses to boot without it. The CMS itself does not sanitise anything with it yet; it is there for the plugins.
+It also carries `sanitize-html`, the server-side sanitiser for HTML built from content. The host check (`html-sanitiser`, a required check) loads it from the project and refuses to boot without it. The CMS itself does not sanitise anything with it yet; it is there for the plugins.
 
 ## Next
 

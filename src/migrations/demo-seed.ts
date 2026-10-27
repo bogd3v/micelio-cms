@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { Core } from '@strapi/strapi'
 import { ABOUT_UID, ARTICLE_UID, AUTHOR_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids'
+import { defaultSiteRelation } from '../utils/default-site'
 import { frontendBaseUrl } from '../utils/frontend-url'
 import {
   coverSvg,
@@ -130,6 +131,8 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
 
   const author = await documents(strapi, AUTHOR_UID).create({ data: DEMO_AUTHOR })
 
+  // Category and tag belong to a site, and the seed has no request to take it from.
+  const site = await defaultSiteRelation(strapi)
   const categoryIds: Record<string, string> = {}
   for (const category of DEMO_CATEGORIES) {
     const display = {
@@ -140,7 +143,7 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
     }
     const created = await documents(strapi, CATEGORY_UID).create({
       locale: main,
-      data: { ...display, ...category.text[main] },
+      data: { ...display, ...category.text[main], site },
     })
     for (const locale of others) {
       await documents(strapi, CATEGORY_UID).update({
@@ -157,7 +160,7 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
   for (const tag of DEMO_TAGS) {
     const created = await documents(strapi, TAG_UID).create({
       locale: main,
-      data: { slug: tag.slug, name: tag.name[main] },
+      data: { slug: tag.slug, name: tag.name[main], site },
     })
     for (const locale of others) {
       await documents(strapi, TAG_UID).update({

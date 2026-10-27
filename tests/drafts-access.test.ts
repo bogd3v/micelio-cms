@@ -3,6 +3,7 @@ import request, { type Response } from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { setRolePermissions } from './helpers/permissions'
 import type { ApiDocument } from './helpers/api-types'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 // Issue #53: `?status=draft` on the content API is only for editors. Before
 // the restriction, any caller with `find`/`findOne` (Public included) read
@@ -52,10 +53,13 @@ describe('Article drafts are only for editors', () => {
       for (const type of ['article', ...RELATED]) await setRolePermissions(roleType, type, READ)
     }
 
+    const site = await defaultSiteRelation(strapi)
     const [category, author, tag] = await Promise.all([
-      strapi.documents('plugin::micelio.category').create({ data: { name: 'Cat', slug: 'cat' } }),
+      strapi
+        .documents('plugin::micelio.category')
+        .create({ data: { name: 'Cat', slug: 'cat', site } }),
       strapi.documents('api::author.author').create({ data: { name: 'Ana' } }),
-      strapi.documents('plugin::micelio.tag').create({ data: { name: 'Tag', slug: 'tag' } }),
+      strapi.documents('plugin::micelio.tag').create({ data: { name: 'Tag', slug: 'tag', site } }),
     ])
     const relations = {
       category: category.documentId,

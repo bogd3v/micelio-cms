@@ -3,6 +3,7 @@ import request, { type Response } from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { setRolePermissions } from './helpers/permissions'
 import type { DraftSummary } from '../src/types/article-drafts'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 // Issue #53, step 4: GET /api/articles/drafts lists, for editors only, the
 // drafts with something to review: never published, or edited after publishing.
@@ -46,9 +47,9 @@ describe('GET /api/articles/drafts', () => {
     }
 
     const articles = strapi.documents(ARTICLE_UID)
-    const category = await strapi
-      .documents('plugin::micelio.category')
-      .create({ data: { name: 'Pruebas', slug: 'pruebas' } })
+    const category = await strapi.documents('plugin::micelio.category').create({
+      data: { name: 'Pruebas', slug: 'pruebas', site: await defaultSiteRelation(strapi) },
+    })
     const author = await strapi.documents('api::author.author').create({ data: { name: 'Ana' } })
 
     // Published and untouched since: nothing to review.

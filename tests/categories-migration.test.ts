@@ -9,6 +9,7 @@ import {
   type ConsolidationReport,
 } from '../src/migrations/consolidate-categories'
 import type { Modules } from '@strapi/strapi'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 const CATEGORY = 'plugin::micelio.category'
 const ARTICLE = 'api::article.article'
@@ -23,8 +24,12 @@ interface JoinTable {
   inverseJoinColumn: { name: string }
 }
 
-async function createCategory(data: Modules.Documents.Params.Data.Input<typeof CATEGORY>) {
-  return strapi.documents(CATEGORY).create({ data })
+async function createCategory(
+  data: Omit<Modules.Documents.Params.Data.Input<typeof CATEGORY>, 'site'>
+) {
+  return strapi.documents(CATEGORY).create({
+    data: { ...data, site: await defaultSiteRelation(strapi) },
+  })
 }
 
 async function createArticle(

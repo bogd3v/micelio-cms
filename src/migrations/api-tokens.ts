@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi'
-import { READ_ACTIONS as MICELIO_READ_ACTIONS } from '../plugins/micelio/server/src/constants/actions'
+import { READ_ACTIONS as MICELIO_READ_ACTIONS } from '@micelio/strapi-plugin-core/strapi-server'
 
 const TOKEN_UID = 'admin::api-token'
 
@@ -29,9 +29,9 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'plugin::comments.client.findAllInHierarchy',
   'plugin::comments.client.findAllFlat',
   'plugin::comments.client.post',
-  // The preview's system grant (micelio ADR 0019): the CMS measures a draft at publish through the
-  // frontend, which reads it with this token, even when the preview is off. Never `.exchange`: that
-  // stays an opt-in of the sites that turn the preview on.
+  // The preview's system grant (micelio ADR 0019), registered by the core plugin: the CMS measures a
+  // draft at publish through the frontend, which reads it with this token, even when the preview is
+  // off. Never `.exchange`: that stays an opt-in of the sites that turn the preview on.
   'plugin::micelio.preview.draft',
   'api::subscriber.subscriber.find',
   'api::subscriber.subscriber.lookup',
@@ -76,9 +76,6 @@ export const BUILD_TOKEN: EnvToken = {
 /** Shortest access key accepted: a guessable token would open the subscribers. */
 const MIN_KEY_LENGTH = 32
 
-/** Actions a token may do without: a plugin older than the permission does not register them. Any other unregistered action stops the boot. */
-const OPTIONAL_ACTIONS = new Set(['plugin::micelio.preview.draft'])
-
 /** `disabled`: the variable is unset; `created`, `updated`: the token was written; `unchanged`: key and permissions already match. */
 export type EnvTokenReport = 'disabled' | 'created' | 'updated' | 'unchanged'
 
@@ -107,11 +104,8 @@ interface TokenService {
  * nothing: production keeps its tokens created by hand. Idempotent.
  *
  * @remarks
- * Strapi refuses a token that names an action no installed plugin registers.
- * An optional action that is not registered (a plugin older than the permission,
- * or not installed) is left out and logged as a warning, so the boot does not
- * stop; the token gets it on the first boot after the plugin registers it. Any
- * other unregistered action makes Strapi refuse the token, and the boot stops.
+ * Strapi refuses a token that names an action no installed plugin registers,
+ * and the boot stops.
  */
 export async function ensureEnvToken(
   strapi: Core.Strapi,
@@ -123,16 +117,7 @@ export async function ensureEnvToken(
     throw new Error(`${token.env} must be at least ${MIN_KEY_LENGTH} characters long`)
   }
 
-  const registered = new Set<string>(strapi.contentAPI.permissions.providers.action.keys())
-  const skipped = token.permissions.filter(
-    (action) => OPTIONAL_ACTIONS.has(action) && !registered.has(action)
-  )
-  if (skipped.length > 0) {
-    strapi.log.warn(
-      `[api-tokens] the ${token.name} API token leaves out actions no plugin registers: ${skipped.join(', ')}`
-    )
-  }
-  const permissions = token.permissions.filter((action) => !skipped.includes(action))
+  const { permissions } = token
 
   const tokens = strapi.service(TOKEN_UID) as unknown as TokenService
   const hashed = tokens.hash(accessKey)

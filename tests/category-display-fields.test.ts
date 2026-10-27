@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import { setupStrapi, cleanupStrapi } from './strapi'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 // ADR 0016 (bogd3v/micelio): a category carries an optional stable `color` (one of the five
 // category roles) and a `featured` flag, so the frontend needs no list of any one site's slugs.
@@ -15,8 +16,10 @@ describe('Category color and featured', () => {
     await cleanupStrapi()
   })
 
-  const create = (slug: string, data: Record<string, unknown> = {}) =>
-    strapi.documents(CATEGORY).create({ data: { name: slug, slug, ...data } })
+  const create = async (slug: string, data: Record<string, unknown> = {}) =>
+    strapi.documents(CATEGORY).create({
+      data: { name: slug, slug, site: await defaultSiteRelation(strapi), ...data },
+    })
 
   it('is not featured and has no color unless the editor says so', async () => {
     const category = await create('display-defaults')

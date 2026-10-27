@@ -9,7 +9,14 @@
     "incremental": true,
     "noImplicitThis": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    // `moduleResolution: Node` ignores the `exports` of a package, and the core plugin publishes its
+    // types only there. Types only: at runtime Node resolves the package by its `exports`.
+    "paths": {
+      "@micelio/strapi-plugin-core/strapi-server": [
+        "./node_modules/@micelio/strapi-plugin-core/dist/server/src/index.d.ts"
+      ]
+    }
   },
   "include": [
     // Include root files

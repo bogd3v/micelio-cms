@@ -55,15 +55,11 @@ describe('Public comments API: fields and filters', () => {
     }
     await strapi.service('plugin::users-permissions.users-permissions').initialize()
 
-    // The preview's draft action is registered by a plugin this repository does not install yet,
-    // and Strapi refuses a token that names an action nobody registers.
     const token = await strapi.service(TOKEN_UID).create({
       name: 'frontend',
       type: 'custom',
       lifespan: null,
-      permissions: FRONTEND_TOKEN_PERMISSIONS.filter(
-        (action) => action !== 'plugin::micelio.preview.draft'
-      ),
+      permissions: FRONTEND_TOKEN_PERMISSIONS,
     })
     frontendKey = token.accessKey
 

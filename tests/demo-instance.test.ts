@@ -241,12 +241,8 @@ describe('Demo instance', () => {
         populate: ['permissions'],
       })
       expect(token.type).toBe('custom')
-      // The preview action comes from a plugin this repository does not install yet, so the token
-      // lacks it (tests/api-tokens-preview.test.ts); every other action must be there.
       expect(token.permissions.map(({ action }: { action: string }) => action).sort()).toEqual(
-        FRONTEND_TOKEN_PERMISSIONS.filter(
-          (action) => action !== 'plugin::micelio.preview.draft'
-        ).sort()
+        [...FRONTEND_TOKEN_PERMISSIONS].sort()
       )
     })
 

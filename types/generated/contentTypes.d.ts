@@ -1167,8 +1167,14 @@ export interface PluginMicelioCategory extends Struct.CollectionTypeSchema {
     draftAndPublish: false
   }
   pluginOptions: {
+    'content-manager': {
+      visible: true
+    }
     i18n: {
       localized: true
+    }
+    micelio: {
+      siteScoped: true
     }
   }
   attributes: {
@@ -1216,6 +1222,13 @@ export interface PluginMicelioCategory extends Struct.CollectionTypeSchema {
         }
       }>
     publishedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
     slug: Schema.Attribute.UID &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -1224,6 +1237,263 @@ export interface PluginMicelioCategory extends Struct.CollectionTypeSchema {
       }>
     updatedAt: Schema.Attribute.DateTime
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+  }
+}
+
+export interface PluginMicelioPreviewCredential extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_preview_credentials'
+  info: {
+    description: 'A preview token, grant or system grant of ADR-0019, stored as the hash of its value and bound to one draft (and, but for a system grant, to one admin user)'
+    displayName: 'Preview credential'
+    pluralName: 'preview-credentials'
+    singularName: 'preview-credential'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: false
+    }
+    'content-type-builder': {
+      visible: false
+    }
+    i18n: {
+      localized: false
+    }
+    micelio: {
+      export: 'never'
+      siteScoped: true
+    }
+  }
+  attributes: {
+    adminOrigin: Schema.Attribute.String
+    adminUser: Schema.Attribute.Integer
+    contentType: Schema.Attribute.String & Schema.Attribute.Required
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    entryDocumentId: Schema.Attribute.String & Schema.Attribute.Required
+    entryLocale: Schema.Attribute.String
+    entryVersion: Schema.Attribute.String
+    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required
+    hash: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique
+    kind: Schema.Attribute.Enumeration<['token', 'grant', 'system']> & Schema.Attribute.Required
+    locale: Schema.Attribute.String & Schema.Attribute.Private
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.preview-credential'> &
+      Schema.Attribute.Private
+    publishedAt: Schema.Attribute.DateTime
+    revokedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    siteDocumentId: Schema.Attribute.String & Schema.Attribute.Required
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    usedAt: Schema.Attribute.DateTime
+  }
+}
+
+export interface PluginMicelioSite extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_sites'
+  info: {
+    description: 'One site the CMS serves: its identity, its host names and the modules the frontend turns on'
+    displayName: 'Site'
+    pluralName: 'sites'
+    singularName: 'site'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: true
+    }
+    'content-type-builder': {
+      visible: false
+    }
+    i18n: {
+      localized: true
+    }
+  }
+  attributes: {
+    addressLocality: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }>
+    author: Schema.Attribute.Component<'micelio-site.author', false> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    contactEmail: Schema.Attribute.Email &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    defaultLocale: Schema.Attribute.Enumeration<['en', 'es']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.DefaultTo<'en'>
+    defaultOgImage: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    description: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }>
+    editorialPolicy: Schema.Attribute.JSON &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    favicon: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    fediverse: Schema.Attribute.Component<'micelio-site.fediverse', false> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    hosts: Schema.Attribute.JSON &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    isDefault: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.DefaultTo<false>
+    locale: Schema.Attribute.String
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.site'>
+    logo: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    modules: Schema.Attribute.Component<'micelio-site.modules', false> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }>
+    privacyContactEmail: Schema.Attribute.Email &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    privacyJurisdiction: Schema.Attribute.Enumeration<['colombia']> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    privacyUpdatedAt: Schema.Attribute.DateTime &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    publishedAt: Schema.Attribute.DateTime
+    securityContact: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 512
+      }>
+    slug: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64
+      }>
+    socialLinks: Schema.Attribute.Component<'micelio-site.social-link', true> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    supportHandle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    tagline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }>
+    theme: Schema.Attribute.Component<'micelio-site.theme', false> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    timezone: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    url: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
   }
 }
 
@@ -1239,8 +1509,14 @@ export interface PluginMicelioTag extends Struct.CollectionTypeSchema {
     draftAndPublish: false
   }
   pluginOptions: {
+    'content-manager': {
+      visible: true
+    }
     i18n: {
       localized: true
+    }
+    micelio: {
+      siteScoped: true
     }
   }
   attributes: {
@@ -1257,6 +1533,13 @@ export interface PluginMicelioTag extends Struct.CollectionTypeSchema {
         }
       }>
     publishedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
     slug: Schema.Attribute.UID<'name'> &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
@@ -1598,6 +1881,8 @@ declare module '@strapi/strapi' {
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction
       'plugin::i18n.locale': PluginI18NLocale
       'plugin::micelio.category': PluginMicelioCategory
+      'plugin::micelio.preview-credential': PluginMicelioPreviewCredential
+      'plugin::micelio.site': PluginMicelioSite
       'plugin::micelio.tag': PluginMicelioTag
       'plugin::review-workflows.workflow': PluginReviewWorkflowsWorkflow
       'plugin::review-workflows.workflow-stage': PluginReviewWorkflowsWorkflowStage

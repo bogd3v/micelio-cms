@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { waitUntil } from './helpers/wait-until'
 import { createRebuildHook, rebuildHookConfig, REBUILD_EVENT_TYPE } from '../src/utils/rebuild-hook'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 // Static and landing sites rebuild when published content changes (#75,
 // micelio ADR 0006 section 7). A local server stands in for GitHub's
@@ -151,7 +152,11 @@ describe('Rebuild hook', () => {
   it('fires when a category is created, saved or deleted, which have no drafts', async () => {
     const category = await documents(CATEGORY_UID).create({
       locale: 'en',
-      data: { name: 'Rebuild probe', slug: 'rebuild-probe' },
+      data: {
+        name: 'Rebuild probe',
+        slug: 'rebuild-probe',
+        site: await defaultSiteRelation(strapi),
+      },
     })
     await waitUntil(() => received.length > 0)
     expect(received[0].body.client_payload.changes[0]).toMatchObject({

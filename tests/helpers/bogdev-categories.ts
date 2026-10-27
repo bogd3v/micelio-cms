@@ -1,4 +1,5 @@
 import { consolidateCategories } from '../../src/migrations/consolidate-categories'
+import { defaultSiteRelation } from '../../src/utils/default-site'
 
 /**
  * BogDev's five redesign categories, as production has them: the migration
@@ -7,7 +8,7 @@ import { consolidateCategories } from '../../src/migrations/consolidate-categori
  */
 export async function createBogdevCategories(): Promise<void> {
   await strapi.documents('plugin::micelio.category').create({
-    data: { name: 'privacy', slug: 'privacy' },
+    data: { name: 'privacy', slug: 'privacy', site: await defaultSiteRelation(strapi) },
   })
   await consolidateCategories(strapi)
 }

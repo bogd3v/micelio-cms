@@ -1,3 +1,4 @@
+import { defaultSiteRelation } from '../../src/utils/default-site'
 import { SEEDED, credit, documents, seoOf, type SeededImages } from './response-fields-seed-base'
 
 const ARTICLE_UID = 'api::article.article'
@@ -29,8 +30,10 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
     },
   })
 
+  const site = await defaultSiteRelation(strapi)
   const category = await documents(CATEGORY_UID).create({
     data: {
+      site,
       name: 'Fields category',
       slug: SEEDED.categorySlug,
       description: 'A category with every field',
@@ -41,7 +44,7 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
   })
 
   const tag = await documents(TAG_UID).create({
-    data: { name: 'Fields tag', slug: SEEDED.tagSlug },
+    data: { name: 'Fields tag', slug: SEEDED.tagSlug, site },
   })
 
   const article = await documents(ARTICLE_UID).create({

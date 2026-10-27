@@ -15,7 +15,8 @@ const plugins = readdirSync(join(root, 'src', 'plugins'), { withFileTypes: true 
 
 describe('Dockerfile copies every local plugin', () => {
   it('finds the local plugins', () => {
-    expect(plugins).toEqual(expect.arrayContaining(['fediverse', 'micelio']))
+    // `micelio` is the published `@micelio/strapi-plugin-core`, not a local plugin.
+    expect(plugins).toEqual(['fediverse'])
   })
 
   it.each(plugins)('copies the package.json and the bundle of %s', (name) => {

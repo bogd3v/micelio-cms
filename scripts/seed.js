@@ -102,9 +102,9 @@ async function uploadFile(file, name) {
     })
 }
 
-async function createEntry({ model, entry }) {
+async function createEntry({ model, entry, uid = `api::${model}.${model}` }) {
   try {
-    return await strapi.documents(`api::${model}.${model}`).create({
+    return await strapi.documents(uid).create({
       data: entry,
     })
   } catch (error) {
@@ -256,15 +256,32 @@ async function importAbout() {
   })
 }
 
+// Category and tag belong to a site, and a script has no request to take it from: they go to the
+// default site, which the core plugin creates at boot (src/utils/default-site.ts).
+async function defaultSiteRelation() {
+  const site = await strapi.db.query('plugin::micelio.site').findOne({
+    where: { isDefault: true },
+    select: ['id'],
+  })
+  if (!site) throw new Error('There is no default site: the core plugin creates it at boot')
+  return { id: site.id }
+}
+
 async function importCategories() {
+  const site = await defaultSiteRelation()
   for (const category of categories) {
-    await createEntry({ model: 'category', entry: category })
+    await createEntry({
+      model: 'category',
+      uid: 'plugin::micelio.category',
+      entry: { ...category, site },
+    })
   }
 }
 
 async function importTags() {
+  const site = await defaultSiteRelation()
   for (const tag of tags) {
-    await createEntry({ model: 'tag', entry: tag })
+    await createEntry({ model: 'tag', uid: 'plugin::micelio.tag', entry: { ...tag, site } })
   }
 }
 

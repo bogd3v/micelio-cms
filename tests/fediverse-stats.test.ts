@@ -4,6 +4,7 @@ import { setupStrapi, cleanupStrapi } from './strapi'
 import { createBogdevCategories } from './helpers/bogdev-categories'
 import type { RankedArticle } from '../src/plugins/fediverse/server/src/types/stats'
 import type { InteractionType } from '../src/plugins/fediverse/server/src/types/interactions'
+import { defaultSiteRelation } from '../src/utils/default-site'
 
 const ARTICLE_UID = 'api::article.article'
 const COMMENT_UID = 'plugin::comments.comment'
@@ -123,8 +124,10 @@ describe('Fediverse batch stats and ranking', () => {
     }
     const ia = await category('ia')
     const linux = await category('linux')
-    const vue = (await strapi.documents(TAG_UID).create({ data: { name: 'Vue', slug: 'vue' } }))
-      .documentId
+    const site = await defaultSiteRelation(strapi)
+    const vue = (
+      await strapi.documents(TAG_UID).create({ data: { name: 'Vue', slug: 'vue', site } })
+    ).documentId
 
     // Default locale ('en' in tests). Totals: a = 4, b = 2, c = 2 (newer than b), d = 0 (newest).
     // Categories: a and c are `ia`, b is `linux`, d has none. Tag `vue`: a, b and d.
