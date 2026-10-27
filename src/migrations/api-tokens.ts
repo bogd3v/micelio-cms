@@ -44,11 +44,11 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
 export const PREVIEW_EXCHANGE_ACTION = 'plugin::micelio.preview.exchange'
 
 /**
- * The frontend token of the demo (`MICELIO_DEMO=true`): the default list plus the preview's
- * exchange, because the demo shows the preview (`compose.demo.yml` sets the frontend's admin
- * origin). No other instance gets it from this file.
+ * The frontend token of an instance that shows the preview: the default list plus the preview's
+ * exchange. The demo (`MICELIO_DEMO=true`, `compose.demo.yml` sets the frontend's admin origin) and
+ * a site that sets `MICELIO_PREVIEW=true` get it; no other instance does.
  */
-export const DEMO_FRONTEND_TOKEN_PERMISSIONS = [
+export const PREVIEW_FRONTEND_TOKEN_PERMISSIONS = [
   ...FRONTEND_TOKEN_PERMISSIONS,
   PREVIEW_EXCHANGE_ACTION,
 ]
@@ -172,18 +172,23 @@ export async function ensureEnvToken(
   return 'updated'
 }
 
+/** Whether the instance keeps the preview's exchange on the frontend token: the demo or a site that opted in. */
+const isPreviewExchangeGranted = (): boolean =>
+  process.env.MICELIO_DEMO === 'true' || process.env.MICELIO_PREVIEW === 'true'
+
 /**
  * The frontend's token, from `FRONTEND_API_TOKEN`.
  *
  * @remarks
- * With `MICELIO_DEMO=true` the token also has the preview's exchange (`DEMO_FRONTEND_TOKEN_PERMISSIONS`);
- * `static` and `landing` have no drafts to preview, and any other instance keeps the default list.
+ * With `MICELIO_DEMO=true` or `MICELIO_PREVIEW=true` (exactly `true`, anything else is off) the token
+ * also has the preview's exchange (`PREVIEW_FRONTEND_TOKEN_PERMISSIONS`) on every boot; `static` and
+ * `landing` have no drafts to preview, and any other instance keeps the default list.
  */
 export const ensureFrontendToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
   ensureEnvToken(
     strapi,
-    process.env.MICELIO_DEMO === 'true'
-      ? { ...FRONTEND_TOKEN, permissions: DEMO_FRONTEND_TOKEN_PERMISSIONS }
+    isPreviewExchangeGranted()
+      ? { ...FRONTEND_TOKEN, permissions: PREVIEW_FRONTEND_TOKEN_PERMISSIONS }
       : FRONTEND_TOKEN
   )
 

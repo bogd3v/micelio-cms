@@ -5,7 +5,7 @@ import { seedDemoContent } from '../src/migrations/demo-seed'
 import {
   ensureFrontendToken,
   FRONTEND_TOKEN_NAME,
-  DEMO_FRONTEND_TOKEN_PERMISSIONS,
+  PREVIEW_FRONTEND_TOKEN_PERMISSIONS,
   PREVIEW_EXCHANGE_ACTION,
   BUILD_TOKEN_NAME,
   BUILD_TOKEN_PERMISSIONS,
@@ -243,7 +243,7 @@ describe('Demo instance', () => {
       })
       expect(token.type).toBe('custom')
       expect(token.permissions.map(({ action }: { action: string }) => action).sort()).toEqual(
-        [...DEMO_FRONTEND_TOKEN_PERMISSIONS].sort()
+        [...PREVIEW_FRONTEND_TOKEN_PERMISSIONS].sort()
       )
     })
 
