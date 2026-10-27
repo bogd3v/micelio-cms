@@ -695,6 +695,9 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     i18n: {
       localized: true
     }
+    micelio: {
+      siteScoped: true
+    }
   }
   attributes: {
     createdAt: Schema.Attribute.DateTime
@@ -729,6 +732,13 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true
+        }
+      }>
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
         }
       }>
     slug: Schema.Attribute.UID<'title'> &

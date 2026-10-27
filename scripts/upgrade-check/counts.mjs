@@ -3,7 +3,8 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Folders whose content types declare a content table: `<dir>/<name>/content-types/<type>/schema.json`.
+// Folders whose content types declare a content table: `<dir>/<name>/content-types/<type>/schema.json`,
+// or `schema.ts` for a type that goes through `withSiteScope` (`api::page.page`).
 const SCHEMA_ROOTS = [{ dir: 'src/api', nested: 'content-types' }];
 
 // Content tables of the core plugin (`@micelio/strapi-plugin-core`) that this tree does not declare:
@@ -12,6 +13,19 @@ const CORE_COLLECTIONS = ['categories', 'tags'];
 
 /** Prefix of the core-store keys that hold the content manager configuration of each content type. */
 const CONTENT_MANAGER_KEY_PREFIX = 'plugin_content_manager_configuration_content_types::';
+
+/** The `collectionName` a type folder declares in `schema.json` or `schema.ts`, or `undefined` when it has neither. */
+function collectionNameOf(typeDir) {
+  const json = join(typeDir, 'schema.json');
+  if (existsSync(json)) {
+    const { collectionName } = JSON.parse(readFileSync(json, 'utf8'));
+    return typeof collectionName === 'string' ? collectionName : undefined;
+  }
+  const code = join(typeDir, 'schema.ts');
+  if (!existsSync(code)) return undefined;
+  // The schema is code there, so the name is read from its text rather than by running it.
+  return /collectionName:\s*'([^']+)'/.exec(readFileSync(code, 'utf8'))?.[1];
+}
 
 /** Reads the `collectionName` of every content type the repository declares, and the core plugin's, sorted. */
 export function readCollectionNames(root) {
@@ -22,15 +36,14 @@ export function readCollectionNames(root) {
     for (const entry of readdirSync(base, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const typesDir = nested ? join(base, entry.name, nested) : join(base, entry.name);
-      const schemas = nested
+      const typeDirs = nested
         ? readdirSync(typesDir, { withFileTypes: true })
             .filter((type) => type.isDirectory())
-            .map((type) => join(typesDir, type.name, 'schema.json'))
-        : [join(typesDir, 'schema.json')];
-      for (const file of schemas) {
-        if (!existsSync(file)) continue;
-        const { collectionName } = JSON.parse(readFileSync(file, 'utf8'));
-        if (typeof collectionName === 'string') names.push(collectionName);
+            .map((type) => join(typesDir, type.name))
+        : [typesDir];
+      for (const typeDir of typeDirs) {
+        const name = collectionNameOf(typeDir);
+        if (name) names.push(name);
       }
     }
   }

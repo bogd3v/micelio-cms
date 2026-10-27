@@ -258,10 +258,12 @@ async function seedShowcasePage(strapi: Core.Strapi, category: string): Promise<
     slug: DEMO_SHOWCASE_SLUG[locale],
     sections: showcaseSections(locale, media),
   })
+  // A page belongs to a site, and a boot step has no request to take it from.
+  const site = await defaultSiteRelation(strapi)
   const created = await documents(strapi, PAGE_UID).create({
     locale: main,
     status: 'published',
-    data: dataFor(main),
+    data: { ...dataFor(main), site },
   })
   for (const locale of others) {
     await documents(strapi, PAGE_UID).update({

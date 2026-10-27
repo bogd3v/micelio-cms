@@ -32,11 +32,11 @@ describe('Slugs that are dot segments', () => {
   const create = async (uid: Uid, titleField: string, slug: string) => {
     const site = await defaultSiteRelation(strapi)
     const doc = await strapi.documents(uid).create({
-      // Category and tag belong to a site; the other types take no such attribute.
+      // Category, tag and page belong to a site; an article takes no such attribute.
       data: {
         [titleField]: `Slug ${slug}`,
         slug,
-        ...(uid.startsWith('plugin::micelio.') ? { site } : {}),
+        ...(uid !== 'api::article.article' ? { site } : {}),
       },
     })
     created.push({ uid, documentId: doc.documentId })
