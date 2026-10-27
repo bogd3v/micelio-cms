@@ -14,7 +14,7 @@ The repository carries three Compose files. Each starts PostgreSQL, this CMS and
 
 The step-by-step guide for the dynamic demo is in the [frontend's install guide](https://github.com/bogd3v/micelio/blob/main/docs/operate/install.md). In short: the blog is at <http://localhost:3000>, the admin at <http://localhost:1337/admin> (Strapi asks for the first administrator on the first visit), `down` stops the stack and keeps the data, and `down -v` deletes everything.
 
-The first run generates Strapi's keys, the database password and the frontend's API token into the `demo-secrets` volume (`scripts/demo-secrets.js`). The CMS seeds the demo content once on an empty database (`MICELIO_DEMO`). The demo is not a deployment: ports are bound to `127.0.0.1`, and there is no TLS, no email and no backup.
+The first run generates Strapi's keys, the database password and the frontend's API token into the `demo-secrets` volume (`scripts/demo-secrets.js`). The CMS seeds the demo content once on an empty database (`MICELIO_DEMO`). `MICELIO_DEMO=true` also gives the frontend token the preview's exchange on every boot, so never set it on a real site. The demo is not a deployment: ports are bound to `127.0.0.1`, and there is no TLS, no email and no backup.
 
 The static and landing profiles have their own project names, so they never share volumes, secrets or the seed with the dynamic demo or each other. Run one stack at a time: all publish the site on port 3000. How they rebuild is in [Static sites](https://github.com/bogd3v/micelio/blob/main/docs/operate/static-site.md).
 

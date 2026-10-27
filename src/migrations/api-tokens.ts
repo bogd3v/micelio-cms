@@ -40,6 +40,19 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'api::subscriber.subscriber.delete',
 ]
 
+/** The preview's exchange action: the frontend trades an admin's one-use token for a grant with it. */
+export const PREVIEW_EXCHANGE_ACTION = 'plugin::micelio.preview.exchange'
+
+/**
+ * The frontend token of the demo (`MICELIO_DEMO=true`): the default list plus the preview's
+ * exchange, because the demo shows the preview (`compose.demo.yml` sets the frontend's admin
+ * origin). No other instance gets it from this file.
+ */
+export const DEMO_FRONTEND_TOKEN_PERMISSIONS = [
+  ...FRONTEND_TOKEN_PERMISSIONS,
+  PREVIEW_EXCHANGE_ACTION,
+]
+
 /** Name of the static build's Custom API token. */
 export const BUILD_TOKEN_NAME = 'build'
 
@@ -159,9 +172,20 @@ export async function ensureEnvToken(
   return 'updated'
 }
 
-/** The frontend's token, from `FRONTEND_API_TOKEN`. */
+/**
+ * The frontend's token, from `FRONTEND_API_TOKEN`.
+ *
+ * @remarks
+ * With `MICELIO_DEMO=true` the token also has the preview's exchange (`DEMO_FRONTEND_TOKEN_PERMISSIONS`);
+ * `static` and `landing` have no drafts to preview, and any other instance keeps the default list.
+ */
 export const ensureFrontendToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
-  ensureEnvToken(strapi, FRONTEND_TOKEN)
+  ensureEnvToken(
+    strapi,
+    process.env.MICELIO_DEMO === 'true'
+      ? { ...FRONTEND_TOKEN, permissions: DEMO_FRONTEND_TOKEN_PERMISSIONS }
+      : FRONTEND_TOKEN
+  )
 
 /** The static build's read-only token, from `BUILD_API_TOKEN`. */
 export const ensureBuildToken = (strapi: Core.Strapi): Promise<EnvTokenReport> =>
