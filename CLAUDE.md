@@ -45,6 +45,7 @@ Run a single test file: `npm test -- tests/fediverse.test.ts` (matches `**/tests
 | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`, `docs/security/response-fields.md`   |
 | Fediverse plugin, federation                       | `docs/FEDIVERSE.md`, skill `strapi-fediverse`                                      |
+| Fediverse move to the plugin package (0.7)         | `docs/architecture/fediverse-cut-over.md`                                          |
 | Comments                                           | `docs/architecture/comments.md`, skill `strapi-comments`                           |
 | Drafts, editor role                                | `docs/architecture/drafts.md`                                                      |
 | Accounts, users-permissions                        | `docs/ACCOUNTS.md`                                                                 |
