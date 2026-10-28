@@ -4,6 +4,8 @@ This document is the source of truth for connecting the Micelio CMS to the fediv
 
 > **Status: Phases 0–4 complete and verified live on staging. Phase 5 is done and federation is live in production (`@blog@cms.example.com`); only cross-server verification against a non-Mastodon implementation is still open.** Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/bogd3v/micelio-cms/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
+> **Next:** what of this document moves to `@micelio/strapi-plugin-core`, to the published `@micelio/strapi-plugin-fediverse` or is dropped at the `0.7` cut-over is in [architecture/fediverse-cut-over.md](architecture/fediverse-cut-over.md). Read it before changing the actor profile, the handle host, the attribution list or what triggers federation.
+
 ## Table of Contents
 
 - [Goal & Decisions](#goal--decisions)
