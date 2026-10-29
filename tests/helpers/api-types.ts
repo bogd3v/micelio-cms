@@ -82,6 +82,8 @@ export interface ApiSiteSetting {
 
 export interface ApiSiteTheme {
   themeId: string | null
+  themeVersion: string | null
+  themeDigest: string | null
   defaultMode: string | null
   /** Only returned when populated explicitly (`populate[theme][populate]=*`). */
   accentOverrides?: { mode: string; color: string }[]

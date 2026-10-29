@@ -164,6 +164,18 @@ UNCONFIRMED_RETENTION_DAYS=30    # optional, default shown; 0 disables the purge
 
 A daily job (cron must be enabled) deletes reader accounts that never confirmed their email and newsletter subscriptions that were never confirmed, once they are older than this many days. The value is a whole number of days from 0 to 36500; anything else (negative, decimal, text, above 36500) stops the boot naming the variable. Accounts are purged only while the users-permissions `email_confirmation` setting is on (it is by default): with it off, unconfirmed users can sign in, so the job leaves accounts alone and still purges subscriptions. Blocked unconfirmed accounts are kept without a time limit. Deletion is permanent: see [Upgrade](upgrade.md) before the first run.
 
+## Theme registry
+
+The theme picker in Site settings (Super Admin only) lists the themes of the registry's index.
+
+- `MICELIO_THEME_REGISTRY` (`host[:port]/path`, https, or http on a loopback host) defaults to
+  `ghcr.io/bogd3v/micelio-themes`. It is the same variable the frontend reads.
+- The CMS reads `index:v1` anonymously and keeps it five minutes. When it cannot, the field is a
+  text input and everything else works.
+- The picker does not verify the index signature: the frontend does, before it installs a theme,
+  with the signer it expects. A registry that is not the default needs its signer set on the
+  frontend (micelio ADR 0009).
+
 ## Static and landing sites (rebuild hook)
 
 Static and landing sites are rebuilt when content changes: on publish, unpublish or delete of an article or a page, and on every save of the site settings, the About page or a category, the CMS calls `REBUILD_HOOK_URL` once per debounce window, with retries, without ever blocking the publish (`src/utils/rebuild-hook.ts`). The body is `{"event_type": "micelio-content", "client_payload": {...}}`, what GitHub's `repository_dispatch` requires; plain deploy hooks ignore it.

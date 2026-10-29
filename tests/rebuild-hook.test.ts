@@ -138,6 +138,22 @@ describe('Rebuild hook', () => {
     })
   })
 
+  it('fires when the theme is changed, so static and landing sites regenerate with it', async () => {
+    const settings = await documents(SITE_SETTING_UID).findFirst()
+    await documents(SITE_SETTING_UID).update({
+      documentId: settings!.documentId,
+      locale: 'en',
+      data: {
+        theme: { themeId: 'alpha', themeVersion: '1.0.0', themeDigest: `sha256:${'1'.repeat(64)}` },
+      },
+    })
+
+    await waitUntil(() => received.length > 0)
+    expect(received[0].body.client_payload.changes.map(({ uid, event }) => [uid, event])).toEqual([
+      [SITE_SETTING_UID, 'entry.update'],
+    ])
+  })
+
   it('fires when the About page is saved, which has no drafts', async () => {
     const about = await documents(ABOUT_UID).findFirst()
     if (about) {

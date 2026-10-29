@@ -1,0 +1,19 @@
+{
+  "micelio.themePicker.label": "Theme",
+  "micelio.themePicker.description": "A theme from the registry, pinned to an exact version. Empty uses the theme the instance ships with",
+  "micelio.themePicker.default": "The instance's default theme",
+  "micelio.themePicker.loading": "Loading the registry…",
+  "micelio.themePicker.offline": "The theme registry could not be read. Type the theme id by hand; the version and digest below stay as they are.",
+  "micelio.themePicker.unavailable": "unavailable",
+  "micelio.themePicker.notInImage": "This image was not built with this theme, which ships code",
+  "micelio.themePicker.official": "Official",
+  "micelio.themePicker.community": "Community",
+  "micelio.themePicker.details": "Version {version}, contract {contract}",
+  "micelio.themePicker.code": "Ships code",
+  "micelio.themePicker.report": "Admission report: {report}",
+  "micelio.themePicker.update": "Version {version} is available.",
+  "micelio.themePicker.updateAction": "Move to {version}",
+  "micelio.themePicker.active": "Active on the frontend: {theme}",
+  "micelio.themePicker.noneActive": "Active on the frontend: not reported",
+  "micelio.themePicker.lastError": "Last error: {error}"
+}

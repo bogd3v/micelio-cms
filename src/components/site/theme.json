@@ -3,13 +3,23 @@
   "info": {
     "displayName": "Theme",
     "icon": "brush",
-    "description": "Installed theme and its bounded overrides (micelio ADR 0005). Empty fields use the theme as it is"
+    "description": "Installed theme, pinned to an exact version and digest from the registry (micelio ADR 0008 and 0009), and its bounded overrides (ADR 0005). Empty fields use the theme as it is"
   },
   "options": {},
   "attributes": {
     "themeId": {
-      "type": "string",
+      "type": "customField",
+      "customField": "global::theme-picker",
       "regex": "^[a-z][a-z0-9-]*$"
+    },
+    "themeVersion": {
+      "type": "string",
+      "maxLength": 128,
+      "regex": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?$"
+    },
+    "themeDigest": {
+      "type": "string",
+      "regex": "^sha256:[0-9a-f]{64}$"
     },
     "defaultMode": {
       "type": "string",

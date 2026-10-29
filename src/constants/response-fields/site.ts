@@ -58,7 +58,7 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
     path: '/api/site-setting',
     callers: ['frontend', 'build'],
     reader: 'server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts',
-    note: 'Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `privacyJurisdiction`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`, `privacyJurisdiction` picks the law the privacy page names) that the frontend schema does not read yet. `mime` is read for pages, not for the site images.',
+    note: 'Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `privacyJurisdiction`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`, `privacyJurisdiction` picks the law the privacy page names) that the frontend schema does not read yet. `mime` is read for pages, not for the site images. `theme.themeVersion` and `theme.themeDigest` are the pin of the registry theme (#97): no frontend code reads them yet, the theme installer will (micelio#400, #403).',
     body: {
       data: {
         use: 'required',
@@ -98,6 +98,8 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
               themeId: 'required',
               defaultMode: 'required',
               displayFont: 'required',
+              themeVersion: 'surplus',
+              themeDigest: 'surplus',
               accentOverrides: {
                 use: 'required',
                 of: { mode: 'required', color: 'required', id: 'surplus' },
