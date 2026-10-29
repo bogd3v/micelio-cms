@@ -1,0 +1,19 @@
+{
+  "micelio.themePicker.label": "Tema",
+  "micelio.themePicker.description": "Un tema del registro, fijado a una versión exacta. Vacío usa el tema con el que viene la instancia",
+  "micelio.themePicker.default": "El tema por defecto de la instancia",
+  "micelio.themePicker.loading": "Cargando el registro…",
+  "micelio.themePicker.offline": "No se pudo leer el registro de temas. Escribe el id del tema a mano; la versión y el digest de abajo no cambian.",
+  "micelio.themePicker.unavailable": "no disponible",
+  "micelio.themePicker.notInImage": "Esta imagen no se construyó con este tema, que incluye código",
+  "micelio.themePicker.official": "Oficial",
+  "micelio.themePicker.community": "Comunidad",
+  "micelio.themePicker.details": "Versión {version}, contrato {contract}",
+  "micelio.themePicker.code": "Incluye código",
+  "micelio.themePicker.report": "Informe de admisión: {report}",
+  "micelio.themePicker.update": "Hay una versión {version} disponible.",
+  "micelio.themePicker.updateAction": "Pasar a {version}",
+  "micelio.themePicker.active": "Activo en el frontend: {theme}",
+  "micelio.themePicker.noneActive": "Activo en el frontend: sin informar",
+  "micelio.themePicker.lastError": "Último error: {error}"
+}

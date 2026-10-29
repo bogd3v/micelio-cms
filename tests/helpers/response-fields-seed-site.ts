@@ -275,6 +275,8 @@ export async function seedSite(
       addressLocality: 'Example City',
       theme: {
         themeId: 'default',
+        themeVersion: '1.0.0',
+        themeDigest: `sha256:${'a'.repeat(64)}`,
         defaultMode: 'light',
         accentOverrides: [{ mode: 'light', color: '#336699' }],
         displayFont: 'archivo',

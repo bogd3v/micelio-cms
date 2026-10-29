@@ -11,6 +11,16 @@ In scope: the code and configuration of this repository, including:
 - Custom API routes, controllers and services (`src/api`), such as search, popular articles and the drafts list
 - Access control: drafts restricted to editors, site settings and subscribers readable only with the frontend's API token ([`API_TOKENS.md`](API_TOKENS.md)), `DELETE /api/users/me`, the Editor role, comment visibility middlewares
 - The `fediverse` plugin (ActivityPub inbox, HTTP signatures, federated replies)
+- Who may change the theme: only the Super Admin role. Editor, Author, any role created later and
+  any API token cannot write `site-setting.theme`.
+  - Stored permissions are narrowed on every boot (`src/migrations/theme-permissions.ts`, admin
+    roles and admin API tokens).
+  - Every write is checked while the request runs (`src/utils/theme-access.ts`): the theme is
+    dropped from an admin session without the role, and a token that sends it gets 403.
+  - The theme picker's admin route answers only the Super Admin, and the content API tokens have
+    `find` only on the site settings (`src/migrations/api-tokens.ts`; micelio's `docs/security.md`
+    must match).
+  - Changing the theme decides what the frontend downloads and installs (micelio ADR 0009)
 - Configuration (`config/`), the Docker image and the CI/CD workflows
 
 Report these upstream instead:

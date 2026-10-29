@@ -11,6 +11,8 @@ import { ensureEditorRole } from './migrations/editor-role'
 import { applyAccountSettings } from './migrations/account-settings'
 import { migrateSliderItems } from './migrations/slider-items'
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
+import { restrictThemeToSuperAdmin } from './migrations/theme-permissions'
+import { restrictThemeWrites } from './utils/theme-access'
 import { ensureAuthorLocales } from './migrations/author-locales'
 import { assignPagesToDefaultSite } from './migrations/page-site'
 import { grantEditorsPageSite } from './migrations/admin-page-site'
@@ -36,6 +38,8 @@ import { assertTimezoneValid } from './utils/site-timezone'
 import { createAuthorsForLocale, registerAuthorLocalesMiddleware } from './utils/author-locales'
 import { assertPageSectionsValid } from './utils/page-sections'
 import { registerRebuildHook } from './utils/rebuild-hook'
+import { registerThemePickerRoute } from './utils/theme-picker-route'
+import { THEME_PICKER_FIELD } from './constants/theme-registry'
 import { restrictDraftsToEditors } from './utils/drafts-access'
 import { assertFrontendUrlConfigured } from './utils/frontend-url'
 import { assertSecretsConfigured } from './utils/secrets'
@@ -141,6 +145,13 @@ export default {
       }
       return next()
     })
+
+    // Only the Super Admin changes the theme, whatever the stored permissions say (#97).
+    restrictThemeWrites(strapi)
+
+    // The input of site.theme.themeId lists the registry's themes (src/admin/components/ThemePicker.tsx).
+    strapi.customFields.register({ name: THEME_PICKER_FIELD, type: 'string' })
+    registerThemePickerRoute(strapi)
 
     // Every author exists in every locale, so articles can link to it in theirs.
     registerAuthorLocalesMiddleware(strapi)
@@ -254,6 +265,12 @@ export default {
     const siteSettingPermissions = await revokeSiteSettingPermissions(strapi)
     if (siteSettingPermissions > 0) {
       strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`)
+    }
+
+    // Only the Super Admin changes the theme (ADR 0009): after Strapi has created its admin roles.
+    const themePermissions = await restrictThemeToSuperAdmin(strapi)
+    if (themePermissions > 0) {
+      strapi.log.info(`[roles] took the theme out of ${themePermissions} admin role permissions`)
     }
 
     const editor = await ensureEditorRole(strapi)

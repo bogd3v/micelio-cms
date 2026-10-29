@@ -10,7 +10,10 @@ The frontend server reads some content with a **custom** API token (Settings →
 | `page`         | `find` (also the read-only `build` token)                  | `src/migrations/page-permissions.ts`       |
 | `subscriber`   | what the newsletter flow needs (`strapi-subscriber` skill) | `src/migrations/subscriber-permissions.ts` |
 
-The site's theme (`theme` in `site-setting`) is covered by the same `find`; it needs no permission of its own. Its values only pick an installed theme and bounded overrides, and the frontend re-serializes them instead of injecting the stored strings (micelio ADR 0005).
+The site's theme (`theme` in `site-setting`) is covered by the same `find`; it needs no permission
+of its own, and no token may write it: changing the theme is for the Super Admin only
+(`docs/security.md`). Its values only pick an installed theme and bounded overrides, and the
+frontend re-serializes them instead of injecting the stored strings (micelio ADR 0005).
 
 Instead of creating it by hand, an instance can set `FRONTEND_API_TOKEN` (32+ random characters, the same value as the frontend's `NUXT_STRAPI_API_TOKEN`): on every boot `src/migrations/api-tokens.ts` creates or updates a Custom token named `frontend` with that key and exactly the permissions the frontend documents (`docs/security.md` in micelio), and resets them if someone widened them. Rotating it means changing the variable on both sides. An instance that does not set it keeps a token created by hand. Both tokens have `find` on authors so `article.author` survives Strapi's relation sanitizer; `author.email` is private and never returned. When a permission is added to `FRONTEND_TOKEN_PERMISSIONS` (as `api::author.author.find` was in #93), add it by hand to any token created by hand too.
 

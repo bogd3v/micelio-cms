@@ -335,7 +335,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | --- | --- | --- | --- | --- | --- | --- |
 | `authors.find` | `GET /api/authors` | public role with `find`, or an API token with `find` | 0 | 15 | none found | The frontend token has `find` only so that `article.author` survives the relation sanitizer; no frontend caller reads this route, so every field is surplus. `email` is private and never appears; `bio` is public content, returned only here and in the feed. |
 | `global.find` | `GET /api/global` | public role with `find` | 0 | 9 | none found | Open only when an operator grants `find` to the public role: the frontend does not call it (the fediverse actor profile reads it inside the CMS). Every field is surplus. Relations (`favicon`, `fediverseHeader`, `defaultSeo`) come back only when a caller populates them and are not covered. |
-| `site-setting.find` | `GET /api/site-setting` | API token with `find`; no role | 47 | 25 | server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts | Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `privacyJurisdiction`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`, `privacyJurisdiction` picks the law the privacy page names) that the frontend schema does not read yet. `mime` is read for pages, not for the site images. |
+| `site-setting.find` | `GET /api/site-setting` | API token with `find`; no role | 47 | 27 | server/utils/site.ts (`parseSiteSettings`), modules/static-routes.ts | Token only. The query is `SITE_POPULATE`, which names the fields of each media and of the author. `tagline`, `securityContact`, `privacyJurisdiction`, `timezone` and `addressLocality` are public site identity (`securityContact` feeds `security.txt`, `privacyJurisdiction` picks the law the privacy page names) that the frontend schema does not read yet. `mime` is read for pages, not for the site images. `theme.themeVersion` and `theme.themeDigest` are the pin of the registry theme (#97): no frontend code reads them yet, the theme installer will (micelio#400, #403). |
 
 #### `authors.find`
 
@@ -366,7 +366,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.defaultOgImage` | as shared `media-site` | as shared `media-site` |
 | `data.socialLinks` | `network`, `url` | `id` |
 | `data.modules` | `newsletter`, `comments`, `accounts`, `drafts`, `fediverse`, `search`, `support` | `id` |
-| `data.theme` | `themeId`, `defaultMode`, `displayFont`, `accentOverrides` | `id` |
+| `data.theme` | `themeId`, `defaultMode`, `displayFont`, `accentOverrides` | `themeVersion`, `themeDigest`, `id` |
 | `data.theme.accentOverrides` | `mode`, `color` | `id` |
 | `data.homePage` | as shared `relation-slug` | as shared `relation-slug` |
 | `meta` | as shared `meta-single` | as shared `meta-single` |
