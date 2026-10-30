@@ -13,7 +13,7 @@ A worktree, its branch, the issue number, the path of the pull request draft (fo
 
 ## Read
 
-1. The issue and its comments: `gh issue view <n> --comments`. A maintainer's decision comment overrides the body where they differ. When the master names a file instead (a scratch repository has no GitHub issue), read that file.
+1. The issue, body and comments: `gh issue view <n> --json body,comments`. A maintainer's decision comment overrides the body where they differ. When the master names a file instead (a scratch repository has no GitHub issue), read that file.
 2. The change. Nothing is committed before gate 5, so read it against the merge base with `origin/main`, untracked files included:
 
    ```bash
@@ -39,7 +39,7 @@ Each check is a heading of your report, `## <n>. <name>`, with these names exact
 
 Things that are always Blocking: a check weakened to make the change pass (a lowered threshold, a skipped test, a regenerated baseline, a broad suppression, a loosened rule); a test that would pass without the change; a contract broken without a `!` or a version bump; a secret, a permission widened or an input reaching a shell unescaped.
 
-Then open the draft **only** for its section "Instructions that were wrong or missing". Each wrong `AGENTS.md` or skill of the repository that it names must be corrected on the branch; a wrong standard, a synced file (the `files` of `.github/standard-sync.json`) or a wrong issue must be reported to the master, and the draft must say so. A missing correction is a finding. Do not read the rest of the draft before you have your own findings.
+Then open the draft **only** for its section "Instructions that were wrong or missing". Each line has the shape `<path or "standard" or "issue">: <what is wrong> - fixed in <path> | reported to the master`. A wrong `AGENTS.md`, `CLAUDE.md` or skill of the repository must end `fixed in` a file the diff touches; the standard, the issue and, outside `micelio-engineering`, a synced file end `reported to the master`; in `micelio-engineering` a synced file is fixed under `template/` and ends `fixed in template/<path>` (the synced files are the list in `docs/standard-sync.md` of `micelio-engineering` (https://github.com/bogd3v/micelio-engineering/blob/main/docs/standard-sync.md)). A line that ends `fixed in` a file the diff does not touch, or an own file that ends `reported`, is an Important finding; a missing correction is a finding. Do not read the rest of the draft before you have your own findings.
 
 ## Findings
 
