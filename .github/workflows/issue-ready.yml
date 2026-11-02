@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: read
       issues: read
-    uses: bogd3v/micelio-engineering/.github/workflows/issue-ready.yml@0ce60010c72b13625ec223db96901e6b498c3409 # main
+    uses: bogd3v/micelio-engineering/.github/workflows/issue-ready.yml@2d3087d5ee4f3f6cb078ed69a7d91e128e2d289f # main
     with:
       tools-ref: 0ce60010c72b13625ec223db96901e6b498c3409
     secrets:
