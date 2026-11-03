@@ -1,6 +1,6 @@
 # Micelio engineering standard
 
-Version 1.5 (2026-10-22). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
+Version 1.6 (2026-11-03). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
 
 These are the rules shared by every repository of **Micelio**: the frontend (`micelio`), the reference distribution of the CMS (`micelio-cms`), the Strapi plugins (`micelio-plugin-core` and the ones that follow it), theme packages, the theme registry and the tooling (`micelio-engineering`), all of them on Node. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`. The standard is Micelio's, not bogd3v's: other projects of the organisation, in other languages or under other licences, are not bound by it.
 
@@ -217,9 +217,9 @@ The public interface of a repository is the set of contracts of section 6 that i
 | MINOR | Something is added without breaking, or something is deprecated | A new feature, optional variable, content type, field or block; a new hook, slot or layout variant (a minor of the theme contract); a new plugin hook, block option or editorial state |
 | PATCH | No contract changes | A fix, a security fix, performance, refactoring, a dependency update, documentation |
 
-- The bump follows the pull request titles merged since the last release, and the highest wins: a `!` after the type or scope is a major (`feat(theme)!: …`), `feat` is a minor, everything else a patch.
+- The bump follows the pull request titles merged since the last release, and the highest wins: a `!` after the type or scope is a major (`feat(theme)!: …`), `feat` is a minor, everything else a patch. Before 1.0.0 the scale moves down one step ("Before 1.0.0", below): a breaking change raises `y` and everything else, `feat` included, raises `z`.
 - A breaking pull request carries the `!` in its title and a `BREAKING CHANGE:` paragraph in its description that says who is affected and what to do.
-- The effect decides, not the prefix: a fix that changes behaviour a site could depend on is released as what it is.
+- The effect decides, not the prefix: a fix that changes behaviour a site could depend on is released as what it is, and so is a feature that adds a refusal (something that was accepted now fails) or a boot failure (an install that started now stops). A refusal and a boot failure are breaking changes and follow the rules of one (section 6; before 1.0.0, "Before 1.0.0" below).
 
 ### Before 1.0.0
 
@@ -327,13 +327,14 @@ While the version is `0.y.z` the project is alpha: nothing is stable and any `0.
 
 - One concern per pull request. Refactors, dependency updates, security fixes and documentation travel separately from features.
 - A pull request **should** stay under about 400 changed lines, not counting generated files and snapshots. A larger one is split or explains why it cannot be.
-- The description follows the template: Problem, What changes, For review, Tests.
+- The description follows the template: Problem, What changes, For review, Tests and Instructions that were wrong or missing (section 13).
 - It references its issue: `Refs #N` while work remains, `Closes #N` in the last one. The issue's Progress section is updated in the same step.
 - `npm run check` passes locally before the pull request is opened. CI is the gate; a red check is never merged around.
 
 ### Review
 
-- Every pull request is read in full by someone other than whoever wrote it. For a change written by an agent, the human who opens the pull request has read the whole diff and answers for it.
+- Every pull request is read in full by someone other than whoever wrote it. For a change written by an agent, the human who opens the pull request has read the whole diff and answers for it. Before the human reads, the change has passed the review and the verification of section 13.
+- For a pull request written by an agent, the risk sets the order in which the human reads, never what is read. A pull request that touches a contract of section 6, security or permissions, or a migration, or that carries a `!`, is read from the diff first and then the reports of the reviewer and the verifier. Any other pull request is read from those reports and the description first, then the diff. The whole diff is read in both cases. The approval, or a review comment where GitHub allows no approval, records which order was used and the minutes it took (`time: <minutes>m diff|report`).
 - Findings are **Blocking**, **Important** or **Suggestion**, each with `path:line` and a concrete fix.
 - The reviewer checks, in order: correctness and edge cases; contracts and the version bump (sections 6 and 7); security and permissions; tests that would fail without the change; documentation the change made false; scope.
 
@@ -389,13 +390,17 @@ Documentation is source: Markdown in the repository, changed in the same pull re
 Agents follow everything above. They are also held to these rules:
 
 - **Read first.** Before changing code: `AGENTS.md`, the skill that matches the task, the issue and the ADRs of the area.
+- **Start from a ready issue.** A worker starts only from an issue that passes `lint-issue`, the Definition of Ready of `micelio-engineering`. An issue that fails goes back to whoever wrote it; the worker does not complete it.
 - **Hard limits.** Never push, merge, tag, release or deploy, and never act on production or staging, without the approval of the human running the session. Never read or print secrets. `.claude/TEAM.md` has each repository's list.
 - **Never weaken a check to get green.** No skipped or deleted tests, no lowered thresholds or budgets, no regenerated baselines, no broad suppressions. If a check is wrong, say so and stop.
 - **Stay in scope.** Report an unrelated problem instead of fixing it.
 - **Report evidence.** The commands that were run, their real results, and what could not be verified.
+- **Review and verify by others.** A pull request written by an agent is reviewed by an agent that did not write it and has none of the author's context, and verified by a third that re-creates the repository's Docker (or the run `AGENTS.md` names instead) from a clean copy and runs the commands of the description again, before a human reads it (section 11). The verifier has not read the review. A Blocking finding is fixed. An Important one is fixed or justified in the answers to the review, which the verifier does not read, and the master decides whether the justification stands. A Suggestion needs no answer.
+- **Name the instructions that failed.** The description has a section "Instructions that were wrong or missing": what in `AGENTS.md`, a skill or the issue failed the agent. "Nothing" is a valid answer; an absent section is not.
 - **Attribution.** A commit with agent-written content carries a `Co-Authored-By:` trailer that names the tool. The `Signed-off-by` line belongs to the human who reviewed the change: the DCO is a person's certification, and an agent cannot give it.
-- **Keep the instructions true.** When `AGENTS.md`, a skill or this standard turns out to be wrong or out of date, correcting it is part of the task.
+- **Keep the instructions true.** When `AGENTS.md` or a skill of the repository turns out to be wrong or out of date, correcting it is part of the task, in the same pull request. This standard, and the other files that are synced from `micelio-engineering` (`docs/standard-sync.md` of `micelio-engineering` lists them: https://github.com/bogd3v/micelio-engineering/blob/main/docs/standard-sync.md), are not corrected in another repository: the copy is checked by `lint:standard` and the next sync puts it back (section 16). The agent reports them in the description, and the maintainer opens a `docs(standard)` issue in `micelio-engineering` (a `chore(factory)` issue for a synced file other than the standard).
 - **Turn repetition into tooling.** A procedure done twice becomes a skill. A correction given twice becomes a check.
+- **Log the corrections.** Every time work is sent back by the human, the reviewer or the verifier, the correction is logged with its category. At each milestone's retro the corrections that repeat are converted into a check, a skill or a rule, and each logged correction ends the retro with a destination.
 
 ## 14. Starting a new repository
 
@@ -453,3 +458,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | 1.3 | 2026-10-18 | The Integrator row of section 12 names the generated OpenAPI document as the reference of routes, inputs, outputs and errors, and `docs/api.md` for caching and behaviour |
 | 1.4 | 2026-10-20 | Scoped to Micelio's repositories, with the Strapi plugins and the tooling among them; the canonical copy moves to `micelio-engineering` and local copies are synced by the Micelio bot and checked by `lint:standard`; the code of conduct and the security policy come from the organisation, contribution terms, governance and trademarks from `micelio-engineering`; contracts for blocks, plugin hooks, editorial states and the site export, keyed by site; plugin and configuration packages in the versioning rules; the licence policy stated as Micelio's; the plugin checklist in section 14 |
 | 1.5 | 2026-10-22 | Section 9 points vulnerability reports to the organisation's security policy, with each repository's scope in its `docs/security.md`, instead of a `SECURITY.md` per repository |
+| 1.6 | 2026-11-03 | The rules of the factory: section 13 gains the ready issue, review and verification by other agents, the section on wrong instructions, and the correction log and retro; "Keep the instructions true" no longer sends a wrong standard or synced file to be fixed outside `micelio-engineering`; section 11 gains the review order by risk; section 7 says where the rule is that before 1.0.0 `feat` raises `z`, and that a feature that adds a refusal or a boot failure is breaking |
