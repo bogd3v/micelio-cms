@@ -134,6 +134,12 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # From v0.6.0 the default theme (bogota) is not in the repository: the frontend's lock pins it and this step installs it from
+      # ghcr.io/bogd3v/micelio-themes (public, no credentials). v0.5.5 has the script and an empty lock, so it installs nothing there.
+      - name: Install the pinned themes
+        working-directory: frontend
+        run: npm run theme:pull -- --frozen
+
       - name: Build the frontend
         working-directory: frontend
         run: npm run build
