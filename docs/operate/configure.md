@@ -190,6 +190,44 @@ REBUILD_HOOK_DEBOUNCE_MS=60000   # changes within the window produce one call
 
 A site in dynamic mode sets none of them.
 
+### Showing the admin why a rebuild failed
+
+The hook only starts the build and never sees how it ends.
+A static or landing build refuses a theme it cannot use and keeps the site published before it
+(micelio `docs/operate/static-site.md`), and the reason is in the builder's output.
+To show it in the admin, next to the theme setting, the builder records its last run in a file
+and the CMS reads that file:
+
+```env
+REBUILD_STATUS_FILE=/build-status/last-run   # empty (the default): nothing is recorded or shown
+```
+
+- The builder runs through `scripts/builder-last-run.sh`
+  (`builder-last-run.sh micelio-builder generate`) with the same `REBUILD_STATUS_FILE`.
+  It writes the exit code, the time, whether the output held a site before the run
+  and the builder's `Static theme: …` lines,
+  and replaces the whole file when the run ends.
+- The CMS needs the file read-only, in a volume the builder can write.
+  `compose.static.yml` and `compose.landing.yml` set all of this up.
+- Only the Super Admin, the role that may change the theme, reads it
+  (`GET /theme-picker/last-rebuild` of the admin API; no API token reaches it).
+- A failed run shows the reasons and, when the builder said so and the output held a site, that
+  the previous site is kept in the output volume (kept, not necessarily served).
+  A later good run replaces the record.
+- The admin shows no text the builder printed.
+  The script drops all of the output but those lines, and the CMS parses each `Static theme: …`
+  line into a code of a fixed list: the settings could not be read (with the HTTP status), the
+  settings are not valid, the theme was refused (with the switch's rule: `pin`, `unknown`,
+  `code`, `off`, `tier`, `limit`, `registry`, `install` or `integrity`; an invalid theme id, and a
+  registry that does not list the version or lists the theme as not public, have their own
+  sentence; any other `registry` refusal says only that the theme could not be installed from it)
+  or was not ready (with the seconds waited).
+  No theme id is shown.
+  The rest of the line, the switch's own message included, is not shown, and a line that does not
+  parse shows "see the builder's log".
+- A site that rebuilds with a GitHub workflow or another job runs its builder through the same
+  script and mounts the same file for the CMS, or leaves the variable empty and reads the log.
+
 ## Fediverse (ActivityPub)
 
 The plugin is **off by default**. The full behaviour is in `docs/FEDIVERSE.md`.

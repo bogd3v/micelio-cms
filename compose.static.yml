@@ -44,29 +44,47 @@ services:
       service: cms
     environment:
       MICELIO_DEMO: static
+      # Where the admin reads how the builder's last run ended (#405).
+      REBUILD_STATUS_FILE: /build-status/last-run
     # Only Strapi: the site is served by `site`, which owns port 3000.
     ports: !override
       - '127.0.0.1:1337:1337'
     volumes:
       - demo-secrets:/secrets:ro
       - demo-uploads:/app/public/uploads
+      - demo-build-status:/build-status:ro
+
+  # Gives the builder's user (uid 1000) the volume that holds the result of its last run, which Docker
+  # creates owned by root. Runs once, before the build.
+  build-status:
+    extends:
+      file: compose.demo.yml
+      service: init
+    entrypoint:
+      - node
+      - -e
+      - require('fs').chownSync('/build-status', 1000, 1000)
+    volumes: !override
+      - demo-build-status:/build-status
 
   # Generates the site into the demo-site volume and exits. It shares the CMS's
   # network namespace, so Strapi is http://localhost:1337 for the build and for
   # the image links the pages carry. Only build.env is mounted: the rest of the
-  # secrets volume holds the CMS's keys.
+  # secrets volume holds the CMS's keys. builder-last-run.sh runs the builder and keeps how the run
+  # ended (exit code, time, the reason of a refused theme) in demo-build-status, for the admin (#405).
   build:
     image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:0.5}
     network_mode: service:cms
     entrypoint:
       - sh
       - -c
-      - set -a && . /run/secrets-build/build.env && set +a && exec micelio-builder generate
+      - set -a && . /run/secrets-build/build.env && set +a && exec sh /usr/local/bin/builder-last-run micelio-builder generate
     environment:
       NUXT_PUBLIC_SITE_MODE: static
       NUXT_PUBLIC_STRAPI_URL: http://localhost:1337
       NUXT_PUBLIC_SITE_URL: http://localhost:3000
       NUXT_PUBLIC_NEWSLETTER_FORM_ACTION: ${NUXT_PUBLIC_NEWSLETTER_FORM_ACTION:-}
+      REBUILD_STATUS_FILE: /build-status/last-run
     volumes:
       - type: volume
         source: demo-secrets
@@ -75,9 +93,13 @@ services:
         volume:
           subpath: build.env
       - demo-site:/out
+      - demo-build-status:/build-status
+      - ./scripts/builder-last-run.sh:/usr/local/bin/builder-last-run:ro,z
     depends_on:
       cms:
         condition: service_healthy
+      build-status:
+        condition: service_completed_successfully
 
   # Serves the generated files with the `_headers` rules applied (the CSP of a
   # static host). Starts once the build has finished.
@@ -97,3 +119,4 @@ volumes:
   demo-db:
   demo-uploads:
   demo-site:
+  demo-build-status:

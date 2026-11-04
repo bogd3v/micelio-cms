@@ -45,6 +45,9 @@ Moved from `CLAUDE.md` (#113).
 - It shows the active theme, the last error and the code themes the image lacks, marked unavailable.
 - It is built from `ThemeStatus` in `src/types/theme-registry.ts` and stays hidden:
   `readThemeStatus()` returns `null` until the frontend exposes its status (micelio#403).
+- Separately, on a static or landing stack, the field shows how the builder's last run ended and,
+  when a theme was refused, why (`LastRebuild.tsx`; the flow is in
+  [demo-instances.md](demo-instances.md#the-builders-last-run-405)).
 
 **Who may change it.** Only the Super Admin (ADR 0009, "Who may change the theme"), in two layers.
 

@@ -2,6 +2,7 @@ import { Alert, Box, Button, Field, Flex, SingleSelect, SingleSelectOption, Text
 import { useFetchClient, useForm } from '@strapi/strapi/admin';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
+import LastRebuild from './LastRebuild';
 
 interface ThemeChoice {
   id: string;
@@ -80,6 +81,7 @@ export default function ThemePicker({ name, value, disabled, error, hint, requir
 
   if (!model.indexAvailable) {
     return (
+      <Flex direction="column" alignItems="stretch" gap={2}>
       <Field.Root name={name} error={error} hint={hint} required={required}>
         <Field.Label>{label}</Field.Label>
         <TextInput
@@ -94,6 +96,8 @@ export default function ThemePicker({ name, value, disabled, error, hint, requir
         </Typography>
         <Field.Error />
       </Field.Root>
+      <LastRebuild />
+      </Flex>
     );
   }
 
@@ -163,6 +167,7 @@ export default function ThemePicker({ name, value, disabled, error, hint, requir
           )}
         </Box>
       )}
+      <LastRebuild />
     </Flex>
   );
 }
