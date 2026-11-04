@@ -4,19 +4,19 @@ The main session acts as **tech lead / orchestrator**. It splits the work, hands
 
 ## Roster
 
-| Agent             | Model  | Use it for                                                                                           |
-| ----------------- | ------ | ---------------------------------------------------------------------------------------------------- |
-| `explorer`        | haiku  | Find files, map an area, answer "where is X?" (also reads `../micelio`)                              |
-| `architect`       | opus   | Plans for content models, permissions, fediverse phases, cross-repo contract                         |
-| `senior-engineer` | sonnet | Services, controllers, routes, Document Service middlewares, extensions                              |
-| `content-modeler` | sonnet | Content types, components, dynamic zones, i18n, boot migrations, seeding, Postgres vs SQLite         |
-| `fediverse`       | opus   | `src/plugins/fediverse/`, Fedify, comments extension, `FEDIVERSE_*`                                  |
-| `junior-engineer` | haiku  | Mechanical changes: renames, UIDs to `constants/uids.ts`, formatting, repetitive edits               |
-| `qa-tester`       | sonnet | Jest suites against a real Strapi on SQLite                                                          |
-| `code-reviewer`   | opus   | Review every diff before it is called done                                                           |
-| `security`        | opus   | Permissions, API tokens, drafts access, accounts, CORS, admin CSP, uploads, secrets                  |
-| `devops`          | sonnet | Dockerfile, CI and image workflows, demo compose, dependencies                                       |
-| `docs-writer`     | haiku  | `docs/architecture/*.md`, `CLAUDE.md` table, `AGENTS.md`, `docs/*.md`, skills, issue Progress drafts |
+| Agent             | Model  | Use it for                                                                                   |
+| ----------------- | ------ | -------------------------------------------------------------------------------------------- |
+| `explorer`        | haiku  | Find files, map an area, answer "where is X?" (also reads `../micelio`)                      |
+| `architect`       | opus   | Plans for content models, permissions, fediverse phases, cross-repo contract                 |
+| `senior-engineer` | sonnet | Services, controllers, routes, Document Service middlewares, extensions                      |
+| `content-modeler` | sonnet | Content types, components, dynamic zones, i18n, boot migrations, seeding, Postgres vs SQLite |
+| `fediverse`       | opus   | `src/plugins/fediverse/`, Fedify, comments extension, `FEDIVERSE_*`                          |
+| `junior-engineer` | haiku  | Mechanical changes: renames, UIDs to `constants/uids.ts`, formatting, repetitive edits       |
+| `qa-tester`       | sonnet | Jest suites against a real Strapi on SQLite                                                  |
+| `code-reviewer`   | opus   | Review every diff before it is called done                                                   |
+| `security`        | opus   | Permissions, API tokens, drafts access, accounts, CORS, admin CSP, uploads, secrets          |
+| `devops`          | sonnet | Dockerfile, CI and image workflows, demo compose, dependencies                               |
+| `docs-writer`     | haiku  | `docs/architecture/*.md`, `AGENTS.md` table, `docs/*.md`, skills, issue Progress drafts      |
 
 ### Factory roles
 
@@ -32,7 +32,7 @@ Work that runs through the Micelio factory ([`docs/factory.md`](https://github.c
 ## Where the plan lives
 
 - Work is tracked in GitHub issues; fediverse work in the `fediverse-federation` milestone (phases 0–5) with `docs/FEDIVERSE.md` as the living tracker. Cross-repository planning is micelio's epic #408 (engineering foundations).
-- `CLAUDE.md` holds the pitfalls and the "before you touch X, read Y" table; read the document it points to before changing an area.
+- `AGENTS.md` holds the "before you touch X, read Y" table and links the pitfalls (`docs/architecture/pitfalls.md`); read the document it points to before changing an area.
 - The operator's documentation is in `docs/operate/`; the CI and image pipeline is in `docs/architecture/ci-pipeline.md`.
 
 ## Cross-repo contract (`micelio-cms` ↔ `micelio`)

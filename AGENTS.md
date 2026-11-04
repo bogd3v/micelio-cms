@@ -1,6 +1,6 @@
 # Agent Guidelines for micelio-cms
 
-This is a **Strapi 5** CMS backend project. Below are conventions and commands for working with this codebase.
+This is a **Strapi 5** (TypeScript) headless CMS backend: the CMS of Micelio, a site engine, shipped as a Docker image (`docs/operate/install.md`). Below are conventions and commands for working with this codebase.
 
 ---
 
@@ -45,7 +45,8 @@ npm run dev            # Start development server with hot reload
 npm run develop        # Alias for dev
 npm run start          # Start production server
 npm run console        # Start Strapi CLI console
-npm run seed:example   # Seed database with sample data
+npm run seed:example   # Seed database with sample data (runs scripts/seed.js)
+npm run generate:keys  # Print Strapi secrets to stdout; writes no file
 npm run strapi <cmd>   # Run Strapi CLI commands
 ```
 
@@ -60,7 +61,7 @@ npm run lint:standard  # The copy of the engineering standard matches the versio
 npm run lint:fix       # Run ESLint and auto-fix issues
 npm run format         # Format files with Prettier
 npm run format:check   # Check formatting without writing files
-npm run test           # Run Jest test suite
+npm run test           # Run Jest (jest --forceExit, parallel workers); `npm test -- tests/<file>` runs one suite
 npm run test:watch     # Run Jest in watch mode
 npm run test:handles    # Serial run with --detectOpenHandles, to find leaked handles
 npm run test:coverage  # Run Jest with coverage report
@@ -206,6 +207,39 @@ const connections = {
 ## Fediverse Federation
 
 The plan for connecting this backend to the fediverse (ActivityPub/Mastodon) lives in `docs/FEDIVERSE.md`. Implementation is tracked via the `fediverse-federation` GitHub milestone (one issue per phase, 0–5). Read that document before touching `src/plugins/fediverse/`, the comments schema extension in `src/extensions/comments/`, or any fediverse-related env vars.
+
+---
+
+## Before you touch X, read Y
+
+Pitfalls that apply to any change are in [`docs/architecture/pitfalls.md`](docs/architecture/pitfalls.md); read it before any change.
+
+| Area                                               | Read                                                                               |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`, `docs/security/response-fields.md`   |
+| Fediverse plugin, federation                       | `docs/FEDIVERSE.md`, skill `strapi-fediverse`                                      |
+| Fediverse move to the plugin package (0.7)         | `docs/architecture/fediverse-cut-over.md`                                          |
+| Comments                                           | `docs/architecture/comments.md`, skill `strapi-comments`                           |
+| Drafts, editor role                                | `docs/architecture/drafts.md`                                                      |
+| Accounts, users-permissions                        | `docs/ACCOUNTS.md`                                                                 |
+| Security review, any requirement                   | `docs/security/asvs.md`, agent `security`                                          |
+| Subscribers                                        | `docs/architecture/subscribers.md`, skill `strapi-subscriber`                      |
+| Site settings, theme, modules                      | `docs/architecture/site-settings.md`                                               |
+| Authors                                            | `docs/architecture/authors.md`                                                     |
+| Categories                                         | `docs/architecture/categories.md`                                                  |
+| The core plugin (category, tag, sites, host check) | `docs/architecture/micelio-plugin.md`                                              |
+| Pages, sections, rebuild hook                      | `docs/architecture/pages.md`                                                       |
+| Demo instance, new instances, API tokens           | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`                        |
+| Playground blocks                                  | `docs/architecture/playground-blocks.md`                                           |
+| Analytics                                          | `docs/ANALYTICS.md`                                                                |
+| Rate limiting, client IP                           | `docs/RATE_LIMITING.md`                                                            |
+| Keys, personal data, outbound calls, uploads, logs | `docs/security/` (`keys.md`, `data.md`, `outbound.md`, `uploads.md`, `logging.md`) |
+| Tests                                              | `docs/architecture/testing.md`                                                     |
+| Install, configure, upgrade, back up               | `docs/operate/`, skill `strapi-deployment`                                         |
+| CI and the image pipeline                          | `docs/architecture/ci-pipeline.md`                                                 |
+| Where each document lives                          | `docs/README.md`                                                                   |
+
+Subsystem knowledge lives in these files, not here (standard, section 1). Add a new subsystem's notes to `docs/architecture/` and a row to this table.
 
 ---
 

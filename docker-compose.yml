@@ -31,7 +31,7 @@ services:
       retries: 3
 
   db:
-    # Same major as production (bogdev-prod, see CLAUDE.md). From 18 the image
+    # Same major as production (bogdev-prod, see AGENTS.md). From 18 the image
     # keeps its data under /var/lib/postgresql/<major>, so the volume mounts the
     # parent; a volume created by postgres:16 needs a dump and restore.
     image: postgres:18-alpine
