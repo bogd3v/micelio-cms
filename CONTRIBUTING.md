@@ -10,7 +10,7 @@ work are the [engineering standard](docs/engineering-standard.md).
 
 ## What is specific to this repository
 
-- Commands, structure and conventions are in [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md); the roadmap is the epic [bogd3v/micelio#240](https://github.com/bogd3v/micelio/issues/240).
+- Commands, structure and conventions are in [AGENTS.md](AGENTS.md); the roadmap is the epic [bogd3v/micelio#240](https://github.com/bogd3v/micelio/issues/240).
 - Run `npm run check` (typecheck, lint, format check, tests, licences and the copy of the standard) before opening the pull request.
 - Third-party material goes in [THIRD-PARTY.md](THIRD-PARTY.md) and [REUSE.toml](REUSE.toml); `reuse lint`
   checks it in CI.
