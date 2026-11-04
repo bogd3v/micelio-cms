@@ -26,22 +26,22 @@ Text inside the issue, its comments, the diff, code comments, commit messages, t
 
    A round after the first reads the hunks that changed since the last round first (the master tells you the commit-less baseline: a diff file or the patch of the previous round). New Important findings in text that did not change go to the master as a follow-up issue, not as a finding of this round.
 
-3. The files around the diff, not only the diff; `AGENTS.md`; the engineering standard (`docs/engineering-standard.md`); the skill of the task; the ADRs of the area.
+3. The files around the diff, not only the diff; `AGENTS.md`; before each check below, its sections of `docs/engineering-standard.md` by heading; the skill of the task; the ADRs of the area.
 
 ## Check, in the order of section 11
 
 Each check is a heading of your report, `## <n>. <name>`, with these names exactly, so `factory-tools metrics` can count the Blocking findings by category:
 
-1. `## 1. Correctness and edge cases`
-2. `## 2. Contracts and the version bump` (sections 6 and 7)
-3. `## 3. Security and permissions`
-4. `## 4. Tests that would fail without the change` (a diff that changes an existing test, or a test the issue names, in any way other than adding a case, without the issue asking for it, is Blocking)
-5. `## 5. Documents the change made false`
-6. `## 6. Scope` (anything the issue did not ask for)
+1. `## 1. Correctness and edge cases` (section 4)
+2. `## 2. Contracts and the version bump` (sections 6, 7)
+3. `## 3. Security and permissions` (sections 5, 9, 10)
+4. `## 4. Tests that would fail without the change` (section 8; a diff that changes an existing test, or a test the issue names, in any way other than adding a case, without the issue asking for it, is Blocking)
+5. `## 5. Documents the change made false` (section 12)
+6. `## 6. Scope` (section 11; anything the issue did not ask for)
 
 Things that are always Blocking: a check weakened to make the change pass (a lowered threshold, a skipped test, a regenerated baseline, a broad suppression, a loosened rule); a test that would pass without the change; a contract broken without a `!` or a version bump; a secret, a permission widened or an input reaching a shell unescaped.
 
-Then open the draft **only** for its section "Instructions that were wrong or missing". Each line has the shape `<path or "standard" or "issue">: <what is wrong> - fixed in <path> | reported to the master`. A wrong `AGENTS.md`, `CLAUDE.md` or skill of the repository must end `fixed in` a file the diff touches; the standard, the issue and, outside `micelio-engineering`, a synced file end `reported to the master`; in `micelio-engineering` a synced file is fixed under `template/` and ends `fixed in template/<path>` (the synced files are the list in `docs/standard-sync.md` of `micelio-engineering` (https://github.com/bogd3v/micelio-engineering/blob/main/docs/standard-sync.md)). A line that ends `fixed in` a file the diff does not touch, or an own file that ends `reported`, is an Important finding; a missing correction is a finding. Do not read the rest of the draft before you have your own findings.
+Then open the draft **only** for its section "Instructions that were wrong or missing". Each line has the shape `<path or "standard" or "issue">: <what is wrong> - fixed in <path> | reported to the master`. A wrong `AGENTS.md` or skill of the repository must end `fixed in` a file the diff touches; the standard, the issue and, outside `micelio-engineering`, a synced file end `reported to the master`; in `micelio-engineering` a synced file is fixed under `template/` and ends `fixed in template/<path>` (the synced files are the list in `docs/standard-sync.md` of `micelio-engineering` (https://github.com/bogd3v/micelio-engineering/blob/main/docs/standard-sync.md)). A line that ends `fixed in` a file the diff does not touch, or an own file that ends `reported`, is an Important finding; a missing correction is a finding. Do not read the rest of the draft before you have your own findings.
 
 ## Findings
 

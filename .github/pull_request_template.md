@@ -26,7 +26,7 @@ Docker used:
 
 ## Instructions that were wrong or missing
 
-<!-- What in AGENTS.md, a skill or the issue failed you, one line for each, in the shape `<path or "standard" or "issue">: <what is wrong> - fixed in <path> | reported to the master`. A wrong `AGENTS.md`, `CLAUDE.md` or skill of this repository ends `fixed in` and the file must be in `git diff --name-only`; the standard, the issue and, outside `micelio-engineering`, a synced file end `reported to the master`; in `micelio-engineering` a synced file is fixed under `template/` and ends `fixed in template/<path>` (the synced files are the list in `docs/standard-sync.md` of `micelio-engineering` (https://github.com/bogd3v/micelio-engineering/blob/main/docs/standard-sync.md)). "Nothing" is a valid answer; an absent section is not. -->
+<!-- What in AGENTS.md, a skill or the issue failed you, one line for each, in the shape `<path or "standard" or "issue">: <what is wrong> - fixed in <path> | reported to the master`. A wrong `AGENTS.md` or skill of this repository ends `fixed in` and the file must be in `git diff --name-only`; the standard, the issue and, outside `micelio-engineering`, a synced file end `reported to the master`; in `micelio-engineering` a synced file is fixed under `template/` and ends `fixed in template/<path>` (the synced files are the list in `docs/standard-sync.md` of `micelio-engineering` (https://github.com/bogd3v/micelio-engineering/blob/main/docs/standard-sync.md)). "Nothing" is a valid answer; an absent section is not. -->
 
 ## Checklist
 

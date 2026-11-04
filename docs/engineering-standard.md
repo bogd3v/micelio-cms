@@ -1,6 +1,6 @@
 # Micelio engineering standard
 
-Version 1.6 (2026-11-03). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
+Version 1.7 (2026-11-04). Canonical copy: `bogd3v/micelio-engineering`, `docs/engineering-standard.md` (in `bogd3v/micelio` until bogd3v/micelio-engineering#6 moves it). Every repository of Micelio carries a copy at the same path, synced as section 16 says.
 
 These are the rules shared by every repository of **Micelio**: the frontend (`micelio`), the reference distribution of the CMS (`micelio-cms`), the Strapi plugins (`micelio-plugin-core` and the ones that follow it), theme packages, the theme registry and the tooling (`micelio-engineering`), all of them on Node. They apply the same way to human contributors and to coding agents. What is specific to one repository (its stack, commands, folders and naming) stays in that repository's `AGENTS.md`. The standard is Micelio's, not bogd3v's: other projects of the organisation, in other languages or under other licences, are not bound by it.
 
@@ -14,7 +14,7 @@ Each fact has one home. Other documents link to it instead of repeating it.
 | --- | --- |
 | `docs/engineering-standard.md` | The rules every repository shares (this file). The canonical copy lives in `micelio-engineering`; each repository keeps a copy for the agents, synced by the Micelio bot and checked by `lint:standard` against the version pinned in `AGENTS.md` (section 16) |
 | `AGENTS.md` | The repository's own conventions, commands and structure, and the version of this standard it follows. It may add rules or tighten these, never relax them |
-| `CLAUDE.md` | Imports only: `AGENTS.md`, this file and `.claude/TEAM.md` |
+| `CLAUDE.md` | Imports `AGENTS.md` and `.claude/TEAM.md`; the standard is read by section, as section 13 says |
 | `.claude/TEAM.md`, `.claude/agents/` | How the agent team is organised and its hard limits |
 | `.claude/skills/` | Procedures: the steps for one kind of task |
 | `docs/adr/` | Decisions that are expensive to undo, and every accepted exception to this standard |
@@ -27,7 +27,7 @@ Each fact has one home. Other documents link to it instead of repeating it.
 | GitHub issues and milestones | The plan and its progress |
 
 - When two documents disagree, the order is: ADR, this standard, `AGENTS.md`, skill. The disagreement is a bug: fix the document that lost in the same pull request.
-- The files an agent loads in every session (`AGENTS.md`, `CLAUDE.md`, `.claude/TEAM.md` and this file) hold rules and pointers. Knowledge about one subsystem goes in `docs/` or in a skill, where it is read on demand. Keep a repository's own three files under about 3,500 words in total.
+- The files an agent loads in every session (`AGENTS.md`, `CLAUDE.md` and `.claude/TEAM.md`; this file is read by section, not loaded whole) hold rules and pointers. Knowledge about one subsystem goes in `docs/` or in a skill, where it is read on demand. Keep a repository's own three files under about 3,500 words in total.
 - Files in `docs/` use lowercase kebab-case names (`static-mode.md`). The community files at the root keep their conventional uppercase names.
 
 ## 2. Principles
@@ -389,7 +389,7 @@ Documentation is source: Markdown in the repository, changed in the same pull re
 
 Agents follow everything above. They are also held to these rules:
 
-- **Read first.** Before changing code: `AGENTS.md`, the skill that matches the task, the issue and the ADRs of the area.
+- **Read first.** Before changing code: `AGENTS.md`, the sections of the standard the role's prompt names, the skill that matches the task, the issue and the ADRs of the area.
 - **Start from a ready issue.** A worker starts only from an issue that passes `lint-issue`, the Definition of Ready of `micelio-engineering`. An issue that fails goes back to whoever wrote it; the worker does not complete it.
 - **Hard limits.** Never push, merge, tag, release or deploy, and never act on production or staging, without the approval of the human running the session. Never read or print secrets. `.claude/TEAM.md` has each repository's list.
 - **Never weaken a check to get green.** No skipped or deleted tests, no lowered thresholds or budgets, no regenerated baselines, no broad suppressions. If a check is wrong, say so and stop.
@@ -459,3 +459,4 @@ Every repository exposes the same script names, and `npm run check` runs the fas
 | 1.4 | 2026-10-20 | Scoped to Micelio's repositories, with the Strapi plugins and the tooling among them; the canonical copy moves to `micelio-engineering` and local copies are synced by the Micelio bot and checked by `lint:standard`; the code of conduct and the security policy come from the organisation, contribution terms, governance and trademarks from `micelio-engineering`; contracts for blocks, plugin hooks, editorial states and the site export, keyed by site; plugin and configuration packages in the versioning rules; the licence policy stated as Micelio's; the plugin checklist in section 14 |
 | 1.5 | 2026-10-22 | Section 9 points vulnerability reports to the organisation's security policy, with each repository's scope in its `docs/security.md`, instead of a `SECURITY.md` per repository |
 | 1.6 | 2026-11-03 | The rules of the factory: section 13 gains the ready issue, review and verification by other agents, the section on wrong instructions, and the correction log and retro; "Keep the instructions true" no longer sends a wrong standard or synced file to be fixed outside `micelio-engineering`; section 11 gains the review order by risk; section 7 says where the rule is that before 1.0.0 `feat` raises `z`, and that a feature that adds a refusal or a boot failure is breaking |
+| 1.7 | 2026-11-04 | `CLAUDE.md` no longer imports the standard: it imports `AGENTS.md` and `.claude/TEAM.md`, and each role reads the sections of the standard its prompt names (section 1; section 13, "Read first"); `CLAUDE.md` travels with the sync. No rule is relaxed: only how the standard is loaded changes |

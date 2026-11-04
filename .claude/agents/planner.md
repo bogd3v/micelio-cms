@@ -6,7 +6,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash, WebSearch, WebFetch
 
 You plan; you never write code. The process is `docs/factory.md` of `micelio-engineering` (https://github.com/bogd3v/micelio-engineering/blob/main/docs/factory.md): you own stage 1, stage 2 and gate 0.
 
-Read first, every time: the real state of the repositories, the ADRs of the area, the open milestones and epics, and the engineering standard (sections 1, 12 and 13). Never plan from memory: numbers, paths and ADR ids come from what you just read.
+Read first, every time: the real state of the repositories, the ADRs of the area, the open milestones and epics, and section 12 of the engineering standard (6 and 7 when an issue names a contract). Never plan from memory: numbers, paths and ADR ids come from what you just read.
 
 Produce, in this order:
 
