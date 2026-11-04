@@ -46,6 +46,45 @@ What you see after the first boot:
 - **New tables** for the sites and the preview credentials (`micelio_sites`, `micelio_preview_credentials` and their link and component tables) and a `site` link for each category and tag (`categories_site_lnk`, `tags_site_lnk`). The existing tables keep their rows.
 - **Pages belong to a site.** The first boot gives the default site to every page that has none: every language, draft and published (`src/migrations/page-site.ts`; the log says `[pages] gave N rows the default site`). `updatedAt` stays as it was, so no draft shows as modified. `/api/pages` answers the `frontend` token as before, because the default site answers a request that names none; `?site=<slug>` is new and optional, and a slug that no site has answers `404` (`unknownSite`). A link table `pages_site_lnk` is added.
 - **The admin roles Editor and Author can pick a site** when they create a page (`src/migrations/admin-page-site.ts`). On the first boot they gain read on the sites (every language, no write) and the `site` field of their page permissions, matched by role name; without them the Content Manager shows no site and refuses the page ("site is required"). A permission an admin emptied on purpose is left as it is, and so are roles with other names. **Preview drafts on the frontend** is not granted: give it under Settings → Roles → Plugins → Micelio.
+- **Only a Super Admin can change the site's theme** (`src/migrations/theme-permissions.ts`).
+  The theme decides what the frontend downloads and installs,
+  so the first boot removes the `theme` fields from `create` and `update` on the site settings
+  for every admin role but Super Admin, and from the permissions of admin API tokens.
+  The log says `[roles] took the theme out of N admin role permissions`;
+  N also counts the permissions of admin API tokens.
+  A role that could edit the site settings keeps editing the rest of them.
+  On a default install Editor and Author cannot edit them at all
+  until an admin grants a locale (and, for Author, removes the creator condition);
+  this upgrade does not change that.
+  The step runs on every boot, so a role you give the theme in Settings → Roles loses it again
+  at the next restart.
+  Between boots a write guard holds the same line:
+  an admin session that is not Super Admin saves the form without the `theme` it sent.
+  A content API token that sends `theme` gets `403`,
+  and so does an admin API token whose permission still lists it
+  (one created or edited since the last boot).
+  An admin API token the boot has narrowed gets `200`:
+  the other fields are saved and the `theme` it sent is dropped,
+  so a script reports success and the theme does not change.
+  The `frontend` and `build` tokens only read the site settings and are not affected.
+  What to do: a script that sends `theme` with any API token, even unchanged,
+  no longer changes it and may be refused.
+  Leave `theme` out of what it sends, and change the theme as a Super Admin in the admin panel.
+  No token can.
+  Nothing else is done by hand.
+- **A theme picker and an exact pin** (optional, nothing to migrate).
+  `theme.themeId` is now a picker that lists the themes of the registry,
+  and writes `themeVersion` and `themeDigest` next to it,
+  so the settings name one exact version;
+  a frontend that cannot install it keeps its current theme.
+  Documents you already have keep their `theme` as it is, with the two new fields empty.
+  The picker reads the registry's index anonymously from `MICELIO_THEME_REGISTRY`
+  (default `ghcr.io/bogd3v/micelio-themes`, the variable the frontend reads, see
+  [Configure](configure.md#theme-registry)).
+  When the registry cannot be reached the field is a text input and everything else works.
+  Only a Super Admin gets the list; any other role sees the same text input.
+  Typing an id by hand leaves `themeVersion` and `themeDigest` as they were.
+  The picker does not verify the index's signature: the frontend does, before it installs a theme.
 - **Roles** keep their permissions on categories and tags. The permissions of the new types are the plugin's to register; the preview needs **Preview drafts on the frontend** under Settings → Roles → Plugins → Micelio ([preview](https://github.com/bogd3v/micelio-plugin-core/blob/main/docs/operate/preview.md)).
 
 Back up first (step 2), as for any upgrade: going back is not supported across a MINOR, so a rollback is the previous image and a restore.
