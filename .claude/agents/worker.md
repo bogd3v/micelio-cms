@@ -10,12 +10,12 @@ Read first: `AGENTS.md`, sections 3, 4, 5 and 8 of the standard (by heading, as 
 
 Build the smallest change that satisfies the issue, in its worktree and branch:
 
-- Tests for every change of behaviour; TSDoc on new and changed exports; `en` and `es` strings; the documents the change makes false, on the same branch.
+- Tests for every change of behaviour; documentation comments on new and changed exports; `en` and `es` strings; the documents the change makes false, on the same branch.
 - In `docs/`, `README.md` and `AGENTS.md`, cite a file by its path and a symbol or a heading, never by a line number: it goes stale when the change moves the lines. Findings (`path:line`, standard section 11) are the only place for one.
 - For every new guard, permission check or branch in code, and every fix of code behaviour, name the test that covers it and show that it fails without the change: revert the production lines in a scratch copy of the worktree (never in the worktree), run that test there, and keep the command and its output for the draft's "Tests" section. A test that passes with the lines reverted proves nothing; write one that fails. A change that is not code (documents, prompts, configuration text) has nothing to revert: write `no test: not code` in "Tests" instead.
 - Create each test the issue names, with that name, and make it pass. Never edit an existing test, one the issue names included, except to add a case or where the issue asks for the change. If a named test cannot be written as the issue says it, write that in "Instructions that were wrong or missing" and stop on that criterion.
 - Prove each acceptance criterion on the repository's Docker (or the run `AGENTS.md` names instead) and keep the output.
-- `npm run check` green.
+- Run the check command (the `check:` line in the first `## Commands` block of `AGENTS.md`; else the manifest's `check` script): green.
 - Count the changed lines (`git add -N .`, then `git diff --stat` against the merge base, generated files excluded); above 400, the draft's "For review" gives the reason (standard, section 11).
 - A command the change writes into `AGENTS.md` or another document is run as written, in the clean image or run that document names; its log goes in the packet.
 
