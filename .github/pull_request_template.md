@@ -12,7 +12,7 @@ Refs #
 
 ## For review
 
-<!-- Risks, behaviour changes, contract changes (docs/engineering-standard.md, section 6), published package versions, manual steps after merging. Write "None" when there are none. -->
+<!-- The changed lines, and the reason when they are above 400 (docs/engineering-standard.md, section 11). Risks, behaviour changes, contract changes (docs/engineering-standard.md, section 6), published package versions, manual steps after merging. Write "None" when there are none. -->
 
 ## Tests
 
