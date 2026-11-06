@@ -19,7 +19,7 @@ Refs #
 <!-- For each command: the command, its real output with the numbers, and the Docker (or the run AGENTS.md names instead) it ran on. For each new guard, permission check or branch in code, or fix of code behaviour: the test that covers it and its failing output with the production lines reverted in a scratch copy (it fails without the change), with the command; for a change that is not code, `no test: not code`. Say what was not verified. -->
 
 ```
-npm run check
+the check command
 ```
 
 Docker used:
@@ -32,7 +32,7 @@ Docker used:
 
 - [ ] One concern, and the commits are signed off (`git commit -s`)
 - [ ] New behaviour has tests
-- [ ] New and changed exports have their TSDoc comment
+- [ ] New and changed exports have their documentation comment
 - [ ] The documents this change made false are updated (`docs/`, README, `AGENTS.md`)
 - [ ] A contract change follows sections 6 and 7 of the standard (`!` in the title, a `BREAKING CHANGE:` paragraph above), and an expensive decision has an ADR
 - [ ] A change to the standard raises its version and adds a line to the table of section 16
