@@ -32,6 +32,21 @@ Frontend 0.2.0 or later looks a token up by its hash first and falls back to the
 
 In a rolling deploy, stop the old CMS instances first: an old image keeps writing and looking up plain tokens until the new image has booted, and none of them should run next to a migrated database. The rewrites are irreversible; a rollback restores the code, not the plain values.
 
+## Upgrading to 0.7: the fediverse profile fallbacks are gone
+
+**Breaking for operators with federation on (`FEDIVERSE_ENABLED=true`).** The four variables that `0.5` deprecated, with a boot warning in `0.5` and `0.6`, are no longer read, and a boot with one of them set stops with a message that names the setting that replaces it. Before you upgrade, in the `0.6` admin:
+
+| Remove from the environment  | Set instead (Content Manager → Site settings → **Fediverse profile**) |
+| ---------------------------- | --------------------------------------------------------------------- |
+| `FEDIVERSE_ACTOR_USERNAME`   | **Username**                                                          |
+| `FEDIVERSE_ACTOR_NAME`       | **Display name**                                                      |
+| `FEDIVERSE_ACTOR_SUMMARY`    | **Summary**                                                           |
+| `FEDIVERSE_ACTOR_SOURCE_URL` | **Source URL**                                                        |
+
+Keep `FEDIVERSE_ACTOR_IDENTIFIER`: it is the actor's address. A site that skips the **Username** would have the identifier as its handle after the upgrade.
+
+`global.fediverseHeader` leaves Global. The first boot copies its image into **Header** of the same profile when that field is empty, never over an image already there, then drops the old relation (`src/migrations/fediverse-header.ts`; the log says `[fediverse] copied global.fediverseHeader into the site settings`). A second boot changes nothing. Going back to `0.6` runs, but its Global has no header, and the copy stays in the profile.
+
 ## Upgrading to 0.6: the core plugin
 
 The CMS now installs `@micelio/strapi-plugin-core` (exact version in `package.json`) and no longer carries its own `micelio` plugin. Nothing is to be done by hand: the URLs, the response shapes, the UIDs (`plugin::micelio.category`, `plugin::micelio.tag`), the tables and rows of `categories`, `tags` and their link tables, and the permissions of roles and tokens on them stay as they are (ADR-0017, amendment of 2026-10-26). `npm run test:upgrade` proves it from `0.5.0`.

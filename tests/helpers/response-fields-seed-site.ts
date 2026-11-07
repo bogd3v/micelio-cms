@@ -245,7 +245,6 @@ export async function seedSite(
       siteName: 'Fields site',
       siteDescription: 'Description of the site',
       favicon: avatar,
-      fediverseHeader: cover,
       defaultSeo: seo,
     },
   })

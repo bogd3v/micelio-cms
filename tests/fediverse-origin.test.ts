@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { setFediverseUsername } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { publicOrigin } from '../src/plugins/fediverse/server/src/utils/public-origin'
 
@@ -40,10 +41,10 @@ describe('Fediverse ids with a configured public URL', () => {
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = 'bogdev'
     process.env.FRONTEND_URL = 'https://blog.example.test'
     process.env.URL = PUBLIC_ORIGIN
     await setupStrapi()
+    await setFediverseUsername('bogdev')
   })
 
   afterAll(async () => {

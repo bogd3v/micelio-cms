@@ -260,7 +260,7 @@ export interface MicelioSiteAuthor extends Struct.ComponentSchema {
 export interface MicelioSiteFediverse extends Struct.ComponentSchema {
   collectionName: 'components_micelio_site_fediverses'
   info: {
-    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity"
+    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the site identity"
     displayName: 'Fediverse profile'
     icon: 'globe'
   }
@@ -996,7 +996,7 @@ export interface SiteAuthor extends Struct.ComponentSchema {
 export interface SiteFediverse extends Struct.ComponentSchema {
   collectionName: 'components_site_fediverses'
   info: {
-    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity"
+    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the site identity"
     displayName: 'Fediverse profile'
     icon: 'globe'
   }

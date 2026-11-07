@@ -74,7 +74,6 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
     // Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
     process.env.FRONTEND_URL = 'https://blog.example.test'
     await setupStrapi()
 
@@ -124,8 +123,8 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       siteName: 'Test DevBog',
       siteDescription: 'A blog about testing federation.',
       favicon: icon.id,
-      fediverseHeader: header.id,
     })
+    await writeFediverseProfile({ header: header.id })
 
     const res = await fetch(actorUrl, { headers: { accept: ACTIVITY_JSON } })
     const body = (await res.json()) as ActorDocument
@@ -732,11 +731,11 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       expect(body.attachment[1].value).toContain('https://code.example.test/component')
     })
 
-    it('falls back to the variables when the component is empty', async () => {
+    it('no longer reads the removed variables when the component is empty (#307)', async () => {
       process.env.FEDIVERSE_ACTOR_NAME = 'Variable name'
       process.env.FEDIVERSE_ACTOR_SUMMARY = 'Variable bio.'
       process.env.FEDIVERSE_ACTOR_SOURCE_URL = 'https://code.example.test/variable'
-      // The site settings' own name would come first, so the variable shows only without it.
+      // The site settings' own name would come first, so "Micelio" shows only without it.
       const site = await strapi.documents(SITE_SETTING_UID).findFirst()
       await strapi.documents(SITE_SETTING_UID).update({
         documentId: site!.documentId,
@@ -745,13 +744,11 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
 
       const body = await readActor()
 
-      expect(body).toMatchObject({
-        preferredUsername: 'bogdev',
-        name: 'Variable name',
-        summary: 'Variable bio.',
-        discoverable: true,
-      })
-      expect(body.attachment[1].value).toContain('https://code.example.test/variable')
+      expect(body.name).toBe('Micelio')
+      expect(body.summary).toBeUndefined()
+      expect(body.preferredUsername).toBe('devbog')
+      expect(body.attachment[1].value).toContain('github.com/bogd3v/micelio-cms')
+      expect(body.attachment[1].value).not.toContain('code.example.test')
     })
 
     it('falls back to the site name, with no summary and no header, when everything is empty', async () => {
@@ -761,20 +758,6 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       expect(body.summary).toBeUndefined()
       expect(body.image).toBeUndefined()
       expect(body.attachment[1].value).toContain('github.com/bogd3v/micelio-cms')
-    })
-
-    it("falls back to the global settings' header when the component has none", async () => {
-      const header = await createImage('global-header.png')
-      await writeGlobal({
-        siteName: 'Global name',
-        siteDescription: 'Global bio.',
-        fediverseHeader: header.id,
-      })
-
-      const body = await readActor()
-
-      expect(body.name).toBe('Global name')
-      expect(body.image.url).toBe(`http://${host}/uploads/global-header.png`)
     })
 
     it('rejects a username with an invalid character', async () => {
@@ -795,8 +778,8 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
           headers: { accept: 'application/jrd+json' },
         })
 
-      // The identifier and the deprecated variable's value keep resolving as former handles.
-      for (const username of ['news_desk', 'devbog', 'bogdev']) {
+      // The identifier keeps resolving as the former handle.
+      for (const username of ['news_desk', 'devbog']) {
         const res = await resolve(username)
         expect(res.status).toBe(200)
         const jrd = (await res.json()) as { links: { rel: string; href: string }[] }

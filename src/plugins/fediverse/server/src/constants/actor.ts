@@ -12,21 +12,9 @@
 export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER?.trim() ?? ''
 
 /**
- * The `user` of the public handle `@user@domain`, from the environment.
- *
- * @deprecated Use the site settings' `fediverse.username`; this variable is only its fallback
- * until #307 removes it.
- *
- * @remarks
- * Unlike the identifier it can change: WebFinger maps it to the identifier,
- * so the account keeps its URI and followers.
- */
-export const ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME?.trim() ?? ''
-
-/**
  * Stops the boot when the actor's identifier is not configured: it is
  * required while the plugin is enabled and, once federated, can never change.
- * The username is not: without a setting or variable the handle is the
+ * The username is not: without the site setting the handle is the
  * identifier.
  */
 export function assertActorConfigured(identifier: string = ACTOR_IDENTIFIER): void {

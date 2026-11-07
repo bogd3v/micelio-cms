@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import request from 'supertest'
+import { setFediverseUsername } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { needsNoStore } from '../src/utils/cache-control'
 
@@ -42,9 +43,10 @@ describe('Browser-facing headers', () => {
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
     process.env.FRONTEND_URL = 'https://blog.example.test'
     await setupStrapi()
+    // Where FEDIVERSE_ACTOR_USERNAME used to put the handle the WebFinger case resolves.
+    await setFediverseUsername('bogdev')
   })
 
   afterAll(async () => {

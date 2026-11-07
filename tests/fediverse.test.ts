@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import request from 'supertest'
+import { setFediverseUsername } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import type { TrackedLifecycleEvent } from '../src/plugins/fediverse/server/src/types/lifecycle'
 
@@ -24,8 +25,8 @@ describe('Fediverse federation (Phase 0 spike)', () => {
     // Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
     await setupStrapi()
+    await setFediverseUsername('bogdev')
 
     host = serverHost()
     actorUrl = `http://${host}/fediverse/user/devbog`

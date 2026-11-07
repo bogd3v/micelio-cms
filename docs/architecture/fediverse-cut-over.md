@@ -54,12 +54,12 @@ The code and the behaviour travel to the package unchanged; the only change is t
 
 A `0.7` breaking change (ADR-0017, section 6; before 1.0.0 it needs the `!`, a `BREAKING CHANGE:` paragraph and the upgrade notes, standard section 7). The package never carries these.
 
-| Dropped                                                                                                                                | Replaced by                                                                                                           |
-| -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `FEDIVERSE_ACTOR_USERNAME`, `_NAME`, `_SUMMARY`, `_SOURCE_URL` and their fallbacks and boot warnings (`utils/deprecated-variables.ts`) | The fields of the site's `fediverse` profile (Content Manager → Site → Fediverse). Already tracked as #307, see below |
-| `global.fediverseHeader` as the header fallback                                                                                        | The `header` of the same profile (#307 copies it)                                                                     |
-| `FEDIVERSE_HANDLE_HOST`                                                                                                                | The first host of the site                                                                                            |
-| The attribution list (`utils/attribution-domains.ts`: host of `FRONTEND_URL` plus `FEDIVERSE_HANDLE_HOST`)                             | The site's hosts                                                                                                      |
+| Dropped                                                                                                                                           | Replaced by                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `FEDIVERSE_ACTOR_USERNAME`, `_NAME`, `_SUMMARY`, `_SOURCE_URL` and their fallbacks (`utils/removed-variables.ts` stops the boot while one is set) | The fields of the site's `fediverse` profile (Content Manager → Site → Fediverse). Already tracked as #307, see below |
+| `global.fediverseHeader` as the header fallback                                                                                                   | The `header` of the same profile (#307 copies it)                                                                     |
+| `FEDIVERSE_HANDLE_HOST`                                                                                                                           | The first host of the site                                                                                            |
+| The attribution list (`utils/attribution-domains.ts`: host of `FRONTEND_URL` plus `FEDIVERSE_HANDLE_HOST`)                                        | The site's hosts                                                                                                      |
 
 **#307 already is the in-tree removal of the four `FEDIVERSE_ACTOR_*` variables and the `global` header.** It must merge before the plugin is moved, or the package inherits what it must not carry. This plan adds what #307 does not: the handle host and the attribution list, which need the site's hosts to exist.
 

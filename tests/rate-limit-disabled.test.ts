@@ -16,7 +16,6 @@ describe('Rate limiting off (the default under NODE_ENV=test)', () => {
       RATE_LIMIT_FEDIVERSE_INBOX: '1/60',
       FEDIVERSE_ENABLED: 'true',
       FEDIVERSE_ACTOR_IDENTIFIER: 'devbog',
-      FEDIVERSE_ACTOR_USERNAME: 'bogdev',
     })
     await setupStrapi()
 

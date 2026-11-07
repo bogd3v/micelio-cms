@@ -46,7 +46,6 @@ describe('Fediverse federation (Article published and updated)', () => {
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
     process.env.FRONTEND_URL = 'https://blog.example.test'
     process.env.FRONTEND_ARTICLE_PATH = '/blog/{slug}'
     await setupStrapi()

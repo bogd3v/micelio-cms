@@ -34,7 +34,6 @@ describe('Rate limiting: fediverse inbox', () => {
       RATE_LIMIT_API: '5/60',
       FEDIVERSE_ENABLED: 'true',
       FEDIVERSE_ACTOR_IDENTIFIER: 'devbog',
-      FEDIVERSE_ACTOR_USERNAME: 'bogdev',
     })
     await setupStrapi()
   })

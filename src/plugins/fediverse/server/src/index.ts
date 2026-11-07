@@ -24,7 +24,7 @@ import {
   unsubscribe as unsubscribePublisher,
 } from './services/publisher'
 import { configureFedifyLogging, resetFedifyLogging } from './utils/fedify-logging'
-import { warnDeprecatedActorVariables } from './utils/deprecated-variables'
+import { assertNoRemovedActorVariables } from './utils/removed-variables'
 import { frontendBaseUrl } from './utils/frontend-url'
 import { handleHost } from './utils/handle-host'
 
@@ -32,6 +32,8 @@ const plugin = {
   register({ strapi }: { strapi: Core.Strapi }): void {
     // Without an actor identity or a frontend URL the plugin would federate
     // under a made-up account or link to another site: refuse to start.
+    // A variable the settings replaced would be ignored without a word: refuse to start instead.
+    assertNoRemovedActorVariables()
     assertActorConfigured()
     frontendBaseUrl()
     // A handle host that is malformed or has no `URL` to keep the ids on stops the boot too.
@@ -48,7 +50,6 @@ const plugin = {
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }): Promise<void> {
-    warnDeprecatedActorVariables(strapi.log)
     subscribe(strapi)
     subscribePublisher(strapi)
     subscribeReplies(strapi)
