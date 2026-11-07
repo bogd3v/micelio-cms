@@ -18,6 +18,7 @@ import { assignPagesToDefaultSite } from './migrations/page-site'
 import { grantEditorsPageSite } from './migrations/admin-page-site'
 import { seedDemoContent } from './migrations/demo-seed'
 import { ensureDefaultSiteUrl } from './migrations/default-site-url'
+import { copySiteSettingsToSite } from './migrations/site-settings-to-site'
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens'
 import { revokePagePermissions } from './migrations/page-permissions'
 import { ensureRateLimitTable } from './migrations/rate-limit-table'
@@ -246,6 +247,14 @@ export default {
     // After the site settings and the demo: it reads their URL for the core's default site.
     const siteUrl = await ensureDefaultSiteUrl(strapi)
     if (siteUrl) strapi.log.info(`[sites] set the url of the default site to ${siteUrl}`)
+
+    // After the url: it keeps the origin the step above stored. The single type is still read.
+    const siteCopy = await copySiteSettingsToSite(strapi)
+    if (siteCopy && siteCopy.written.length > 0) {
+      strapi.log.info(
+        `[sites] copied the site settings into the default site: ${siteCopy.written.join(', ')}`
+      )
+    }
 
     for (const [name, ensure] of [
       ['frontend', ensureFrontendToken],
