@@ -63,6 +63,8 @@ Write two files in the directory you were given and nothing else:
   Verdict: Red · 2 mismatches
   ```
 
+  K is a number and the noun stays `mismatches`, whatever K is, 0 and 1 included.
+
   (`Verdict: Pass · 0 mismatches` when every count matches, every command has its log, every varying figure is at or above its floor and every criterion holds; `Verdict: Red · 0 mismatches` when a criterion fails or a command cannot be run), then one line per mismatch, `variance` row, failed criterion or command not run, with the reported and the obtained value. Nothing more: the master reads only this file.
 
 Reply with the two paths and the first line of `summary.md`, nothing else.
