@@ -24,7 +24,6 @@ describe('Data classification (docs/security/data.md)', () => {
     // The fediverse types exist only when the plugin is enabled at boot.
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = 'site'
-    process.env.FEDIVERSE_ACTOR_USERNAME = 'site'
     await setupStrapi()
   })
 

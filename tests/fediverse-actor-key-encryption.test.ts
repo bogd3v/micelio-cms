@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeAll, afterAll, afterEach } from '@jest/globals'
 import { generateCryptoKeyPair, verifyRequest } from '@fedify/fedify'
 import type { webcrypto } from 'node:crypto'
+import { setFediverseUsername } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { createRemoteActor } from './helpers/remote-actor'
 import { waitUntil } from './helpers/wait-until'
@@ -141,9 +142,9 @@ describe('Fediverse actor key encrypted at rest', () => {
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = ACTOR_IDENTIFIER
-    process.env.FEDIVERSE_ACTOR_USERNAME = ACTOR_USERNAME
     process.env.FRONTEND_URL = 'https://blog.example.test'
     await setupStrapi()
+    await setFediverseUsername(ACTOR_USERNAME)
 
     actorUrl = `http://${serverHost()}/fediverse/user/${ACTOR_IDENTIFIER}`
     keysService = strapi.plugin('fediverse').service('keys')

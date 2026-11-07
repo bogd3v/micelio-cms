@@ -34,7 +34,6 @@ const ROW_UID = 'plugin::fediverse.federated-article'
     it('delivers a retry that was waiting in the queue when Strapi stopped', async () => {
       process.env.FEDIVERSE_ENABLED = 'true'
       process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
-      process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
       process.env.FRONTEND_URL = 'https://blog.example.test'
       process.env.FRONTEND_ARTICLE_PATH = '/blog/{slug}'
       // Both knocks of the first attempt are refused, so Fedify queues a retry (1 to 2 s later).

@@ -17,7 +17,6 @@ async function boot(env: Parameters<typeof setRateLimitEnv>[0]) {
   setRateLimitEnv({
     FEDIVERSE_ENABLED: 'true',
     FEDIVERSE_ACTOR_IDENTIFIER: 'devbog',
-    FEDIVERSE_ACTOR_USERNAME: 'bogdev',
     ...env,
   })
   delete process.env.URL

@@ -18,6 +18,7 @@ import { assignPagesToDefaultSite } from './migrations/page-site'
 import { grantEditorsPageSite } from './migrations/admin-page-site'
 import { seedDemoContent } from './migrations/demo-seed'
 import { ensureDefaultSiteUrl } from './migrations/default-site-url'
+import { migrateFediverseHeader } from './migrations/fediverse-header'
 import { copySiteSettingsToSite } from './migrations/site-settings-to-site'
 import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens'
 import { revokePagePermissions } from './migrations/page-permissions'
@@ -244,6 +245,10 @@ export default {
     if (demo !== 'disabled' && demo !== 'already-applied') {
       strapi.log.info(`[demo] ${demo}`)
     }
+    // After the site settings exist: the header moves into their `fediverse` component.
+    const fediverseHeader = await migrateFediverseHeader(strapi)
+    if (fediverseHeader > 0)
+      strapi.log.info('[fediverse] copied global.fediverseHeader into the site settings')
     // After the site settings and the demo: it reads their URL for the core's default site.
     const siteUrl = await ensureDefaultSiteUrl(strapi)
     if (siteUrl) strapi.log.info(`[sites] set the url of the default site to ${siteUrl}`)

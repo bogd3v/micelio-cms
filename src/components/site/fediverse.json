@@ -3,7 +3,7 @@
   "info": {
     "displayName": "Fediverse profile",
     "icon": "globe",
-    "description": "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity"
+    "description": "How the blog's fediverse account looks (name, bio, header). Empty fields use the site identity"
   },
   "options": {},
   "attributes": {
