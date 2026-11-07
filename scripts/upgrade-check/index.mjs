@@ -1,6 +1,7 @@
 // A scripted upgrade check (bogd3v/micelio-cms#369): starts a released image on PostgreSQL with the
 // demo content, counts rows and permissions, restarts the same database under the image to test,
-// counts again and fails when a count fell. docs/architecture/testing.md ("Upgrade check").
+// counts again and fails when a count fell, or when the default site does not carry the name, theme pin
+// and fediverse username of the single type `site-setting` (bogd3v/micelio-cms#415). docs/architecture/testing.md ("Upgrade check").
 //
 //   npm run test:upgrade [-- --allow-drop <name>]...
 //
@@ -12,6 +13,7 @@ import { constants } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { compareCounts, contentTablesSql, formatTable, LIST_TABLES_SQL, parseCounts, PERMISSIONS_SQL, readCollectionNames, trackedTables } from './counts.mjs';
+import { compareIdentity, formatIdentity, parseIdentity, SEED_PROFILE_SQL, SITE_IDENTITY_SQL } from './site-copy.mjs';
 import { docker, interrupt, removeRun, runLabel, waitFor } from './docker.mjs';
 
 /** Tables that the demo seed fills in the released image; if one is empty before the upgrade, the check proves nothing. */
@@ -160,6 +162,8 @@ async function main() {
     if (empty.length > 0) throw new Error(`The released image left no rows in: ${empty.join(', ')}; the demo seed did not run, so the check would prove nothing`);
     await docker(['stop', '-t', '30', first]);
     await docker(['rm', first]);
+    // The demo has no theme pin and no fediverse profile: give the single type both, so the copy has them to carry.
+    await psql(ctx, SEED_PROFILE_SQL);
 
     log(`starting ${to} on the same database`);
     await startCms(ctx, to);
@@ -170,12 +174,19 @@ async function main() {
     console.log(`\n${formatTable(rows)}\n`);
     if (allowed.length > 0) log(`allowed drops: ${allowed.join(', ')}`);
     for (const name of allowed) if (!rows.some((row) => row.name === name)) log(`warning: --allow-drop ${name} matches no row`);
+    const identity = parseIdentity(await psql(ctx, SITE_IDENTITY_SQL));
+    console.log(`Site name, theme pin and fediverse username, single type and default site:\n${formatIdentity(identity)}\n`);
+    const differences = compareIdentity(identity);
+    if (differences.length > 0) {
+      console.error(`[upgrade-check] FAILED: the default site differs from the site settings in ${differences.map((d) => `${d.locale}.${d.field}`).join(', ')}`);
+      process.exitCode = 1;
+    }
     const dropped = rows.filter((row) => row.dropped).map((row) => row.name);
     if (dropped.length > 0) {
       console.error(`[upgrade-check] FAILED: ${dropped.length} count(s) decreased: ${dropped.join(', ')}`);
       process.exitCode = 1;
-    } else {
-      log('OK: no count decreased');
+    } else if (differences.length === 0) {
+      log('OK: no count decreased, and the default site carries the name, theme pin and fediverse username of the site settings');
     }
   } finally {
     try {
