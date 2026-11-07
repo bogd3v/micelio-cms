@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi'
 
-import { ACTOR_IDENTIFIER, ACTOR_USERNAME } from '../constants/actor'
+import { ACTOR_IDENTIFIER } from '../constants/actor'
 import { GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids'
 import type { ActorProfile } from '../types/actor-profile'
 import { attributionDomains } from '../utils/attribution-domains'
@@ -18,7 +18,6 @@ interface GlobalSettings {
   siteName?: string | null
   siteDescription?: string | null
   favicon?: Media | null
-  fediverseHeader?: Media | null
 }
 
 /** The `fediverse` component of the site settings (`site.fediverse`). */
@@ -75,50 +74,48 @@ async function loadSiteSettings(strapi: Core.Strapi): Promise<SiteSettings | nul
 }
 
 function resolveUsername(settings: SiteSettings | null): string {
-  return firstFilled(settings?.fediverse?.username, ACTOR_USERNAME, ACTOR_IDENTIFIER) ?? ''
+  return firstFilled(settings?.fediverse?.username, ACTOR_IDENTIFIER) ?? ''
 }
 
 /**
  * The handle's `@user` (`preferredUsername`): the site settings' `fediverse.username`, then the
- * deprecated `FEDIVERSE_ACTOR_USERNAME`, then the actor identifier.
+ * actor identifier.
  */
 export async function getActorUsername(strapi: Core.Strapi): Promise<string> {
   return resolveUsername(await loadSiteSettings(strapi))
 }
 
 /**
- * Usernames WebFinger resolves to the blog, lowercase: the current handle and, as former handles,
- * the deprecated `FEDIVERSE_ACTOR_USERNAME` and the identifier.
+ * Usernames WebFinger resolves to the blog, lowercase: the current handle and, as a former
+ * handle, the identifier.
  */
 export async function getActorUsernames(strapi: Core.Strapi): Promise<string[]> {
-  const usernames = [await getActorUsername(strapi), ACTOR_USERNAME, ACTOR_IDENTIFIER]
+  const usernames = [await getActorUsername(strapi), ACTOR_IDENTIFIER]
   return [...new Set(usernames.filter(Boolean).map((username) => username.toLowerCase()))]
 }
 
 /**
  * Resolves the blog actor's profile. The `fediverse` component of the site settings wins; each
- * empty field falls back, in order, to what a site had before it existed, so no site changes
- * until its editor fills the component:
+ * empty field falls back, in order, to the site's identity:
  *
- *   username ← fediverse.username → FEDIVERSE_ACTOR_USERNAME → the actor identifier
- *   name     ← fediverse.displayName → global.siteName → site-setting.name → FEDIVERSE_ACTOR_NAME → "Micelio"
- *   summary  ← fediverse.summary → global.siteDescription → site-setting.description → FEDIVERSE_ACTOR_SUMMARY → none
+ *   username ← fediverse.username → the actor identifier
+ *   name     ← fediverse.displayName → global.siteName → site-setting.name → "Micelio"
+ *   summary  ← fediverse.summary → global.siteDescription → site-setting.description → none
  *   icon     ← global.favicon (resolved against the actor URL)
- *   header   ← fediverse.header → global.fediverseHeader (resolved against the actor URL)
- *   fields   ← Blog (FRONTEND_URL) and Código (fediverse.sourceUrl → FEDIVERSE_ACTOR_SOURCE_URL → this repository)
+ *   header   ← fediverse.header (resolved against the actor URL)
+ *   fields   ← Blog (FRONTEND_URL) and Código (fediverse.sourceUrl → this repository)
  *   attributionDomains ← the host of FRONTEND_URL and FEDIVERSE_HANDLE_HOST (utils/attribution-domains.ts)
  *
  * `discoverable` is true unless the component says otherwise. `about.title` is deliberately not
- * a fallback: it's the About page heading ("Acerca de este blog"), not a name. The `FEDIVERSE_ACTOR_*`
- * variables are deprecated (a boot warning names the setting that replaces each); `global`'s
- * `fediverseHeader` is too.
+ * a fallback: it's the About page heading ("Acerca de este blog"), not a name. The
+ * `FEDIVERSE_ACTOR_*` variables and `global`'s `fediverseHeader` are no longer read (#307).
  */
 export async function getActorProfile(strapi: Core.Strapi, baseUrl: string): Promise<ActorProfile> {
   let globalSettings: GlobalSettings | null = null
 
   try {
     globalSettings = (await strapi.documents(GLOBAL_UID).findFirst({
-      populate: { favicon: true, fediverseHeader: true },
+      populate: { favicon: true },
     })) as GlobalSettings | null
   } catch (error) {
     strapi.log.warn('[fediverse] failed to load global settings for actor profile', { error })
@@ -130,27 +127,21 @@ export async function getActorProfile(strapi: Core.Strapi, baseUrl: string): Pro
 
   const url = frontendHome()
   const name =
-    firstFilled(
-      fediverse?.displayName,
-      globalSettings?.siteName,
-      siteSettings?.name,
-      process.env.FEDIVERSE_ACTOR_NAME
-    ) ?? DEFAULT_NAME
+    firstFilled(fediverse?.displayName, globalSettings?.siteName, siteSettings?.name) ??
+    DEFAULT_NAME
   const summary = firstFilled(
     fediverse?.summary,
     globalSettings?.siteDescription,
-    siteSettings?.description,
-    process.env.FEDIVERSE_ACTOR_SUMMARY
+    siteSettings?.description
   )
-  const sourceUrl =
-    firstFilled(fediverse?.sourceUrl, process.env.FEDIVERSE_ACTOR_SOURCE_URL) ?? DEFAULT_SOURCE_URL
+  const sourceUrl = firstFilled(fediverse?.sourceUrl) ?? DEFAULT_SOURCE_URL
 
   return {
     username: resolveUsername(siteSettings),
     name,
     summary,
     iconUrl: absoluteUrl(globalSettings?.favicon?.url, baseUrl),
-    headerUrl: absoluteUrl(fediverse?.header?.url ?? globalSettings?.fediverseHeader?.url, baseUrl),
+    headerUrl: absoluteUrl(fediverse?.header?.url, baseUrl),
     discoverable: fediverse?.discoverable ?? true,
     url,
     fields: [

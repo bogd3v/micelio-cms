@@ -64,7 +64,6 @@ describe('Rate limiting: security events', () => {
       RATE_LIMIT_AUTH_EMAIL: '1/3600',
       FEDIVERSE_ENABLED: 'true',
       FEDIVERSE_ACTOR_IDENTIFIER: 'devbog',
-      FEDIVERSE_ACTOR_USERNAME: 'bogdev',
     })
     process.env.FRONTEND_URL = 'https://rate-limit.test'
     await setupStrapi()

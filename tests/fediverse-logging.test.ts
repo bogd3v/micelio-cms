@@ -48,7 +48,6 @@ describe('Fediverse logging (Fedify LogTape records and refused inbox signatures
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME || 'bogdev'
     await setupStrapi()
     host = serverHost()
     remote = await createRemoteActor({ preferredUsername: 'logger-test' })

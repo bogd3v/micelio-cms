@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { setFediverseUsername } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import {
   federationOrigin,
@@ -86,11 +87,11 @@ describe('Fediverse handle host', () => {
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = 'devbog'
-    process.env.FEDIVERSE_ACTOR_USERNAME = 'bogdev'
     process.env.FRONTEND_URL = 'https://blog.example.test'
     process.env.URL = CMS_ORIGIN
     process.env.FEDIVERSE_HANDLE_HOST = HANDLE_HOST
     await setupStrapi()
+    await setFediverseUsername('bogdev')
   })
 
   afterAll(async () => {

@@ -34,7 +34,7 @@ export const SITE_ROUTES: readonly ResponseRoute[] = [
     path: '/api/global',
     callers: ['public'],
     reader: '',
-    note: 'Open only when an operator grants `find` to the public role: the frontend does not call it (the fediverse actor profile reads it inside the CMS). Every field is surplus. Relations (`favicon`, `fediverseHeader`, `defaultSeo`) come back only when a caller populates them and are not covered.',
+    note: 'Open only when an operator grants `find` to the public role: the frontend does not call it (the fediverse actor profile reads it inside the CMS). Every field is surplus. Relations (`favicon`, `defaultSeo`) come back only when a caller populates them and are not covered.',
     body: {
       data: {
         use: 'surplus',

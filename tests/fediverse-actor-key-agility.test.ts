@@ -6,7 +6,6 @@ import { encryptText } from '../src/plugins/fediverse/server/src/utils/key-encry
 
 const ACTIVITY_JSON = 'application/activity+json'
 /** Neutral actor handle and URI path, set before Strapi boots so WebFinger and the actor URL agree. */
-const ACTOR_USERNAME = 'alice'
 const ACTOR_IDENTIFIER = 'actor'
 const CORE_STORE_KEY = 'plugin_fediverse_keyPairs'
 /** The body of every key failure: the cause is only in the server log. */
@@ -86,7 +85,6 @@ describe('Fediverse actor key imported by its JWK type', () => {
   beforeAll(async () => {
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = ACTOR_IDENTIFIER
-    process.env.FEDIVERSE_ACTOR_USERNAME = ACTOR_USERNAME
     process.env.FRONTEND_URL = 'https://blog.example.test'
     await setupStrapi()
 

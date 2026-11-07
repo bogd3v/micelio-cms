@@ -22,7 +22,6 @@ describe('Response fields of the fediverse counters (ASVS V15.3.1)', () => {
     // Read when the plugin registers, so it must be set before Strapi boots.
     process.env.FEDIVERSE_ENABLED = 'true'
     process.env.FEDIVERSE_ACTOR_IDENTIFIER = 'site'
-    process.env.FEDIVERSE_ACTOR_USERNAME = 'site'
     await setupStrapi()
     seeded = await seedContent()
 
