@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals'
+import { writeFediverseProfile } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { createRemoteActor, type RemoteActor } from './helpers/remote-actor'
 import { waitUntil } from './helpers/wait-until'
@@ -9,7 +10,6 @@ import type followers from '../src/plugins/fediverse/server/src/services/followe
 // `updated` predates its `published`, and an `Update` whose `published` differs from the `Create`'s.
 
 const ARTICLE_UID = 'api::article.article'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const ROW_UID = 'plugin::fediverse.federated-article'
 const FOLLOWER_UID = 'plugin::fediverse.follower'
 const ACTIVITY_JSON = 'application/activity+json'
@@ -52,11 +52,7 @@ describe('Fediverse federation (Article published and updated)', () => {
     followersService = strapi.plugin('fediverse').service('followers')
 
     // The default is a Note (#305); this suite covers the Article shape, so it asks for it.
-    const settings = await strapi.documents(SITE_SETTING_UID).findFirst()
-    await strapi.documents(SITE_SETTING_UID).update({
-      documentId: settings!.documentId,
-      data: { fediverse: { objectType: 'article' } } as never,
-    })
+    await writeFediverseProfile({ objectType: 'article' })
   })
 
   beforeEach(async () => {
@@ -122,11 +118,7 @@ describe('Fediverse federation (Article published and updated)', () => {
     await strapi.documents(ARTICLE_UID).publish({ documentId: id })
     await waitUntil(() => deliveriesOf('Create').find(forArticle(id)))
 
-    const settings = await strapi.documents(SITE_SETTING_UID).findFirst()
-    await strapi.documents(SITE_SETTING_UID).update({
-      documentId: settings!.documentId,
-      data: { fediverse: { objectType: 'article', displayName: `Renamed ${Date.now()}` } } as never,
-    })
+    await writeFediverseProfile({ objectType: 'article', displayName: `Renamed ${Date.now()}` })
     await waitUntil(() => deliveriesOf('Update').length === 1)
     expect(deliveriesOf('Update')[0].object?.type).toBe('Person')
 

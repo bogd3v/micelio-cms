@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals'
 import { verifyJsonLd } from '@fedify/fedify'
 import { PUBLIC_COLLECTION } from '@fedify/fedify/vocab'
+import { writeFediverseProfile } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { createRemoteActor, type RemoteActor } from './helpers/remote-actor'
 import { waitUntil } from './helpers/wait-until'
@@ -8,7 +9,6 @@ import { ActorUpdate, AttributedPerson } from '../src/plugins/fediverse/server/s
 import { attributionDomains } from '../src/plugins/fediverse/server/src/utils/attribution-domains'
 
 const ACTIVITY_JSON = 'application/activity+json'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const IRI = 'http://joinmastodon.org/ns#attributionDomains'
 const AS_OBJECT = 'https://www.w3.org/ns/activitystreams#object'
 /** Mastodon's own definition of the term (`app/helpers/context_helper.rb`). */
@@ -165,11 +165,7 @@ describe('Fediverse author attribution (actor and Update(Person))', () => {
   })
 
   it('carries the domains in the Update(Person) sent to followers, under a valid signature', async () => {
-    const site = await strapi.documents(SITE_SETTING_UID).findFirst()
-    await strapi.documents(SITE_SETTING_UID).update({
-      documentId: site!.documentId,
-      data: { fediverse: { displayName: 'Attributed blog' } } as never,
-    })
+    await writeFediverseProfile({ displayName: 'Attributed blog' })
 
     const update = await waitUntil(() =>
       profileUpdates().find((a) => (a.object as Json).name === 'Attributed blog')

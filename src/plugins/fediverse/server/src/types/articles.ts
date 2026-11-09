@@ -28,5 +28,5 @@ export interface ArticleRecord {
   image: MediaRecord | null
 }
 
-/** The ActivityPub type an article is sent as: `Article` or `Note` (site settings `fediverse.objectType`). */
+/** The ActivityPub type an article is sent as: `Article` or `Note` (default site `fediverse.objectType`). */
 export type FederatedObjectType = 'article' | 'note'

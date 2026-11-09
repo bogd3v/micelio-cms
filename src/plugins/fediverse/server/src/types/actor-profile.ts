@@ -19,7 +19,7 @@ export interface ActorProfile {
   summary: string | null
   /** Absolute URL to the actor avatar (global favicon), or null. */
   iconUrl: string | null
-  /** Absolute URL to the profile header image (site settings), or null. */
+  /** Absolute URL to the profile header image (default site), or null. */
   headerUrl: string | null
   /** Whether the actor opts into Mastodon's public directory. */
   discoverable: boolean

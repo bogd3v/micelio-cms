@@ -47,6 +47,8 @@ Keep `FEDIVERSE_ACTOR_IDENTIFIER`: it is the actor's address. A site that skips 
 
 `global.fediverseHeader` leaves Global. The first boot copies its image into **Header** of the same profile when that field is empty, never over an image already there, then drops the old relation (`src/migrations/fediverse-header.ts`; the log says `[fediverse] copied global.fediverseHeader into the site settings`). A second boot changes nothing. Going back to `0.6` runs, but its Global has no header, and the copy stays in the profile.
 
+From `0.7` the plugin reads the profile and **Object type** from the default site (Content Manager → Sites → the entry marked default → **Fediverse profile**), not from Site settings: the boot copies the Site settings into the default site once, and an edit of the Site settings' profile afterwards no longer reaches the actor.
+
 ## Upgrading to 0.6: the core plugin
 
 The CMS now installs `@micelio/strapi-plugin-core` (exact version in `package.json`) and no longer carries its own `micelio` plugin. Nothing is to be done by hand: the URLs, the response shapes, the UIDs (`plugin::micelio.category`, `plugin::micelio.tag`), the tables and rows of `categories`, `tags` and their link tables, and the permissions of roles and tokens on them stay as they are (ADR-0017, amendment of 2026-10-26). `npm run test:upgrade` proves it from `0.5.0`.
