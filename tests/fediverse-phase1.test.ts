@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from '@jest/globals'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { createRemoteActor } from './helpers/remote-actor'
 import { waitUntil } from './helpers/wait-until'
+import { updateDefaultSite, writeFediverseProfile } from './helpers/fediverse-profile'
 import type { Modules } from '@strapi/strapi'
 import type followers from '../src/plugins/fediverse/server/src/services/followers'
 
@@ -29,17 +32,6 @@ async function writeGlobal(data: Modules.Documents.Params.Data.Input<'api::globa
     return strapi.documents('api::global.global').update({ documentId: existing.documentId, data })
   }
   return strapi.documents('api::global.global').create({ data })
-}
-
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
-
-/** Sets the `fediverse` component of the site settings (default locale); `null` empties it. */
-async function writeFediverseProfile(fediverse: Record<string, unknown> | null) {
-  const existing = await strapi.documents(SITE_SETTING_UID).findFirst()
-  return strapi.documents(SITE_SETTING_UID).update({
-    documentId: existing!.documentId,
-    data: { fediverse } as never,
-  })
 }
 
 async function createImage(name: string): Promise<{ id: number }> {
@@ -101,6 +93,43 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
 
     expect(body.name).toBe('Test DevBog')
     expect(body.summary).toBe('A blog about testing federation.')
+  })
+
+  it('the actor document is the same before and after the reader moves', async () => {
+    // The document the previous reader (`api::site-setting`) served for this profile, recorded
+    // from it with the origin replaced by a placeholder and the keys left out (they are random).
+    const recorded = readFileSync(
+      join(__dirname, 'fixtures', 'fediverse-actor-before-site-read.json'),
+      'utf8'
+    )
+    const icon = await createImage('avatar.png')
+    const header = await createImage('header.png')
+    await writeGlobal({
+      siteName: 'Global name',
+      siteDescription: 'Global bio.',
+      favicon: icon.id,
+    })
+    await writeFediverseProfile({
+      username: 'news_desk',
+      displayName: 'The news desk',
+      summary: 'What the component says.',
+      header: header.id,
+      discoverable: false,
+      sourceUrl: 'https://code.example.test/component',
+    })
+
+    try {
+      const res = await fetch(actorUrl, { headers: { accept: ACTIVITY_JSON } })
+      const body = (await res.json()) as Record<string, unknown>
+      delete body.assertionMethod
+      delete body.publicKey
+
+      expect(JSON.parse(JSON.stringify(body).split(`http://${host}`).join('{{origin}}'))).toEqual(
+        JSON.parse(recorded)
+      )
+    } finally {
+      await writeFediverseProfile(null)
+    }
   })
 
   it('never names the actor after the About page title', async () => {
@@ -692,11 +721,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       if (existing) {
         await strapi.documents('api::global.global').delete({ documentId: existing.documentId })
       }
-      const site = await strapi.documents(SITE_SETTING_UID).findFirst()
-      await strapi.documents(SITE_SETTING_UID).update({
-        documentId: site!.documentId,
-        data: { name: 'Site Name', description: null } as never,
-      })
+      await updateDefaultSite({ name: 'Site Name', description: null })
       await writeFediverseProfile(null)
       for (const name of VARIABLES) delete process.env[name]
     }
@@ -735,12 +760,8 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       process.env.FEDIVERSE_ACTOR_NAME = 'Variable name'
       process.env.FEDIVERSE_ACTOR_SUMMARY = 'Variable bio.'
       process.env.FEDIVERSE_ACTOR_SOURCE_URL = 'https://code.example.test/variable'
-      // The site settings' own name would come first, so "Micelio" shows only without it.
-      const site = await strapi.documents(SITE_SETTING_UID).findFirst()
-      await strapi.documents(SITE_SETTING_UID).update({
-        documentId: site!.documentId,
-        data: { name: ' ' } as never,
-      })
+      // The default site's own name would come first, so "Micelio" shows only without it.
+      await updateDefaultSite({ name: ' ' })
 
       const body = await readActor()
 
@@ -795,18 +816,9 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
           actorId: remote.actorUrl,
           inbox: remote.inboxUrl,
         })
-        const site = await strapi.documents(SITE_SETTING_UID).findFirst()
         // The Spanish version first, so the save below is an edit of an existing locale.
-        await strapi.documents(SITE_SETTING_UID).update({
-          documentId: site!.documentId,
-          locale: 'es',
-          data: { name: 'Sitio' } as never,
-        })
-        await strapi.documents(SITE_SETTING_UID).update({
-          documentId: site!.documentId,
-          locale: 'es',
-          data: { fediverse: { displayName: 'La mesa de noticias' } } as never,
-        })
+        await updateDefaultSite({ name: 'Sitio' }, 'es')
+        await updateDefaultSite({ fediverse: { displayName: 'La mesa de noticias' } }, 'es')
 
         await waitUntil(() =>
           remote.inboxDeliveries.find(
@@ -831,11 +843,7 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
 
         // Same profile again, and a setting the actor does not show.
         await writeFediverseProfile({ displayName: 'Steady name' })
-        const site = await strapi.documents(SITE_SETTING_UID).findFirst()
-        await strapi.documents(SITE_SETTING_UID).update({
-          documentId: site!.documentId,
-          data: { tagline: 'Not on the actor' } as never,
-        })
+        await updateDefaultSite({ tagline: 'Not on the actor' })
         await new Promise((resolve) => setTimeout(resolve, 1500))
 
         expect(remote.inboxDeliveries).toHaveLength(sent)

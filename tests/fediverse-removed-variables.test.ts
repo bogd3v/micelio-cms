@@ -16,9 +16,9 @@ describe('Removed FEDIVERSE_ACTOR_* variables (#307)', () => {
     process.env = { ...saved }
   })
 
-  it.each(REMOVED)('%s stops the boot, naming "%s" under Site settings', (name, field) => {
+  it.each(REMOVED)('%s stops the boot, naming "%s" under the default site', (name, field) => {
     expect(() => assertNoRemovedActorVariables({ [name]: 'anything' })).toThrow(
-      `[fediverse] ${name} is no longer read: set "${field}" under Site settings > Fediverse profile`
+      `[fediverse] ${name} is no longer read: set "${field}" under the default site's Fediverse profile`
     )
   })
 
@@ -58,7 +58,7 @@ describe('Removed FEDIVERSE_ACTOR_* variables (#307)', () => {
 
     try {
       await expect(setupStrapi()).rejects.toThrow(
-        'FEDIVERSE_ACTOR_USERNAME is no longer read: set "Username" under Site settings > Fediverse profile'
+        `FEDIVERSE_ACTOR_USERNAME is no longer read: set "Username" under the default site's Fediverse profile`
       )
     } finally {
       await cleanupStrapi()

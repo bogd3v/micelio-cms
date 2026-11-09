@@ -1,7 +1,7 @@
 import type { Core } from '@strapi/strapi'
 
 import { ACTOR_IDENTIFIER } from '../constants/actor'
-import { GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids'
+import { GLOBAL_UID, SITE_UID } from '../constants/uids'
 import type { ActorProfile } from '../types/actor-profile'
 import { attributionDomains } from '../utils/attribution-domains'
 import { frontendBaseUrl } from '../utils/frontend-url'
@@ -20,7 +20,7 @@ interface GlobalSettings {
   favicon?: Media | null
 }
 
-/** The `fediverse` component of the site settings (`site.fediverse`). */
+/** The `fediverse` component of the default site (`site.fediverse`). */
 interface FediverseSettings {
   username?: string | null
   displayName?: string | null
@@ -59,16 +59,17 @@ function firstFilled(...values: Array<string | null | undefined>): string | null
 }
 
 /**
- * Reads the site settings of the default locale with the component's header
+ * Reads the default site (the row with `isDefault`) in the default locale with the component's header
  * populated: the document service does not populate media by itself.
  */
 async function loadSiteSettings(strapi: Core.Strapi): Promise<SiteSettings | null> {
   try {
-    return (await strapi.documents(SITE_SETTING_UID).findFirst({
+    return (await strapi.documents(SITE_UID).findFirst({
+      filters: { isDefault: true },
       populate: { fediverse: { populate: { header: true } } },
     })) as SiteSettings | null
   } catch (error) {
-    strapi.log.warn('[fediverse] failed to load site settings for actor profile', { error })
+    strapi.log.warn('[fediverse] failed to load the default site for actor profile', { error })
     return null
   }
 }
@@ -78,7 +79,7 @@ function resolveUsername(settings: SiteSettings | null): string {
 }
 
 /**
- * The handle's `@user` (`preferredUsername`): the site settings' `fediverse.username`, then the
+ * The handle's `@user` (`preferredUsername`): the default site's `fediverse.username`, then the
  * actor identifier.
  */
 export async function getActorUsername(strapi: Core.Strapi): Promise<string> {
@@ -95,12 +96,12 @@ export async function getActorUsernames(strapi: Core.Strapi): Promise<string[]> 
 }
 
 /**
- * Resolves the blog actor's profile. The `fediverse` component of the site settings wins; each
+ * Resolves the blog actor's profile. The `fediverse` component of the default site wins; each
  * empty field falls back, in order, to the site's identity:
  *
  *   username ← fediverse.username → the actor identifier
- *   name     ← fediverse.displayName → global.siteName → site-setting.name → "Micelio"
- *   summary  ← fediverse.summary → global.siteDescription → site-setting.description → none
+ *   name     ← fediverse.displayName → global.siteName → site.name → "Micelio"
+ *   summary  ← fediverse.summary → global.siteDescription → site.description → none
  *   icon     ← global.favicon (resolved against the actor URL)
  *   header   ← fediverse.header (resolved against the actor URL)
  *   fields   ← Blog (FRONTEND_URL) and Código (fediverse.sourceUrl → this repository)

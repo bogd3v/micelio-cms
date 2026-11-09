@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals'
+import { writeFediverseProfile } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { createRemoteActor, type RemoteActor } from './helpers/remote-actor'
 import type { ActivityJson } from './helpers/api-types'
@@ -7,7 +8,6 @@ import { waitUntil } from './helpers/wait-until'
 
 const ACTIVITY_JSON = 'application/activity+json'
 const ARTICLE_UID = 'api::article.article'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 
 type ObjectType = 'article' | 'note'
 const TYPES: Array<[ObjectType, 'Article' | 'Note']> = [
@@ -24,13 +24,9 @@ describe('Fediverse federation (#305: object shape, Article or Note)', () => {
   const deliveriesOf = (type: string) => remote.inboxDeliveries.filter((a) => a.type === type)
   const forArticle = (documentId: string) => (a: ActivityJson) => a.object?.id?.endsWith(documentId)
 
-  /** Sets `fediverse.objectType` on the site settings; `null` leaves the component without one. */
+  /** Sets `fediverse.objectType` on the default site; `null` leaves the component without one. */
   async function setObjectType(objectType: ObjectType | null) {
-    const existing = await strapi.documents(SITE_SETTING_UID).findFirst()
-    await strapi.documents(SITE_SETTING_UID).update({
-      documentId: existing!.documentId,
-      data: { fediverse: objectType ? { objectType } : null } as never,
-    })
+    await writeFediverseProfile(objectType ? { objectType } : null)
   }
 
   async function createPublished(extra: Record<string, unknown> = {}) {
@@ -180,6 +176,31 @@ describe('Fediverse federation (#305: object shape, Article or Note)', () => {
       expect(update.object?.type).toBe(apType)
       expect(update.object?.id).toBe(create.object?.id)
     })
+  })
+
+  it('the object type comes from the default site', async () => {
+    // The single type `api::site-setting` says `article`; only the default site's value counts.
+    const settings = await strapi.documents('api::site-setting.site-setting').findFirst()
+    await strapi.documents('api::site-setting.site-setting').update({
+      documentId: settings!.documentId,
+      data: { fediverse: { objectType: 'article' } } as never,
+    })
+    try {
+      await setObjectType('note')
+      const asNote = await createPublished()
+      expect((await getJson(`/fediverse/articles/${asNote.documentId}`)).body.type).toBe('Note')
+
+      await setObjectType('article')
+      const asArticle = await createPublished()
+      expect((await getJson(`/fediverse/articles/${asArticle.documentId}`)).body.type).toBe(
+        'Article'
+      )
+    } finally {
+      await strapi.documents('api::site-setting.site-setting').update({
+        documentId: settings!.documentId,
+        data: { fediverse: null } as never,
+      })
+    }
   })
 
   it('sends a Note when the setting is empty', async () => {

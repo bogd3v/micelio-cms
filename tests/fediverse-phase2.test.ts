@@ -8,6 +8,7 @@ import {
   afterEach,
   jest,
 } from '@jest/globals'
+import { writeFediverseProfile } from './helpers/fediverse-profile'
 import { setupStrapi, cleanupStrapi, serverHost } from './strapi'
 import { createRemoteActor, type RemoteActor } from './helpers/remote-actor'
 import type { ActivityJson } from './helpers/api-types'
@@ -17,7 +18,6 @@ import { waitUntil } from './helpers/wait-until'
 
 const ACTIVITY_JSON = 'application/activity+json'
 const ARTICLE_UID = 'api::article.article'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 
 type ArticleInput = Modules.Documents.Params.Data.Input<typeof ARTICLE_UID>
 
@@ -76,11 +76,7 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
     followersService = strapi.plugin('fediverse').service('followers')
 
     // The default is a Note (#305); this suite covers the Article shape, so it asks for it.
-    const settings = await strapi.documents(SITE_SETTING_UID).findFirst()
-    await strapi.documents(SITE_SETTING_UID).update({
-      documentId: settings!.documentId,
-      data: { fediverse: { objectType: 'article' } } as never,
-    })
+    await writeFediverseProfile({ objectType: 'article' })
   })
 
   beforeEach(async () => {

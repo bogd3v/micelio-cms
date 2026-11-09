@@ -7,7 +7,7 @@ import { PUBLIC_COLLECTION, type Activity } from '@fedify/fedify/vocab'
 
 import { ActorUpdate } from '../attributed-actor'
 import { ACTOR_IDENTIFIER } from '../constants/actor'
-import { ARTICLE_UID, GLOBAL_UID, SITE_SETTING_UID } from '../constants/uids'
+import { ARTICLE_UID, GLOBAL_UID, SITE_UID } from '../constants/uids'
 import { buildActor, getFederation } from '../federation'
 import {
   buildArticleActivity,
@@ -350,7 +350,7 @@ export function subscribe(strapi: Core.Strapi): void {
       'entry.update',
       guarded(GLOBAL_UID, 'profile update federation', onProfileChanged)
     ),
-    // The actor's profile lives in the site settings' `fediverse` component. Not filtered by locale:
+    // The actor's profile lives in the default site's `fediverse` component. Not filtered by locale:
     // it is not localized, so a save in `es` changes the actor but only emits the `es` event
     // (see onSiteSettingsChanged).
     // Only updates: the boot seed creates the document (one per locale), and an actor nobody has
@@ -358,7 +358,7 @@ export function subscribe(strapi: Core.Strapi): void {
     // to whoever followed right after boot.
     strapi.eventHub.on(
       'entry.update',
-      guarded(SITE_SETTING_UID, 'profile update federation', onSiteSettingsChanged)
+      guarded(SITE_UID, 'profile update federation', onSiteSettingsChanged)
     ),
   ]
 }

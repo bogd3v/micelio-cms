@@ -206,7 +206,7 @@ async function extractAvatarUrl(
   }
 }
 
-/** What reply handling needs, with the blog's usernames as the site settings have them now. */
+/** What reply handling needs, with the blog's usernames as the default site has them now. */
 async function loadReplyContext(ctx: Context<FediverseContextData>): Promise<ReplyContext> {
   return { ...replyContext(ctx), actorUsernames: await getActorUsernames(ctx.data.strapi) }
 }
