@@ -860,6 +860,10 @@ export interface SharedReference extends Struct.ComponentSchema {
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 64
       }>
+    language: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 35
+      }>
     pages: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 32

@@ -32,6 +32,11 @@
       "type": "string",
       "required": true
     },
+    "language": {
+      "type": "string",
+      "maxLength": 35,
+      "regex": "^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$"
+    },
     "container": {
       "type": "string"
     },
@@ -61,6 +66,16 @@
     },
     "accessedAt": {
       "type": "date"
+    }
+  },
+  "config": {
+    "metadatas": {
+      "language": {
+        "edit": {
+          "label": "language",
+          "description": "Idioma de la fuente, si no es el de la página: una etiqueta BCP 47 como en, pt-BR o zh-Hant. Los lectores de pantalla la usan para pronunciar el título. Déjalo vacío si coincide con el idioma de la página."
+        }
+      }
     }
   }
 }

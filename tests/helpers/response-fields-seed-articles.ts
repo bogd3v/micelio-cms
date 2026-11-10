@@ -88,6 +88,7 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
           volume: '3',
           issue: '2',
           pages: '1-10',
+          language: 'en',
           venueLabel: 'JoE',
           doi: '10.0000/example',
           url: 'https://example.test/paper',

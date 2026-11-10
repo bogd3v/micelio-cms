@@ -12,6 +12,7 @@ interface ReferenceEntry {
   key?: string | null
   doi?: string | null
   url?: string | null
+  language?: string | null
 }
 
 const KEY = '[a-z0-9][a-z0-9-]*'
@@ -24,6 +25,11 @@ const FORMATS: { field: keyof ReferenceEntry; pattern: RegExp; hint: string }[] 
   { field: 'key', pattern: new RegExp(`^${KEY}$`), hint: 'lowercase letters, digits and dashes' },
   { field: 'doi', pattern: /^10\.\d{4,9}\/\S+$/, hint: 'a bare DOI such as 10.1145/3571730' },
   { field: 'url', pattern: /^https?:\/\/\S+$/, hint: 'an http(s) URL' },
+  {
+    field: 'language',
+    pattern: /^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$/,
+    hint: 'a BCP 47 language tag such as en, pt-BR or zh-Hant',
+  },
 ]
 
 /**
@@ -65,7 +71,7 @@ function validationError(path: string[], message: string): errors.ValidationErro
 }
 
 /**
- * Throws a ValidationError when a reference has a malformed key, DOI or URL,
+ * Throws a ValidationError when a reference has a malformed key, DOI, URL or language,
  * when two references share a key, or when a block cites a key no reference
  * has. References nobody cites are allowed: they read as general bibliography.
  */
