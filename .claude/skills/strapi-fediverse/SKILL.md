@@ -89,14 +89,14 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 ```bash
 npm test                     # all suites, SQLite, one database file per Jest worker
 npx jest tests/fediverse-phase3.test.ts --forceExit   # one suite (run npm run build:fediverse first)
-TEST_DATABASE_URL=postgres://user:pass@127.0.0.1:5432/postgres npm test   # PostgreSQL, as in production
+TEST_DATABASE_URL=postgres://user:pass@127.0.0.1:5432/postgres npm run test:postgres   # PostgreSQL, as in production; serial
 ```
 
 - Suites boot a real Strapi; they set `FEDIVERSE_ENABLED` in `beforeAll`, before `setupStrapi()`, and `tests/fediverse-disabled.test.ts` covers the switched-off case.
 - `tests/helpers/remote-actor.ts` starts a fake remote server (signed actor + recording inbox); `postSignedActivity()` signs a POST with Fedify's `signRequest`. `allowPrivateAddress` is on only when `NODE_ENV=test`, so 127.0.0.1 actors can be dereferenced.
 - Wait for async work with `tests/helpers/wait-until.ts`; for "nothing happened" assertions use a short settle delay. Deliveries are queued, so a test never reads the fake inbox right after publishing.
 - `createRemoteActor({ inboxFailures: { status, times } })` makes the first POSTs fail (two per Fedify attempt); `strapi.config.set('plugin::fediverse.outboxRetryPolicy', createExponentialBackoffPolicy({ initialDelay: { milliseconds: 20 }, maxAttempts: 2, jitter: false }))` shortens the backoff, and must be set back to `undefined` afterwards.
-- PostgreSQL: the queue tests (`fediverse-queue-postgres`, `fediverse-delivery-restart`) run only with `TEST_DATABASE_URL`, and `setupStrapi({ keepDatabase: true })` reboots on the same database. A whole-suite run needs a server with room for the workers (`max_connections`, `max_locks_per_transaction`), or `--maxWorkers`.
+- PostgreSQL: the queue tests (`fediverse-queue-postgres`, `fediverse-delivery-restart`) run only with `TEST_DATABASE_URL`, and `setupStrapi({ keepDatabase: true })` reboots on the same database. Run the whole suite with `npm run test:postgres` (serial): parallel workers exhaust the server's lock table (`docs/architecture/testing.md`, "Against PostgreSQL").
 - Same-origin forgery cases matter: Fedify already refuses embedded objects from a different origin, so test forgery with ids on the sender's own origin.
 
 ## Testing against the real fediverse

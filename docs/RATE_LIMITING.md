@@ -216,7 +216,7 @@ Set `RATE_LIMIT_ENABLED=false` and restart the CMS. The limiter and the fedivers
 
 ## Testing
 
-Suites are `tests/rate-limit*.test.ts`, running on SQLite like the rest. With `TEST_DATABASE_URL=postgres://user:pass@host:5432/postgres npm test` every Jest worker gets its own freshly recreated database (`strapi_test_<worker>`), which also exercises the database store.
+Suites are `tests/rate-limit*.test.ts`, running on SQLite like the rest. With `TEST_DATABASE_URL=postgres://user:pass@host:5432/postgres npm run test:postgres` (serial, `docs/architecture/testing.md`) every Jest worker gets its own freshly recreated database (`strapi_test_<worker>`), which also exercises the database store.
 
 ## Implementation notes
 
