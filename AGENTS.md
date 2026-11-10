@@ -63,6 +63,7 @@ npm run format         # Format files with Prettier
 npm run format:check   # Check formatting without writing files
 npm run test           # Run Jest (jest --forceExit, parallel workers); `npm test -- tests/<file>` runs one suite
 npm run test:watch     # Run Jest in watch mode
+npm run test:postgres  # Serial Jest run for TEST_DATABASE_URL (PostgreSQL); the parallel run exhausts its lock table
 npm run test:handles    # Serial run with --detectOpenHandles, to find leaked handles
 npm run test:coverage  # Run Jest with coverage report
 npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (needs Docker; not in check)
