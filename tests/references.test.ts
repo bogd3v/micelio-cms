@@ -143,6 +143,67 @@ describe('Article references', () => {
     }
   })
 
+  it('rejects a language that is not a BCP 47 tag', async () => {
+    for (const bad of [
+      'english',
+      'e',
+      'en_US',
+      'en-',
+      'en--US',
+      'en-aaaaaaaa-bbbbbbbb-cccccccc-dddddddd',
+    ]) {
+      await expect(
+        create({ title: 'Bad language', references: [reference('bad-lang', { language: bad })] })
+      ).rejects.toThrow(/language/)
+    }
+  })
+
+  it('returns the language of a reference through the public API', async () => {
+    const draft = await create({
+      title: 'Language of sources',
+      slug: 'language-of-sources',
+      references: [
+        reference('en-source', { language: 'en' }),
+        reference('pt-source', { language: 'pt-BR' }),
+        reference('hant-source', { language: 'zh-Hant' }),
+      ],
+    })
+    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId })
+
+    const res = await request(strapi.server.httpServer)
+      .get('/api/articles')
+      .query({ filters: { slug: { $eq: 'language-of-sources' } }, populate: 'references' })
+      .expect(200)
+    const [article] = res.body.data as (ApiDocument & { references: { language?: string }[] })[]
+    expect(article.references).toMatchObject([
+      { key: 'en-source', language: 'en' },
+      { key: 'pt-source', language: 'pt-BR' },
+      { key: 'hant-source', language: 'zh-Hant' },
+    ])
+  })
+
+  it('keeps a reference without a language working', async () => {
+    const draft = await create({
+      title: 'No language',
+      slug: 'no-language',
+      references: [reference('plain')],
+    })
+    const found = await strapi.documents(ARTICLE_UID).findOne({
+      documentId: draft.documentId,
+      populate: ['references'],
+    })
+    expect(found?.references).toHaveLength(1)
+    expect(found?.references?.[0]).toHaveProperty('language', null)
+
+    await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId })
+    const res = await request(strapi.server.httpServer)
+      .get('/api/articles')
+      .query({ filters: { slug: { $eq: 'no-language' } }, populate: 'references' })
+      .expect(200)
+    const [article] = res.body.data as (ApiDocument & { references: { language?: string }[] })[]
+    expect(article.references).toMatchObject([{ key: 'plain', language: null }])
+  })
+
   it('checks an update of the body against the stored references', async () => {
     const draft = await create({
       title: 'Edited later',
@@ -217,5 +278,14 @@ describe('Article references', () => {
       .findConfiguration({ uid: ARTICLE_UID })
 
     expect(metadatas.references.edit.description).toMatch(/\[@clave\]/)
+  })
+
+  it('describes the language field in the admin', async () => {
+    const components = strapi.plugin('content-manager').service('components')
+    const { metadatas } = await components.findConfiguration(
+      components.findComponent('shared.reference')
+    )
+
+    expect(metadatas.language.edit.description).toMatch(/BCP 47/)
   })
 })

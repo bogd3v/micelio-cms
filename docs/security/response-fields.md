@@ -81,7 +81,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | `articles.list` | `GET /api/articles` | public role with `find`, or an API token with `find` | 60 | 4 | server/api/posts/index.get.ts, server/utils/pageSections.ts | The query is the post card populate of `POST_CARD_POPULATE`; an unpopulated call returns the scalar fields only. `readTime` and `snippet` are added by the frontend, not by the CMS. |
-| `articles.detail` | `GET /api/articles?filters[slug]=:slug` | public role with `find`, an API token with `find`, or an editor JWT for drafts | 152 | 10 | server/api/posts/[slug].get.ts, server/api/drafts/[documentId].get.ts | The query is `ARTICLE_POPULATE`. An editor reads a draft the same way (`status=draft`, `GET /api/articles/:documentId`, a single object under `data`). `plainText` and `author.email` are private attributes and never appear. |
+| `articles.detail` | `GET /api/articles?filters[slug]=:slug` | public role with `find`, an API token with `find`, or an editor JWT for drafts | 153 | 10 | server/api/posts/[slug].get.ts, server/api/drafts/[documentId].get.ts | The query is `ARTICLE_POPULATE`. An editor reads a draft the same way (`status=draft`, `GET /api/articles/:documentId`, a single object under `data`). `plainText` and `author.email` are private attributes and never appear. |
 | `articles.feed` | `GET /api/articles?populate[cover][fields][0]=url&populate[category][fields][0]=name` | public role with `find`, or an API token with `find` | 10 | 20 | server/utils/feed.ts | The query is `FEED_POPULATE`: the cover returns `url` and the category `name`, and the feed no longer asks for the author. It reads `title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url` and `category.name`. |
 | `articles.sitemap` | `GET /api/articles?fields[]=slug&fields[]=locale&fields[]=publishedAt&fields[]=updatedAt` | public role with `find`, or an API token with `find` | 11 | 8 | server/routes/sitemap.xml.ts | Strapi adds `id` and `documentId` to every document whatever `fields` says; they cannot be dropped without a custom controller. |
 | `articles.reading-path` | `GET /api/articles?fields[]=documentId&fields[]=slug&fields[]=title` | public role with `find`, or an API token with `find` | 4 | 7 | server/api/reading-path.get.ts | Strapi adds `id` to every document whatever `fields` says. |
@@ -548,7 +548,7 @@ The body is a map from a document id; each value has the keys of `(body)`.
 
 | Object | Required | Surplus |
 | --- | --- | --- |
-| `(body)` | `id`, `key`, `type`, `authors`, `year`, `title`, `container`, `volume`, `issue`, `pages`, `venueLabel`, `doi`, `url`, `accessedAt` | none |
+| `(body)` | `id`, `key`, `type`, `authors`, `year`, `title`, `language`, `container`, `volume`, `issue`, `pages`, `venueLabel`, `doi`, `url`, `accessedAt` | none |
 
 #### `localization-article`
 

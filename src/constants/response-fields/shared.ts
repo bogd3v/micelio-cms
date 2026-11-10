@@ -73,6 +73,7 @@ export const SHARED_SHAPES: Record<string, Shape> = {
     authors: 'required',
     year: 'required',
     title: 'required',
+    language: 'required',
     container: 'required',
     volume: 'required',
     issue: 'required',
