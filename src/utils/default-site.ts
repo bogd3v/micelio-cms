@@ -26,3 +26,20 @@ export async function defaultSiteRelation(strapi: Core.Strapi): Promise<SiteRela
   if (!site) throw new Error('There is no default site: the core plugin creates it at boot')
   return { id: site.id }
 }
+
+/**
+ * The `documentId` of the default site, which every locale of the site shares.
+ *
+ * @remarks
+ * What the boot steps and the `GET /api/site-setting` alias that read or fill the site's identity
+ * use to name it, since a `documentId` addresses the same site in every locale.
+ *
+ * @returns The `documentId`, or `null` when no site has `isDefault`.
+ */
+export async function defaultSiteDocumentId(strapi: Core.Strapi): Promise<string | null> {
+  const site = (await strapi.db.query(SITE_UID).findOne({
+    where: { isDefault: true },
+    select: ['documentId'],
+  })) as { documentId: string } | null
+  return site?.documentId ?? null
+}

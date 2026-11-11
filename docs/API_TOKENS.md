@@ -4,13 +4,13 @@ How the frontend server reads content from this CMS. This is the security model;
 
 The frontend server reads some content with a **custom** API token (Settings → API Tokens) instead of a role, so that content stays off the public API. No role has permissions on it: a migration removes them on every boot, and a request without the token gets 403.
 
-| Content type   | Token permissions                                          | Roles cleared by                           |
-| -------------- | ---------------------------------------------------------- | ------------------------------------------ |
-| `site-setting` | `find` (identity, modules, theme and privacy jurisdiction) | `src/migrations/site-settings.ts`          |
-| `page`         | `find` (also the read-only `build` token)                  | `src/migrations/page-permissions.ts`       |
-| `subscriber`   | what the newsletter flow needs (`strapi-subscriber` skill) | `src/migrations/subscriber-permissions.ts` |
+| Content type   | Token permissions                                                                                   | Roles cleared by                           |
+| -------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `site-setting` | `find` (identity, modules, theme and privacy jurisdiction; the alias answers from the default site) | `src/migrations/site-settings.ts`          |
+| `page`         | `find` (also the read-only `build` token)                                                           | `src/migrations/page-permissions.ts`       |
+| `subscriber`   | what the newsletter flow needs (`strapi-subscriber` skill)                                          | `src/migrations/subscriber-permissions.ts` |
 
-The site's theme (`theme` in `site-setting`) is covered by the same `find`; it needs no permission
+The settings live on the default site since 0.7 (`plugin::micelio.site`), and `GET /api/site-setting` is an alias that answers from it (`docs/architecture/site-settings.md`, "The retired single type and the alias"). The alias route keeps the action `api::site-setting.site-setting.find`, so the lists above and a token created by hand are unchanged; no token holds `find` of the site's own route (`GET /api/micelio/sites`), which lists every site and its host names. The site's theme (`theme` on the site) is covered by the same `find`; it needs no permission
 of its own, and no token may write it: changing the theme is for the Super Admin only
 (`docs/security.md`). Its values only pick an installed theme and bounded overrides, and the
 frontend re-serializes them instead of injecting the stored strings (micelio ADR 0005).

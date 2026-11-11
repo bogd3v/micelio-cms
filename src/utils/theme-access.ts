@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi'
 import { errors } from '@strapi/utils'
-import { SITE_SETTING_UID } from '../constants/uids'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { SUPER_ADMIN_ROLE_CODE } from '../constants/theme-registry'
 
 interface RequestState {
@@ -12,7 +12,7 @@ interface RequestState {
 const WRITES = new Set(['create', 'update', 'clone'])
 
 /**
- * Keeps the theme of the site settings writable by the Super Admin only, at the moment of the write.
+ * Keeps the theme of the site writable by the Super Admin only, at the moment of the write.
  *
  * @remarks
  * The stored field permissions (`restrictThemeToSuperAdmin`) are applied at boot, so a role created
@@ -25,7 +25,7 @@ const WRITES = new Set(['create', 'update', 'clone'])
  */
 export function restrictThemeWrites(strapi: Core.Strapi): void {
   strapi.documents.use(async (context, next) => {
-    if (context.uid !== SITE_SETTING_UID || !WRITES.has(context.action)) return next()
+    if (context.uid !== SITE_UID || !WRITES.has(context.action)) return next()
     const data = (context.params as { data?: Record<string, unknown> }).data
     if (!data || !('theme' in data)) return next()
 

@@ -24,10 +24,11 @@ function originOf(value: unknown): string | null {
  *
  * @remarks
  * The core creates the default site with no `url`. The origin comes from the `url` of
- * `api::site-setting` in the default locale, else from `FRONTEND_URL` as the environment holds
+ * the single type `api::site-setting` in the default locale, else from `FRONTEND_URL` as the environment holds
  * it (no development default: an unset variable leaves the site empty). A value that is not an
  * `http(s)` URL is ignored. A site that already has a `url` is never touched: the admin owns it
- * afterwards. Runs after `seedSiteSettings`, which writes the site setting's `url`.
+ * afterwards. The single type is retired and is only read here, for a database upgraded from 0.6
+ * that still holds its `url`; a new instance has no rows in it, so its origin is `FRONTEND_URL`.
  *
  * @returns The origin written, or `null` when nothing was written.
  */

@@ -2,7 +2,7 @@
 
 **Kind:** reference. Goal: look up what a variable does and what it needs. `.env.example` lists every variable with its default; this page adds what that file cannot say.
 
-The code carries no value of any one site. What identifies your site comes from these variables and from the site settings in the admin panel. A new database starts with neutral site settings ("Micelio") and English account emails with that name.
+The code carries no value of any one site. What identifies your site comes from these variables and from the default Site in the admin panel (Content Manager → Site). A new database starts with a neutral default Site ("Micelio") and English account emails with that name.
 
 Never commit a `.env` file with real secrets. Set the variables in the environment of your container.
 
@@ -166,7 +166,7 @@ A daily job (cron must be enabled) deletes reader accounts that never confirmed 
 
 ## Theme registry
 
-The theme picker in Site settings (Super Admin only) lists the themes of the registry's index.
+The theme picker in Site → Theme (Super Admin only) lists the themes of the registry's index.
 
 - `MICELIO_THEME_REGISTRY` (`host[:port]/path`, https, or http on a loopback host) defaults to
   `ghcr.io/bogd3v/micelio-themes`. It is the same variable the frontend reads.
@@ -178,7 +178,7 @@ The theme picker in Site settings (Super Admin only) lists the themes of the reg
 
 ## Static and landing sites (rebuild hook)
 
-Static and landing sites are rebuilt when content changes: on publish, unpublish or delete of an article or a page, and on every save of the site settings, the About page or a category, the CMS calls `REBUILD_HOOK_URL` once per debounce window, with retries, without ever blocking the publish (`src/utils/rebuild-hook.ts`). The body is `{"event_type": "micelio-content", "client_payload": {...}}`, what GitHub's `repository_dispatch` requires; plain deploy hooks ignore it.
+Static and landing sites are rebuilt when content changes: on publish, unpublish or delete of an article or a page, and on every save of the Site, the About page or a category, the CMS calls `REBUILD_HOOK_URL` once per debounce window, with retries, without ever blocking the publish (`src/utils/rebuild-hook.ts`). The body is `{"event_type": "micelio-content", "client_payload": {...}}`, what GitHub's `repository_dispatch` requires; plain deploy hooks ignore it.
 
 ```env
 REBUILD_HOOK_URL=https://api.github.com/repos/<owner>/<site-repo>/dispatches

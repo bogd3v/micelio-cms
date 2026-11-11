@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { checkArticleCitations } from './api/article/utils/check-citations'
 import { blocksToPlainText } from './api/article/utils/plain-text'
 import { backfillArticlePlainText } from './migrations/article-plain-text'
@@ -24,13 +25,7 @@ import { ensureBuildToken, ensureFrontendToken } from './migrations/api-tokens'
 import { revokePagePermissions } from './migrations/page-permissions'
 import { ensureRateLimitTable } from './migrations/rate-limit-table'
 import { hashUserTokens } from './migrations/hash-user-tokens'
-import {
-  ABOUT_UID,
-  ARTICLE_STAT_UID,
-  ARTICLE_UID,
-  PAGE_UID,
-  SITE_SETTING_UID,
-} from './constants/uids'
+import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID, PAGE_UID } from './constants/uids'
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client'
 import type { UmamiConfig } from './types/article-stat'
 import { assertImageCreditsValid } from './utils/image-credit'
@@ -42,6 +37,7 @@ import { assertPageSectionsValid } from './utils/page-sections'
 import { registerRebuildHook } from './utils/rebuild-hook'
 import { registerThemePickerRoute } from './utils/theme-picker-route'
 import { THEME_PICKER_FIELD } from './constants/theme-registry'
+import { applyThemeRulesToSite } from './utils/site-theme-component'
 import { restrictDraftsToEditors } from './utils/drafts-access'
 import { assertFrontendUrlConfigured } from './utils/frontend-url'
 import { assertSecretsConfigured } from './utils/secrets'
@@ -135,7 +131,7 @@ export default {
     // and a malformed security contact.
     strapi.documents.use(async (context, next) => {
       if (
-        context.uid === SITE_SETTING_UID &&
+        context.uid === SITE_UID &&
         (context.action === 'create' || context.action === 'update')
       ) {
         const data = (context.params as { data?: Record<string, unknown> }).data
@@ -151,8 +147,9 @@ export default {
     // Only the Super Admin changes the theme, whatever the stored permissions say (#97).
     restrictThemeWrites(strapi)
 
-    // The input of site.theme.themeId lists the registry's themes (src/admin/components/ThemePicker.tsx).
+    // The input of the site's theme.themeId lists the registry's themes (src/admin/components/ThemePicker.tsx).
     strapi.customFields.register({ name: THEME_PICKER_FIELD, type: 'string' })
+    applyThemeRulesToSite(strapi)
     registerThemePickerRoute(strapi)
 
     // Every author exists in every locale, so articles can link to it in theirs.
@@ -238,28 +235,30 @@ export default {
 
     const siteLocales = await seedSiteSettings(strapi)
     if (siteLocales.length > 0) {
-      strapi.log.info(`[site-settings] created neutral settings in ${siteLocales.join(', ')}`)
+      strapi.log.info(
+        `[sites] gave the default site a neutral description in ${siteLocales.join(', ')}`
+      )
     }
-    // After the site settings exist: the demo replaces their neutral values.
+    // After the default site exists (the core creates it): the demo replaces its neutral values.
     const demo = await seedDemoContent(strapi)
     if (demo !== 'disabled' && demo !== 'already-applied') {
       strapi.log.info(`[demo] ${demo}`)
     }
-    // After the site settings exist: the header moves into their `fediverse` component.
-    const fediverseHeader = await migrateFediverseHeader(strapi)
-    if (fediverseHeader > 0)
-      strapi.log.info('[fediverse] copied global.fediverseHeader into the site settings')
     // After the site settings and the demo: it reads their URL for the core's default site.
     const siteUrl = await ensureDefaultSiteUrl(strapi)
     if (siteUrl) strapi.log.info(`[sites] set the url of the default site to ${siteUrl}`)
 
-    // After the url: it keeps the origin the step above stored. The single type is still read.
+    // After the url: it keeps the origin the step above stored. The single type is only read.
     const siteCopy = await copySiteSettingsToSite(strapi)
     if (siteCopy && siteCopy.written.length > 0) {
       strapi.log.info(
         `[sites] copied the site settings into the default site: ${siteCopy.written.join(', ')}`
       )
     }
+    // After the copy: the header moves into the `fediverse` component of the default site.
+    const fediverseHeader = await migrateFediverseHeader(strapi)
+    if (fediverseHeader > 0)
+      strapi.log.info('[fediverse] copied global.fediverseHeader into the default site')
 
     for (const [name, ensure] of [
       ['frontend', ensureFrontendToken],
@@ -276,6 +275,7 @@ export default {
       strapi.log.info(`[pages] revoked ${pagePermissions} role permissions`)
     }
 
+    // The single type is hidden and has only the alias route: no role keeps a permission on it.
     const siteSettingPermissions = await revokeSiteSettingPermissions(strapi)
     if (siteSettingPermissions > 0) {
       strapi.log.info(`[site-settings] revoked ${siteSettingPermissions} role permissions`)

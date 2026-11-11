@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { waitUntil } from './helpers/wait-until'
 import { createRebuildHook, rebuildHookConfig, REBUILD_EVENT_TYPE } from '../src/utils/rebuild-hook'
@@ -12,7 +13,6 @@ import { defaultSiteRelation } from '../src/utils/default-site'
 
 const PAGE_UID = 'api::page.page'
 const ARTICLE_UID = 'api::article.article'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const ABOUT_UID = 'api::about.about'
 const CATEGORY_UID = 'plugin::micelio.category'
 const DEBOUNCE_MS = 300
@@ -125,22 +125,22 @@ describe('Rebuild hook', () => {
   })
 
   it('fires when the site settings are saved, which have no drafts', async () => {
-    const settings = await documents(SITE_SETTING_UID).findFirst()
-    await documents(SITE_SETTING_UID).update({
+    const settings = await documents(SITE_UID).findFirst()
+    await documents(SITE_UID).update({
       documentId: settings!.documentId,
       locale: 'en',
       data: { description: 'Changed' },
     })
     await waitUntil(() => received.length > 0)
     expect(received[0].body.client_payload.changes[0]).toMatchObject({
-      uid: SITE_SETTING_UID,
+      uid: SITE_UID,
       event: 'entry.update',
     })
   })
 
   it('fires when the theme is changed, so static and landing sites regenerate with it', async () => {
-    const settings = await documents(SITE_SETTING_UID).findFirst()
-    await documents(SITE_SETTING_UID).update({
+    const settings = await documents(SITE_UID).findFirst()
+    await documents(SITE_UID).update({
       documentId: settings!.documentId,
       locale: 'en',
       data: {
@@ -150,7 +150,7 @@ describe('Rebuild hook', () => {
 
     await waitUntil(() => received.length > 0)
     expect(received[0].body.client_payload.changes.map(({ uid, event }) => [uid, event])).toEqual([
-      [SITE_SETTING_UID, 'entry.update'],
+      [SITE_UID, 'entry.update'],
     ])
   })
 

@@ -12,7 +12,7 @@ export default {
     translations: { en, es },
   },
   register(app: StrapiApp) {
-    // The input of site.theme.themeId (custom field global::theme-picker, registered on the server).
+    // The input of theme.themeId of the site (custom field global::theme-picker, registered on the server).
     app.customFields.register({
       name: 'theme-picker',
       type: 'string',

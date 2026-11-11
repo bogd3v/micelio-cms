@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import request from 'supertest'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { setPublicPermissions } from './helpers/permissions'
 import { revokePagePermissions } from '../src/migrations/page-permissions'
@@ -11,7 +12,6 @@ import { defaultSiteRelation } from '../src/utils/default-site'
 // Pages built from the section catalog (#75, micelio ADR 0005 section 11).
 
 const PAGE_UID = 'api::page.page'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const FRONTEND_KEY = 'pages-frontend-token-0123456789abcdef0123'
 const BUILD_KEY = 'pages-build-token-0123456789abcdef01234567'
 
@@ -198,9 +198,9 @@ describe('Pages', () => {
       data: { title: 'Inicio', slug: 'inicio' },
     } as never)
 
-    const settings = await strapi.documents(SITE_SETTING_UID).findFirst()
+    const settings = await strapi.documents(SITE_UID).findFirst()
     // The Spanish site settings (the locale was added after the boot seed).
-    await strapi.documents(SITE_SETTING_UID).update({
+    await strapi.documents(SITE_UID).update({
       documentId: settings!.documentId,
       locale: 'es',
       data: { name: 'Micelio', defaultLocale: 'en', modules: {} },
@@ -208,7 +208,7 @@ describe('Pages', () => {
     // Localized: each language's settings point at the page, and get its own
     // version of it.
     for (const locale of ['en', 'es']) {
-      await strapi.documents(SITE_SETTING_UID).update({
+      await strapi.documents(SITE_UID).update({
         documentId: settings!.documentId,
         locale,
         data: { homePage: english.documentId },
@@ -219,7 +219,7 @@ describe('Pages', () => {
       ['en', 'Home'],
       ['es', 'Inicio'],
     ]) {
-      const read = (await strapi.documents(SITE_SETTING_UID).findFirst({
+      const read = (await strapi.documents(SITE_UID).findFirst({
         locale,
         status: 'published',
         populate: { homePage: true },

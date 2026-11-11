@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { migrateFediverseHeader } from '../src/migrations/fediverse-header'
 
 const GLOBAL_UID = 'api::global.global'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
+const SINGLE_TYPE_UID = 'api::site-setting.site-setting'
 const RELATIONS = 'files_related_mph'
 
 interface Profile {
@@ -11,7 +12,7 @@ interface Profile {
   header?: { id: number } | null
 }
 
-describe('Migration of global.fediverseHeader into the site settings (#307)', () => {
+describe('Migration of global.fediverseHeader into the default site (#307)', () => {
   let defaultLocale: string
   let otherLocale: string
   let globalId: number
@@ -47,8 +48,8 @@ describe('Migration of global.fediverseHeader into the site settings (#307)', ()
       .first() as Promise<{ total: number | string }>
 
   const writeProfile = async (fediverse: Record<string, unknown> | null) => {
-    const site = await strapi.documents(SITE_SETTING_UID).findFirst({ locale: defaultLocale })
-    await strapi.documents(SITE_SETTING_UID).update({
+    const site = await strapi.documents(SITE_UID).findFirst({ locale: defaultLocale })
+    await strapi.documents(SITE_UID).update({
       documentId: site!.documentId,
       locale: defaultLocale,
       data: { fediverse } as never,
@@ -56,7 +57,7 @@ describe('Migration of global.fediverseHeader into the site settings (#307)', ()
   }
 
   const readProfile = async (locale = defaultLocale): Promise<Profile | null> => {
-    const site = (await strapi.documents(SITE_SETTING_UID).findFirst({
+    const site = (await strapi.documents(SITE_UID).findFirst({
       locale,
       populate: { fediverse: { populate: { header: true } } },
     } as never)) as { fediverse?: Profile | null } | null
@@ -88,8 +89,8 @@ describe('Migration of global.fediverseHeader into the site settings (#307)', ()
     const legacy = await createImage('legacy-header.png')
     await writeProfile({ username: 'news_desk' })
     // A second localization of the site settings, as a site with two languages has.
-    const site = await strapi.documents(SITE_SETTING_UID).findFirst({ locale: defaultLocale })
-    await strapi.documents(SITE_SETTING_UID).update({
+    const site = await strapi.documents(SITE_UID).findFirst({ locale: defaultLocale })
+    await strapi.documents(SITE_UID).update({
       documentId: site!.documentId,
       locale: otherLocale,
       data: { name: 'Other locale' } as never,
@@ -203,5 +204,24 @@ describe('Migration of global.fediverseHeader into the site settings (#307)', ()
   it('does nothing when global never had a header', async () => {
     expect(await migrateFediverseHeader(strapi)).toBe(0)
     expect(await readProfile()).toBeNull()
+  })
+
+  it('adds the header after the copy of the 0.6 profile, at the boot of an upgraded database', async () => {
+    const legacy = await createImage('legacy-upgrade.png')
+    await leaveLegacyHeader(legacy.id)
+    // What a 0.6 database holds: the profile in the single type, the default site as the core made it.
+    await strapi.documents(SINGLE_TYPE_UID as never).create({
+      locale: defaultLocale,
+      data: { name: 'Old', defaultLocale: 'en', modules: {}, fediverse: { username: 'old_desk' } },
+    } as never)
+    await strapi.store.delete({ type: 'core', name: 'migrations', key: 'site-settings-to-site' })
+
+    await cleanupStrapi({ keepDatabase: true })
+    await setupStrapi({ keepDatabase: true })
+
+    const profile = await readProfile()
+    expect(profile?.username).toBe('old_desk')
+    expect(profile?.header?.id).toBe(legacy.id)
+    expect(Number((await legacyRows()).total)).toBe(0)
   })
 })

@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi'
-import { SITE_SETTING_UID } from '../constants/uids'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { frontendBaseUrl } from '../utils/frontend-url'
 
 const ROLE_UID = 'plugin::users-permissions.role'
@@ -109,14 +109,18 @@ export function accountEmailTemplates(siteName: string, language: string): Email
 }
 
 /**
- * The site's name and language for the emails: the site settings in their
- * `defaultLocale` (seeded before this migration runs), else neutral values.
+ * The site's name and language for the emails: the default site in its
+ * `defaultLocale` (set before this migration runs), else neutral values.
  */
 async function siteIdentity(strapi: Core.Strapi): Promise<{ name: string; language: string }> {
-  const settings = strapi.documents(SITE_SETTING_UID)
-  const any = (await settings.findFirst()) as { defaultLocale?: string; name?: string } | null
+  // The host's types do not know the core's attributes.
+  const sites = strapi.documents(SITE_UID as never) as unknown as {
+    findFirst(params: object): Promise<{ defaultLocale?: string; name?: string } | null>
+  }
+  const filters = { isDefault: true }
+  const any = await sites.findFirst({ filters })
   const language = any?.defaultLocale ?? 'en'
-  const localized = (await settings.findFirst({ locale: language })) as { name?: string } | null
+  const localized = await sites.findFirst({ filters, locale: language })
   return { name: localized?.name || any?.name || FALLBACK_SITE_NAME, language }
 }
 

@@ -79,6 +79,10 @@ describe('Default site url at boot', () => {
     beforeAll(async () => {
       await cleanupStrapi()
       await setupStrapi()
+      // The boot no longer writes the single type: an instance upgraded from 0.6 is what holds a row.
+      await settings().create({
+        data: { name: 'Old', defaultLocale: 'en', locale: 'en', modules: {} },
+      })
     })
 
     it('uses FRONTEND_URL when the site setting has no url', async () => {

@@ -1,0 +1,241 @@
+{
+  "recordedFrom": "ghcr.io/bogd3v/micelio-cms@sha256:2e07abf38c66e6d519a675f67c5fdc6adcacbf4a3c0b2e99514261ac5cbdbe53",
+  "how": "A 0.6.0 container on PostgreSQL with MICELIO_DEMO=true and FRONTEND_URL=http://localhost:3000; then the `extras` were written to the single type in en through the Content Manager API; read with the frontend token (GET /api/site-setting).",
+  "extras": {
+    "tagline": "Notes from the plot",
+    "addressLocality": "Bogota",
+    "securityContact": "mailto:security@example.com",
+    "privacyJurisdiction": "colombia",
+    "timezone": "America/Bogota",
+    "supportHandle": "fieldnotes",
+    "theme": {
+      "themeId": "paper",
+      "themeVersion": "1.2.0",
+      "themeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "defaultMode": "dark",
+      "displayFont": "fraunces",
+      "accentOverrides": [
+        {
+          "mode": "dark",
+          "color": "#112233"
+        }
+      ]
+    },
+    "fediverse": {
+      "username": "fieldnotes",
+      "displayName": "Field Notes",
+      "summary": "Garden notes"
+    }
+  },
+  "populate": "populate[author][fields][0]=name&populate[author][fields][1]=url&populate[logo][fields][0]=url&populate[logo][fields][1]=alternativeText&populate[logo][fields][2]=width&populate[logo][fields][3]=height&populate[favicon][fields][0]=url&populate[defaultOgImage][fields][0]=url&populate[socialLinks]=true&populate[modules]=true&populate[theme][populate]=*&populate[homePage][fields][0]=slug&populate[fediverse][fields][0]=username",
+  "responses": {
+    "populatedEn": {
+      "data": {
+        "id": 1,
+        "documentId": "yk4k2yed9snt12re11w1rjun",
+        "name": "Field Notes",
+        "description": "A demo site built with Micelio: notes from a small urban garden.",
+        "tagline": "Notes from the plot",
+        "url": "http://localhost:3000",
+        "defaultLocale": "en",
+        "contactEmail": "alex@example.com",
+        "privacyContactEmail": "alex@example.com",
+        "securityContact": "mailto:security@example.com",
+        "privacyJurisdiction": "colombia",
+        "privacyUpdatedAt": "2026-11-11T19:29:50.159Z",
+        "supportHandle": "fieldnotes",
+        "timezone": "America/Bogota",
+        "addressLocality": "Bogota",
+        "createdAt": "2026-11-11T19:29:49.650Z",
+        "updatedAt": "2026-11-11T19:31:02.803Z",
+        "publishedAt": "2026-11-11T19:31:02.759Z",
+        "locale": "en",
+        "author": {
+          "id": 3,
+          "name": "Alex Moreno",
+          "url": "http://localhost:3000/about"
+        },
+        "logo": {
+          "id": 1,
+          "documentId": "dpirh2le0qehrwikwbp19jmg",
+          "url": "/uploads/field_notes_logo_e15ca880bf.svg",
+          "alternativeText": "",
+          "width": 64,
+          "height": 64
+        },
+        "favicon": {
+          "id": 1,
+          "documentId": "dpirh2le0qehrwikwbp19jmg",
+          "url": "/uploads/field_notes_logo_e15ca880bf.svg"
+        },
+        "defaultOgImage": null,
+        "socialLinks": [
+          {
+            "id": 3,
+            "network": "github",
+            "url": "https://github.com/bogd3v/micelio"
+          }
+        ],
+        "modules": {
+          "id": 3,
+          "newsletter": true,
+          "comments": true,
+          "accounts": true,
+          "drafts": true,
+          "fediverse": true,
+          "search": true,
+          "support": true
+        },
+        "theme": {
+          "id": 1,
+          "themeId": "paper",
+          "themeVersion": "1.2.0",
+          "themeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "defaultMode": "dark",
+          "displayFont": "fraunces",
+          "accentOverrides": [
+            {
+              "id": 1,
+              "mode": "dark",
+              "color": "#112233"
+            }
+          ]
+        },
+        "homePage": null,
+        "fediverse": {
+          "id": 1,
+          "username": "fieldnotes"
+        }
+      },
+      "meta": {}
+    },
+    "populatedEs": {
+      "data": {
+        "id": 2,
+        "documentId": "yk4k2yed9snt12re11w1rjun",
+        "name": "Notas de campo",
+        "description": "Un sitio de demostración hecho con Micelio: notas de una pequeña huerta urbana.",
+        "tagline": null,
+        "url": "http://localhost:3000",
+        "defaultLocale": "en",
+        "contactEmail": "alex@example.com",
+        "privacyContactEmail": "alex@example.com",
+        "securityContact": "mailto:security@example.com",
+        "privacyJurisdiction": "colombia",
+        "privacyUpdatedAt": "2026-11-11T19:29:50.159Z",
+        "supportHandle": "fieldnotes",
+        "timezone": "America/Bogota",
+        "addressLocality": null,
+        "createdAt": "2026-11-11T19:29:50.186Z",
+        "updatedAt": "2026-11-11T19:31:02.897Z",
+        "publishedAt": "2026-11-11T19:29:50.164Z",
+        "locale": "es",
+        "author": {
+          "id": 4,
+          "name": "Alex Moreno",
+          "url": "http://localhost:3000/about"
+        },
+        "logo": {
+          "id": 1,
+          "documentId": "dpirh2le0qehrwikwbp19jmg",
+          "url": "/uploads/field_notes_logo_e15ca880bf.svg",
+          "alternativeText": "",
+          "width": 64,
+          "height": 64
+        },
+        "favicon": {
+          "id": 1,
+          "documentId": "dpirh2le0qehrwikwbp19jmg",
+          "url": "/uploads/field_notes_logo_e15ca880bf.svg"
+        },
+        "defaultOgImage": null,
+        "socialLinks": [
+          {
+            "id": 4,
+            "network": "github",
+            "url": "https://github.com/bogd3v/micelio"
+          }
+        ],
+        "modules": {
+          "id": 4,
+          "newsletter": true,
+          "comments": true,
+          "accounts": true,
+          "drafts": true,
+          "fediverse": true,
+          "search": true,
+          "support": true
+        },
+        "theme": {
+          "id": 2,
+          "themeId": "paper",
+          "themeVersion": "1.2.0",
+          "themeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "defaultMode": "dark",
+          "displayFont": "fraunces",
+          "accentOverrides": [
+            {
+              "id": 2,
+              "mode": "dark",
+              "color": "#112233"
+            }
+          ]
+        },
+        "homePage": null,
+        "fediverse": {
+          "id": 2,
+          "username": "fieldnotes"
+        }
+      },
+      "meta": {}
+    },
+    "bareEn": {
+      "data": {
+        "id": 1,
+        "documentId": "yk4k2yed9snt12re11w1rjun",
+        "name": "Field Notes",
+        "description": "A demo site built with Micelio: notes from a small urban garden.",
+        "tagline": "Notes from the plot",
+        "url": "http://localhost:3000",
+        "defaultLocale": "en",
+        "contactEmail": "alex@example.com",
+        "privacyContactEmail": "alex@example.com",
+        "securityContact": "mailto:security@example.com",
+        "privacyJurisdiction": "colombia",
+        "privacyUpdatedAt": "2026-11-11T19:29:50.159Z",
+        "supportHandle": "fieldnotes",
+        "timezone": "America/Bogota",
+        "addressLocality": "Bogota",
+        "createdAt": "2026-11-11T19:29:49.650Z",
+        "updatedAt": "2026-11-11T19:31:02.803Z",
+        "publishedAt": "2026-11-11T19:31:02.759Z",
+        "locale": "en"
+      },
+      "meta": {}
+    },
+    "bareDefault": {
+      "data": {
+        "id": 1,
+        "documentId": "yk4k2yed9snt12re11w1rjun",
+        "name": "Field Notes",
+        "description": "A demo site built with Micelio: notes from a small urban garden.",
+        "tagline": "Notes from the plot",
+        "url": "http://localhost:3000",
+        "defaultLocale": "en",
+        "contactEmail": "alex@example.com",
+        "privacyContactEmail": "alex@example.com",
+        "securityContact": "mailto:security@example.com",
+        "privacyJurisdiction": "colombia",
+        "privacyUpdatedAt": "2026-11-11T19:29:50.159Z",
+        "supportHandle": "fieldnotes",
+        "timezone": "America/Bogota",
+        "addressLocality": "Bogota",
+        "createdAt": "2026-11-11T19:29:49.650Z",
+        "updatedAt": "2026-11-11T19:31:02.803Z",
+        "publishedAt": "2026-11-11T19:31:02.759Z",
+        "locale": "en"
+      },
+      "meta": {}
+    }
+  }
+}

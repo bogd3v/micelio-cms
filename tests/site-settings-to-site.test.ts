@@ -32,7 +32,7 @@ describe('Site settings copied into the default site', () => {
     await setupStrapi()
     markerAfterBoot = await strapi.store.get(COPY_MARKER)
     seeded = await seedSingleType()
-    // The boot copied the neutral settings: start from the site as the core creates it.
+    // Start from the site as the core creates it.
     await resetDefaultSite()
   })
 
@@ -40,8 +40,8 @@ describe('Site settings copied into the default site', () => {
     await cleanupStrapi()
   })
 
-  it('runs at boot, once the neutral settings exist', () => {
-    expect(markerAfterBoot).toEqual({ version: 1 })
+  it('sets no marker on a fresh boot: nothing writes the single type, so there is nothing to copy', () => {
+    expect(markerAfterBoot).toBeNull()
   })
 
   it('copies every attribute of the single type into the default site, per locale', async () => {
@@ -224,5 +224,17 @@ describe('Site settings copied into the default site', () => {
         .query(SITE_SETTING_UID)
         .updateMany({ where: {}, data: { timezone: 'America/Bogota' } })
     }
+  })
+
+  it('copies at boot when the database holds the single type, as an upgrade from 0.6 does', async () => {
+    await resetDefaultSite()
+    expect(await strapi.store.get(COPY_MARKER)).toBeNull()
+
+    await cleanupStrapi({ keepDatabase: true })
+    await setupStrapi({ keepDatabase: true })
+
+    expect(await strapi.store.get(COPY_MARKER)).toEqual({ version: 1 })
+    expect((await readSite('en'))?.name).toBe('Acme Garden')
+    expect((await readSite('en'))?.fediverse.username).toBe('acme')
   })
 })

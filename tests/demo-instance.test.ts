@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import request from 'supertest'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { seedDemoContent } from '../src/migrations/demo-seed'
 import {
@@ -19,7 +20,6 @@ const ARTICLE_UID = 'api::article.article'
 const CATEGORY_UID = 'plugin::micelio.category'
 const TAG_UID = 'plugin::micelio.tag'
 const ABOUT_UID = 'api::about.about'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const TOKEN_UID = 'admin::api-token'
 const MARKER = { type: 'core', name: 'migrations', key: 'demo-seed' }
 const ACCESS_KEY = 'demo-frontend-token-0123456789abcdef0123456789'
@@ -97,15 +97,11 @@ describe('Demo instance', () => {
     })
 
     it('names the site and fills the About page in both languages', async () => {
-      const english = (await strapi
-        .documents(SITE_SETTING_UID)
-        .findFirst({ locale: 'en' })) as Named
-      const spanish = (await strapi
-        .documents(SITE_SETTING_UID)
-        .findFirst({ locale: 'es' })) as Named
+      const english = (await strapi.documents(SITE_UID).findFirst({ locale: 'en' })) as Named
+      const spanish = (await strapi.documents(SITE_UID).findFirst({ locale: 'es' })) as Named
       expect(english.name).toBe('Field Notes')
       expect(
-        await strapi.documents(SITE_SETTING_UID).findFirst({ locale: 'en', populate: '*' })
+        await strapi.documents(SITE_UID).findFirst({ locale: 'en', populate: '*' })
       ).toMatchObject({
         author: { name: 'Alex Moreno', url: 'http://localhost:3000/about' },
         socialLinks: [{ network: 'github', url: 'https://github.com/bogd3v/micelio' }],
@@ -145,7 +141,7 @@ describe('Demo instance', () => {
     it('leaves the home page empty with MICELIO_DEMO=true', async () => {
       for (const locale of ['en', 'es']) {
         expect(
-          await strapi.documents(SITE_SETTING_UID).findFirst({ locale, populate: ['homePage'] })
+          await strapi.documents(SITE_UID).findFirst({ locale, populate: ['homePage'] } as never)
         ).toMatchObject({ homePage: null })
       }
     })
@@ -153,17 +149,11 @@ describe('Demo instance', () => {
     it('never mentions BogDev or a real person', async () => {
       const everything = JSON.stringify(
         await Promise.all(
-          [
-            ARTICLE_UID,
-            CATEGORY_UID,
-            TAG_UID,
-            ABOUT_UID,
-            SITE_SETTING_UID,
-            'api::page.page',
-          ].flatMap((uid) =>
-            ['en', 'es'].map((locale) =>
-              strapi.documents(uid as typeof ARTICLE_UID).findMany({ locale, populate: '*' })
-            )
+          [ARTICLE_UID, CATEGORY_UID, TAG_UID, ABOUT_UID, SITE_UID, 'api::page.page'].flatMap(
+            (uid) =>
+              ['en', 'es'].map((locale) =>
+                strapi.documents(uid as typeof ARTICLE_UID).findMany({ locale, populate: '*' })
+              )
           )
         )
       )

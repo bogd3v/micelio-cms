@@ -36,7 +36,7 @@ interface ThemePickerProps {
 const DEFAULT_VALUE = '__default__';
 
 /**
- * The input of `site.theme.themeId` (custom field `global::theme-picker`): lists the registry's
+ * The input of `theme.themeId` of the site (custom field `global::theme-picker`): lists the registry's
  * themes, writes the id, the exact version and the digest together, offers an update only as a
  * button, and falls back to a text input when the registry cannot be read.
  */

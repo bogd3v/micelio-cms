@@ -7,12 +7,12 @@ import {
   type SeededImages,
 } from './response-fields-seed-base'
 import type { SeededArticles } from './response-fields-seed-articles'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { defaultSiteRelation } from '../../src/utils/default-site'
 
 const ABOUT_UID = 'api::about.about'
 const GLOBAL_UID = 'api::global.global'
 const PAGE_UID = 'api::page.page'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const SUBSCRIBER_UID = 'api::subscriber.subscriber'
 
 /** Creates a page with every section, the About page, the global type, the site settings and a subscriber. */
@@ -249,9 +249,10 @@ export async function seedSite(
     },
   })
 
-  const settings = await documents(SITE_SETTING_UID).findFirst()
-  if (!settings) throw new Error('site-setting was not seeded on boot')
-  await documents(SITE_SETTING_UID).update({
+  // The default site holds the settings; `GET /api/site-setting` answers from it.
+  const settings = await documents(SITE_UID).findFirst()
+  if (!settings) throw new Error('the default site was not created on boot')
+  await documents(SITE_UID).update({
     documentId: settings.documentId,
     data: {
       name: 'Fields site',

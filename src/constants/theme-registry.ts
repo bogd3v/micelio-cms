@@ -21,7 +21,7 @@ export const THEME_INDEX_TTL_MS = 5 * 60 * 1000
 /** Milliseconds one request to the registry may take, body included. */
 export const THEME_INDEX_TIMEOUT_MS = 10_000
 
-/** The custom field (`global::theme-picker`) that `site.theme.themeId` uses. */
+/** The custom field (`global::theme-picker`) that the `theme.themeId` of the site uses (`src/utils/site-theme-component.ts`). */
 export const THEME_PICKER_FIELD = 'theme-picker'
 
 /** The format of a theme id, as in micelio's `THEME_ID`. */
