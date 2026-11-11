@@ -3,10 +3,6 @@ import request from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { setPublicPermissions } from './helpers/permissions'
 import { migrateSliderItems } from '../src/migrations/slider-items'
-import {
-  formatCreditHtml,
-  findPublishedArticle,
-} from '../src/plugins/fediverse/server/src/services/articles'
 import type { Modules } from '@strapi/strapi'
 
 const ARTICLE_UID = 'api::article.article'
@@ -57,30 +53,6 @@ async function createImage(name: string): Promise<{ id: number }> {
     },
   })
 }
-
-describe('Credit line for federated articles', () => {
-  it('formats a CC BY-SA credit with its links', () => {
-    expect(formatCreditHtml(ccBySa, 'es')).toBe(
-      'Foto: <a href="https://commons.wikimedia.org/wiki/User:Danielfjio" rel="nofollow noopener">Danielfjio</a>' +
-        ' · <a href="https://commons.wikimedia.org/wiki/File:Paisaje_Sumapaz,_Colombia.jpg" rel="nofollow noopener">Wikimedia Commons</a>' +
-        ' · <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license nofollow noopener">CC BY-SA 4.0</a>' +
-        ' · recortada'
-    )
-  })
-
-  it('formats own work without links, in the article language', () => {
-    expect(formatCreditHtml(ownWork, 'en')).toBe(
-      'Illustration: Alejandro Ramírez · BogDev · own work'
-    )
-  })
-
-  it('escapes the editor text and returns null without a credit', () => {
-    expect(formatCreditHtml({ license: 'permission', author: '<b>Ana</b>' }, 'es')).toBe(
-      'Foto: &lt;b&gt;Ana&lt;/b&gt; · uso con permiso'
-    )
-    expect(formatCreditHtml(null, 'es')).toBeNull()
-  })
-})
 
 describe('Image captions and credits', () => {
   const create = (data: ArticleInput) => strapi.documents(ARTICLE_UID).create({ data })
@@ -153,10 +125,6 @@ describe('Image captions and credits', () => {
     expect(slider.items.map((item) => item.caption)).toEqual(['Frailejón', 'Laguna'])
     expect(slider.items[0].credit).toMatchObject(ownWork)
     expect(slider.items[1].credit).toMatchObject(ccBySa)
-
-    // The federated article carries the cover's attribution.
-    const federated = await findPublishedArticle(strapi, draft.documentId)
-    expect(federated?.image?.creditHtml).toContain('CC BY-SA 4.0')
   })
 
   it('rejects an attribution license without author or source link', async () => {

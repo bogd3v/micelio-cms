@@ -1,6 +1,6 @@
 import type { ResponseRoute } from './types'
 
-/** The public counters of the fediverse plugin (`src/plugins/fediverse/server/src/routes/index.ts`). */
+/** The public counters of the fediverse plugin (`server/src/routes/index.ts` of `@micelio/strapi-plugin-fediverse`). */
 export const FEDIVERSE_ROUTES: readonly ResponseRoute[] = [
   {
     id: 'fediverse.stats-batch',

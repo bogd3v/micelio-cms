@@ -230,107 +230,22 @@ REBUILD_STATUS_FILE=/build-status/last-run   # empty (the default): nothing is r
 
 ## Fediverse (ActivityPub)
 
-The plugin is **off by default**. The full behaviour is in `docs/FEDIVERSE.md`.
+Federation is the package [`@micelio/strapi-plugin-fediverse`](https://github.com/bogd3v/micelio-plugin-fediverse) (exact version in `package.json`). This image lists it in `config/plugins.ts` as always enabled and the package reads `FEDIVERSE_ENABLED` itself: **off by default**, it is an empty plugin with no routes, content types, permission actions, admin page, status check or export section. What this repository still owns is in `docs/FEDIVERSE.md`; everything else (every variable, the profile, hosts and the handle, the Fediverse page and its diagnostics, the delivery queue, the move of an article to the editorial workflow, rollback) is in the package's [`docs/operate/configure.md`](https://github.com/bogd3v/micelio-plugin-fediverse/blob/main/docs/operate/configure.md), and the upgrade in its [`docs/operate/upgrade-0.7.md`](https://github.com/bogd3v/micelio-plugin-fediverse/blob/main/docs/operate/upgrade-0.7.md).
 
 ```env
 FEDIVERSE_ENABLED=true                  # master switch; off = no fediverse routes, content types or publish hooks
-FEDIVERSE_ACTOR_IDENTIFIER=blog         # required: path of the actor URI; never change it, remote follows are keyed by it
-FEDIVERSE_HANDLE_HOST=example.com       # optional: host of the handle, when it is not the CMS host (see below)
+FEDIVERSE_ACTOR_IDENTIFIER=blog         # required while enabled: path of the actor URI; never change it, remote follows are keyed by it
 FRONTEND_ARTICLE_PATH=/blog/{slug}      # optional: article path template
-FRONTEND_DEFAULT_LOCALE=en              # optional: locale the frontend serves without a URL prefix
+FRONTEND_DEFAULT_LOCALE=en              # deprecated: the site's Default locale replaces it
 ```
 
-While enabled, `FEDIVERSE_ACTOR_IDENTIFIER` has no default: without it the plugin refuses to start.
+While enabled, `FEDIVERSE_ACTOR_IDENTIFIER` has no default: without it the plugin refuses to start. `FEDIVERSE_HANDLE_HOST` is gone: the handle host is the first host of the site (Content Manager → Sites). `FEDIVERSE_ACTOR_USERNAME`, `_NAME`, `_SUMMARY` and `_SOURCE_URL` are not read either: a boot with federation on and one of them set stops with a message that names the setting that replaces it.
 
-**The profile is edited in the admin panel**, not in the environment: Content Manager → Sites → the entry marked default → **Fediverse profile** has (since #416 the plugin reads the default site, not Site settings) the username (the handle's `@user`, lowercase letters, digits and `_`; changing it keeps the former handle and the followers, because the identifier stays), the display name, a summary of up to 500 characters (plain text), a header image (1500×500 recommended; the size is not checked), whether the account is discoverable (on by default) and the source URL shown in the "Código" field. **Object type** chooses what articles are sent as: `Article` (the default, shown by Mastodon as a title and a link card) or `Note` (a regular post with the title, excerpt and link, the shape Ghost and WriteFreely use, which GoToSocial shows without hiding it behind the title). Switching sends nothing and keeps every link and id: posts already sent keep their type until their next edit. Saving it sends an `Update(Person)` to the followers' servers. An empty field uses the site's identity: the display name and the summary are Global's name and description, then the default site's name and description. With none of them the handle is the identifier and there is no bio.
+The profile (username, display name, summary, header, discoverable, source URL, object type) is edited under Content Manager → Sites → the entry marked default → **Fediverse profile**, not in the environment.
 
-**Removed variables.** `FEDIVERSE_ACTOR_USERNAME` (now Username), `FEDIVERSE_ACTOR_NAME` (Display name), `FEDIVERSE_ACTOR_SUMMARY` (Summary) and `FEDIVERSE_ACTOR_SOURCE_URL` (Source URL) are no longer read. A boot with federation on and one of them set stops with a message that names the setting that replaces it: move the value into the site settings first, then delete the variable. Global's `fediverseHeader` is gone too: the first boot of this version copies it into the Header of the Fediverse profile when that field is empty (`docs/operate/upgrade.md`).
+**Roles and the plugin's permissions.** `plugin::fediverse.read` (the Fediverse page) and `plugin::fediverse.manage` (block, unblock, retry) are given to a role in Settings → Administration Panel → Roles, under Plugins; the super admin has both. They exist only while `FEDIVERSE_ENABLED=true`. **A boot with federation off removes them from every role but the super admin**, because the package registers no action while it is off (Strapi deletes the permissions of an action that is not registered): after turning federation on again, grant them again. An upgrade from `0.6` with federation on before and after keeps them (`npm run test:upgrade` counts them).
 
-**Author credit on Mastodon link cards.** The actor lists the host of `FRONTEND_URL`, and `FEDIVERSE_HANDLE_HOST` when set, in its `attributionDomains`, so Mastodon shows the blog's account on the card of a shared article. It works only when the site's canonical URL (the site settings' URL, or the frontend's `NUXT_PUBLIC_SITE_URL`) is on one of those hosts or a subdomain of them. A restart that changes them sends an `Update(Person)` to the followers. Details and how to check it: `docs/FEDIVERSE.md`, "Author attribution".
-
-### A handle on the site's domain (`FEDIVERSE_HANDLE_HOST`)
-
-By default the handle is `@blog@cms.example.com`, the host of `URL`, because the actor lives on the CMS. To show `@blog@example.com` instead, set `FEDIVERSE_HANDLE_HOST=example.com` and make the site domain forward WebFinger to the CMS. Every id stays on the CMS origin (the actor, its inbox, outbox and key ids do not change), so no follower is lost.
-
-1. Set `URL` to the CMS's public origin. It is required with this variable: the boot stops with a message naming the variable if `URL` is missing, or if the value is not a bare host such as `example.com`.
-2. Forward `/.well-known/webfinger` on the site domain to the CMS. The frontend route that does it comes later; until then a proxy rule does:
-
-   ```caddyfile
-   example.com {
-       handle /.well-known/webfinger {
-           reverse_proxy https://cms.example.com {
-               header_up Host {upstream_hostport}
-           }
-       }
-       # the rest of the site as before
-   }
-   ```
-
-   ```yaml
-   # Traefik, dynamic configuration: a router on the site domain, with a higher priority than the site's
-   http:
-     routers:
-       webfinger:
-         rule: 'Host(`example.com`) && Path(`/.well-known/webfinger`)'
-         priority: 100
-         service: cms
-         tls: {}
-     services:
-       cms:
-         loadBalancer:
-           passHostHeader: false
-           servers:
-             - url: 'https://cms.example.com'
-   ```
-
-3. Check it from outside: `npx @fedify/cli lookup @blog@example.com`.
-
-Once set, **only the handle host resolves**: `@blog@cms.example.com` stops answering WebFinger, so searching for it finds nothing. Servers that already follow the site keep doing so, because they key the follow by the actor id. Details and the reason: `docs/FEDIVERSE.md`, "Changing the handle without losing followers".
-
-`URL` must be the CMS's real public origin, because activities sent in the background build their ids from it. Requirements that are easy to miss:
-
-- **Node 22.19 or later.** Strapi 5.59 depends on undici 8, which needs that version, and it also covers Fedify, whose ESM-only package `require()` loads from Node 22.12. The image is on Node 22 (22.23 when this was written); do not pin its base image below 22.19.
-- **A persistent database.** Followers, the actor's key pair, the record of federated articles and, on PostgreSQL, the deliveries waiting to be sent live in the database. If it is wiped, the next boot generates a new actor key and every follower is lost.
-- **Proxy headers.** Behind a TLS-terminating proxy, generated URLs use `https` only if the CMS follows `X-Forwarded-Proto` and `X-Forwarded-Host`: that is the default, but only for a connection from a proxy that `TRUST_PROXY` trusts (a private address by default, see above); from any other peer the CMS uses the real scheme and the `Host` header. `TRUST_PROXY_PROTOCOL=false` turns it off. A proxy outside the private ranges must be listed in `TRUST_PROXY`. Federation does not depend on those headers when `URL` is set: every actor, inbox, key and WebFinger id is built from the origin of `URL`, so a forged `X-Forwarded-Host` cannot make the actor document name another host. Set `URL` to the real public origin in production; unset, the ids follow the request.
-- **No proxy or DNS changes.** Fedify's routes (`/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/*`) are served by the CMS on the same domain as the API.
-
-### Enable it on a running site
-
-1. Take a database backup ([Backup](backup.md)). On the first boot with the plugin enabled the CMS creates `fediverse_followers`, `fediverse_interactions` and `fediverse_federated_articles` and adds `fediverse_uri` and `fediverse_actor_handle` to the comments table.
-2. Set `FEDIVERSE_ENABLED=true` and `FEDIVERSE_ACTOR_IDENTIFIER`, and restart.
-3. Verify from outside:
-   ```bash
-   curl -s https://cms.example.com/_health -o /dev/null -w '%{http_code}\n'   # 204
-   npx @fedify/cli webfinger @blog@cms.example.com                            # 200, https links
-   npx @fedify/cli lookup @blog@cms.example.com                               # actor with inbox, outbox, publicKey
-   ```
-4. Follow the actor from a Mastodon account, publish an article, and watch the logs for `[fediverse]` lines (each fan-out reports how many followers it was queued for).
-
-### Fediverse page
-
-The admin menu has a **Fediverse** entry (diagnostics, followers, failed deliveries). It appears only for a role that has the permission **Read the Fediverse page** (`plugin::fediverse.read`); blocking, unblocking and retrying need **Block and unblock followers, and retry failed deliveries** (`plugin::fediverse.manage`). The super admin has both. Give them to the other roles in Settings → Administration Panel → Roles, under Plugins. They exist only while `FEDIVERSE_ENABLED=true`, so with federation off nobody sees the entry. **Turning federation off and on again removes the grants:** Strapi deletes the permissions of an action that is not registered from every role at boot, so after enabling it again only the super admin has them and the other roles must be given them again. Opening the page makes the CMS request its own WebFinger address (`URL`), once per visit.
-
-What each failing diagnostic means and how to fix it:
-
-- **Public address, `url-missing`:** set `URL` to the CMS's real public origin (for example `https://cms.example.com`) and restart.
-- **Public address, `url-not-https`:** `URL` should be the public `https` origin; behind a TLS-terminating proxy, set it to the `https` address and make the proxy forward `X-Forwarded-Proto`.
-- **Actor key, `actor-key-missing-encryption-key`:** `ENCRYPTION_KEY` is not the value the key was encrypted with. Put the previous value back and restart; the stored key is not touched.
-- **Actor key, `actor-key-missing`:** no key is stored yet. It is created the first time a remote server fetches the actor or an activity is sent; fetch the actor's address once, or publish an article. If followers already exist, the key was lost: restore the database from a backup. The page only reads the key, it never creates it.
-- **Actor key, `actor-key-unreadable`:** restore the database from a backup taken before the problem; a new key would be a new identity for every follower.
-- **WebFinger, `webfinger-skipped`:** needs `URL`.
-- **WebFinger, `webfinger-unreachable`:** the CMS cannot reach its own public address: check DNS, the proxy and the firewall.
-- **WebFinger, `webfinger-not-found`:** the address answers, but not with the WebFinger document: make sure `/.well-known/*` and `/fediverse/*` reach the CMS.
-- **WebFinger, `webfinger-wrong-subject`:** check the username in the default site's Fediverse profile and that the domain of `URL` is the CMS's.
-
-### Delivery queue and database connections
-
-Publishing returns as soon as the activities are queued; the CMS delivers them in the background and retries a failure with Fedify's default backoff (up to 10 retries over roughly 20 to 35 minutes; a host that keeps failing is then held by Fedify's circuit breaker for up to a week). There is no variable for it: the backend follows `DATABASE_URL`.
-
-- **PostgreSQL (production).** The queue and Fedify's cache are two tables, `fedify_message_v2` and `fedify_kv_v2`, created on first use in the schema the CMS uses (`DATABASE_SCHEMA`). A restart loses none of the deliveries waiting in it; the one being sent at the moment of a crash is lost. They use their own pool, apart from Strapi's: **at most 3 connections plus 1 that listens for new messages, so 4 more per CMS process**. Count them in `max_connections` (a managed database with a small limit, or a pooler in transaction mode, is where this shows up). The constant is `FEDIFY_POOL_SIZE` in `src/plugins/fediverse/server/src/constants/queue.ts`. The queued activities hold the actor's signing key, encrypted with `ENCRYPTION_KEY` (change that value and what is waiting in the queue is dropped); the pool checks the database certificate for the `sslmode`s that Strapi's `pg` checks; a backup of these tables is as sensitive as one of the key itself ([Backup](backup.md)).
-- **SQLite (development, tests).** The queue is in memory: a restart loses what was waiting.
-- **Reading the state.** The edit view of an article has a **Fediverse** panel in its side column: the state of the last activity, the counts, and a **Federate now** button that needs the permission to publish articles. Each article's `Fediverse Federated Article` entry in the admin panel says when its last activity was queued, how many attempts it has had and the last error; `failed` means at least one follower's server was given up on. Nothing says an activity was _delivered_: Fedify does not report it. A follower whose server answered `404` or `410` is skipped by later publishes until it sends the blog an activity again.
-
-**Rollback:** set `FEDIVERSE_ENABLED=false` and restart. The routes and hooks disappear; the tables, followers and key pair stay in the database, and the comments-visibility middleware keeps hiding pending comments. Remote servers that still know the actor get 404s until it is enabled again.
+**Rollback:** set `FEDIVERSE_ENABLED=false` and restart. The routes and hooks disappear; the tables, followers and key pair stay in the database, and the comments-visibility middleware of this image keeps hiding pending comments. Remote servers that still know the actor get 404s until it is enabled again.
 
 ## Preview
 

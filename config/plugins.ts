@@ -63,9 +63,12 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
   const ownAuthLimit = limitsAuth(env)
 
   return {
+    // Always enabled: Strapi bundles a plugin's admin code only while it is enabled when the
+    // admin is built, and the image builds it with FEDIVERSE_ENABLED unset. The package reads the
+    // switch itself: off (the default), it is an empty plugin with no routes, content types,
+    // permission actions, admin page, status check or export section (docs/FEDIVERSE.md).
     fediverse: {
-      enabled: env.bool('FEDIVERSE_ENABLED', false),
-      resolve: './src/plugins/fediverse',
+      enabled: true,
     },
     micelio: {
       enabled: true,

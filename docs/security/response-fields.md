@@ -2,6 +2,8 @@
 
 **Kind:** reference. The fields each public or token-readable route returns, which of them the frontend reads and which it does not. Answers ASVS 5.0.0 V15.3.1, "responses return only the required fields" ([mapping](asvs.md)); [#200](https://github.com/bogd3v/micelio-cms/issues/200) tracks it. The frontend limits what leaves its own server with allow-lists (`server/lib/publicShapes.ts` in micelio); this document covers what the CMS sends to it, to an integrator and to a visitor who calls the content API directly.
 
+A path that starts with `fediverse:` is in the package `@micelio/strapi-plugin-fediverse` (repository `bogd3v/micelio-plugin-fediverse`, tag `v0.7.0`), where the fediverse code and its suites moved from this repository at `0.7` (bogd3v/micelio-cms#391).
+
 ## Policy
 
 - A field the frontend needs is **required**. It is documented here and never removed or ignored.
@@ -64,7 +66,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 
 ## Not covered
 
-- **ActivityPub and NodeInfo.** The actor, followers, outbox, `Article` objects, WebFinger and NodeInfo documents (`/fediverse/*`, `/.well-known/*`, `/nodeinfo/*`, built by Fedify in `src/plugins/fediverse/server/src/federation.ts`) have a shape the protocols define, and remote servers expect those fields. They are excluded from the per-field tests; what they publish about the actor is configured in the fediverse module ([FEDIVERSE.md](../FEDIVERSE.md)).
+- **ActivityPub and NodeInfo.** The actor, followers, outbox, `Article` objects, WebFinger and NodeInfo documents (`/fediverse/*`, `/.well-known/*`, `/nodeinfo/*`, built by Fedify in `fediverse:server/src/federation.ts`) have a shape the protocols define, and remote servers expect those fields. They are excluded from the per-field tests; what they publish about the actor is configured in the fediverse module ([FEDIVERSE.md](../FEDIVERSE.md)).
 - **Routes with no frontend caller and no role by default.** The `findOne` variants of the content types other than those listed under _Default grants not traced_, `POST`, `PUT` and `DELETE` on the content types other than the subscribers, the comments plugin's routes to report, edit and delete a comment and to list the comments of an author, `/api/users`, `/api/users/:id`, `/api/email` and `/api/upload`. They answer 403 until an operator grants a permission; their bodies are not traced here.
 - **Default grants not traced.** The public role also has `auth.refresh`, `auth.forgotPassword`, `auth.resetPassword`, `auth.emailConfirmation`, `auth.sendEmailConfirmation` and `tag.findOne`, a reader has `auth.changePassword` and the session routes, and an editor has `findOne` on articles, categories, authors and tags and `find` and `findOne` on uploads. Their bodies come from Strapi's users-permissions and upload plugins and are not listed field by field yet.
 - **Deleting your own account.** `DELETE /api/users/me` (`plugin::users-permissions.user.destroyMe`, granted to the public role, readers and editors by `src/migrations/account-settings.ts`) deletes the account of the JWT; its body is not traced.

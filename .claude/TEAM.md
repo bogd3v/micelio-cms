@@ -10,7 +10,6 @@ The main session acts as **tech lead / orchestrator**. It splits the work, hands
 | `architect`       | opus   | Plans for content models, permissions, fediverse phases, cross-repo contract                 |
 | `senior-engineer` | sonnet | Services, controllers, routes, Document Service middlewares, extensions                      |
 | `content-modeler` | sonnet | Content types, components, dynamic zones, i18n, boot migrations, seeding, Postgres vs SQLite |
-| `fediverse`       | opus   | `src/plugins/fediverse/`, Fedify, comments extension, `FEDIVERSE_*`                          |
 | `junior-engineer` | haiku  | Mechanical changes: renames, UIDs to `constants/uids.ts`, formatting, repetitive edits       |
 | `qa-tester`       | sonnet | Jest suites against a real Strapi on SQLite                                                  |
 | `code-reviewer`   | opus   | Review every diff before it is called done                                                   |

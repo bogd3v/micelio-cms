@@ -29,9 +29,9 @@ module.exports = {
   },
   // Transform node_modules only for ESM-only packages that CJS code requires
   // (Node can `require()` ESM since v22, Jest cannot): structured-field-values
-  // and devalue from Fedify, and htmlparser2 and its dom* deps from
-  // sanitize-html (comments plugin). Nested node_modules count: the last
-  // segment decides.
+  // and devalue, which the fediverse package gets from Fedify, and htmlparser2
+  // and its dom* deps from sanitize-html (comments plugin). Nested node_modules
+  // count: the last segment decides.
   transformIgnorePatterns: [
     `node_modules/(?!(?:[^/]+/node_modules/)*(?:${ESM_PACKAGES.join('|')})/)`,
   ],
