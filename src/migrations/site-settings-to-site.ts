@@ -7,6 +7,8 @@ import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const MARKER = { type: 'core', name: 'migrations', key: 'site-settings-to-site' }
 const VERSION = 1
+/** The attribute whose copy bypasses the Document Service (see `copySiteSettingsToSite`). */
+const FEDIVERSE_ATTRIBUTE = 'fediverse'
 
 /** Locales the core writes its default site in, as `ensureDefaultSite` of the core does. */
 const SITE_LOCALES = ['en', 'es']
@@ -146,6 +148,10 @@ function siteHoldsValue(name: string, value: unknown, defaultLocale: string): bo
  * edits of the single type are not copied again and a second boot writes nothing. Runs after
  * `ensureDefaultSiteUrl`, which gives the site the origin of the frontend as its `url`.
  *
+ * The `fediverse` profile is written below the Document Service (`strapi.db`), because the fediverse
+ * package's username lock, a Document Service middleware, refuses an empty username becoming a value
+ * once the default site has a follower. The rest goes through the Document Service.
+ *
  * Three failures are logged and retried, not thrown, since nothing reads the copy yet: the default
  * site lacks an attribute of the single type (the installed core is older than the single type
  * needs: nothing is written), no site has `isDefault`, or the site refuses a value. The step logs
@@ -220,6 +226,38 @@ export async function copySiteSettingsToSite(
   const write = async (locale: string, data: Row): Promise<void> => {
     await sites.update({ documentId: site.documentId, locale, data: data as unknown as Data })
   }
+  // The attribute is not localized, so every row of the site shares it: each is written.
+  const writeBelow = async (profile: unknown): Promise<void> => {
+    const component = targetAttributes[FEDIVERSE_ATTRIBUTE].component as string
+    const rows = (await strapi.db
+      .query(SITE_UID)
+      .findMany({ where: { documentId: site.documentId }, select: ['id'] })) as { id: number }[]
+    const link = (
+      strapi.db.metadata.get(SITE_UID).attributes[FEDIVERSE_ATTRIBUTE] as unknown as {
+        joinTable: { name: string }
+      }
+    ).joinTable.name
+    // At the database layer a component is a row of its own, linked to the site's row. One
+    // transaction: a failure leaves no row filled, so the retry of the next boot finds none held.
+    await strapi.db.transaction(async ({ trx }) => {
+      for (const row of rows) {
+        const created = (await strapi.db.query(component).create({ data: profile as Row })) as {
+          id: number
+        }
+        await strapi.db
+          .query(SITE_UID)
+          .update({ where: { id: row.id }, data: { [FEDIVERSE_ATTRIBUTE]: created.id } })
+        // The Document Service names the component's type in the link; the database layer does not.
+        await strapi.db
+          .connection(link)
+          .where({ entity_id: row.id, field: FEDIVERSE_ATTRIBUTE })
+          .update({ component_type: component })
+          .transacting(trx)
+      }
+    })
+  }
+  let profile: unknown
+  let profileLocale = ''
   for (const locale of locales) {
     const first = locale === locales[0]
     const from = (await settings.findFirst({ locale, populate } as never)) as Row | null
@@ -236,6 +274,12 @@ export async function copySiteSettingsToSite(
       const held = isLocalized(attribute) ? own : shared
       if (held && siteHoldsValue(name, held[name], defaultLocale)) continue
       data[name] = inputFor(strapi, attribute, value)
+    }
+    // The fediverse profile is written below the Document Service, after the loop (see below).
+    if (FEDIVERSE_ATTRIBUTE in data) {
+      profile = data[FEDIVERSE_ATTRIBUTE]
+      profileLocale = locale
+      delete data[FEDIVERSE_ATTRIBUTE]
     }
     if (Object.keys(data).length === 0) continue
     try {
@@ -254,6 +298,22 @@ export async function copySiteSettingsToSite(
           )
         }
       }
+    }
+  }
+
+  // Last, so no Document Service write after it can reset it. The package's username lock is a
+  // Document Service middleware that counts an empty username becoming a value as a change and
+  // refuses it once the default site has a follower, which the package's own boot step may have
+  // given it before this step runs.
+  if (profile !== undefined) {
+    try {
+      await writeBelow(profile)
+      report.written.push(`${profileLocale}.${FEDIVERSE_ATTRIBUTE}`)
+    } catch (error) {
+      report.failed.push(`${profileLocale}.${FEDIVERSE_ATTRIBUTE}`)
+      strapi.log.error(
+        `[sites] could not write ${profileLocale}.${FEDIVERSE_ATTRIBUTE} of the site settings into the default site (${error instanceof Error ? error.name : 'error'})`
+      )
     }
   }
 

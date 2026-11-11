@@ -4,9 +4,7 @@ import {
   DEV_FRONTEND_URL,
   frontendBaseUrl,
 } from '../src/utils/frontend-url'
-import { frontendBaseUrl as pluginFrontendBaseUrl } from '../src/plugins/fediverse/server/src/utils/frontend-url'
 import { assertSecretsConfigured } from '../src/utils/secrets'
-import { assertActorConfigured } from '../src/plugins/fediverse/server/src/constants/actor'
 
 // A new instance must not borrow BogDev's identity: what identifies a site
 // comes from its environment, and production refuses to start without it.
@@ -19,44 +17,26 @@ describe('Instance configuration', () => {
   })
 
   describe('FRONTEND_URL', () => {
-    it.each([
-      ['the root', frontendBaseUrl],
-      ['the fediverse plugin', pluginFrontendBaseUrl],
-    ])('%s uses it when set', (_where, read) => {
+    it('uses it when set', () => {
       process.env.FRONTEND_URL = 'https://example.com'
-      expect(read()).toBe('https://example.com')
+      expect(frontendBaseUrl()).toBe('https://example.com')
     })
 
-    it.each([
-      ['the root', frontendBaseUrl],
-      ['the fediverse plugin', pluginFrontendBaseUrl],
-    ])('%s defaults to a local dev server outside production', (_where, read) => {
+    it('defaults to a local dev server outside production', () => {
       delete process.env.FRONTEND_URL
       process.env.NODE_ENV = 'development'
-      expect(read()).toBe(DEV_FRONTEND_URL)
+      expect(frontendBaseUrl()).toBe(DEV_FRONTEND_URL)
     })
 
-    it.each([
-      ['the root', frontendBaseUrl],
-      ['the fediverse plugin', pluginFrontendBaseUrl],
-    ])('%s is required in production', (_where, read) => {
+    it('is required in production', () => {
       delete process.env.FRONTEND_URL
       process.env.NODE_ENV = 'production'
-      expect(() => read()).toThrow('FRONTEND_URL is required in production')
+      expect(() => frontendBaseUrl()).toThrow('FRONTEND_URL is required in production')
     })
 
     it('stops the boot when it is not a URL', () => {
       process.env.FRONTEND_URL = 'bogus'
       expect(() => assertFrontendUrlConfigured()).toThrow('FRONTEND_URL is not a valid URL')
-    })
-  })
-
-  describe('fediverse actor', () => {
-    it('requires the identifier, with no default; the username falls back to it (#303)', () => {
-      expect(() => assertActorConfigured('')).toThrow(
-        'FEDIVERSE_ACTOR_IDENTIFIER must be set while FEDIVERSE_ENABLED=true'
-      )
-      expect(() => assertActorConfigured('blog')).not.toThrow()
     })
   })
 

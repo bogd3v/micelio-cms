@@ -2,6 +2,8 @@
 
 **Kind:** reference. Every host the CMS connects to, what it sends, what turns it off and what is on by default. Answers ASVS 5.0.0 V13.1.1 and V14.2.3, and documents V13.2.4 ([mapping](asvs.md)). Operators' settings are in [configure.md](../operate/configure.md); this page is the complete list behind them.
 
+A path that starts with `fediverse:` is in the package `@micelio/strapi-plugin-fediverse` (repository `bogd3v/micelio-plugin-fediverse`, tag `v0.7.0`), where the fediverse code and its suites moved from this repository at `0.7` (bogd3v/micelio-cms#391).
+
 Inbound traffic (the content API, the admin panel, the fediverse inbox) is not listed. The frontend server calls the CMS; that call is inbound here.
 
 ## Operator-configured destinations
@@ -37,7 +39,7 @@ The destinations here are chosen by other servers, so they are not in the operat
 | WebFinger self-check | The CMS's own public origin (`URL`)                                                 | `GET /.well-known/webfinger?resource=acct:<user>@<host>` with a 5 s timeout and no redirects, when an admin with the plugin permission opens the Fediverse page. The address is the operator's setting, never a visitor's                                                                                                                                           |
 | WebFinger lookups    | The domain of a handle that an admin or a remote server names                       | `GET /.well-known/webfinger`                                                                                                                                                                                                                                                                                                                                        |
 
-Private and loopback addresses are refused for everything Fedify fetches, **except** the WebFinger self-check above, which uses a plain `fetch` to the operator's own `URL`: Fedify's loader and delivery reject them, and the plugin enables them only under `NODE_ENV=test` (`src/plugins/fediverse/server/src/federation.ts:306-308`, `allowPrivateAddress`). The plugin's avatar lookup goes through the same loader (`federation.ts:130-150`, `extractAvatarUrl`).
+Private and loopback addresses are refused for everything Fedify fetches, **except** the WebFinger self-check above, which uses a plain `fetch` to the operator's own `URL`: Fedify's loader and delivery reject them, and the plugin enables them only under `NODE_ENV=test` (`fediverse:server/src/federation.ts`, `allowPrivateAddress`). The plugin's avatar lookup goes through the same loader (`federation.ts:130-150`, `extractAvatarUrl`).
 
 ## Accepted risk: no host allowlist (V13.2.4)
 

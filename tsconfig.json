@@ -44,8 +44,6 @@
     "**/*.test.*",
     // Do not include tooling configs compiled separately
     "jest.config.js",
-    "eslint.config.mjs",
-    // Do not include plugins in the server compilation
-    "src/plugins/**"
+    "eslint.config.mjs"
   ]
 }

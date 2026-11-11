@@ -31,10 +31,10 @@ The other keys currently in the file (`approvalScores`, `moderation`, `nested`, 
 - `related` is `api::article.article:<documentId>` (the document id, not the numeric id).
 - `threadOf` points at the parent comment (nesting).
 - `authorId`, `authorName`, `authorAvatar` identify the author. `authorEmail` is stored and shown to moderators in the admin panel; the public API never returns it (`src/middlewares/strip-comment-author-email.ts`), so keep the guest's address only when the flow needs it. See `docs/architecture/comments.md`.
-- Extra fields added by `src/extensions/comments/strapi-server.ts`: `fediverseUri` (remote Note id, used to dedupe) and `fediverseActorHandle` (`@user@host`). Fediverse replies are created with `strapi.documents('plugin::comments.comment')` by `src/plugins/fediverse/server/src/services/replies.ts`; see `docs/FEDIVERSE.md` (Phase 3).
+- Extra fields added by `src/extensions/comments/strapi-server.ts`: `fediverseUri` (remote Note id, used to dedupe) and `fediverseActorHandle` (`@user@host`). Fediverse replies are created with `strapi.documents('plugin::comments.comment')` by `@micelio/strapi-plugin-fediverse` (`server/src/services/replies.ts`); see `docs/FEDIVERSE.md`.
 - Extend the schema in `strapi-server.ts`, not with an extension `schema.json`: Strapi merges schema files shallowly, so a `schema.json` with `attributes` replaces every attribute of the plugin.
 
-- A reply an admin writes to a fediverse comment is sent to the remote thread by the fediverse plugin (a lifecycle hook on this model, `services/reply-publisher.ts`); the note id goes in `fediverseNoteUri` (`<origin>/fediverse/notes/<documentId>`), a non-public attribute: the public `fediverseUri` and `fediverseActorHandle` stay `null`, because the frontend marks a comment as remote by either. Only an admin who may moderate comments federates (the plugin's admin routes check no permission). See `docs/FEDIVERSE.md`, flow 5.
+- A reply an admin writes to a fediverse comment is sent to the remote thread by the fediverse package (a lifecycle hook on this model, `server/src/services/reply-publisher.ts`); the note id goes in `fediverseNoteUri` (`<origin>/fediverse/notes/<documentId>`), a non-public attribute: the public `fediverseUri` and `fediverseActorHandle` stay `null`, because the frontend marks a comment as remote by either. Only an admin who may moderate comments federates (the comments plugin's admin routes check no permission, so the package does). See `docs/FEDIVERSE.md`.
 
 ## Public permissions
 

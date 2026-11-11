@@ -91,6 +91,8 @@ export const DATA_CLASSIFICATION: Readonly<Record<string, AttributeLevels>> = {
     avatar: 'personal',
     blocked: 'personal',
     unreachableSince: 'personal',
+    // The site the follower belongs to, added by the package at 0.7: the site is not personal data.
+    site: 'public',
   },
   'plugin::fediverse.interaction': {
     type: 'public',
@@ -98,6 +100,7 @@ export const DATA_CLASSIFICATION: Readonly<Record<string, AttributeLevels>> = {
     handle: 'personal',
     articleDocumentId: 'public',
     interactionKey: 'personal',
+    site: 'public',
   },
   'api::article-stat.article-stat': {
     articleDocumentId: 'public',

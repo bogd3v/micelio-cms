@@ -54,7 +54,7 @@ npm run strapi <cmd>   # Run Strapi CLI commands
 
 ```bash
 npm run check          # CI's fast steps in order: typecheck, lint (ESLint, placement, EE), format:check, test, lint:licenses, lint:standard
-npm run typecheck      # Type-check the server, the fediverse plugin, the admin panel and the tests
+npm run typecheck      # Type-check the server, the admin panel and the tests
 npm run lint           # Run ESLint, the placement check and the EE check
 npm run lint:licenses  # Production dependency licences against the AGPL-3.0 allowlist
 npm run lint:standard  # The copy of the engineering standard matches the version pinned above
@@ -98,7 +98,6 @@ npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (need
 │   ├── extensions/      # Plugin extensions
 │   ├── middlewares/     # Global Koa middlewares
 │   ├── migrations/      # One-off data migrations run from bootstrap
-│   ├── plugins/         # Local plugin (fediverse: own constants/, types/, utils/)
 │   ├── types/           # Shared TypeScript types
 │   ├── utils/           # Shared helpers
 │   └── index.ts         # Application lifecycle hooks
@@ -111,10 +110,10 @@ npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (need
 
 - **`constants/`, `types/`, `utils/`** hold what more than one file uses, or configuration-like values (content type UIDs, route prefixes, license tables). Import UIDs from `constants/uids.ts` instead of repeating `'api::article.article'`.
 - Code specific to one domain stays next to it: `src/api/article/utils/` (citations, plain text), search limits in the article service.
-- `npm run lint` runs `scripts/check-placement.mjs`: a type or constant imported by two or more files of `src/` must live in `src/types/`, `src/constants/` or the `types.ts` / `constants.ts` of its feature folder. It skips `src/migrations/` and the fediverse plugin.
+- `npm run lint` runs `scripts/check-placement.mjs`: a type or constant imported by two or more files of `src/` must live in `src/types/`, `src/constants/` or the `types.ts` / `constants.ts` of its feature folder. It skips `src/migrations/`.
 - A type that is a service's contract (its inputs and outputs) goes in `types/`; row shapes private to one query stay in that file.
 - `src/migrations/` is self-contained on purpose: each migration keeps its own constants so it keeps working after the code it migrated away from changes.
-- The fediverse plugin mirrors this layout under `src/plugins/fediverse/server/src/` and **never imports from the root `src/`**: it is a separate TypeScript project bundled by esbuild. The `micelio` plugin (`category`, `tag`, sites, the host check; UIDs `plugin::micelio.*`) is the npm package `@micelio/strapi-plugin-core`, not code of this repository: `config/plugins.ts` enables it, `src/extensions/micelio/strapi-server.ts` adds the host's side of its types, and the host imports from `@micelio/strapi-plugin-core/strapi-server` (`docs/architecture/micelio-plugin.md`).
+- The distribution has no plugin code of its own: `src/plugins/` does not exist. Both plugins are npm packages that `config/plugins.ts` enables. The fediverse plugin (ActivityPub; UIDs `plugin::fediverse.*`) is `@micelio/strapi-plugin-fediverse` (repository `bogd3v/micelio-plugin-fediverse`, with its own `docs/`, suites, skill and agent); the host keeps only its side (`docs/FEDIVERSE.md`). The `micelio` plugin (`category`, `tag`, sites, the host check; UIDs `plugin::micelio.*`) is the npm package `@micelio/strapi-plugin-core`, not code of this repository: `config/plugins.ts` enables it, `src/extensions/micelio/strapi-server.ts` adds the host's side of its types, and the host imports from `@micelio/strapi-plugin-core/strapi-server` (`docs/architecture/micelio-plugin.md`).
 
 ---
 
@@ -207,7 +206,7 @@ const connections = {
 
 ## Fediverse Federation
 
-The plan for connecting this backend to the fediverse (ActivityPub/Mastodon) lives in `docs/FEDIVERSE.md`. Implementation is tracked via the `fediverse-federation` GitHub milestone (one issue per phase, 0–5). Read that document before touching `src/plugins/fediverse/`, the comments schema extension in `src/extensions/comments/`, or any fediverse-related env vars.
+The plan for connecting this backend to the fediverse (ActivityPub/Mastodon) lives in `docs/FEDIVERSE.md`. Implementation is tracked via the `fediverse-federation` GitHub milestone (one issue per phase, 0–5). Read that document before touching the comments schema extension in `src/extensions/comments/`, or any fediverse-related env vars.
 
 ---
 
@@ -215,30 +214,30 @@ The plan for connecting this backend to the fediverse (ActivityPub/Mastodon) liv
 
 Pitfalls that apply to any change are in [`docs/architecture/pitfalls.md`](docs/architecture/pitfalls.md); read it before any change.
 
-| Area                                               | Read                                                                               |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`, `docs/security/response-fields.md`   |
-| Fediverse plugin, federation                       | `docs/FEDIVERSE.md`, skill `strapi-fediverse`                                      |
-| Fediverse move to the plugin package (0.7)         | `docs/architecture/fediverse-cut-over.md`                                          |
-| Comments                                           | `docs/architecture/comments.md`, skill `strapi-comments`                           |
-| Drafts, editor role                                | `docs/architecture/drafts.md`                                                      |
-| Accounts, users-permissions                        | `docs/ACCOUNTS.md`                                                                 |
-| Security review, any requirement                   | `docs/security/asvs.md`, agent `security`                                          |
-| Subscribers                                        | `docs/architecture/subscribers.md`, skill `strapi-subscriber`                      |
-| Site settings, theme, modules                      | `docs/architecture/site-settings.md`                                               |
-| Authors                                            | `docs/architecture/authors.md`                                                     |
-| Categories                                         | `docs/architecture/categories.md`                                                  |
-| The core plugin (category, tag, sites, host check) | `docs/architecture/micelio-plugin.md`                                              |
-| Pages, sections, rebuild hook                      | `docs/architecture/pages.md`                                                       |
-| Demo instance, new instances, API tokens           | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`                        |
-| Playground blocks                                  | `docs/architecture/playground-blocks.md`                                           |
-| Analytics                                          | `docs/ANALYTICS.md`                                                                |
-| Rate limiting, client IP                           | `docs/RATE_LIMITING.md`                                                            |
-| Keys, personal data, outbound calls, uploads, logs | `docs/security/` (`keys.md`, `data.md`, `outbound.md`, `uploads.md`, `logging.md`) |
-| Tests                                              | `docs/architecture/testing.md`                                                     |
-| Install, configure, upgrade, back up               | `docs/operate/`, skill `strapi-deployment`                                         |
-| CI and the image pipeline                          | `docs/architecture/ci-pipeline.md`                                                 |
-| Where each document lives                          | `docs/README.md`                                                                   |
+| Area                                               | Read                                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Content types, controllers, services               | `docs/architecture/overview.md`, `AGENTS.md`, `docs/security/response-fields.md`    |
+| Fediverse plugin, federation                       | `docs/FEDIVERSE.md`, then the package's `docs/`, skill `strapi-fediverse` and agent |
+| Fediverse move to the plugin package (0.7)         | `docs/architecture/fediverse-cut-over.md`                                           |
+| Comments                                           | `docs/architecture/comments.md`, skill `strapi-comments`                            |
+| Drafts, editor role                                | `docs/architecture/drafts.md`                                                       |
+| Accounts, users-permissions                        | `docs/ACCOUNTS.md`                                                                  |
+| Security review, any requirement                   | `docs/security/asvs.md`, agent `security`                                           |
+| Subscribers                                        | `docs/architecture/subscribers.md`, skill `strapi-subscriber`                       |
+| Site settings, theme, modules                      | `docs/architecture/site-settings.md`                                                |
+| Authors                                            | `docs/architecture/authors.md`                                                      |
+| Categories                                         | `docs/architecture/categories.md`                                                   |
+| The core plugin (category, tag, sites, host check) | `docs/architecture/micelio-plugin.md`                                               |
+| Pages, sections, rebuild hook                      | `docs/architecture/pages.md`                                                        |
+| Demo instance, new instances, API tokens           | `docs/architecture/demo-instances.md`, `docs/API_TOKENS.md`                         |
+| Playground blocks                                  | `docs/architecture/playground-blocks.md`                                            |
+| Analytics                                          | `docs/ANALYTICS.md`                                                                 |
+| Rate limiting, client IP                           | `docs/RATE_LIMITING.md`                                                             |
+| Keys, personal data, outbound calls, uploads, logs | `docs/security/` (`keys.md`, `data.md`, `outbound.md`, `uploads.md`, `logging.md`)  |
+| Tests                                              | `docs/architecture/testing.md`                                                      |
+| Install, configure, upgrade, back up               | `docs/operate/`, skill `strapi-deployment`                                          |
+| CI and the image pipeline                          | `docs/architecture/ci-pipeline.md`                                                  |
+| Where each document lives                          | `docs/README.md`                                                                    |
 
 Subsystem knowledge lives in these files, not here (standard, section 1). Add a new subsystem's notes to `docs/architecture/` and a row to this table.
 
@@ -257,7 +256,6 @@ Project-specific agent skills live in `.claude/skills/`. They are loaded automat
 | `strapi-deployment`   | Docker image, env vars, health checks, backups                                          |
 | `strapi-subscriber`   | Working with newsletter subscriptions, signup, or confirmation flows                    |
 | `strapi-comments`     | Configuring or querying the comments plugin and moderation settings                     |
-| `strapi-fediverse`    | Working on the ActivityPub plugin, Fedify, followers, replies, or `FEDIVERSE_*` vars    |
 
 Each skill file is at `.claude/skills/<name>/SKILL.md`.
 
@@ -267,7 +265,7 @@ Each skill file is at `.claude/skills/<name>/SKILL.md`.
 
 1. **Jest + Supertest** configured for integration tests against an isolated SQLite database
 2. **ESLint, Prettier and the base `tsconfig`** come from `@micelio/eslint-config`, `@micelio/prettier-config` and `@micelio/tsconfig`; `eslint.config.mjs` and the `tsconfig.json` files hold only what is this repository's own. Prettier has no semicolons. Run `npm run check` before committing
-3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, the fediverse plugin, `src/admin/` and `tests/`); `npm run typecheck` covers all four
+3. **Strict TypeScript** (`strict: true` in the root `tsconfig.json`, `src/admin/` and `tests/`); `npm run typecheck` covers all three
 4. **PostgreSQL 18** is the production database; backup and restore are in `docs/operate/backup.md`
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
 6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and build the image on `main` (`docs/architecture/ci-pipeline.md`)

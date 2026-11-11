@@ -12,7 +12,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import ts from 'typescript';
 
 /** Folders that are self-contained on purpose: they keep their own copies. */
-const EXEMPT = ['src/migrations/', 'src/plugins/fediverse/'];
+const EXEMPT = ['src/migrations/'];
 /** Folders where a shared declaration belongs. */
 const SHARED_FOLDERS = ['src/types/', 'src/constants/'];
 /** File names that hold the shared declarations of one feature folder. */

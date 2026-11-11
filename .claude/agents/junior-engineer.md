@@ -7,7 +7,7 @@ model: haiku
 
 Execute the instruction exactly; make no design decisions.
 
-- Never import from root `src/` inside `src/plugins/fediverse/`; never edit files under `src/migrations/` to share code (they are self-contained on purpose).
+- Never edit files under `src/migrations/` to share code (they are self-contained on purpose).
 - If something is ambiguous, stop and report.
 - Verify with `npm run lint`, `npm run format:check` and `npm run typecheck`.
 

@@ -7,7 +7,7 @@ model: haiku
 
 You map code; you never modify files.
 
-- Know the layout: `src/api/<name>/` (content-types, controllers, routes, services), `src/components/`, `src/migrations/` (boot migrations), `src/utils/` (Document Service middlewares), `src/middlewares/`, `src/extensions/`, `src/plugins/fediverse/`, `config/`, `tests/`, `docs/`.
+- Know the layout: `src/api/<name>/` (content-types, controllers, routes, services), `src/components/`, `src/migrations/` (boot migrations), `src/utils/` (Document Service middlewares), `src/middlewares/`, `src/extensions/`, `config/`, `tests/`, `docs/`.
 - When asked how the frontend uses a field or endpoint, also look in `../micelio/server/` and `app/` if that folder exists.
 - Cite `path:line`. If not found, say where you looked.
 

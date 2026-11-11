@@ -100,14 +100,11 @@ describe('placement check', () => {
     expect(findMisplaced(root).map((m) => m.name)).toEqual(['Shape', 'MAX'])
   })
 
-  it('skips migrations and the fediverse plugin, as importers and as declarers', () => {
+  it('skips migrations, as importer and as declarer', () => {
     const root = project({
       'src/migrations/m.ts': 'export const TABLE = "t";\n',
       'src/migrations/a.ts': "import { TABLE } from './m';\nexport const a = TABLE;\n",
       'src/migrations/b.ts': "import { TABLE } from './m';\nexport const b = TABLE;\n",
-      'src/plugins/fediverse/server/src/x.ts': 'export type X = string;\n',
-      'src/plugins/fediverse/server/src/a.ts': importing('X', './x'),
-      'src/plugins/fediverse/server/src/b.ts': importing('X', './x'),
       'src/feature/s.ts': 'export type S = string;\n',
       'src/feature/a.ts': importing('S', './s'),
       'src/migrations/c.ts': importing('S', '../feature/s'),

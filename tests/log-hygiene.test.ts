@@ -2,33 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals'
 import request from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { hashIdentifier, securityLogSecret } from '../src/utils/security-log'
-import { cleanRemoteText } from '../src/plugins/fediverse/server/src/utils/remote-text'
-
-describe('cleanRemoteText', () => {
-  it('turns line breaks into spaces so a value cannot forge a log line', () => {
-    expect(cleanRemoteText('eve\n[2026-01-01] info: follow accepted: admin')).toBe(
-      'eve [2026-01-01] info: follow accepted: admin'
-    )
-    expect(cleanRemoteText('a\r\nb c d\te')).toBe('a b c d e')
-  })
-
-  it('drops invisible format characters such as bidi overrides', () => {
-    expect(cleanRemoteText('ev‮il​')).toBe('evil')
-  })
-
-  it('caps the length by characters, not by UTF-16 units', () => {
-    expect(cleanRemoteText('x'.repeat(300))).toHaveLength(255)
-    expect(Array.from(cleanRemoteText('🍄'.repeat(300), 10) ?? '')).toHaveLength(10)
-  })
-
-  it.each([undefined, null, 42, '', ' \n\t '])('gives null for %j', (value) => {
-    expect(cleanRemoteText(value)).toBeNull()
-  })
-
-  it('leaves an ordinary handle alone', () => {
-    expect(cleanRemoteText('@ana@mastodon.example')).toBe('@ana@mastodon.example')
-  })
-})
 
 describe('Request log', () => {
   let lines: string[]

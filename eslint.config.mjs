@@ -5,7 +5,6 @@ export default [
   ...micelio,
   {
     ignores: [
-      'src/plugins/*/dist/',
       '.strapi/',
       'public/uploads/',
       'database/',

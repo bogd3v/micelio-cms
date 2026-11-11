@@ -5,7 +5,7 @@
 //
 //   npm run test:upgrade [-- --allow-drop <name>]...
 //
-// UPGRADE_FROM_IMAGE (default ghcr.io/bogd3v/micelio-cms:0.5.0), UPGRADE_TO_IMAGE (default: a
+// UPGRADE_FROM_IMAGE (default ghcr.io/bogd3v/micelio-cms:0.6.0), UPGRADE_TO_IMAGE (default: a
 // `docker build` of this working tree), CHECK_KEEP=1 keeps the stack, CHECK_TIMEOUT_SECONDS (300)
 // bounds each wait. Needs Docker; no secret, token or email is printed.
 import { randomBytes } from 'node:crypto';
@@ -14,13 +14,14 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { compareCounts, contentTablesSql, formatTable, LIST_TABLES_SQL, parseCounts, PERMISSIONS_SQL, readCollectionNames, trackedTables } from './counts.mjs';
 import { compareIdentity, formatIdentity, parseIdentity, SEED_PROFILE_SQL, SITE_IDENTITY_SQL } from './site-copy.mjs';
+import { ACTOR_PATH, FEDIVERSE_COUNTS_SQL, FEDIVERSE_ENV, GRANT_ROWS, KEY_ROW, SEED_FEDIVERSE_SQL, SEEDED_FEDIVERSE } from './fediverse.mjs';
 import { docker, interrupt, removeRun, runLabel, waitFor } from './docker.mjs';
 
 /** Tables that the demo seed fills in the released image; if one is empty before the upgrade, the check proves nothing. */
 const SEEDED = ['abouts', 'articles', 'authors', 'categories', 'pages', 'tags'];
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const DEFAULT_FROM = 'ghcr.io/bogd3v/micelio-cms:0.5.0';
+const DEFAULT_FROM = 'ghcr.io/bogd3v/micelio-cms:0.6.0';
 const POSTGRES_IMAGE = 'postgres:18-alpine';
 const DB_NAME = 'strapi';
 const DB_USER = 'strapi';
@@ -51,7 +52,7 @@ async function startCms(ctx, image) {
   await docker([
     'run', '-d', '--name', name, '--network', ctx.network, ...ctx.labelArgs, '-p', '127.0.0.1::1337',
     '-v', `${ctx.secrets}:/secrets:ro`, '-v', `${ctx.uploads}:/app/public/uploads`,
-    '-e', 'URL=http://localhost:1337', '-e', 'FRONTEND_URL=http://localhost:3000', '-e', 'MICELIO_DEMO=true',
+    ...FEDIVERSE_ENV, '-e', 'URL=http://localhost:1337', '-e', 'FRONTEND_URL=http://localhost:3000', '-e', 'MICELIO_DEMO=true',
     '-e', 'DATABASE_CLIENT=postgres', '-e', `DATABASE_HOST=${ctx.db}`, '-e', 'DATABASE_PORT=5432',
     '-e', `DATABASE_NAME=${DB_NAME}`, '-e', `DATABASE_USERNAME=${DB_USER}`, '-e', 'DATABASE_SSL=false', '-e', 'TRUST_PROXY=false',
     '--entrypoint', '/sbin/tini', image, '--', 'sh', '-c', CMS_START,
@@ -77,7 +78,8 @@ async function psql(ctx, sql) {
 async function countAll(ctx) {
   const tables = parseCounts(await psql(ctx, contentTablesSql(ctx.tracked, ctx.collections)));
   const permissions = parseCounts(await psql(ctx, PERMISSIONS_SQL));
-  return new Map([...tables, ...permissions]);
+  const fediverse = parseCounts(await psql(ctx, FEDIVERSE_COUNTS_SQL));
+  return new Map([...tables, ...permissions, ...fediverse]);
 }
 
 async function ensureImage(image) {
@@ -154,14 +156,20 @@ async function main() {
 
     log(`starting ${from} with MICELIO_DEMO=true`);
     const first = await startCms(ctx, from);
+    // Fetching the actor makes the released image store its key pair, which the check then counts.
+    const port = (await docker(['port', first, '1337/tcp'])).split('\n')[0];
+    const actor = await fetch(`http://${port}${ACTOR_PATH}`, { headers: { accept: 'application/activity+json' }, signal: AbortSignal.timeout(30000) });
+    if (actor.status !== 200) throw new Error(`GET ${ACTOR_PATH} answered ${actor.status} from ${from}; the actor key was not stored, so the check would prove nothing`);
     // Every table the released image created, not only those of this tree's schemas: a content type the new code retires stays counted.
     ctx.tracked = trackedTables((await psql(ctx, LIST_TABLES_SQL)).split('\n').filter(Boolean));
-    log('counting rows before the upgrade');
-    const before = await countAll(ctx);
-    const empty = SEEDED.filter((name) => !before.get(name));
-    if (empty.length > 0) throw new Error(`The released image left no rows in: ${empty.join(', ')}; the demo seed did not run, so the check would prove nothing`);
     await docker(['stop', '-t', '30', first]);
     await docker(['rm', first]);
+    // The released image's queue is stopped: seed what must survive, then count it.
+    await psql(ctx, SEED_FEDIVERSE_SQL);
+    log('counting rows before the upgrade');
+    const before = await countAll(ctx);
+    const empty = [...SEEDED, ...SEEDED_FEDIVERSE, KEY_ROW, ...GRANT_ROWS].filter((name) => !before.get(name));
+    if (empty.length > 0) throw new Error(`The released image left no rows in: ${empty.join(', ')}; the seed did not run, so the check would prove nothing`);
     // The demo has no theme pin and no fediverse profile: give the single type both, so the copy has them to carry.
     await psql(ctx, SEED_PROFILE_SQL);
 
