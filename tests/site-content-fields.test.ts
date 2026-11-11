@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import request from 'supertest'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import type { ApiSiteSetting } from './helpers/api-types'
 
 // Site settings gained `tagline` and `addressLocality` (localized) and
 // `timezone` (shared, checked against the runtime's IANA data) (#93).
 
-const SITE_SETTING = 'api::site-setting.site-setting'
 const FRONTEND_KEY = 'site-content-frontend-token-0123456789abcdef0123'
 
 describe('Site content fields', () => {
@@ -14,7 +14,7 @@ describe('Site content fields', () => {
   const http = () => request(strapi.server.httpServer)
   const auth = { Authorization: `Bearer ${FRONTEND_KEY}` }
   const settings = () =>
-    strapi.documents(SITE_SETTING) as unknown as {
+    strapi.documents(SITE_UID as never) as unknown as {
       findFirst(p?: object): Promise<{ documentId: string } | null>
       update(p: object): Promise<unknown>
     }

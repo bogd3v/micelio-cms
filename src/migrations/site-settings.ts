@@ -1,52 +1,59 @@
 import type { Core } from '@strapi/strapi'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { SITE_SETTING_UID } from '../constants/uids'
-import { frontendBaseUrl } from '../utils/frontend-url'
+import { defaultSiteDocumentId } from '../utils/default-site'
 
 interface NeutralSiteSettings {
-  name: string
   description: string
-  url: string
   defaultLocale: string
-  modules: Record<string, never>
 }
 
 const PERMISSION_UID = 'plugin::users-permissions.permission'
 const SITE_SETTING_ACTION_PREFIX = `${SITE_SETTING_UID}.`
+// Marks that the neutral values were written (or not needed) once; afterwards the admin owns them.
+const MARKER = { type: 'core', name: 'migrations', key: 'site-seed' }
 
 /** Locales the site settings are translated into. */
 const SITE_LOCALES = ['en', 'es']
 
 /** Text of a new site, per locale; the admin panel replaces it. */
-const NEUTRAL_TEXT: Record<string, { name: string; description: string }> = {
-  en: { name: 'Micelio', description: 'A site built with Micelio' },
-  es: { name: 'Micelio', description: 'Un sitio hecho con Micelio' },
+const NEUTRAL_TEXT: Record<string, { description: string }> = {
+  en: { description: 'A site built with Micelio' },
+  es: { description: 'Un sitio hecho con Micelio' },
 }
 
 /**
- * What a new instance starts with: a neutral name and description, the
- * frontend's URL, and every module on. No author, links or contacts: each
- * site fills in its own in the admin panel.
+ * What a new instance's default site starts with: a neutral description and the default locale.
+ * The name (`Micelio`), the modules (every one on) come from the core, which creates the default
+ * site; the `url` comes from `ensureDefaultSiteUrl`. No author, links or contacts: each site
+ * fills in its own in the admin panel.
  */
 export function neutralSiteSettings(locale: string, defaultLocale: string): NeutralSiteSettings {
   return {
     ...(NEUTRAL_TEXT[locale] ?? NEUTRAL_TEXT.en),
-    url: frontendBaseUrl(),
     defaultLocale: SITE_LOCALES.includes(defaultLocale) ? defaultLocale : 'en',
-    // Every module defaults to on.
-    modules: {},
   }
 }
 
 /**
- * Creates neutral site settings, in the default locale and in every other
- * configured locale among English and Spanish, when they don't exist yet.
- * Afterwards the admin panel owns them: an existing document is never
- * touched. Returns the locales created.
+ * Gives the default site a neutral description in the default locale and in every other
+ * configured locale among English and Spanish, once. Afterwards the admin panel owns them.
+ * Returns the locales written.
+ *
+ * @remarks
+ * The single type `api::site-setting` is retired and no longer written (ADR-0017, D6). An instance
+ * that has rows in it is an upgrade: `copySiteSettingsToSite` fills the site from them, so nothing
+ * is written here and the marker is set. A store marker keeps a description the admin cleared from
+ * coming back at the next boot.
  */
 export async function seedSiteSettings(strapi: Core.Strapi): Promise<string[]> {
-  const settings = strapi.documents(SITE_SETTING_UID)
-  const existing = await strapi.db.query(SITE_SETTING_UID).count()
-  if (existing > 0) return []
+  if (await strapi.store.get(MARKER)) return []
+  if ((await strapi.db.query(SITE_SETTING_UID).count()) > 0) {
+    await strapi.store.set({ ...MARKER, value: { version: 1 } })
+    return []
+  }
+  const documentId = await defaultSiteDocumentId(strapi)
+  if (!documentId) return []
 
   const localesService = strapi.plugin('i18n').service('locales')
   const defaultLocale: string = await localesService.getDefaultLocale()
@@ -54,14 +61,22 @@ export async function seedSiteSettings(strapi: Core.Strapi): Promise<string[]> {
     .map((locale) => locale.code)
     .filter((code) => SITE_LOCALES.includes(code) && code !== defaultLocale)
 
-  type Data = Parameters<typeof settings.create>[0]['data']
-  const dataFor = (locale: string) => neutralSiteSettings(locale, defaultLocale) as unknown as Data
-  const created = await settings.create({ locale: defaultLocale, data: dataFor(defaultLocale) })
-  for (const locale of otherLocales) {
-    // Updating a locale the document does not have yet creates that localization.
-    await settings.update({ documentId: created.documentId, locale, data: dataFor(locale) })
+  // The host's types do not know the core's attributes.
+  const sites = strapi.documents(SITE_UID as never) as unknown as {
+    update(params: object): Promise<unknown>
   }
-  return [defaultLocale, ...otherLocales]
+  const locales = [defaultLocale, ...otherLocales]
+  for (const locale of locales) {
+    // Updating a locale the site does not have yet creates that localization, which needs a name.
+    const name = locale === defaultLocale ? {} : { name: 'Micelio' }
+    await sites.update({
+      documentId,
+      locale,
+      data: { ...name, ...neutralSiteSettings(locale, defaultLocale) },
+    })
+  }
+  await strapi.store.set({ ...MARKER, value: { version: 1 } })
+  return locales
 }
 
 /**

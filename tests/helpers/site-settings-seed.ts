@@ -79,14 +79,16 @@ export async function resetDefaultSite(): Promise<void> {
 }
 
 /**
- * Fills the single type, in `en` and `es`, with a value in every attribute it declares: the
+ * Creates the single type's rows (the boot no longer writes it: an instance upgraded from 0.6 is
+ * the only one that has them), in `en` and `es`, with a value in every attribute it declares: the
  * identity, three images, the author, social links, the theme pin with an accent override, the
  * fediverse profile with its header, and the home page.
  */
 export async function seedSingleType(): Promise<SeededSettings> {
   await ensureSpanish()
   const settings = strapi.documents(SITE_SETTING_UID as never) as unknown as {
-    findFirst(params?: object): Promise<{ documentId: string }>
+    findFirst(params?: object): Promise<{ documentId: string } | null>
+    create(params: object): Promise<{ documentId: string }>
     update(params: object): Promise<unknown>
   }
   const logo = await createImage('logo.png')
@@ -108,7 +110,13 @@ export async function seedSingleType(): Promise<SeededSettings> {
     data: { title: 'Inicio', slug: 'inicio', site: await defaultSiteRelation(strapi) },
   })
 
-  const { documentId } = await settings.findFirst()
+  // Nothing in the code writes the single type any more: this is how a 0.6 database holds it.
+  const { documentId } =
+    (await settings.findFirst({ locale: 'en' })) ??
+    (await settings.create({
+      locale: 'en',
+      data: { name: 'Micelio', defaultLocale: 'en', modules: {} },
+    }))
   await settings.update({
     documentId,
     locale: 'en',

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { seedDemoContent } from '../src/migrations/demo-seed'
 
 // MICELIO_DEMO=landing (#84): also sets the showcase page as the localized home page.
 
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const PAGE_UID = 'api::page.page'
 
 type Page = { documentId: string; locale: string; slug: string }
@@ -31,7 +31,7 @@ describe('Demo profile landing', () => {
       const page = (await strapi
         .documents(PAGE_UID)
         .findFirst({ locale, status: 'published', filters: { slug } } as never)) as Page
-      const settings = (await strapi.documents(SITE_SETTING_UID).findFirst({
+      const settings = (await strapi.documents(SITE_UID).findFirst({
         locale,
         status: 'published',
         populate: ['homePage'],

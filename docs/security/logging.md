@@ -41,7 +41,7 @@ The logger runs first and reads `client`, `actor` and `actorKind` after `next()`
 
 ### Boot
 
-`src/index.ts` writes one `info` line per migration that changed something, with counts and not the content: `[authors]`, `[roles]`, `[accounts]` (the report is `settingsApplied` and `permissionsGranted`, `src/migrations/account-settings.ts:156`), `[tags]`, `[subscribers]`, `[pages]`, `[site-settings]`, `[api-tokens]` (the report word and the token name), `[demo]`, `[rate-limit]` (table created), and the rate-limit mode at start (`src/utils/rate-limit/runtime.ts:67`, `:90`). Strapi's startup banner comes from `@strapi/core`.
+`src/index.ts` writes one `info` line per migration that changed something, with counts and not the content: `[authors]`, `[roles]`, `[accounts]` (the report is `settingsApplied` and `permissionsGranted`, `src/migrations/account-settings.ts:156`), `[tags]`, `[subscribers]`, `[pages]`, `[site-settings]` (permissions revoked), `[sites]` (the default site's neutral description, its url, the copy of the 0.6 settings), `[api-tokens]` (the report word and the token name), `[demo]`, `[rate-limit]` (table created), and the rate-limit mode at start (`src/utils/rate-limit/runtime.ts:67`, `:90`). Strapi's startup banner comes from `@strapi/core`.
 
 ### Errors and failures
 

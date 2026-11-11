@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { seedDemoContent } from '../src/migrations/demo-seed'
 
 // MICELIO_DEMO=static (#84): seeds like true, with no home page.
 
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const PAGE_UID = 'api::page.page'
 const MARKER = { type: 'core', name: 'migrations', key: 'demo-seed' }
 
@@ -33,8 +33,8 @@ describe('Demo profile static', () => {
     expect(await strapi.documents(PAGE_UID).count({ locale: 'en', status: 'published' })).toBe(1)
     for (const locale of ['en', 'es']) {
       const settings = (await strapi
-        .documents(SITE_SETTING_UID)
-        .findFirst({ locale, populate: ['homePage'] })) as unknown as Settings
+        .documents(SITE_UID)
+        .findFirst({ locale, populate: ['homePage'] } as never)) as unknown as Settings
       expect(settings.homePage).toBeNull()
     }
     expect(await seedDemoContent(strapi)).toBe('already-applied')

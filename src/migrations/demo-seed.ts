@@ -2,8 +2,9 @@ import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { Core } from '@strapi/strapi'
-import { ABOUT_UID, ARTICLE_UID, AUTHOR_UID, PAGE_UID, SITE_SETTING_UID } from '../constants/uids'
-import { defaultSiteRelation } from '../utils/default-site'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
+import { ABOUT_UID, ARTICLE_UID, AUTHOR_UID, PAGE_UID } from '../constants/uids'
+import { defaultSiteDocumentId, defaultSiteRelation } from '../utils/default-site'
 import { frontendBaseUrl } from '../utils/frontend-url'
 import {
   coverSvg,
@@ -88,7 +89,7 @@ async function ensureLocales(strapi: Core.Strapi): Promise<void> {
  * once (#74): site settings for a fictional site, an author, two categories,
  * three tags, three published articles with generated covers, an About page
  * and a page that uses every section of the catalog (#75), in English and
- * Spanish. `landing` also sets that page as the site settings' `homePage` in
+ * Spanish. `landing` also sets that page as the default site's `homePage` in
  * each language (#84). Any other value leaves the demo disabled. It never
  * touches an instance that already has articles, and a store marker keeps it
  * from running again, so whatever the user changes or deletes afterwards stays
@@ -106,12 +107,13 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
     for (const locale of DEMO_LOCALES) await fn(locale)
   }
 
-  const settings = await documents(strapi, SITE_SETTING_UID).findFirst()
-  if (settings) {
+  // The identity of the demo goes into the default site (the single type `site-setting` is retired).
+  const siteDocumentId = await defaultSiteDocumentId(strapi)
+  if (siteDocumentId) {
     const logo = await uploadSvg(strapi, 'field-notes-logo', DEMO_LOGO_SVG)
     await forEachLocale((locale) =>
-      documents(strapi, SITE_SETTING_UID).update({
-        documentId: settings.documentId,
+      documents(strapi, SITE_UID).update({
+        documentId: siteDocumentId,
         locale,
         data: {
           ...DEMO_SITE[locale],
@@ -211,11 +213,11 @@ export async function seedDemoContent(strapi: Core.Strapi): Promise<DemoSeedRepo
   })
 
   const showcaseId = await seedShowcasePage(strapi, categoryIds.garden)
-  if (profile === 'landing' && settings) {
+  if (profile === 'landing' && siteDocumentId) {
     // `homePage` is localized: each language points at its own version of the page.
     await forEachLocale((locale) =>
-      documents(strapi, SITE_SETTING_UID).update({
-        documentId: settings.documentId,
+      documents(strapi, SITE_UID).update({
+        documentId: siteDocumentId,
         locale,
         data: { homePage: showcaseId },
       })

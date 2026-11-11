@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import { createHmac } from 'node:crypto'
 import request from 'supertest'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { getPublicRole, getRole } from './helpers/permissions'
 import { restoreRateLimitEnv, setRateLimitEnv } from './helpers/rate-limit-env'
@@ -11,7 +12,6 @@ const USER_UID = 'plugin::users-permissions.user'
 const PERMISSION_UID = 'plugin::users-permissions.permission'
 const ARTICLE_UID = 'api::article.article'
 const COMMENT_UID = 'plugin::comments.comment'
-const SITE_SETTING_UID = 'api::site-setting.site-setting'
 const MARKER = { type: 'core', name: 'migrations', key: 'account-settings' }
 const PASSWORD = 'Sup3r-secret'
 
@@ -105,7 +105,7 @@ describe('Accounts (users-permissions)', () => {
     })
 
     it("writes the email templates with the site's name, in its language", async () => {
-      // The neutral site settings seeded on a fresh instance: Micelio, in English.
+      // The neutral default site seeded on a fresh instance: Micelio, in English.
       const email = (await pluginStore().get({ key: 'email' })) as EmailTemplates
       expect(email.email_confirmation.options.object).toBe('Confirm your email for Micelio')
       expect(email.reset_password.options.object).toBe('Reset your Micelio password')
@@ -612,8 +612,8 @@ describe('Accounts (users-permissions)', () => {
   // Last: it rewrites the templates the sign-up and reset tests read.
   describe('email templates of a Spanish site', () => {
     it("are written in Spanish with the site's name when the settings are applied", async () => {
-      const settings = await strapi.documents(SITE_SETTING_UID).findFirst()
-      await strapi.documents(SITE_SETTING_UID).update({
+      const settings = await strapi.documents(SITE_UID).findFirst()
+      await strapi.documents(SITE_UID).update({
         documentId: settings!.documentId,
         locale: 'en',
         data: { name: 'La Huerta', defaultLocale: 'es' },

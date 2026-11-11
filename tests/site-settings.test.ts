@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals'
 import request from 'supertest'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { setPublicPermissions, setRolePermissions } from './helpers/permissions'
 import type { ApiSiteSetting } from './helpers/api-types'
@@ -12,8 +13,17 @@ import {
 // The frontend reads the site's identity and modules (micelio#233, #234)
 // with its custom API token; nobody else reads them.
 
+// The action of the alias route of the retired single type, which the frontend token holds.
 const SITE_SETTING = 'api::site-setting.site-setting'
+const SEED_MARKER = { type: 'core', name: 'migrations', key: 'site-seed' }
 const MODULES = ['newsletter', 'comments', 'accounts', 'drafts', 'fediverse', 'search', 'support']
+
+/** The default site's documents: the settings are written there, the alias only reads them. */
+const sites = () =>
+  strapi.documents(SITE_UID as never) as unknown as {
+    findFirst(params?: object): Promise<{ documentId: string } | null>
+    update(params: object): Promise<unknown>
+  }
 
 describe('Site settings', () => {
   let auth: { Authorization: string }
@@ -30,8 +40,8 @@ describe('Site settings', () => {
   }
 
   async function documentId(): Promise<string> {
-    const settings = await strapi.documents(SITE_SETTING).findFirst()
-    return settings!.documentId
+    const site = await sites().findFirst({ filters: { isDefault: true } })
+    return site!.documentId
   }
 
   beforeAll(async () => {
@@ -56,8 +66,8 @@ describe('Site settings', () => {
       locale: 'en',
       name: 'Micelio',
       description: 'A site built with Micelio',
-      // FRONTEND_URL is unset in tests: the development default.
-      url: 'http://localhost:3000',
+      // FRONTEND_URL is unset in tests and the default site gets no development default.
+      url: null,
       defaultLocale: 'en',
       author: null,
       contactEmail: null,
@@ -80,14 +90,9 @@ describe('Site settings', () => {
     expect(await seedSiteSettings(strapi)).toEqual([])
 
     await strapi.plugin('i18n').service('locales').create({ code: 'es', name: 'Spanish (es)' })
-    await strapi.documents(SITE_SETTING).delete({ documentId: await documentId(), locale: '*' })
+    await strapi.store.delete(SEED_MARKER)
 
-    process.env.FRONTEND_URL = 'https://example.test'
-    try {
-      expect(await seedSiteSettings(strapi)).toEqual(['en', 'es'])
-    } finally {
-      delete process.env.FRONTEND_URL
-    }
+    expect(await seedSiteSettings(strapi)).toEqual(['en', 'es'])
     expect(await seedSiteSettings(strapi)).toEqual([])
 
     const spanish = await read('es')
@@ -95,9 +100,22 @@ describe('Site settings', () => {
       locale: 'es',
       name: 'Micelio',
       description: 'Un sitio hecho con Micelio',
-      url: 'https://example.test',
     })
     expect(spanish.socialLinks).toEqual([])
+  })
+
+  it('seeds nothing on an instance that still has rows in the single type, and does not write it', async () => {
+    await strapi.store.delete(SEED_MARKER)
+    const single = strapi.db.query(SITE_SETTING)
+    await single.create({ data: { name: 'Old', defaultLocale: 'en', locale: 'en', modules: {} } })
+    const before = await single.count()
+    try {
+      expect(await seedSiteSettings(strapi)).toEqual([])
+      expect(await strapi.store.get(SEED_MARKER)).toBeTruthy()
+      expect(await single.count()).toBe(before)
+    } finally {
+      await single.deleteMany({ where: { name: 'Old' } })
+    }
   })
 
   it('never seeds anything that identifies BogDev', () => {
@@ -109,10 +127,9 @@ describe('Site settings', () => {
   })
 
   it('keeps the other modules on when one is turned off', async () => {
-    await strapi.documents(SITE_SETTING).update({
+    await sites().update({
       documentId: await documentId(),
       locale: 'en',
-      // @ts-expect-error the generated type requires every module; the defaults fill the rest
       data: { modules: { newsletter: false } },
     })
 
@@ -135,10 +152,9 @@ describe('Site settings', () => {
     }
 
     async function saveTheme(theme: unknown) {
-      return strapi.documents(SITE_SETTING).update({
+      return sites().update({
         documentId: await documentId(),
         locale: 'en',
-        // @ts-expect-error the cases below include invalid values on purpose
         data: { theme },
       })
     }
@@ -284,10 +300,9 @@ describe('Site settings', () => {
     ],
   ])('rejects %s', async (_case, data) => {
     await expect(
-      strapi.documents(SITE_SETTING).update({
+      sites().update({
         documentId: await documentId(),
         locale: 'en',
-        // @ts-expect-error invalid on purpose: the values break the schema
         data,
       })
     ).rejects.toMatchObject({ name: 'ValidationError' })
@@ -295,7 +310,7 @@ describe('Site settings', () => {
 
   describe('security contact', () => {
     beforeEach(async () => {
-      await strapi.documents(SITE_SETTING).update({
+      await sites().update({
         documentId: await documentId(),
         locale: 'en',
         data: { securityContact: '' },
@@ -303,7 +318,7 @@ describe('Site settings', () => {
     })
 
     async function saveContact(securityContact: string): Promise<void> {
-      await strapi.documents(SITE_SETTING).update({
+      await sites().update({
         documentId: await documentId(),
         locale: 'en',
         data: { securityContact },
@@ -337,16 +352,15 @@ describe('Site settings', () => {
 
   describe('privacy jurisdiction', () => {
     async function saveJurisdiction(privacyJurisdiction: string | null): Promise<void> {
-      await strapi.documents(SITE_SETTING).update({
+      await sites().update({
         documentId: await documentId(),
         locale: 'en',
-        // @ts-expect-error the generated type is the enum; null clears it
         data: { privacyJurisdiction },
       })
     }
 
     it('is declared as a shared enumeration with the single value colombia', () => {
-      const attribute = strapi.contentType(SITE_SETTING).attributes.privacyJurisdiction
+      const attribute = strapi.contentType(SITE_UID).attributes.privacyJurisdiction
 
       expect(attribute).toMatchObject({
         type: 'enumeration',
@@ -405,7 +419,7 @@ describe('Site settings', () => {
     it('leaves the frontend response as it was, and shows the profile only when asked', async () => {
       const before = await frontendResponse()
 
-      await strapi.documents(SITE_SETTING).update({
+      await sites().update({
         documentId: await documentId(),
         locale: 'en',
         data: { fediverse: { username: 'news_desk', summary: 'A bio.', discoverable: false } },

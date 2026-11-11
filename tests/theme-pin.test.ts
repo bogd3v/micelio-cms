@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import { setupStrapi, cleanupStrapi } from './strapi'
-import { SITE_SETTING_UID } from '../src/constants/uids'
+import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 
 // `site.theme` pins an exact version and digest (micelio-cms#97, ADR 0009): no range, no latest.
 
@@ -9,18 +9,15 @@ const DIGEST = `sha256:${'a'.repeat(64)}`
 describe('The pin of the theme', () => {
   let documentId: string
   const update = (data: Record<string, unknown>) =>
-    strapi.documents(SITE_SETTING_UID).update({ documentId, locale: 'en', data: data as never })
+    strapi.documents(SITE_UID).update({ documentId, locale: 'en', data: data as never })
   const stored = () =>
-    strapi.db
-      .query(SITE_SETTING_UID)
-      .findOne({ where: { locale: 'en' }, populate: ['theme'] }) as Promise<{
+    strapi.db.query(SITE_UID).findOne({ where: { locale: 'en' }, populate: ['theme'] }) as Promise<{
       theme: Record<string, unknown> | null
     }>
 
   beforeAll(async () => {
     await setupStrapi()
-    documentId = (await strapi.db.query(SITE_SETTING_UID).findOne({ where: { locale: 'en' } }))
-      .documentId
+    documentId = (await strapi.db.query(SITE_UID).findOne({ where: { locale: 'en' } })).documentId
   })
   afterAll(async () => {
     await cleanupStrapi()

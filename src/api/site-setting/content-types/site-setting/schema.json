@@ -5,12 +5,18 @@
     "singularName": "site-setting",
     "pluralName": "site-settings",
     "displayName": "Site settings",
-    "description": "Identity of the site and the modules the frontend turns on"
+    "description": "Retired in 0.7: the site settings live on the default site (Content Manager, Site). Kept for one release so the upgrade can copy them, then removed in 0.8"
   },
   "options": {
     "draftAndPublish": false
   },
   "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": false
+    },
     "i18n": {
       "localized": true
     }

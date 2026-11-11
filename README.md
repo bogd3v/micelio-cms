@@ -38,14 +38,14 @@ The static and landing profiles have their own project names (`micelio-demo-stat
 
 ### Make it yours
 
-In the admin panel, _Content Manager → Site settings_:
+In the admin panel, _Content Manager → Site_ (the entry marked default):
 
-| What                                                                         | Where                                                                                                                                                        |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Name, description, author, social links, contact emails, logo, favicon       | Site settings, per language for the name and description                                                                                                     |
-| Modules (newsletter, comments, accounts, drafts, fediverse, search, support) | Site settings → Modules                                                                                                                                      |
-| Theme, mode, accent per mode and display font                                | Site settings → Theme ([theme contract](https://github.com/bogd3v/micelio/blob/main/docs/adr/0005-theme-contract.md)); the demo image ships the Bogotá theme |
-| Content                                                                      | Articles, categories, tags and the About page; delete the demo ones when you are done                                                                        |
+| What                                                                         | Where                                                                                                                                               |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name, description, author, social links, contact emails, logo, favicon       | Site, per language for the name and description                                                                                                     |
+| Modules (newsletter, comments, accounts, drafts, fediverse, search, support) | Site → Modules                                                                                                                                      |
+| Theme, mode, accent per mode and display font                                | Site → Theme ([theme contract](https://github.com/bogd3v/micelio/blob/main/docs/adr/0005-theme-contract.md)); the demo image ships the Bogotá theme |
+| Content                                                                      | Articles, categories, tags and the About page; delete the demo ones when you are done                                                               |
 
 ### To run it for real
 
@@ -59,7 +59,7 @@ The minimum on the CMS is a database, Strapi's keys (`npm run generate:keys`), `
 | Fediverse      | A public HTTPS domain for the CMS and `FEDIVERSE_*`, see `docs/FEDIVERSE.md`                                            |
 | Media on a CDN | An S3-compatible bucket such as Cloudflare R2 (`R2_*`); without it uploads stay on the CMS's disk                       |
 
-Turn off in the site settings the modules whose services you don't set up. [`docs/operate/`](docs/operate/install.md) covers installing the image, every variable, upgrades and backups.
+Turn off on the Site the modules whose services you don't set up. [`docs/operate/`](docs/operate/install.md) covers installing the image, every variable, upgrades and backups.
 
 ## Development
 

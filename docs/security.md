@@ -9,10 +9,10 @@ Report it through **Security → [Report a vulnerability](https://github.com/bog
 In scope: the code and configuration of this repository, including:
 
 - Custom API routes, controllers and services (`src/api`), such as search, popular articles and the drafts list
-- Access control: drafts restricted to editors, site settings and subscribers readable only with the frontend's API token ([`API_TOKENS.md`](API_TOKENS.md)), `DELETE /api/users/me`, the Editor role, comment visibility middlewares
+- Access control: drafts restricted to editors, site settings (`GET /api/site-setting`, answered from the default site) and subscribers readable only with the frontend's API token ([`API_TOKENS.md`](API_TOKENS.md)), `DELETE /api/users/me`, the Editor role, comment visibility middlewares
 - The `fediverse` plugin (ActivityPub inbox, HTTP signatures, federated replies)
 - Who may change the theme: only the Super Admin role. Editor, Author, any role created later and
-  any API token cannot write `site-setting.theme`.
+  any API token cannot write the `theme` of the site (`plugin::micelio.site`).
   - Stored permissions are narrowed on every boot (`src/migrations/theme-permissions.ts`, admin
     roles and admin API tokens).
   - Every write is checked while the request runs (`src/utils/theme-access.ts`): the theme is

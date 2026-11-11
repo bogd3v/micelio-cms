@@ -5,8 +5,12 @@ export const NO_STORE = 'private, no-store'
 const SENSITIVE_PREFIXES = [
   '/api/auth',
   '/api/users/me',
-  // Never public: only an API token may read or write them.
+  // Never public: only an API token may read the site's settings, through the alias of the
+  // retired single type or the sites route (`/api/site-settings` is the plural the single type
+  // never served; it stays covered).
+  '/api/site-setting',
   '/api/site-settings',
+  '/api/micelio/sites',
   '/api/subscribers',
 ]
 
@@ -29,7 +33,7 @@ function asksForDrafts(query: Record<string, unknown>): boolean {
  *
  * @remarks
  * True for the auth routes, the current user, the token-only content types
- * (site settings, subscribers) and any content API read with `status=draft`.
+ * (the site settings, subscribers) and any content API read with `status=draft`.
  * Public content stays cacheable: the frontend and its CDN rely on it.
  *
  * @param method - The HTTP method.
