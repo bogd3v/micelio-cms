@@ -33,6 +33,10 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   // draft at publish through the frontend, which reads it with this token, even when the preview is
   // off. Never `.exchange`: that stays an opt-in of the sites that turn the preview on.
   'plugin::micelio.preview.draft',
+  // The site's slug redirects, `GET /api/micelio/redirects` (core 0.4.0): the frontend reads them to
+  // answer a moved page, and logs that the token "needs plugin::micelio.redirects.find" without it.
+  // Read only, and not in the build token's list: a static build has no redirect to answer.
+  'plugin::micelio.redirects.find',
   'api::subscriber.subscriber.find',
   'api::subscriber.subscriber.lookup',
   'api::subscriber.subscriber.create',
