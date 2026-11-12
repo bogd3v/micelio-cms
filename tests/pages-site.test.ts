@@ -147,7 +147,7 @@ describe('Pages belong to a site', () => {
           title: 'Scoped',
           slug,
           locale: 'en',
-          sections: [{ __component: 'section.rich-text', body: 'Hello' }],
+          sections: [{ __component: 'section.rich-text', body: 'Hello', blockId: null }],
           seo: null,
           localizations: [],
         },

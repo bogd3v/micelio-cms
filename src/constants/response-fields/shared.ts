@@ -131,10 +131,22 @@ export const SHARED_SHAPES: Record<string, Shape> = {
 
 /** The blocks that articles and the About page share, by `__component`. */
 export const SHARED_BLOCKS: Record<string, Shape> = {
-  'shared.rich-text': { id: 'required', __component: 'required', body: 'required' },
-  'shared.quote': { id: 'required', __component: 'required', body: 'required', title: 'required' },
+  'shared.rich-text': {
+    id: 'required',
+    blockId: 'surplus',
+    __component: 'required',
+    body: 'required',
+  },
+  'shared.quote': {
+    id: 'required',
+    blockId: 'surplus',
+    __component: 'required',
+    body: 'required',
+    title: 'required',
+  },
   'shared.media': {
     id: 'required',
+    blockId: 'surplus',
     __component: 'required',
     file: { use: 'required', of: 'media-card' },
     caption: 'required',
@@ -142,11 +154,13 @@ export const SHARED_BLOCKS: Record<string, Shape> = {
   },
   'shared.slider': {
     id: 'required',
+    blockId: 'surplus',
     __component: 'required',
     items: {
       use: 'required',
       of: {
         id: 'required',
+        itemId: 'surplus',
         file: { use: 'required', of: 'media-card' },
         caption: 'required',
         credit: { use: 'required', of: 'image-credit' },

@@ -7,6 +7,9 @@
   },
   "options": {},
   "attributes": {
+    "blockId": {
+      "type": "string"
+    },
     "runtime": {
       "type": "enumeration",
       "enum": ["python", "sql", "javascript"],

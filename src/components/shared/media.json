@@ -6,6 +6,9 @@
   },
   "options": {},
   "attributes": {
+    "blockId": {
+      "type": "string"
+    },
     "file": {
       "allowedTypes": ["images", "files", "videos"],
       "type": "media",

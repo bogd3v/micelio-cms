@@ -7,6 +7,9 @@
   },
   "options": {},
   "attributes": {
+    "itemId": {
+      "type": "string"
+    },
     "question": {
       "type": "string",
       "required": true

@@ -7,6 +7,9 @@
   },
   "options": {},
   "attributes": {
+    "itemId": {
+      "type": "string"
+    },
     "file": {
       "type": "media",
       "multiple": false,

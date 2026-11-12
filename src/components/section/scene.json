@@ -7,6 +7,9 @@
   },
   "options": {},
   "attributes": {
+    "blockId": {
+      "type": "string"
+    },
     "variant": {
       "type": "enumeration",
       "enum": ["background", "inline"],

@@ -260,7 +260,7 @@ export interface MicelioSiteAuthor extends Struct.ComponentSchema {
 export interface MicelioSiteFediverse extends Struct.ComponentSchema {
   collectionName: 'components_micelio_site_fediverses'
   info: {
-    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the site identity"
+    description: "How the blog's fediverse account looks (name, bio, header). Empty fields use the deprecated FEDIVERSE_ACTOR_* variables, then the site identity"
     displayName: 'Fediverse profile'
     icon: 'globe'
   }
@@ -344,8 +344,11 @@ export interface MicelioSiteTheme extends Struct.ComponentSchema {
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 128
       }>
-    themeId: Schema.Attribute.String
-    themeVersion: Schema.Attribute.String
+    themeId: Schema.Attribute.String & Schema.Attribute.CustomField<'global::theme-picker'>
+    themeVersion: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 128
+      }>
   }
 }
 
@@ -357,6 +360,7 @@ export interface SectionCta extends Struct.ComponentSchema {
     icon: 'rocket'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
     text: Schema.Attribute.Text
@@ -375,6 +379,7 @@ export interface SectionFaq extends Struct.ComponentSchema {
     icon: 'question'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.faq-item', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -398,6 +403,7 @@ export interface SectionFaqItem extends Struct.ComponentSchema {
   }
   attributes: {
     answer: Schema.Attribute.RichText & Schema.Attribute.Required
+    itemId: Schema.Attribute.String
     question: Schema.Attribute.String & Schema.Attribute.Required
   }
 }
@@ -410,6 +416,7 @@ export interface SectionFeatureGrid extends Struct.ComponentSchema {
     icon: 'grid'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.feature-item', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -435,6 +442,7 @@ export interface SectionFeatureItem extends Struct.ComponentSchema {
   }
   attributes: {
     icon: Schema.Attribute.Media<'images'>
+    itemId: Schema.Attribute.String
     text: Schema.Attribute.Text
     title: Schema.Attribute.String & Schema.Attribute.Required
   }
@@ -448,6 +456,7 @@ export interface SectionGallery extends Struct.ComponentSchema {
     icon: 'images'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     images: Schema.Attribute.Media<'images', true> & Schema.Attribute.Required
     title: Schema.Attribute.String
     variant: Schema.Attribute.Enumeration<['grid', 'masonry']> &
@@ -464,6 +473,7 @@ export interface SectionHero extends Struct.ComponentSchema {
     icon: 'landscape'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     media: Schema.Attribute.Media<'images' | 'videos'>
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
@@ -497,6 +507,7 @@ export interface SectionLogo extends Struct.ComponentSchema {
   }
   attributes: {
     image: Schema.Attribute.Media<'images'> & Schema.Attribute.Required
+    itemId: Schema.Attribute.String
     name: Schema.Attribute.String & Schema.Attribute.Required
     url: Schema.Attribute.String
   }
@@ -510,6 +521,7 @@ export interface SectionLogoCloud extends Struct.ComponentSchema {
     icon: 'apps'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     logos: Schema.Attribute.Component<'section.logo', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -532,6 +544,7 @@ export interface SectionMediaShowcase extends Struct.ComponentSchema {
     icon: 'picture'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     link: Schema.Attribute.Component<'section.link', false>
     media: Schema.Attribute.Media<'images' | 'videos'> & Schema.Attribute.Required
     text: Schema.Attribute.RichText
@@ -550,6 +563,7 @@ export interface SectionNewsletter extends Struct.ComponentSchema {
     icon: 'message'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     buttonLabel: Schema.Attribute.String
     text: Schema.Attribute.Text
     title: Schema.Attribute.String
@@ -568,6 +582,7 @@ export interface SectionPlan extends Struct.ComponentSchema {
   }
   attributes: {
     features: Schema.Attribute.Text
+    itemId: Schema.Attribute.String
     link: Schema.Attribute.Component<'section.link', false>
     name: Schema.Attribute.String & Schema.Attribute.Required
     period: Schema.Attribute.String
@@ -584,6 +599,7 @@ export interface SectionPostList extends Struct.ComponentSchema {
     icon: 'bulletList'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     category: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.category'>
     count: Schema.Attribute.Integer &
       Schema.Attribute.Required &
@@ -611,6 +627,7 @@ export interface SectionPricing extends Struct.ComponentSchema {
     icon: 'priceTag'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     plans: Schema.Attribute.Component<'section.plan', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -634,6 +651,7 @@ export interface SectionRichText extends Struct.ComponentSchema {
     icon: 'feather'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     body: Schema.Attribute.RichText & Schema.Attribute.Required
   }
 }
@@ -647,6 +665,7 @@ export interface SectionScene extends Struct.ComponentSchema {
   }
   attributes: {
     alt: Schema.Attribute.String & Schema.Attribute.Required
+    blockId: Schema.Attribute.String
     model: Schema.Attribute.Media<'files'> & Schema.Attribute.Required
     poster: Schema.Attribute.Media<'images'> & Schema.Attribute.Required
     text: Schema.Attribute.Text
@@ -665,6 +684,7 @@ export interface SectionStat extends Struct.ComponentSchema {
     icon: 'chartPie'
   }
   attributes: {
+    itemId: Schema.Attribute.String
     label: Schema.Attribute.String & Schema.Attribute.Required
     value: Schema.Attribute.String & Schema.Attribute.Required
   }
@@ -678,6 +698,7 @@ export interface SectionStats extends Struct.ComponentSchema {
     icon: 'chartBubble'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.stat', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -703,6 +724,7 @@ export interface SectionTestimonial extends Struct.ComponentSchema {
   attributes: {
     author: Schema.Attribute.String & Schema.Attribute.Required
     avatar: Schema.Attribute.Media<'images'>
+    itemId: Schema.Attribute.String
     quote: Schema.Attribute.Text & Schema.Attribute.Required
     role: Schema.Attribute.String
   }
@@ -716,6 +738,7 @@ export interface SectionTestimonials extends Struct.ComponentSchema {
     icon: 'discuss'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.testimonial', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -771,6 +794,7 @@ export interface SharedMedia extends Struct.ComponentSchema {
     icon: 'file-video'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     caption: Schema.Attribute.Text
     credit: Schema.Attribute.Component<'shared.image-credit', false>
     file: Schema.Attribute.Media<'images' | 'files' | 'videos'>
@@ -808,6 +832,7 @@ export interface SharedPlayground extends Struct.ComponentSchema {
     icon: 'code'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     caption: Schema.Attribute.Text
     code: Schema.Attribute.Text &
       Schema.Attribute.Required &
@@ -834,6 +859,7 @@ export interface SharedQuote extends Struct.ComponentSchema {
     icon: 'indent'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     body: Schema.Attribute.Text
     title: Schema.Attribute.String
   }
@@ -899,6 +925,7 @@ export interface SharedRichText extends Struct.ComponentSchema {
     icon: 'align-justify'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     body: Schema.Attribute.RichText
   }
 }
@@ -943,6 +970,7 @@ export interface SharedSlide extends Struct.ComponentSchema {
     caption: Schema.Attribute.Text
     credit: Schema.Attribute.Component<'shared.image-credit', false>
     file: Schema.Attribute.Media<'images'> & Schema.Attribute.Required
+    itemId: Schema.Attribute.String
   }
 }
 
@@ -954,6 +982,7 @@ export interface SharedSlider extends Struct.ComponentSchema {
     icon: 'address-book'
   }
   attributes: {
+    blockId: Schema.Attribute.String
     files: Schema.Attribute.Media<'images', true>
     items: Schema.Attribute.Component<'shared.slide', true>
   }
@@ -1070,7 +1099,7 @@ export interface SiteSocialLink extends Struct.ComponentSchema {
 export interface SiteTheme extends Struct.ComponentSchema {
   collectionName: 'components_site_themes'
   info: {
-    description: 'Installed theme and its bounded overrides (micelio ADR 0005). Empty fields use the theme as it is'
+    description: 'Installed theme, pinned to an exact version and digest from the registry (micelio ADR 0008 and 0009), and its bounded overrides (ADR 0005). Empty fields use the theme as it is'
     displayName: 'Theme'
     icon: 'brush'
   }
@@ -1080,7 +1109,12 @@ export interface SiteTheme extends Struct.ComponentSchema {
     displayFont: Schema.Attribute.Enumeration<
       ['archivo', 'fraunces', 'bricolage-grotesque', 'newsreader', 'space-grotesk']
     >
-    themeId: Schema.Attribute.String
+    themeDigest: Schema.Attribute.String
+    themeId: Schema.Attribute.String & Schema.Attribute.CustomField<'global::theme-picker'>
+    themeVersion: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 128
+      }>
   }
 }
 

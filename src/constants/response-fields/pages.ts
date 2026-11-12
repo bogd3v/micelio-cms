@@ -118,6 +118,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     secondaryLink: { use: 'required', of: 'link-section' },
     media: { use: 'required', of: 'media-page' },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.feature-grid': {
     __component: 'required',
@@ -131,9 +132,11 @@ const PAGE_SECTIONS: Record<string, Shape> = {
         title: 'required',
         text: 'required',
         id: 'surplus',
+        itemId: 'surplus',
       },
     },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.media-showcase': {
     __component: 'required',
@@ -143,13 +146,18 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     media: { use: 'required', of: 'media-page' },
     link: { use: 'required', of: 'link-section' },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.stats': {
     __component: 'required',
     variant: 'required',
     title: 'required',
-    items: { use: 'required', of: { value: 'required', label: 'required', id: 'surplus' } },
+    items: {
+      use: 'required',
+      of: { value: 'required', label: 'required', id: 'surplus', itemId: 'surplus' },
+    },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.logo-cloud': {
     __component: 'required',
@@ -162,9 +170,11 @@ const PAGE_SECTIONS: Record<string, Shape> = {
         name: 'required',
         url: 'required',
         id: 'surplus',
+        itemId: 'surplus',
       },
     },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.testimonials': {
     __component: 'required',
@@ -178,9 +188,11 @@ const PAGE_SECTIONS: Record<string, Shape> = {
         role: 'required',
         avatar: { use: 'required', of: 'media-page' },
         id: 'surplus',
+        itemId: 'surplus',
       },
     },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.pricing': {
     __component: 'required',
@@ -197,16 +209,22 @@ const PAGE_SECTIONS: Record<string, Shape> = {
         link: { use: 'required', of: 'link-section' },
         recommended: 'required',
         id: 'surplus',
+        itemId: 'surplus',
       },
     },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.faq': {
     __component: 'required',
     variant: 'required',
     title: 'required',
-    items: { use: 'required', of: { question: 'required', answer: 'required', id: 'surplus' } },
+    items: {
+      use: 'required',
+      of: { question: 'required', answer: 'required', id: 'surplus', itemId: 'surplus' },
+    },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.cta': {
     __component: 'required',
@@ -216,6 +234,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     primaryLink: { use: 'required', of: 'link-section' },
     secondaryLink: { use: 'required', of: 'link-section' },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.post-list': {
     __component: 'required',
@@ -225,6 +244,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     category: { use: 'required', of: 'relation-slug' },
     tag: { use: 'required', of: 'relation-slug' },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.newsletter': {
     __component: 'required',
@@ -233,14 +253,21 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     text: 'required',
     buttonLabel: 'required',
     id: 'surplus',
+    blockId: 'surplus',
   },
-  'section.rich-text': { __component: 'required', body: 'required', id: 'surplus' },
+  'section.rich-text': {
+    __component: 'required',
+    body: 'required',
+    id: 'surplus',
+    blockId: 'surplus',
+  },
   'section.gallery': {
     __component: 'required',
     variant: 'required',
     title: 'required',
     images: { use: 'required', of: 'media-page' },
     id: 'surplus',
+    blockId: 'surplus',
   },
   'section.scene': {
     __component: 'required',
@@ -251,6 +278,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     title: 'required',
     text: 'required',
     id: 'surplus',
+    blockId: 'surplus',
   },
 }
 
