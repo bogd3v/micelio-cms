@@ -51,4 +51,8 @@ describe('upgrade check: the fediverse seed', () => {
     expect(FEDIVERSE_COUNTS_SQL).toContain("key = 'plugin_fediverse_keyPairs'")
     expect(FEDIVERSE_COUNTS_SQL).not.toMatch(/select\s+value/i)
   })
+
+  it('counts the key of a package 0.7 image, one row per site', () => {
+    expect(FEDIVERSE_COUNTS_SQL).toContain("starts_with(key, 'plugin_fediverse_keyPairs:')")
+  })
 })

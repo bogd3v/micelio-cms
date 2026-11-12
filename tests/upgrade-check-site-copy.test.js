@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals'
 import {
   compareIdentity,
+  comparesSingleType,
   formatIdentity,
   parseIdentity,
 } from '../scripts/upgrade-check/site-copy.mjs'
@@ -49,5 +50,19 @@ describe('upgrade check: the default site against the single type', () => {
     ).split('\n')
     expect(lines).toHaveLength(10)
     expect(lines.filter((line) => line.endsWith('DIFFERENT'))).toHaveLength(1)
+  })
+
+  it('compares the single type before 0.7 and the counts only from 0.7', () => {
+    expect(comparesSingleType('0.6.0')).toBe(true)
+    expect(comparesSingleType('0.6.12\n')).toBe(true)
+    expect(comparesSingleType('0.7.0')).toBe(false)
+    expect(comparesSingleType('0.8.1')).toBe(false)
+    expect(comparesSingleType('1.0.0')).toBe(false)
+  })
+
+  it('keeps the guard when the version cannot be read, and an empty single type still fails', () => {
+    expect(comparesSingleType('')).toBe(true)
+    expect(comparesSingleType('latest')).toBe(true)
+    expect(compareIdentity([])).toHaveLength(1)
   })
 })

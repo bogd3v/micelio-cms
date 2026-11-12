@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals'
+import request from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import {
   ensureEnvToken,
@@ -15,6 +16,7 @@ import {
 const TOKEN_UID = 'admin::api-token'
 const DRAFT = 'plugin::micelio.preview.draft'
 const EXCHANGE = 'plugin::micelio.preview.exchange'
+const REDIRECTS = 'plugin::micelio.redirects.find'
 const ACCESS_KEY = 'preview-frontend-token-0123456789abcdef0123456789'
 
 describe('Frontend token and the preview draft action', () => {
@@ -48,6 +50,18 @@ describe('Frontend token and the preview draft action', () => {
     const registered = [...strapi.contentAPI.permissions.providers.action.keys()]
     expect(registered).toContain(DRAFT)
     expect(registered).toContain(EXCHANGE)
+  })
+
+  it('registers the redirects action, grants it to the frontend token and answers its request', async () => {
+    expect([...strapi.contentAPI.permissions.providers.action.keys()]).toContain(REDIRECTS)
+    expect(FRONTEND_TOKEN_PERMISSIONS).toContain(REDIRECTS)
+    expect(await actionsOfToken()).toContain(REDIRECTS)
+
+    // The frontend's contract suite reads this route with the token and expects 200 (it was 403).
+    const answer = await request(strapi.server.httpServer)
+      .get('/api/micelio/redirects')
+      .set('Authorization', `Bearer ${ACCESS_KEY}`)
+    expect(answer.status).toBe(200)
   })
 
   it('lists the draft action and never the exchange', () => {

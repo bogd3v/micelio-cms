@@ -75,9 +75,12 @@ BEGIN
 END $$;
 `
 
-/** SQL that prints `name|count` lines for the key and the plugin's grants (the key's value is never read). */
+/**
+ * SQL that prints `name|count` lines for the key and the plugin's grants (the key's value is never read).
+ * The key is `keyPairs` up to `0.6` and `keyPairs:<site documentId>` from the package `0.7` (one per site), so both count.
+ */
 export const FEDIVERSE_COUNTS_SQL = `
-select 'core_store:plugin_fediverse_keyPairs', count(*) from strapi_core_store_settings where key = 'plugin_fediverse_keyPairs'
+select 'core_store:plugin_fediverse_keyPairs', count(*) from strapi_core_store_settings where key = 'plugin_fediverse_keyPairs' or starts_with(key, 'plugin_fediverse_keyPairs:')
 union all
 select 'admin_permissions_action:' || action, count(*) from admin_permissions where starts_with(action, 'plugin::fediverse.') group by action
 order by 1`

@@ -13,7 +13,7 @@ import { constants } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { compareCounts, contentTablesSql, formatTable, LIST_TABLES_SQL, parseCounts, PERMISSIONS_SQL, readCollectionNames, trackedTables } from './counts.mjs';
-import { compareIdentity, formatIdentity, parseIdentity, SEED_PROFILE_SQL, SITE_IDENTITY_SQL } from './site-copy.mjs';
+import { compareIdentity, comparesSingleType, formatIdentity, parseIdentity, SEED_PROFILE_SQL, SITE_IDENTITY_SQL } from './site-copy.mjs';
 import { ACTOR_PATH, FEDIVERSE_COUNTS_SQL, FEDIVERSE_ENV, GRANT_ROWS, KEY_ROW, SEED_FEDIVERSE_SQL, SEEDED_FEDIVERSE } from './fediverse.mjs';
 import { docker, interrupt, removeRun, runLabel, waitFor } from './docker.mjs';
 
@@ -172,6 +172,10 @@ async function main() {
     if (empty.length > 0) throw new Error(`The released image left no rows in: ${empty.join(', ')}; the seed did not run, so the check would prove nothing`);
     // The demo has no theme pin and no fediverse profile: give the single type both, so the copy has them to carry.
     await psql(ctx, SEED_PROFILE_SQL);
+    // From `0.7` the released image keeps its settings on the default site and its single type has no rows: nothing is left to copy, so only the counts are compared. Before `0.7`, an empty single type still fails (`compareIdentity`).
+    const releasedVersion = (await docker(['run', '--rm', ...labelArgs, '--entrypoint', 'node', from, '-p', "require('./package.json').version"])).trim();
+    const copiesSingleType = comparesSingleType(releasedVersion);
+    if (!copiesSingleType) log(`the released image is ${releasedVersion} (0.7 or later): the copy into the default site is not compared`);
 
     log(`starting ${to} on the same database`);
     await startCms(ctx, to);
@@ -182,9 +186,12 @@ async function main() {
     console.log(`\n${formatTable(rows)}\n`);
     if (allowed.length > 0) log(`allowed drops: ${allowed.join(', ')}`);
     for (const name of allowed) if (!rows.some((row) => row.name === name)) log(`warning: --allow-drop ${name} matches no row`);
-    const identity = parseIdentity(await psql(ctx, SITE_IDENTITY_SQL));
-    console.log(`Site name, theme pin and fediverse username, single type and default site:\n${formatIdentity(identity)}\n`);
-    const differences = compareIdentity(identity);
+    let differences = [];
+    if (copiesSingleType) {
+      const identity = parseIdentity(await psql(ctx, SITE_IDENTITY_SQL));
+      console.log(`Site name, theme pin and fediverse username, single type and default site:\n${formatIdentity(identity)}\n`);
+      differences = compareIdentity(identity);
+    }
     if (differences.length > 0) {
       console.error(`[upgrade-check] FAILED: the default site differs from the site settings in ${differences.map((d) => `${d.locale}.${d.field}`).join(', ')}`);
       process.exitCode = 1;
@@ -194,7 +201,7 @@ async function main() {
       console.error(`[upgrade-check] FAILED: ${dropped.length} count(s) decreased: ${dropped.join(', ')}`);
       process.exitCode = 1;
     } else if (differences.length === 0) {
-      log('OK: no count decreased, and the default site carries the name, theme pin and fediverse username of the site settings');
+      log(copiesSingleType ? 'OK: no count decreased, and the default site carries the name, theme pin and fediverse username of the site settings' : 'OK: no count decreased');
     }
   } finally {
     try {
