@@ -11,6 +11,7 @@ import { hashSubscriberTokens } from './migrations/hash-subscriber-tokens'
 import { ensureEditorRole } from './migrations/editor-role'
 import { applyAccountSettings } from './migrations/account-settings'
 import { migrateSliderItems } from './migrations/slider-items'
+import { fillBlockIds } from './migrations/block-ids'
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
 import { restrictThemeToSuperAdmin } from './migrations/theme-permissions'
 import { restrictThemeWrites } from './utils/theme-access'
@@ -216,6 +217,9 @@ export default {
 
     const sliders = await migrateSliderItems(strapi)
     if (sliders > 0) strapi.log.info(`[sliders] copied files into items for ${sliders} sliders`)
+
+    const blockIds = await fillBlockIds(strapi)
+    if (blockIds > 0) strapi.log.info(`[blocks] filled ${blockIds} block and item ids`)
 
     const localized = await backfillCommentLocale(strapi)
     if (localized > 0) strapi.log.info(`[comments] set the locale of ${localized} comments`)
