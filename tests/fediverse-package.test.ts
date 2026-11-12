@@ -92,7 +92,7 @@ describe('The distribution with @micelio/strapi-plugin-fediverse (FEDIVERSE_ENAB
   })
 
   it('lists the fediverse plugin from the package, always enabled', () => {
-    expect(installedPackage().version).toBe('0.7.0')
+    expect(installedPackage().version).toBe('0.7.1')
 
     // Always enabled and never resolved from a path: the package reads FEDIVERSE_ENABLED itself.
     const listed = pluginsConfig({ env } as never) as Record<string, Record<string, unknown>>

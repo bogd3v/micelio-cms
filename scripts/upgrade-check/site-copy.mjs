@@ -107,3 +107,19 @@ export function formatIdentity(rows) {
   }
   return lines.join('\n');
 }
+
+/**
+ * Whether the check compares the single type with the default site: yes for a released image
+ * older than `0.7` (the boot copies the single type into the default site, and a single type with
+ * no row there fails the check), no from `0.7` (the settings live on the default site and the
+ * single type has no rows, so only the counts are compared). A version that cannot be read is
+ * compared, so the guard is never dropped by mistake.
+ * @param {string} releasedVersion - The `version` of the released image's `package.json`.
+ * @returns {boolean} `true` when the comparison runs.
+ */
+export function comparesSingleType(releasedVersion) {
+  const match = /^(\d+)\.(\d+)\./.exec(String(releasedVersion).trim());
+  if (!match) return true;
+  const [major, minor] = [Number(match[1]), Number(match[2])];
+  return major === 0 && minor < 7;
+}

@@ -32,9 +32,17 @@ Frontend 0.2.0 or later looks a token up by its hash first and falls back to the
 
 In a rolling deploy, stop the old CMS instances first: an old image keeps writing and looking up plain tokens until the new image has booted, and none of them should run next to a migrated database. The rewrites are irreversible; a rollback restores the code, not the plain values.
 
+## Upgrading to 0.8: the core plugin declares release line `0.7`
+
+**Breaking for editors whose pages hold more than one background Scene.** `0.8` installs `@micelio/strapi-plugin-core` `0.4.0` (it was `0.2.0`) and `@micelio/strapi-plugin-fediverse` `0.7.1` (its peer range admits the core). Take a backup first ([Backup](backup.md)); there is nothing to do by hand otherwise.
+
+- **Scenes.** A save of a page (or an import) with more than one **Scene** whose **Variant** is `background` in the same dynamic zone is refused with `400 sceneBackgroundLimit`; a Scene with no variant counts as `background`. A page that already holds two keeps being served, but its editor cannot save it until all but one are set to `inline`. Before upgrading, open the pages with several Scenes and set the extra ones to `inline`.
+- **Release line.** Micelio → Status and `npx micelio doctor` report release line `0.7` (the core declares `0.7`, not `0.8`), and **Run again** passes `frontend-release-line` for a frontend on `0.6.x` or `0.7.x`; a frontend on `0.8.x` fails that optional check until a core declares `0.8`. The check never stops a boot.
+- **What does not change.** No public URL, response field or token permission changes (the core's `READ_ACTIONS` is the same two actions), and no stored row is rewritten; the boot adds the tables of the core's new types. The core's other `0.3.0` and `0.4.0` refusals (the budget at publish, the review, scheduling, island and SEO checks, the move of an edited scheduled entry to `draft`) belong to types marked editorial, and `micelio-cms` marks none, so they never run here.
+
 ## Upgrading to 0.7: the site settings move to the Site and the fediverse plugin is a package
 
-**Breaking for editors, for scripts that write the single type `api::site-setting`, for operators with federation on (`FEDIVERSE_ENABLED=true`) and for anything that read the plugin's code.** Two changes arrive together, and this section follows the order you follow them: back up, prepare the `0.6` instance, start `0.7`, check. The site settings live on the default **Site**, and the fediverse plugin is no longer code of this repository: the image installs [`@micelio/strapi-plugin-fediverse`](https://github.com/bogd3v/micelio-plugin-fediverse) `0.7.0` and the local plugin folder under `src/plugins/` is gone. The core plugin stays `@micelio/strapi-plugin-core` `0.2.0` (see [Known limitation](#known-limitation-the-core-reports-release-line-06)). Take a backup first ([Backup](backup.md)); the fediverse package's own notes are in its [`docs/operate/upgrade-0.7.md`](https://github.com/bogd3v/micelio-plugin-fediverse/blob/main/docs/operate/upgrade-0.7.md).
+**Breaking for editors, for scripts that write the single type `api::site-setting`, for operators with federation on (`FEDIVERSE_ENABLED=true`) and for anything that read the plugin's code.** Two changes arrive together, and this section follows the order you follow them: back up, prepare the `0.6` instance, start `0.7`, check. The site settings live on the default **Site**, and the fediverse plugin is no longer code of this repository: the image installs [`@micelio/strapi-plugin-fediverse`](https://github.com/bogd3v/micelio-plugin-fediverse) `0.7.0` and the local plugin folder under `src/plugins/` is gone. The core plugin stays `@micelio/strapi-plugin-core` `0.2.0`, which declares release line `0.6`: the Status page and `npx micelio doctor` report `0.6`, and the optional check `frontend-release-line` fails for a frontend that answers `0.7.x` on `/_health`. The check never stops a boot (`docs/operate/host-check.md` of the core); `0.8` raises the core (see [Upgrading to 0.8](#upgrading-to-08-the-core-plugin-declares-release-line-07)). Take a backup first ([Backup](backup.md)); the fediverse package's own notes are in its [`docs/operate/upgrade-0.7.md`](https://github.com/bogd3v/micelio-plugin-fediverse/blob/main/docs/operate/upgrade-0.7.md).
 
 ### Before you upgrade
 
@@ -70,10 +78,6 @@ Read the Site entry once and check the **Theme**, the **URL** and the **Fedivers
 **The Fediverse page** is **Fediverse** under **Site** in the Micelio sub-navigation, no longer an entry of the main menu, and the article edit view has its panel as before. They come from the package's admin entry, which Strapi bundles because `config/plugins.ts` lists the plugin as always enabled: the admin bundle contains them whatever `FEDIVERSE_ENABLED` is at build time.
 
 **Queued deliveries.** A message the `0.6` image left in `fedify_message_v2` stays in the table. Fedify refuses a private address outside `NODE_ENV=test`, so the check proves the row survives, not that it is delivered.
-
-### Known limitation: the core reports release line `0.6`
-
-`@micelio/strapi-plugin-core` `0.2.0` still reports release line `0.6` (the Status page and `npx micelio doctor`), so its optional check `frontend-release-line` reports `fail` for a frontend that answers `0.7.x` on `/_health`. The check never stops a boot (`docs/operate/host-check.md` of the core). A later `0.7.z` raises the core to a release that declares `0.7` (the exception recorded in [ADR-0001](../adr/0001-core-pin-in-a-patch.md)); until then, read that `fail` as expected.
 
 **Rolling back** from `0.7` to `0.6` is not supported across a MINOR (see the rules): restore the backup. The rows keep their `site` column, which `0.6` ignores.
 

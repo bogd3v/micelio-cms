@@ -32,7 +32,8 @@ const PREVIEW_PLUGIN = 'micelio'
  *   service, checked before `readDraft`); an unknown, spent, expired, revoked or wrong-site grant
  *   gets `404`.
  *
- * Checked against `@micelio/strapi-plugin-core` 0.2.0, the pinned version. Re-check the order of
+ * Checked against `@micelio/strapi-plugin-core` 0.4.0, the pinned version (0.4.0 adds a `system` grant that
+ * `resolveGrant` also checks before `readDraft`; the order of the two handlers is unchanged). Re-check the order of
  * reads in both handlers on every bump of the core: a release that reads a draft before its
  * credential check would be unguarded here, and the tests prove the refusals, not the order.
  *
