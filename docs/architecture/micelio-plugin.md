@@ -41,7 +41,7 @@ In production (`NODE_ENV=production`) the core's `bootstrap` refuses to boot whe
 
 ## Types
 
-`strapi.documents('plugin::micelio.category')` compiles only once `types/generated/contentTypes.d.ts` knows the plugin's types, with the plugin loaded (ADR-0017, amendment of 2026-10-23, "generated types"). Regenerate it with `NODE_ENV=test npx strapi ts:generate-types` (without `NODE_ENV=test` the command stops on missing `APP_KEYS`); the file changes with every change to a core type, so a core upgrade that touches one regenerates it in the same pull request.
+`strapi.documents('plugin::micelio.category')` compiles only once `types/generated/contentTypes.d.ts` knows the plugin's types, with the plugin loaded (ADR-0017, amendment of 2026-10-23, "generated types"). Regenerate it with `NODE_ENV=test npx strapi ts:generate-types` (without `NODE_ENV=test` the command stops on missing `APP_KEYS`); the file changes with every change to a core type, so a core upgrade that touches one regenerates it in the same pull request. A change that touches no core type regenerates only the interfaces it changed (the installed core can be newer than the committed file, and a full run then adds unrelated types: keep them out of the diff).
 
 ## What a plugin cannot do
 

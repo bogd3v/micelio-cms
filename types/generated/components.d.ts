@@ -360,11 +360,14 @@ export interface SectionCta extends Struct.ComponentSchema {
     icon: 'rocket'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
     text: Schema.Attribute.Text
     title: Schema.Attribute.String & Schema.Attribute.Required
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['banner', 'card']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'banner'>
@@ -379,6 +382,7 @@ export interface SectionFaq extends Struct.ComponentSchema {
     icon: 'question'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.faq-item', true> &
       Schema.Attribute.SetMinMax<
@@ -388,6 +392,8 @@ export interface SectionFaq extends Struct.ComponentSchema {
         number
       >
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['list', 'two-columns']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'list'>
@@ -416,6 +422,7 @@ export interface SectionFeatureGrid extends Struct.ComponentSchema {
     icon: 'grid'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.feature-item', true> &
       Schema.Attribute.SetMinMax<
@@ -427,6 +434,8 @@ export interface SectionFeatureGrid extends Struct.ComponentSchema {
       >
     text: Schema.Attribute.Text
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['grid', 'list', 'bento']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'grid'>
@@ -456,9 +465,12 @@ export interface SectionGallery extends Struct.ComponentSchema {
     icon: 'images'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     images: Schema.Attribute.Media<'images', true> & Schema.Attribute.Required
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['grid', 'masonry']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'grid'>
@@ -473,12 +485,15 @@ export interface SectionHero extends Struct.ComponentSchema {
     icon: 'landscape'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     media: Schema.Attribute.Media<'images' | 'videos'>
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
     text: Schema.Attribute.Text
     title: Schema.Attribute.String & Schema.Attribute.Required
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['centered', 'split', 'full-bleed']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'centered'>
@@ -521,6 +536,7 @@ export interface SectionLogoCloud extends Struct.ComponentSchema {
     icon: 'apps'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     logos: Schema.Attribute.Component<'section.logo', true> &
       Schema.Attribute.SetMinMax<
@@ -530,6 +546,8 @@ export interface SectionLogoCloud extends Struct.ComponentSchema {
         number
       >
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['row', 'marquee']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'row'>
@@ -544,11 +562,14 @@ export interface SectionMediaShowcase extends Struct.ComponentSchema {
     icon: 'picture'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     link: Schema.Attribute.Component<'section.link', false>
     media: Schema.Attribute.Media<'images' | 'videos'> & Schema.Attribute.Required
     text: Schema.Attribute.RichText
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['left', 'right', 'stacked']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'left'>
@@ -563,10 +584,13 @@ export interface SectionNewsletter extends Struct.ComponentSchema {
     icon: 'message'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     buttonLabel: Schema.Attribute.String
     text: Schema.Attribute.Text
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['inline', 'card']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'inline'>
@@ -599,6 +623,7 @@ export interface SectionPostList extends Struct.ComponentSchema {
     icon: 'bulletList'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     category: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.category'>
     count: Schema.Attribute.Integer &
@@ -613,6 +638,8 @@ export interface SectionPostList extends Struct.ComponentSchema {
       Schema.Attribute.DefaultTo<3>
     tag: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.tag'>
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['cards', 'list']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'cards'>
@@ -627,6 +654,7 @@ export interface SectionPricing extends Struct.ComponentSchema {
     icon: 'priceTag'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     plans: Schema.Attribute.Component<'section.plan', true> &
       Schema.Attribute.SetMinMax<
@@ -637,6 +665,8 @@ export interface SectionPricing extends Struct.ComponentSchema {
       >
     text: Schema.Attribute.Text
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['cards', 'table']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'cards'>
@@ -651,8 +681,11 @@ export interface SectionRichText extends Struct.ComponentSchema {
     icon: 'feather'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     body: Schema.Attribute.RichText & Schema.Attribute.Required
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
   }
 }
 
@@ -664,12 +697,15 @@ export interface SectionScene extends Struct.ComponentSchema {
     icon: 'globe'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     alt: Schema.Attribute.String & Schema.Attribute.Required
     blockId: Schema.Attribute.String
     model: Schema.Attribute.Media<'files'> & Schema.Attribute.Required
     poster: Schema.Attribute.Media<'images'> & Schema.Attribute.Required
     text: Schema.Attribute.Text
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['background', 'inline']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'background'>
@@ -698,6 +734,7 @@ export interface SectionStats extends Struct.ComponentSchema {
     icon: 'chartBubble'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.stat', true> &
       Schema.Attribute.SetMinMax<
@@ -708,6 +745,8 @@ export interface SectionStats extends Struct.ComponentSchema {
         number
       >
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['row', 'cards']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'row'>
@@ -738,6 +777,7 @@ export interface SectionTestimonials extends Struct.ComponentSchema {
     icon: 'discuss'
   }
   attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     items: Schema.Attribute.Component<'section.testimonial', true> &
       Schema.Attribute.SetMinMax<
@@ -747,6 +787,8 @@ export interface SectionTestimonials extends Struct.ComponentSchema {
         number
       >
     title: Schema.Attribute.String
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
+      Schema.Attribute.DefaultTo<'default'>
     variant: Schema.Attribute.Enumeration<['single', 'grid']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'single'>

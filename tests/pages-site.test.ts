@@ -139,15 +139,23 @@ describe('Pages belong to a site', () => {
       before = (await frontend(query)).body
     })
 
-    // The body the same request got before pages had a site, ids and timestamps aside (the
-    // relation is not populated by default, and `populate=*` does not reach it).
+    // The body before pages had a site, plus the section options of #442, ids and timestamps
+    // aside (the relation is not populated by default, and `populate=*` does not reach it).
     const expected = {
       data: [
         {
           title: 'Scoped',
           slug,
           locale: 'en',
-          sections: [{ __component: 'section.rich-text', body: 'Hello', blockId: null }],
+          sections: [
+            {
+              __component: 'section.rich-text',
+              body: 'Hello',
+              blockId: null,
+              tone: 'default',
+              align: 'start',
+            },
+          ],
           seo: null,
           localizations: [],
         },

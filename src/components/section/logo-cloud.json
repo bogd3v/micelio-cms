@@ -24,6 +24,16 @@
       "repeatable": true,
       "component": "section.logo",
       "min": 1
+    },
+    "tone": {
+      "type": "enumeration",
+      "enum": ["default", "raised", "accent"],
+      "default": "default"
+    },
+    "align": {
+      "type": "enumeration",
+      "enum": ["start", "center"],
+      "default": "start"
     }
   }
 }

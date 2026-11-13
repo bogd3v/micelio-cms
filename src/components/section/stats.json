@@ -25,6 +25,16 @@
       "component": "section.stat",
       "min": 2,
       "max": 4
+    },
+    "tone": {
+      "type": "enumeration",
+      "enum": ["default", "raised", "accent"],
+      "default": "default"
+    },
+    "align": {
+      "type": "enumeration",
+      "enum": ["start", "center"],
+      "default": "start"
     }
   }
 }
