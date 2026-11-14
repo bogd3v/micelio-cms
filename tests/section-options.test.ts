@@ -36,6 +36,24 @@ function attributes(name: string): Record<string, Attribute> {
   return JSON.parse(fs.readFileSync(file, 'utf8')).attributes
 }
 
+// `eyebrow` and `anchor` (#441): optional strings on the twelve sections whose renderer uses
+// `SectionHead`, and on no other.
+const SECTION_HEAD = [
+  'cta',
+  'faq',
+  'feature-grid',
+  'gallery',
+  'hero',
+  'logo-cloud',
+  'newsletter',
+  'post-list',
+  'pricing',
+  'scene',
+  'stats',
+  'testimonials',
+]
+const WITHOUT_HEAD = SECTIONS.filter((name) => !SECTION_HEAD.includes(name))
+
 describe('section components offer tone and align', () => {
   it.each(SECTIONS)('section.%s has tone and align with the vocabulary defaults', (name) => {
     const { tone, align } = attributes(name)
@@ -51,5 +69,19 @@ describe('section components offer tone and align', () => {
     const zone = (pageSchema.attributes as unknown as Record<string, { components: string[] }>)
       .sections.components
     expect(zone.map((uid) => uid.replace(/^section\./, '')).sort()).toEqual([...SECTIONS].sort())
+  })
+})
+
+describe('sections with a SectionHead offer eyebrow and anchor', () => {
+  it.each(SECTION_HEAD)('section.%s has optional string eyebrow and anchor', (name) => {
+    const { eyebrow, anchor } = attributes(name)
+    expect(eyebrow).toEqual({ type: 'string' })
+    expect(anchor).toEqual({ type: 'string' })
+  })
+
+  it.each(WITHOUT_HEAD)('section.%s has neither eyebrow nor anchor', (name) => {
+    const attrs = attributes(name)
+    expect(attrs).not.toHaveProperty('eyebrow')
+    expect(attrs).not.toHaveProperty('anchor')
   })
 })
