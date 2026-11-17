@@ -9,8 +9,29 @@ const ESM_PACKAGES = [
   'entities',
 ]
 
+/**
+ * Reads a worker limit from the environment: a positive integer (`3`) or a
+ * percentage (`50%`). Anything else (empty, `abc`, `0`, `-1`, `1.5`) is ignored.
+ *
+ * @param {string | undefined} value The raw value of the variable.
+ * @returns {number | string | undefined} The limit as Jest takes it, or `undefined`.
+ */
+function parseWorkerLimit(value) {
+  const text = (value ?? '').trim()
+  if (/^[1-9]\d*$/.test(text)) return Number(text)
+  if (/^[1-9]\d*%$/.test(text)) return text
+  return undefined
+}
+
+// `JEST_MAX_WORKERS` wins, then `VITEST_MAX_WORKERS` (what `factory-slot.sh run`
+// of micelio-engineering sets); a bad value falls through to the next, and with
+// none Jest keeps its default (one worker per core but one).
+const maxWorkers =
+  parseWorkerLimit(process.env.JEST_MAX_WORKERS) ?? parseWorkerLimit(process.env.VITEST_MAX_WORKERS)
+
 /** @type {import('jest').Config} */
 module.exports = {
+  ...(maxWorkers === undefined ? {} : { maxWorkers }),
   testEnvironment: 'node',
   testMatch: ['**/tests/**/*.test.[jt]s'],
   testPathIgnorePatterns: [
