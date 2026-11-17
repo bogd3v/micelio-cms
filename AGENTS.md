@@ -45,7 +45,7 @@ The globs `factory-tools lint-lane` reads to set an issue's lane (`docs/factory.
 
 ```text
 stack: Dockerfile, .dockerignore, .nvmrc, docker-entrypoint.sh, docker-compose.yml, docker-compose.verify.yml, compose.demo.yml, compose.landing.yml, compose.static.yml, demo/, database/migrations/, config/, server.js, scripts/upgrade-check/, scripts/release/, scripts/demo-secrets.js, scripts/backup-volumes.sh, scripts/restore-volumes.sh, scripts/builder-last-run.sh, .github/workflows/deploy.yml, .github/workflows/release.yml
-contract: src/api/*/content-types/, src/api/*/routes/, src/components/, src/migrations/, src/policies/, src/middlewares/, src/extensions/, src/index.ts, src/utils/admin-auth-routes.ts, src/utils/cors-origins.ts, src/utils/drafts-access.ts, src/utils/theme-access.ts, src/utils/theme-picker-route.ts, src/constants/response-fields/, src/constants/roles.ts, types/generated/, .env.example, .github/workflows/contract.yml, docs/security.md, docs/security/response-fields.md, docs/API_TOKENS.md, docs/operate/
+contract: src/api/*/content-types/, src/api/*/routes/, src/components/, src/migrations/, src/policies/, src/middlewares/, src/extensions/, src/index.ts, src/utils/admin-auth-routes.ts, src/utils/cors-origins.ts, src/utils/drafts-access.ts, src/utils/theme-access.ts, src/utils/theme-picker-route.ts, src/constants/response-fields/, src/constants/roles.ts, types/generated/, .env.example, .github/workflows/contract.yml, scripts/contract/, docs/security.md, docs/security/response-fields.md, docs/API_TOKENS.md, docs/operate/
 express: README.md, CONTRIBUTING.md, THIRD-PARTY.md, docs/*.md, docs/architecture/, docs/security/, docs/assets/
 ```
 

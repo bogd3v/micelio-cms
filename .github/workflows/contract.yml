@@ -5,6 +5,9 @@
 # It runs on every pull request to main or develop, with no `paths` filter, so it can be a required check of `main`: a required check
 # from a workflow that a path filter skips never reports and blocks the pull request. It does not gate `deploy`.
 #
+# On the previous MINOR only, a run whose only failure is stale known differences of the frontend passes and shows them
+# (scripts/contract/previous-ref.mjs).
+#
 # The frontend's own workflow cannot be called from here: a called workflow checks out the caller's repository, so the frontend's
 # source is checked out below instead.
 name: Contract tests
@@ -159,8 +162,23 @@ jobs:
           SOURCE_URL: ${{ github.server_url }}/bogd3v/micelio
         run: echo "image=$(MIRROR_OWNER="${OWNER,,}" MIRROR_REGISTRY=ghcr.io SOURCE_URL="${SOURCE_URL}" scripts/ci/mirror-image.sh postgres:18-alpine)" >> "$GITHUB_OUTPUT"
 
+      # latest and override: any failure of the suite fails the job, stale known differences included.
       - name: Run the contract suite
+        if: matrix.label != 'previous'
         working-directory: frontend
         env:
           POSTGRES_IMAGE: ${{ steps.postgres.outputs.image }}
         run: CONTRACT_CMS_IMAGE="${CMS_IMAGE}" CONTRACT_POSTGRES_IMAGE="${POSTGRES_IMAGE}" npm run test:contract
+
+      # previous: a released tag that cannot change, so a run whose only failure is stale known differences (entries the CMS no
+      # longer gives) passes and shows them in the step summary and as warnings; any other failure fails the job. The status is
+      # kept without stopping the step (the shell is `bash -e`) and scripts/contract/previous-ref.mjs decides from it and the report.
+      - name: Run the contract suite (previous MINOR)
+        if: matrix.label == 'previous'
+        working-directory: frontend
+        env:
+          POSTGRES_IMAGE: ${{ steps.postgres.outputs.image }}
+          REPORT: ${{ runner.temp }}/contract-report.json
+        run: |
+          if CONTRACT_CMS_IMAGE="${CMS_IMAGE}" CONTRACT_POSTGRES_IMAGE="${POSTGRES_IMAGE}" PLAYWRIGHT_JSON_OUTPUT_FILE="${REPORT}" npm run test:contract -- --reporter=github,json; then status=0; else status=$?; fi
+          node ../cms/scripts/contract/previous-ref.mjs --status "$status" --report "${REPORT}"
