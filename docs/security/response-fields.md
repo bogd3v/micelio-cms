@@ -235,7 +235,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | `about.find` | `GET /api/about` | public role with `find`, or an API token with `find` | 191 | 10 | server/api/about.get.ts (`publicAbout`) | Single type; the query is `ABOUT_POPULATE`. The frontend re-filters the body with its own allow-list, which this shape mirrors. |
-| `pages.find` | `GET /api/pages` | API token with `find`; no role | 164 | 134 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. |
+| `pages.find` | `GET /api/pages` | API token with `find`; no role | 166 | 136 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. |
 | `pages.slugs` | `GET /api/pages?fields[]=slug` | API token with `find`; no role | 5 | 5 | modules/static-routes.ts | Token only. Strapi adds `id` and `documentId` whatever `fields` says. |
 
 #### `about.find`
@@ -315,6 +315,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.sections[section.post-list].tag` | as shared `relation-slug` | as shared `relation-slug` |
 | `data.sections[section.newsletter]` | `__component`, `variant`, `title`, `text`, `buttonLabel` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
 | `data.sections[section.rich-text]` | `__component`, `body` | `id`, `blockId`, `tone`, `align` |
+| `data.sections[shared.rich-text]` | `__component`, `body` | `id`, `blockId` |
 | `data.sections[section.gallery]` | `__component`, `variant`, `title`, `images` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
 | `data.sections[section.gallery].images` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.scene]` | `__component`, `variant`, `model`, `poster`, `alt`, `title`, `text` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |

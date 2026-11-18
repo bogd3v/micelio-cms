@@ -57,6 +57,16 @@ const CALLS: Record<string, (get: Get) => Promise<unknown[]>> = {
       pagination: { limit: 1 },
       populate: PAGE_POPULATE,
     }),
+    // `micelio` main does not name `shared.rich-text` yet (#445): the request that will, once it
+    // does, so its section is read as the frontend will read it.
+    await get('/api/pages', {
+      filters: { slug: { $eq: SEEDED.pageSlug } },
+      locale: 'en',
+      pagination: { limit: 1 },
+      populate: {
+        sections: { on: { 'shared.rich-text': { populate: '*' } } },
+      },
+    }),
   ],
   'pages.slugs': async (get) => [
     await get('/api/pages', {

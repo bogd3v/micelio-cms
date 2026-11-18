@@ -305,6 +305,12 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     tone: 'surplus',
     align: 'surplus',
   },
+  'shared.rich-text': {
+    __component: 'required',
+    body: 'required',
+    id: 'surplus',
+    blockId: 'surplus',
+  },
   'section.gallery': {
     __component: 'required',
     variant: 'required',

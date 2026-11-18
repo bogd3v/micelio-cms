@@ -66,6 +66,7 @@ export default withSiteScope({
         'section.post-list',
         'section.newsletter',
         'section.rich-text',
+        'shared.rich-text',
         'section.gallery',
         'section.scene',
       ],
