@@ -68,7 +68,10 @@ describe('section components offer tone and align', () => {
   it('lists every component of the sections dynamic zone of a page', () => {
     const zone = (pageSchema.attributes as unknown as Record<string, { components: string[] }>)
       .sections.components
-    expect(zone.map((uid) => uid.replace(/^section\./, '')).sort()).toEqual([...SECTIONS].sort())
+    // `shared.rich-text` is allowed next to `section.rich-text` (#445): the zone is no longer all `section.*`.
+    expect([...zone].sort()).toEqual(
+      [...SECTIONS.map((name) => `section.${name}`), 'shared.rich-text'].sort()
+    )
   })
 })
 

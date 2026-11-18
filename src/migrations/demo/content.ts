@@ -512,6 +512,13 @@ export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): Show
       ),
     },
     {
+      __component: 'shared.rich-text',
+      body: t(
+        '## Prose\n\nThe same Markdown block that articles use, placed in a page.',
+        '## Prosa\n\nEl mismo bloque de Markdown que usan los artículos, puesto en una página.'
+      ),
+    },
+    {
       __component: 'section.gallery',
       variant: 'grid',
       title: t('Through the year', 'A lo largo del año'),

@@ -130,6 +130,7 @@ export async function seedSite(
           buttonLabel: 'Subscribe',
         },
         { __component: 'section.rich-text', body: 'Rich **text**' },
+        { __component: 'shared.rich-text', body: 'Shared **prose**' },
         { __component: 'section.gallery', variant: 'masonry', title: 'Gallery', images: [cover] },
         {
           __component: 'section.scene',
