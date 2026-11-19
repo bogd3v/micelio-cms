@@ -295,6 +295,9 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     eyebrow: 'surplus',
     anchor: 'surplus',
     tone: 'surplus',
+    consentText: 'surplus',
+    successMessage: 'surplus',
+    placeholder: 'surplus',
     align: 'surplus',
   },
   'section.rich-text': {

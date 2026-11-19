@@ -600,7 +600,10 @@ export interface SectionNewsletter extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     buttonLabel: Schema.Attribute.String
+    consentText: Schema.Attribute.Text
     eyebrow: Schema.Attribute.String
+    placeholder: Schema.Attribute.String
+    successMessage: Schema.Attribute.String
     text: Schema.Attribute.Text
     title: Schema.Attribute.String
     tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &

@@ -12,6 +12,7 @@ import { ensureEditorRole } from './migrations/editor-role'
 import { applyAccountSettings } from './migrations/account-settings'
 import { migrateSliderItems } from './migrations/slider-items'
 import { fillBlockIds } from './migrations/block-ids'
+import { reportNewsletterConsent } from './migrations/newsletter-consent'
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
 import { restrictThemeToSuperAdmin } from './migrations/theme-permissions'
 import { restrictThemeWrites } from './utils/theme-access'
@@ -220,6 +221,8 @@ export default {
 
     const blockIds = await fillBlockIds(strapi)
     if (blockIds > 0) strapi.log.info(`[blocks] filled ${blockIds} block and item ids`)
+
+    await reportNewsletterConsent(strapi)
 
     const localized = await backfillCommentLocale(strapi)
     if (localized > 0) strapi.log.info(`[comments] set the locale of ${localized} comments`)
