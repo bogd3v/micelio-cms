@@ -151,7 +151,7 @@ describe('Pages belong to a site', () => {
             {
               __component: 'section.rich-text',
               body: 'Hello',
-              blockId: null,
+              blockId: expect.any(String),
               tone: 'default',
               align: 'start',
             },
