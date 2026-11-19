@@ -31,6 +31,15 @@
     "buttonLabel": {
       "type": "string"
     },
+    "consentText": {
+      "type": "text"
+    },
+    "successMessage": {
+      "type": "string"
+    },
+    "placeholder": {
+      "type": "string"
+    },
     "tone": {
       "type": "enumeration",
       "enum": ["default", "raised", "accent"],
