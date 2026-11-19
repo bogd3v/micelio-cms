@@ -32,6 +32,16 @@ Frontend 0.2.0 or later looks a token up by its hash first and falls back to the
 
 In a rolling deploy, stop the old CMS instances first: an old image keeps writing and looking up plain tokens until the new image has booted, and none of them should run next to a migrated database. The rewrites are irreversible; a rollback restores the code, not the plain values.
 
+## Upgrading to 0.9: the core plugin declares release line `0.9`
+
+**Breaking for editors of a site that has a module off.** `0.9` installs `@micelio/strapi-plugin-core` `0.5.0` (it was `0.4.0`) and `@micelio/strapi-plugin-fediverse` `0.7.2` (it was `0.7.1`; its peer range admits the core `0.5`). Take a backup first ([Backup](backup.md)).
+
+- **Blocks of a module that is off.** On a site whose **Modules** has `newsletter` off, the **Newsletter** section is no longer offered (the Block catalogue shows it disabled and names the module), and a save, an import or a template that adds one (a page that holds more Newsletter sections than before) is refused with `400 blockNotAllowed` (`reason: moduleOff`). A page that already holds one keeps being served and still saves. Either turn the module on (Content Manager → Site → **Modules**) to add Newsletter sections again, or leave the existing ones as they are. A site with the module on, the default, sees no change.
+- **Background Scenes.** A **Scene** whose **Variant** is `background` (or has none) is refused a **Tone** or **Align** other than the default, with `400 blockOptionInvalid`. The builder never writes another value there, so only a value sent through the API is affected.
+- **Section anchors.** A section **Anchor** must be a kebab-case slug (lowercase letters and digits joined by single hyphens) that no other section of the page uses; a save that breaks either rule is refused with `400 sectionAnchorInvalid`. An empty anchor is accepted.
+- **Release line.** Micelio → Status and `npx micelio doctor` report release line `0.9` (the core declares `0.9`), and **Run again** passes `frontend-release-line` for a frontend on `0.8.x` or `0.9.x`; a frontend on `0.7.x` fails that optional check, which never stops a boot.
+- **What does not change.** No public URL, response field or token permission changes (the core's `READ_ACTIONS` is the same), and nothing needs doing by hand. The core now writes the `blockId` of a section and the `itemId` of an item that lacks one when it is saved; stored content already has them from the `0.8` boot migration.
+
 ## Upgrading to 0.8: the core plugin declares release line `0.7`
 
 **Breaking for editors whose pages hold more than one background Scene.** `0.8` installs `@micelio/strapi-plugin-core` `0.4.0` (it was `0.2.0`) and `@micelio/strapi-plugin-fediverse` `0.7.1` (its peer range admits the core). Take a backup first ([Backup](backup.md)); there is nothing to do by hand otherwise.
