@@ -99,6 +99,7 @@ Use the shared components in `src/components/shared/`:
 - `shared.quote` — quote block
 - `shared.playground` — runnable code block (article `blocks`): `runtime`, `code`, optional `expectedOutput`, `setup` and `caption`
 - `shared.reference` — bibliographic source (article `references`, cited as `[@key]`)
+- `shared.translation-credit` — the fediverse actor (`actorUrl`, `https:` only) of whoever translated a locale (article `translationCredits`, localised, at most 10 per locale; ADR-0025 of micelio)
 - `shared.seo` — SEO metadata
 
 Example dynamic zone on a new content type:

@@ -102,6 +102,18 @@
         }
       }
     },
+    "translationCredits": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.translation-credit",
+      "max": 10,
+      "required": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
     "seo": {
       "type": "component",
       "repeatable": false,
@@ -145,6 +157,12 @@
         "edit": {
           "label": "references",
           "description": "Fuentes del artículo. Cítalas en el texto con [@clave] (varias: [@a; @b]); el número [n] sale del orden en que aparecen. Se comparten entre idiomas."
+        }
+      },
+      "translationCredits": {
+        "edit": {
+          "label": "translationCredits",
+          "description": "Quién tradujo este idioma: el id de actor ActivityPub de cada traductor (https://…), no la página de su perfil. Se publica en el fediverso con el artículo. Una traducción automática sin revisar acredita al actor del software, no a una persona sola. Propio de cada idioma."
         }
       }
     }

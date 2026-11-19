@@ -1069,6 +1069,22 @@ export interface SharedTechItem extends Struct.ComponentSchema {
   }
 }
 
+export interface SharedTranslationCredit extends Struct.ComponentSchema {
+  collectionName: 'components_shared_translation_credits'
+  info: {
+    description: 'The fediverse actor of whoever translated a locale of an article'
+    displayName: 'Translation credit'
+    icon: 'globe'
+  }
+  attributes: {
+    actorUrl: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255
+      }>
+  }
+}
+
 export interface SiteAccentOverride extends Struct.ComponentSchema {
   collectionName: 'components_site_accent_overrides'
   info: {
@@ -1242,6 +1258,7 @@ declare module '@strapi/strapi' {
       'shared.slide': SharedSlide
       'shared.slider': SharedSlider
       'shared.tech-item': SharedTechItem
+      'shared.translation-credit': SharedTranslationCredit
       'site.accent-override': SiteAccentOverride
       'site.author': SiteAuthor
       'site.fediverse': SiteFediverse
