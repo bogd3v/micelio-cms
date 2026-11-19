@@ -276,6 +276,79 @@ describe('The distribution with @micelio/strapi-plugin-fediverse (FEDIVERSE_ENAB
       expect(profileFields(fields)).toEqual([])
     }
   })
+
+  describe('translator credits (FEP-22cd)', () => {
+    const FEP_22CD = 'https://w3id.org/fep/22cd'
+    const TRANSLATOR = 'https://translators.example.test/users/ana'
+
+    /** The object the plugin serves for an article, as a remote server would fetch it. */
+    type Served = {
+      id?: string
+      attributedTo?: string
+      '@context'?: unknown
+      translations?: {
+        type?: string
+        inLanguage?: string
+        translator?: string[] | string
+        translationOfWork?: string
+      }[]
+    }
+
+    async function ensureLocale(code: string, name: string): Promise<void> {
+      const locales = strapi.plugin('i18n').service('locales')
+      if (!(await locales.findByCode(code))) await locales.create({ code, name })
+    }
+
+    /** Publishes an article in `en` and `es`; `credit` is written on `es` only. */
+    async function publishInEnAndEs(slug: string, credit?: string): Promise<string> {
+      await ensureLocale('es', 'Spanish (es)')
+      const draft = await strapi.documents(ARTICLE_UID).create({
+        data: { title: `Title ${slug}`, slug, description: 'English excerpt.' },
+      })
+      await strapi.documents(ARTICLE_UID).update({
+        documentId: draft.documentId,
+        locale: 'es',
+        data: {
+          title: `Titulo ${slug}`,
+          slug: `es-${slug}`,
+          description: 'Extracto.',
+          ...(credit ? { translationCredits: [{ actorUrl: credit }] } : {}),
+        } as never,
+      })
+      // The translation first, so the publish of `en` carries both locales.
+      await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId, locale: 'es' })
+      await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId, locale: 'en' })
+      return draft.documentId
+    }
+
+    async function served(documentId: string): Promise<Served> {
+      const response = await request(strapi.server.httpServer)
+        .get(`/fediverse/articles/${documentId}`)
+        .set('Accept', ACTIVITY_JSON)
+        .expect(200)
+      return response.body as Served
+    }
+
+    it('serves a credited translation of an article as a FEP-22cd Translation through the package', async () => {
+      const object = await served(await publishInEnAndEs('credited-translation', TRANSLATOR))
+
+      expect(object.translations).toHaveLength(1)
+      const [translation] = object.translations ?? []
+      expect(translation.type).toBe('Translation')
+      expect(translation.inLanguage).toBe('es')
+      expect([translation.translator].flat()).toEqual([TRANSLATOR])
+      expect(translation.translationOfWork).toBe(object.id)
+      // Credit is not authorship.
+      expect([object.attributedTo].flat()).not.toContain(TRANSLATOR)
+    })
+
+    it('serves an article without translation credits with no translations and no FEP-22cd context', async () => {
+      const object = await served(await publishInEnAndEs('uncredited-translation'))
+
+      expect(object).not.toHaveProperty('translations')
+      expect(JSON.stringify(object['@context'])).not.toContain(FEP_22CD)
+    })
+  })
 })
 
 describe('A boot that the package refuses', () => {
