@@ -1,6 +1,6 @@
 # ADR-0001: Raise the core plugin to the release that declares 0.7 in a 0.7.z patch
 
-**Status:** Proposed
+**Status:** Rejected: not applied, see #435
 **Date:** 2026-11-11
 **Deciders:** Micelio maintainer
 

@@ -4,4 +4,4 @@ This folder records the decisions specific to `micelio-cms`, among them its exce
 
 | #                                   | Decision                                                                | Status   | Date       |
 | ----------------------------------- | ----------------------------------------------------------------------- | -------- | ---------- |
-| [0001](0001-core-pin-in-a-patch.md) | Raise the core plugin to the release that declares 0.7 in a 0.7.z patch | Proposed | 2026-11-11 |
+| [0001](0001-core-pin-in-a-patch.md) | Raise the core plugin to the release that declares 0.7 in a 0.7.z patch | Rejected | 2026-11-11 |
