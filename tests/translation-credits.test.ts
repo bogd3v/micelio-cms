@@ -25,7 +25,8 @@ interface ApiArticle {
   translationCredits?: ApiCredit[]
 }
 
-const actor = (name: string) => `https://social.example.com/users/${name}`
+const CREDIT_HOST = 'social.example.com'
+const actor = (name: string) => `https://${CREDIT_HOST}/users/${name}`
 const credits = (...names: string[]): Credits => names.map((name) => ({ actorUrl: actor(name) }))
 
 describe('Translation credits (article.translationCredits)', () => {
@@ -222,8 +223,10 @@ describe('Translation credits (article.translationCredits)', () => {
     try {
       const documentId = await bilingual('offline', credits('fiona'), credits('gael'))
       await publishEs(documentId)
-      const requested = fetchSpy.mock.calls.map(([input]) => String(input))
-      expect(requested.filter((url) => url.includes('social.example.com'))).toEqual([])
+      const hosts = fetchSpy.mock.calls.map(
+        ([input]) => new URL(input instanceof Request ? input.url : String(input)).hostname
+      )
+      expect(hosts).not.toContain(CREDIT_HOST)
     } finally {
       fetchSpy.mockRestore()
     }
