@@ -88,3 +88,11 @@ describe('sections with a SectionHead offer eyebrow and anchor', () => {
     expect(attrs).not.toHaveProperty('anchor')
   })
 })
+
+describe('faq items can open by default', () => {
+  it('section.faq-item has a boolean defaultOpen that is false unless set (#447)', () => {
+    const file = path.join(process.cwd(), 'src', 'components', 'section', 'faq-item.json')
+    const { defaultOpen } = JSON.parse(fs.readFileSync(file, 'utf8')).attributes
+    expect(defaultOpen).toEqual({ type: 'boolean', default: false })
+  })
+})

@@ -247,7 +247,13 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     title: 'required',
     items: {
       use: 'required',
-      of: { question: 'required', answer: 'required', id: 'surplus', itemId: 'surplus' },
+      of: {
+        question: 'required',
+        answer: 'required',
+        defaultOpen: 'surplus',
+        id: 'surplus',
+        itemId: 'surplus',
+      },
     },
     id: 'surplus',
     blockId: 'surplus',

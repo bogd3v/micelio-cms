@@ -413,6 +413,7 @@ export interface SectionFaqItem extends Struct.ComponentSchema {
   }
   attributes: {
     answer: Schema.Attribute.RichText & Schema.Attribute.Required
+    defaultOpen: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>
     itemId: Schema.Attribute.String
     question: Schema.Attribute.String & Schema.Attribute.Required
   }
