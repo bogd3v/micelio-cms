@@ -17,6 +17,10 @@
     "answer": {
       "type": "richtext",
       "required": true
+    },
+    "defaultOpen": {
+      "type": "boolean",
+      "default": false
     }
   }
 }
