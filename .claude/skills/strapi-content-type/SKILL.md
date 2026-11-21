@@ -25,7 +25,7 @@ This project is a **Strapi 5 headless CMS**. Every content type exposed to front
 
 ## A type that belongs to a site
 
-A content type of `src/api` that belongs to a site (ADR-0017, section 4; `api::page.page` does) is written as `schema.ts`, `export default withSiteScope({ ... })` with `withSiteScope` from `@micelio/strapi-plugin-core/strapi-server`, and its routes carry `SITE_SCOPE_MIDDLEWARE` in `config.middlewares` (see `src/api/page/`). It is not `schema.json` plus an `index.ts`: Strapi reads the folder's file named `schema` and ignores `index`. Code that creates one outside a request passes `site: await defaultSiteRelation(strapi)` (`src/utils/default-site.ts`), and a boot migration gives the default site to the rows that predate it.
+A content type of `src/api` that belongs to a site (ADR-0017, section 4; `api::page.page` does) is written as `schema.ts`, `export default withSiteScope({ ... })` with `withSiteScope` from `@micelio/strapi-plugin-core/strapi-server`, and its routes carry `SITE_SCOPE_MIDDLEWARE` in `config.middlewares` (see `src/api/page/`). It is not `schema.json` plus an `index.ts`: Strapi reads the folder's file named `schema` and ignores `index`. Code that creates one outside a request passes `site: await defaultSiteRelation(strapi)` (`src/utils/default-site.ts`), and a boot migration gives the default site to the rows that predate it. A type the builder edits as a page also goes through `withPageSettings`, inside `withSiteScope` (`src/api/page/content-types/page/schema.ts`), which adds `pageType`, `visibility` and the template record (`docs/architecture/pages.md`, "Page settings").
 
 ## Minimal new content type
 

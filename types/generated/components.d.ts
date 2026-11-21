@@ -231,6 +231,24 @@ export interface MicelioEditorialEditorial extends Struct.ComponentSchema {
   }
 }
 
+export interface MicelioPageVisibility extends Struct.ComponentSchema {
+  collectionName: 'components_micelio_page_visibilities'
+  info: {
+    description: 'Where a page shows up: the navigation menu, the sitemap and feeds, and search engines (the page settings of the builder)'
+    displayName: 'Visibility'
+    icon: 'eye'
+  }
+  attributes: {
+    inMenu: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>
+    inSitemap: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>
+    noindex: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>
+  }
+}
+
 export interface MicelioSiteAccentOverride extends Struct.ComponentSchema {
   collectionName: 'components_micelio_site_accent_overrides'
   info: {
@@ -1231,6 +1249,7 @@ declare module '@strapi/strapi' {
       'about.topic': AboutTopic
       'about.topics': AboutTopics
       'micelio-editorial.editorial': MicelioEditorialEditorial
+      'micelio-page.visibility': MicelioPageVisibility
       'micelio-site.accent-override': MicelioSiteAccentOverride
       'micelio-site.author': MicelioSiteAuthor
       'micelio-site.fediverse': MicelioSiteFediverse

@@ -1,9 +1,12 @@
-import { withSiteScope } from '@micelio/strapi-plugin-core/strapi-server'
+import { withPageSettings, withSiteScope } from '@micelio/strapi-plugin-core/strapi-server'
 
 // A page belongs to a site (ADR-0017, section 4). This is `schema.ts` and not `schema.json` because
 // Strapi reads a content type of `src/api` from the folder's file named `schema` and ignores an
 // `index.ts` beside it, so the schema has to be code to go through `withSiteScope`.
-export default withSiteScope({
+// `withPageSettings` adds the builder's page settings (#414): `pageType`, `visibility` and the
+// template record, none localised (`docs/architecture/pages.md`, "Page settings"). It goes inside
+// `withSiteScope`; `withEditorial` is not applied, so no redirect on a slug change and no budget.
+const schema = withPageSettings({
   kind: 'collectionType',
   collectionName: 'pages',
   info: {
@@ -78,3 +81,5 @@ export default withSiteScope({
     },
   },
 })
+
+export default withSiteScope(schema)
