@@ -790,8 +790,18 @@ export interface SectionTestimonial extends Struct.ComponentSchema {
     author: Schema.Attribute.String & Schema.Attribute.Required
     avatar: Schema.Attribute.Media<'images'>
     itemId: Schema.Attribute.String
+    logo: Schema.Attribute.Media<'images'>
     quote: Schema.Attribute.Text & Schema.Attribute.Required
+    rating: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5
+          min: 1
+        },
+        number
+      >
     role: Schema.Attribute.String
+    sourceUrl: Schema.Attribute.String
   }
 }
 

@@ -96,3 +96,17 @@ describe('faq items can open by default', () => {
     expect(defaultOpen).toEqual({ type: 'boolean', default: false })
   })
 })
+
+describe('testimonials can name their source, logo and rating', () => {
+  it('section.testimonial has an optional sourceUrl, logo and rating of 1 to 5 (#451)', () => {
+    const file = path.join(process.cwd(), 'src', 'components', 'section', 'testimonial.json')
+    const attrs = JSON.parse(fs.readFileSync(file, 'utf8')).attributes
+    expect(attrs.sourceUrl).toEqual({ type: 'string', regex: '^https?://\\S+$' })
+    expect(attrs.logo).toEqual({ type: 'media', multiple: false, allowedTypes: ['images'] })
+    expect(attrs.rating).toEqual({ type: 'integer', min: 1, max: 5 })
+    // The existing fields stay: an existing testimonial renders as before.
+    expect(attrs.quote.required).toBe(true)
+    expect(attrs.author.required).toBe(true)
+    expect(attrs).toHaveProperty('avatar')
+  })
+})
