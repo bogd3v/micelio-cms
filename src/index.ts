@@ -19,6 +19,7 @@ import { restrictThemeWrites } from './utils/theme-access'
 import { ensureAuthorLocales } from './migrations/author-locales'
 import { assignPagesToDefaultSite } from './migrations/page-site'
 import { grantEditorsPageSite } from './migrations/admin-page-site'
+import { grantEditorsPageSettings } from './migrations/admin-page-settings'
 import { seedDemoContent } from './migrations/demo-seed'
 import { ensureDefaultSiteUrl } from './migrations/default-site-url'
 import { migrateFediverseHeader } from './migrations/fediverse-header'
@@ -303,6 +304,13 @@ export default {
     const adminSites = await grantEditorsPageSite(strapi)
     if (adminSites > 0)
       strapi.log.info(`[roles] gave the admin roles ${adminSites} site permissions`)
+
+    // On an upgraded instance the same roles save the page settings of `withPageSettings` (#517).
+    const adminPageSettings = await grantEditorsPageSettings(strapi)
+    if (adminPageSettings > 0)
+      strapi.log.info(
+        `[roles] gave the admin roles the page settings in ${adminPageSettings} page permissions`
+      )
 
     // After the Editor role exists: it also gets DELETE /api/users/me.
     const accounts = await applyAccountSettings(strapi)
