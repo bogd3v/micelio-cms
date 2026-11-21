@@ -707,6 +707,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
       localized: true
     }
     micelio: {
+      pageSettings: true
       siteScoped: true
     }
   }
@@ -715,6 +716,16 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
     locale: Schema.Attribute.String
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::page.page'>
+    pageType: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64
+      }> &
+      Schema.Attribute.DefaultTo<'standard'>
     publishedAt: Schema.Attribute.DateTime
     sections: Schema.Attribute.DynamicZone<
       [
@@ -760,6 +771,47 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
           localized: true
         }
       }>
+    templateFixed: Schema.Attribute.JSON &
+      Schema.Attribute.Private &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+        micelio: {
+          export: 'always'
+        }
+      }>
+    templateId: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64
+      }>
+    templateSamples: Schema.Attribute.JSON &
+      Schema.Attribute.Private &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+        micelio: {
+          export: 'always'
+        }
+      }>
+    templateVersion: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1
+        },
+        number
+      >
     title: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
@@ -769,6 +821,12 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
       }>
     updatedAt: Schema.Attribute.DateTime
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    visibility: Schema.Attribute.Component<'micelio-page.visibility', false> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
   }
 }
 

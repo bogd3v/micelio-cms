@@ -386,7 +386,7 @@ export const PAGE_ROUTES: readonly ResponseRoute[] = [
     path: '/api/pages',
     callers: ['frontend', 'build'],
     reader: 'server/utils/pageSections.ts (`parsePage`)',
-    note: 'Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them.',
+    note: 'Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. `pageType`, `visibility`, `templateId` and `templateVersion` are the page settings of `withPageSettings` (#414): surplus until the frontend reads them; `visibility` is a component (`inMenu`, `inSitemap`, `noindex`), returned only when the query populates it, which `PAGE_POPULATE` does not. `templateSamples` and `templateFixed` are private and never returned.',
     body: {
       data: {
         use: 'required',
@@ -402,6 +402,10 @@ export const PAGE_ROUTES: readonly ResponseRoute[] = [
           createdAt: 'surplus',
           updatedAt: 'surplus',
           publishedAt: 'surplus',
+          pageType: 'surplus',
+          visibility: 'surplus',
+          templateId: 'surplus',
+          templateVersion: 'surplus',
         },
       },
       meta: { use: 'surplus', of: { pagination: { use: 'surplus', of: 'pagination-offset' } } },

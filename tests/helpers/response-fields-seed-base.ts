@@ -118,7 +118,7 @@ export function seoOf(metaImage: number): Data {
     ],
     keywords: 'one, two',
     metaRobots: 'index, follow',
-    structuredData: { '@type': 'Article' },
+    structuredData: { '@context': 'https://schema.org', '@type': 'Article' },
     metaViewport: 'width=device-width',
     canonicalURL: 'https://example.test/canonical',
   }
