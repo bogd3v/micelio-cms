@@ -205,6 +205,8 @@ const PAGE_SECTIONS: Record<string, Shape> = {
         author: 'required',
         role: 'required',
         avatar: { use: 'required', of: 'media-page' },
+        sourceUrl: 'surplus',
+        rating: 'surplus',
         id: 'surplus',
         itemId: 'surplus',
       },

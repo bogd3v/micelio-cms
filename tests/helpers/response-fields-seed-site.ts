@@ -79,6 +79,22 @@ export async function seedSite(
           items: [{ quote: 'Great', author: 'Ben', role: 'Reader', avatar }],
         },
         {
+          __component: 'section.testimonials',
+          variant: 'single',
+          title: 'Testimonials with a source',
+          items: [
+            {
+              quote: 'Great',
+              author: 'Ben',
+              role: 'Reader',
+              avatar,
+              sourceUrl: 'https://example.test/review',
+              logo: avatar,
+              rating: 4,
+            },
+          ],
+        },
+        {
           __component: 'section.pricing',
           variant: 'table',
           title: 'Pricing',

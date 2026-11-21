@@ -25,6 +25,20 @@
       "type": "media",
       "multiple": false,
       "allowedTypes": ["images"]
+    },
+    "sourceUrl": {
+      "type": "string",
+      "regex": "^https?://\\S+$"
+    },
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "rating": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
     }
   }
 }
