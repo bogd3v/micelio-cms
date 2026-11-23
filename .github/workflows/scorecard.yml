@@ -17,4 +17,4 @@ jobs:
       actions: read
       security-events: write
       id-token: write
-    uses: bogd3v/micelio-engineering/.github/workflows/scorecard.yml@1c8b550ff6389f3dd4f534ba3eda9291fc3b2b07 # main
+    uses: bogd3v/micelio-engineering/.github/workflows/scorecard.yml@d0ebe4c9a0a2d4c2c9408709ec05a8f03d45ce3d # main
