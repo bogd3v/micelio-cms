@@ -285,6 +285,8 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     count: 'required',
     category: { use: 'required', of: 'relation-slug' },
     tag: { use: 'required', of: 'relation-slug' },
+    showExcerpt: 'surplus',
+    sort: 'surplus',
     id: 'surplus',
     blockId: 'surplus',
     eyebrow: 'surplus',

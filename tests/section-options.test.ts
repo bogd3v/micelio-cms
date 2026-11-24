@@ -110,3 +110,20 @@ describe('testimonials can name their source, logo and rating', () => {
     expect(attrs).toHaveProperty('avatar')
   })
 })
+
+describe('post lists can feature, sort and hide the excerpt', () => {
+  it('section.post-list has showExcerpt, sort and the featured variant, defaults unchanged (#444)', () => {
+    const { variant, showExcerpt, sort } = attributes('post-list')
+    expect(variant).toMatchObject({
+      enum: ['cards', 'list', 'featured'],
+      default: 'cards',
+      required: true,
+    })
+    expect(showExcerpt).toEqual({ type: 'boolean', default: true })
+    expect(sort).toEqual({
+      type: 'enumeration',
+      enum: ['newest', 'oldest', 'alphabetical'],
+      default: 'newest',
+    })
+  })
+})
