@@ -62,6 +62,14 @@ export async function seedArticles(images: SeededImages): Promise<SeededArticles
       blocks: [
         { __component: 'shared.rich-text', body: 'Some **text**' },
         { __component: 'shared.quote', title: 'A quote', body: 'Quoted text' },
+        {
+          __component: 'shared.code',
+          code: 'const a = 1\nconst b = 2',
+          language: 'typescript',
+          filename: 'a.ts',
+          highlight: [2],
+          caption: 'Two lines',
+        },
         { __component: 'shared.media', file: sliderFile, caption: 'A figure', credit },
         {
           __component: 'shared.playground',

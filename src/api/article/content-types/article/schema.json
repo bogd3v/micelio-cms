@@ -85,6 +85,7 @@
         }
       },
       "components": [
+        "shared.code",
         "shared.media",
         "shared.playground",
         "shared.quote",

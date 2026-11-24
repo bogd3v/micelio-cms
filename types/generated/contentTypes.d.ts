@@ -521,7 +521,14 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
   attributes: {
     author: Schema.Attribute.Relation<'manyToOne', 'api::author.author'>
     blocks: Schema.Attribute.DynamicZone<
-      ['shared.media', 'shared.playground', 'shared.quote', 'shared.rich-text', 'shared.slider']
+      [
+        'shared.code',
+        'shared.media',
+        'shared.playground',
+        'shared.quote',
+        'shared.rich-text',
+        'shared.slider',
+      ]
     > &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -742,6 +749,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
         'section.newsletter',
         'section.rich-text',
         'shared.rich-text',
+        'shared.code',
         'section.gallery',
         'section.scene',
       ]

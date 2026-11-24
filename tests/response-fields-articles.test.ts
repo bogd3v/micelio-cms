@@ -36,6 +36,12 @@ const CALLS: Record<string, (get: Get) => Promise<unknown[]>> = {
       locale: 'en',
       populate: ARTICLE_POPULATE,
     }),
+    // `micelio` main does not name `shared.code` yet (#448): the request that will, once it does.
+    await get('/api/articles', {
+      filters: { slug: { $eq: SEEDED.articleSlug } },
+      locale: 'en',
+      populate: { blocks: { on: { 'shared.code': true } } },
+    }),
   ],
   'articles.feed': async (get) => [
     await get('/api/articles', {
@@ -137,6 +143,12 @@ describe('Response fields of the article routes (ASVS V15.3.1)', () => {
           status: 'draft',
           locale: 'en',
           populate: ARTICLE_POPULATE,
+        }),
+        await get('/api/articles', {
+          filters: { slug: { $eq: SEEDED.articleSlug } },
+          status: 'draft',
+          locale: 'en',
+          populate: { blocks: { on: { 'shared.code': true } } },
         }),
       ]
       assertShape(routeById('articles.detail'), 'editor', bodies)

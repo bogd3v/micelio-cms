@@ -70,7 +70,7 @@ describe('section components offer tone and align', () => {
       .sections.components
     // `shared.rich-text` is allowed next to `section.rich-text` (#445): the zone is no longer all `section.*`.
     expect([...zone].sort()).toEqual(
-      [...SECTIONS.map((name) => `section.${name}`), 'shared.rich-text'].sort()
+      [...SECTIONS.map((name) => `section.${name}`), 'shared.rich-text', 'shared.code'].sort()
     )
   })
 })

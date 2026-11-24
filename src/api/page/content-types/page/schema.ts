@@ -70,6 +70,7 @@ const schema = withPageSettings({
         'section.newsletter',
         'section.rich-text',
         'shared.rich-text',
+        'shared.code',
         'section.gallery',
         'section.scene',
       ],

@@ -519,6 +519,14 @@ export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): Show
       ),
     },
     {
+      __component: 'shared.code',
+      code: 'docker compose up --build\n# the site answers on http://localhost:3000',
+      language: 'bash',
+      filename: 'terminal',
+      highlight: [1],
+      caption: t('The command that starts this demo.', 'El comando que arranca esta demostración.'),
+    },
+    {
       __component: 'section.gallery',
       variant: 'grid',
       title: t('Through the year', 'A lo largo del año'),
