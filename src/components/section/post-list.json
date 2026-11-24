@@ -18,7 +18,7 @@
     },
     "variant": {
       "type": "enumeration",
-      "enum": ["cards", "list"],
+      "enum": ["cards", "list", "featured"],
       "default": "cards",
       "required": true
     },
@@ -41,6 +41,15 @@
       "max": 12,
       "default": 3,
       "required": true
+    },
+    "showExcerpt": {
+      "type": "boolean",
+      "default": true
+    },
+    "sort": {
+      "type": "enumeration",
+      "enum": ["newest", "oldest", "alphabetical"],
+      "default": "newest"
     },
     "tone": {
       "type": "enumeration",

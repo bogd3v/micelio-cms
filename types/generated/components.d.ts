@@ -674,11 +674,14 @@ export interface SectionPostList extends Struct.ComponentSchema {
       > &
       Schema.Attribute.DefaultTo<3>
     eyebrow: Schema.Attribute.String
+    showExcerpt: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>
+    sort: Schema.Attribute.Enumeration<['newest', 'oldest', 'alphabetical']> &
+      Schema.Attribute.DefaultTo<'newest'>
     tag: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.tag'>
     title: Schema.Attribute.String
     tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
       Schema.Attribute.DefaultTo<'default'>
-    variant: Schema.Attribute.Enumeration<['cards', 'list']> &
+    variant: Schema.Attribute.Enumeration<['cards', 'list', 'featured']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'cards'>
   }
