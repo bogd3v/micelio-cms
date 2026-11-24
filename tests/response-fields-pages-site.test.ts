@@ -67,6 +67,15 @@ const CALLS: Record<string, (get: Get) => Promise<unknown[]>> = {
         sections: { on: { 'shared.rich-text': { populate: '*' } } },
       },
     }),
+    // The same for `shared.code` (#448).
+    await get('/api/pages', {
+      filters: { slug: { $eq: SEEDED.pageSlug } },
+      locale: 'en',
+      pagination: { limit: 1 },
+      populate: {
+        sections: { on: { 'shared.code': true } },
+      },
+    }),
   ],
   'pages.slugs': async (get) => [
     await get('/api/pages', {

@@ -57,6 +57,16 @@ export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
             use: 'required',
             variants: {
               ...SHARED_BLOCKS,
+              'shared.code': {
+                id: 'required',
+                blockId: 'surplus',
+                __component: 'required',
+                code: 'required',
+                language: 'required',
+                filename: 'required',
+                highlight: 'required',
+                caption: 'required',
+              },
               'shared.playground': {
                 id: 'required',
                 blockId: 'surplus',

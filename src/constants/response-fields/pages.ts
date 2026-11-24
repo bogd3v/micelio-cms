@@ -324,6 +324,16 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     id: 'surplus',
     blockId: 'surplus',
   },
+  'shared.code': {
+    __component: 'required',
+    code: 'required',
+    language: 'required',
+    filename: 'required',
+    highlight: 'required',
+    caption: 'required',
+    id: 'surplus',
+    blockId: 'surplus',
+  },
   'section.gallery': {
     __component: 'required',
     variant: 'required',

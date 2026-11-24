@@ -1,0 +1,45 @@
+{
+  "collectionName": "components_shared_codes",
+  "info": {
+    "displayName": "Code",
+    "icon": "code",
+    "description": "Code shown with its file name, highlighted lines and a caption, highlighted on the server"
+  },
+  "options": {},
+  "attributes": {
+    "blockId": {
+      "type": "string"
+    },
+    "code": {
+      "type": "text"
+    },
+    "language": {
+      "type": "enumeration",
+      "enum": [
+        "bash",
+        "shell",
+        "javascript",
+        "typescript",
+        "json",
+        "yaml",
+        "xml",
+        "css",
+        "python",
+        "sql",
+        "diff",
+        "dockerfile",
+        "ini",
+        "markdown"
+      ]
+    },
+    "filename": {
+      "type": "string"
+    },
+    "highlight": {
+      "type": "json"
+    },
+    "caption": {
+      "type": "text"
+    }
+  }
+}

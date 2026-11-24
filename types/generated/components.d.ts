@@ -854,6 +854,40 @@ export interface SectionTestimonials extends Struct.ComponentSchema {
   }
 }
 
+export interface SharedCode extends Struct.ComponentSchema {
+  collectionName: 'components_shared_codes'
+  info: {
+    description: 'Code shown with its file name, highlighted lines and a caption, highlighted on the server'
+    displayName: 'Code'
+    icon: 'code'
+  }
+  attributes: {
+    blockId: Schema.Attribute.String
+    caption: Schema.Attribute.Text
+    code: Schema.Attribute.Text
+    filename: Schema.Attribute.String
+    highlight: Schema.Attribute.JSON
+    language: Schema.Attribute.Enumeration<
+      [
+        'bash',
+        'shell',
+        'javascript',
+        'typescript',
+        'json',
+        'yaml',
+        'xml',
+        'css',
+        'python',
+        'sql',
+        'diff',
+        'dockerfile',
+        'ini',
+        'markdown',
+      ]
+    >
+  }
+}
+
 export interface SharedImageCredit extends Struct.ComponentSchema {
   collectionName: 'components_shared_image_credits'
   info: {
@@ -1280,6 +1314,7 @@ declare module '@strapi/strapi' {
       'section.stats': SectionStats
       'section.testimonial': SectionTestimonial
       'section.testimonials': SectionTestimonials
+      'shared.code': SharedCode
       'shared.image-credit': SharedImageCredit
       'shared.media': SharedMedia
       'shared.meta-social': SharedMetaSocial

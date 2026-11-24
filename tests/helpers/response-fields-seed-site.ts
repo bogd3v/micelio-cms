@@ -147,6 +147,14 @@ export async function seedSite(
         },
         { __component: 'section.rich-text', body: 'Rich **text**' },
         { __component: 'shared.rich-text', body: 'Shared **prose**' },
+        {
+          __component: 'shared.code',
+          code: 'const a = 1\nconst b = 2',
+          language: 'typescript',
+          filename: 'a.ts',
+          highlight: [2],
+          caption: 'Two lines',
+        },
         { __component: 'section.gallery', variant: 'masonry', title: 'Gallery', images: [cover] },
         {
           __component: 'section.scene',

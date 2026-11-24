@@ -24,6 +24,7 @@ const BLOCK_UIDS = [
   'shared.media',
   'shared.slider',
   'shared.playground',
+  'shared.code',
 ]
 
 /** Repeatable items of the blocks that carry an `itemId`. */
