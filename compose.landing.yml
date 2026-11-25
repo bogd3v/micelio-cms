@@ -28,8 +28,14 @@ services:
     extends:
       file: compose.demo.yml
       service: init
+    # Also copies build.env into the builder's own volume (see `build`), at every run.
+    entrypoint:
+      - sh
+      - -c
+      - node scripts/demo-secrets.js /secrets && cp /secrets/build.env /build-env/build.env
     volumes:
       - demo-secrets:/secrets
+      - demo-build-env:/build-env
 
   db:
     extends:
@@ -70,12 +76,16 @@ services:
 
   # Generates the site into the demo-site volume and exits. It shares the CMS's
   # network namespace, so Strapi is http://localhost:1337 for the build and for
-  # the image links the pages carry. Only build.env is mounted: the rest of the
-  # secrets volume holds the CMS's keys. builder-last-run.sh runs the builder and keeps how the run
+  # the image links the pages carry. It gets build.env from a volume of its own,
+  # filled by `init`, and never mounts demo-secrets, which holds the CMS's keys (the
+  # volume would be mounted whole on Podman, so one file cannot be picked from it).
+  # builder-last-run.sh runs the builder and keeps how the run
   # ended (exit code, time, the reason of a refused theme) in demo-build-status, for the admin (#405).
   build:
     image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:0.9}
     network_mode: service:cms
+    # Both containers that share demo-site disable the SELinux label, or the volume keeps the first one's.
+    security_opt: [label=disable]
     entrypoint:
       - sh
       - -c
@@ -87,12 +97,7 @@ services:
       NUXT_PUBLIC_NEWSLETTER_FORM_ACTION: ${NUXT_PUBLIC_NEWSLETTER_FORM_ACTION:-}
       REBUILD_STATUS_FILE: /build-status/last-run
     volumes:
-      - type: volume
-        source: demo-secrets
-        target: /run/secrets-build/build.env
-        read_only: true
-        volume:
-          subpath: build.env
+      - demo-build-env:/run/secrets-build:ro
       - demo-site:/out
       - demo-build-status:/build-status
       - ./scripts/builder-last-run.sh:/usr/local/bin/builder-last-run:ro,z
@@ -107,6 +112,8 @@ services:
   site:
     image: ${MICELIO_BUILDER_IMAGE:-ghcr.io/bogd3v/micelio-builder:0.9}
     command: ['serve']
+    # Shares demo-site with `build`: see its security_opt.
+    security_opt: [label=disable]
     ports:
       - '127.0.0.1:3000:8080'
     volumes:
@@ -117,6 +124,7 @@ services:
 
 volumes:
   demo-secrets:
+  demo-build-env:
   demo-db:
   demo-uploads:
   demo-site:
