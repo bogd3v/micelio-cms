@@ -37,6 +37,7 @@ Work moves through the gates of the Micelio factory: [`docs/factory.md`](https:/
   `POST /admin/register-admin` and sign in with `POST /admin/login`.
   Each rebuild is `docker compose -f compose.static.yml run --rm build`,
   the admin reads its result at `GET /theme-picker/last-rebuild`, and `down -v` removes the stack.
+  `npm run test:demo-stacks -- --file <file> --rebuilds <n>` runs this whole bullet in one command, with `MICELIO_CMS_IMAGE` and `MICELIO_BUILDER_IMAGE` exported (`docs/architecture/testing.md`, "Demo stack check").
 - `docker compose up --build` always runs the `production` image, which refuses to boot without `FRONTEND_URL` (`FRONTEND_URL is required in production`). To observe the unset case, add a compose override that sets `NODE_ENV: development` and `FRONTEND_URL: ""` on the `strapi` service (an `environment` entry overrides `env_file`, which would otherwise supply the `.env` value; an empty value counts as unset), and bring the stack down with `down -v`.
 
 An `express` or `normal` issue does not run the steps above on the stack (the lane is set by the paths it touches: [Lanes](https://github.com/bogd3v/micelio-engineering/blob/main/docs/factory.md#lanes) of `docs/factory.md` in `micelio-engineering`, and `## Lanes` below); this section describes the run for `full`.
@@ -48,7 +49,7 @@ An `express` or `normal` issue does not run the steps above on the stack (the la
 The globs `factory-tools lint-lane` reads to set an issue's lane (`docs/factory.md` of `micelio-engineering`, "Lanes"). A path that matches `stack:` or `contract:` is `full`; one that matches only `express:` is `express`, unless it is normative (`AGENTS.md`, `CLAUDE.md`, `.claude/`, the standard); every other path is `normal`. `stack:` is the images, the compose files, the entrypoint, the boot configuration, the Node version and the scripts an operator or the pipeline runs against the stack; `contract:` is where a contract of section 6 of the standard lives in this repository (the content types, components and routes, the response shapes and their catalogue, the API token, role and admin permissions, CORS, the boot migrations and their wiring, the operator interface and its documentation); `express:` is Markdown that instructs no agent and records no decision (`docs/adr/` is outside it). Anything that matches no glob is `normal`.
 
 ```text
-stack: Dockerfile, .dockerignore, .nvmrc, docker-entrypoint.sh, docker-compose.yml, docker-compose.verify.yml, compose.demo.yml, compose.landing.yml, compose.static.yml, demo/, database/migrations/, config/, server.js, scripts/upgrade-check/, scripts/release/, scripts/demo-secrets.js, scripts/backup-volumes.sh, scripts/restore-volumes.sh, scripts/builder-last-run.sh, .github/workflows/deploy.yml, .github/workflows/release.yml
+stack: Dockerfile, .dockerignore, .nvmrc, docker-entrypoint.sh, docker-compose.yml, docker-compose.verify.yml, compose.demo.yml, compose.landing.yml, compose.static.yml, demo/, database/migrations/, config/, server.js, scripts/upgrade-check/, scripts/demo-stack-check/, scripts/release/, scripts/demo-secrets.js, scripts/backup-volumes.sh, scripts/restore-volumes.sh, scripts/builder-last-run.sh, .github/workflows/deploy.yml, .github/workflows/demo-stacks.yml, .github/workflows/release.yml
 contract: src/api/*/content-types/, src/api/*/routes/, src/components/, src/migrations/, src/policies/, src/middlewares/, src/extensions/, src/index.ts, src/utils/admin-auth-routes.ts, src/utils/cors-origins.ts, src/utils/drafts-access.ts, src/utils/theme-access.ts, src/utils/theme-picker-route.ts, src/constants/response-fields/, src/constants/roles.ts, types/generated/, .env.example, .github/workflows/contract.yml, scripts/contract/, docs/security.md, docs/security/response-fields.md, docs/API_TOKENS.md, docs/operate/
 express: README.md, CONTRIBUTING.md, THIRD-PARTY.md, docs/*.md, docs/architecture/, docs/security/, docs/assets/
 ```
@@ -83,6 +84,7 @@ npm run test:postgres  # Serial Jest run for TEST_DATABASE_URL (PostgreSQL); the
 npm run test:handles    # Serial run with --detectOpenHandles, to find leaked handles
 npm run test:coverage  # Run Jest with coverage report
 npm run test:upgrade   # Upgrade check from a released image on PostgreSQL (needs Docker; not in check)
+npm run test:demo-stacks  # Demo stack check (needs Docker or Podman and the image variables; not in check)
 ```
 
 ### Node.js Requirements
