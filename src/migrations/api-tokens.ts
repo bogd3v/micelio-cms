@@ -35,7 +35,7 @@ export const FRONTEND_TOKEN_PERMISSIONS = [
   'plugin::micelio.preview.draft',
   // The site's slug redirects, `GET /api/micelio/redirects` (core 0.4.0): the frontend reads them to
   // answer a moved page, and logs that the token "needs plugin::micelio.redirects.find" without it.
-  // Read only, and not in the build token's list: a static build has no redirect to answer.
+  // Read only; the build token holds it too (`BUILD_TOKEN_PERMISSIONS`).
   'plugin::micelio.redirects.find',
   'api::subscriber.subscriber.find',
   'api::subscriber.subscriber.lookup',
@@ -62,8 +62,8 @@ export const BUILD_TOKEN_NAME = 'build'
 
 /**
  * What a static build reads (micelio ADR 0006, section 7): published content
- * only. API tokens never get drafts (`src/utils/drafts-access.ts`), and this
- * one cannot write anything.
+ * and the site's redirects only. API tokens never get drafts
+ * (`src/utils/drafts-access.ts`), and this one cannot write anything.
  */
 export const BUILD_TOKEN_PERMISSIONS = [
   'api::article.article.find',
@@ -72,6 +72,9 @@ export const BUILD_TOKEN_PERMISSIONS = [
   'api::site-setting.site-setting.find',
   'api::page.page.find',
   'api::author.author.find',
+  // The static build reads `GET /api/micelio/redirects` once to write `_redirects` (micelio
+  // `modules/static-routes.ts`); without it the build warns and writes no `_redirects`.
+  'plugin::micelio.redirects.find',
 ]
 
 /** Definition of the frontend token, created from `FRONTEND_API_TOKEN`. */

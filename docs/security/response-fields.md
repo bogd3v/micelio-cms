@@ -47,7 +47,7 @@ Each surface has a summary table, then one table per route with one row per obje
 
 Callers in the tests: the **public role** (with `find` granted where the route is not public by default), the **frontend token** and the **build token** (`FRONTEND_TOKEN_PERMISSIONS` and `BUILD_TOKEN_PERMISSIONS` in `src/migrations/api-tokens.ts`), an **editor** and a signed-in **reader** (a JWT). The suites also check who cannot read: the draft list answers the public role, a reader, the frontend token and the build token with 403; the page and site settings routes answer the public role, a reader and an editor with 403, and `global` answers the frontend token and the build token with 403; the subscriber routes answer the public role, a reader, an editor and the build token with 403, and the comment routes answer the build token with 403.
 
-The **frontend token** also holds `plugin::micelio.redirects.find` (core `0.4.0`, `GET /api/micelio/redirects`, the site's slug redirects: `from`, `to` and `locale` of each, site paths only; no personal data), granted in `FRONTEND_TOKEN_PERMISSIONS`; the build token does not hold it, and the public role has no grant on it (`tests/api-tokens-preview.test.ts`).
+The **frontend token** also holds `plugin::micelio.redirects.find` (core `0.4.0`, `GET /api/micelio/redirects`, the site's slug redirects: `from`, `to` and `locale` of each, site paths only; no personal data), granted in `FRONTEND_TOKEN_PERMISSIONS`; the build token holds it too (`BUILD_TOKEN_PERMISSIONS`: the static build writes `_redirects` from it), and the public role has no grant on it (`tests/api-tokens-preview.test.ts`).
 
 ## What every response adds and cannot lose
 
