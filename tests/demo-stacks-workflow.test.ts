@@ -17,12 +17,17 @@ function section(text: string, key: string): string {
   return rest.slice(0, end < 0 ? rest.length : end).join('\n')
 }
 
+/** The text of `value` with every regular-expression metacharacter escaped, so a pattern built from it matches it literally. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /** The text of the job whose `name:` is `name`. */
 function job(name: string): string {
   const jobs = section(workflow, 'jobs')
   const blocks = jobs.split(/^ {2}(?=\S[^\n]*:$)/m).filter(Boolean)
   const found = blocks.find((block) =>
-    new RegExp(`^ {4}name: ${name.replace(/[()$.{}]/g, '\\$&')}$`, 'm').test(block)
+    new RegExp(`^ {4}name: ${escapeRegExp(name)}$`, 'm').test(block)
   )
   return found ?? ''
 }
@@ -52,6 +57,13 @@ const PATHS = [
 ]
 
 describe('demo-stacks.yml', () => {
+  it('matches a job name with a regular-expression character literally', () => {
+    const name = 'Demo [a+b] \\ (x|y)* ^$ ?'
+    expect(new RegExp(`^${escapeRegExp(name)}$`).test(name)).toBe(true)
+    expect(new RegExp(`^${escapeRegExp('a+b')}$`).test('aab')).toBe(false)
+    expect(new RegExp(`^${escapeRegExp('[a]')}$`).test('a')).toBe(false)
+  })
+
   it('runs on pull requests that touch a demo stack, by hand, and weekly', () => {
     const on = section(workflow, 'on')
     const pullRequest = /^ {2}pull_request:\n((?: {4}.*\n)+)/m.exec(on)?.[1] ?? ''
