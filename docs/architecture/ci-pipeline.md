@@ -10,7 +10,7 @@
 - `REUSE`: `reuse lint`, the licence headers and `REUSE.toml`.
 - `Build`: `npm run build`.
 
-A final job, `Check`, passes only when all of them did or were skipped by an input. Reported as `check / Check`, it is the check the ruleset "Protect main" requires. `dco.yml` and `scorecard.yml` call the reusable `dco.yml` and `scorecard.yml` the same way (the DCO check is reported as `dco / Signed-off-by`); `codeql.yml` (`analyze`), `contract.yml` and `release.yml` are this repository's own. Raise the pinned SHA in a pull request when the reusable workflows change.
+A final job, `Check`, passes only when all of them did or were skipped by an input. Reported as `check / Check`, it is the check the ruleset "Protect main" requires. `dco.yml` and `scorecard.yml` call the reusable `dco.yml` and `scorecard.yml` the same way (the DCO check is reported as `dco / Signed-off-by`); `codeql.yml` (`analyze`), `contract.yml`, `demo-stacks.yml` and `release.yml` are this repository's own. Raise the pinned SHA in a pull request when the reusable workflows change.
 
 A finding of `npm audit` that cannot be fixed yet goes in `docs/DEPENDENCY_RISKS.md` with its reason, never silenced without one.
 
@@ -62,6 +62,33 @@ Run it locally with Docker, next to a checkout of the frontend:
 docker build --target production -t micelio-cms:contract .
 cd ../micelio && npm ci && npm run build
 CONTRACT_CMS_IMAGE=micelio-cms:contract npm run test:contract
+```
+
+## Demo stacks: `demo-stacks.yml`
+
+**Kind:** explanation, with the command to run it on the host. Nothing else runs the demo stacks of this repository on Docker, the engine of CI and of the operators: `contract.yml` builds the image and never starts `compose.static.yml`, `compose.landing.yml` or `compose.demo.yml`. The workers and verifiers run them on rootless Podman (ADR-0002 of `micelio-engineering`, Decision 4: the compose files are the single source for both engines, and CI proves the Docker path), so this job is the Docker proof, with no override but `ports:`.
+
+Each job builds the `production` image of the commit (loaded into the runner's Docker, not pushed) and runs `npm run test:demo-stacks` (`scripts/demo-stack-check/`):
+
+- **`Demo stacks (compose.static.yml)`** (2 rebuilds) and **`Demo stacks (compose.landing.yml)`** (1 rebuild), a matrix with `fail-fast: false`: the stack comes up, `site` answers `200`, `run --rm build` runs and exits `0` with no `are required`, `/out is not writable` or `Permission denied` in its output (the builder read `build.env` and wrote `demo-site`), `site` answers `200` again, and the first admin, created with a throwaway password that is never printed, reads `GET /theme-picker/last-rebuild`: `lastRebuild.status` is `succeeded`.
+- **`Demo stack (compose.demo.yml)`**: `init`, `db` and `cms` come up, `cms` is healthy (`GET /_health` answers `204`) and the frontend answers `200` at `/blog/starting-a-balcony-garden`, the first article the demo seed creates. The static and landing jobs cover `init`, `db` and `cms` through `extends`, not the server-rendered `frontend`.
+
+The script runs each stack under the project name `demo-check-<random>`, with a compose override written outside the repository that changes only `ports:` of `cms` and `site` to free ports on `127.0.0.1`, so it runs beside other stacks. In every case, also on failure (it then prints the stack's logs) and on SIGINT or SIGTERM, it runs `down -v --remove-orphans` (spawned detached, in a process group of its own, so a second Ctrl-C cannot interrupt it and leave volumes) and deletes the override; it never removes an image.
+
+- **Which paths start it:** pull requests to `main` or `develop` that touch `compose.static.yml`, `compose.landing.yml`, `compose.demo.yml` (both extend it), `demo/**`, `scripts/demo-secrets.js`, `scripts/builder-last-run.sh`, `scripts/demo-stack-check/**`, `Dockerfile`, `docker-entrypoint.sh`, `package.json`, `package-lock.json` and the workflow itself. It also runs by hand (`workflow_dispatch`) and once a week (Monday 05:23 UTC, with no `paths` filter, on `main`).
+- **Which images:** the CMS image is built from the commit (from `main` on the weekly run). The builder (`ghcr.io/bogd3v/micelio-builder:0.9`) and the frontend (`ghcr.io/bogd3v/micelio:0.9`) are the released images the compose files name by default, resolved to their digest and printed in the log and the step summary, so a pull request is checked against what an operator gets with these files and the run says which. They are public pulls: no registry login and no `secrets.` reference; the token is `contents: read`. When a release raises the default tags of the compose files, raise `BUILDER_TAG` and `FRONTEND_TAG` in the workflow in the same pull request: `tests/demo-stacks-workflow.test.ts` fails otherwise.
+- **Why weekly:** a new patch of the builder or the frontend that breaks a stack is found with no change in this repository.
+- **It is not a required check.** The `paths` filter means it never reports on a pull request it skips, and a required check that never reports blocks the pull request (`contract.yml` has no filter for that reason). Dropping the filter is a decision on cost, which the maintainer owns.
+- **Cost:** each job builds the CMS image (the layer cache is shared) and runs `nuxt generate`; `timeout-minutes` is 30. The minutes per job are measured on the pull request's run (`gh run list --workflow demo-stacks.yml`); not measured yet.
+- **When it fails:** a change broke a stack on Docker, or a new patch of the builder or the frontend did. Read the logs the script prints. A compose file that is wrong on Docker is fixed in its own pull request, never by an override in the job.
+
+Run it on the host (Docker or Podman) with the images it needs:
+
+```bash
+docker build --load --target production -t micelio-cms:demo-stacks .
+export MICELIO_CMS_IMAGE=micelio-cms:demo-stacks
+MICELIO_BUILDER_IMAGE=ghcr.io/bogd3v/micelio-builder:0.9 npm run test:demo-stacks -- --file compose.static.yml --rebuilds 2
+MICELIO_IMAGE=ghcr.io/bogd3v/micelio:0.9 npm run test:demo-stacks -- --file compose.demo.yml
 ```
 
 ## Pull request labels and release notes

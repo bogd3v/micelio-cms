@@ -1,0 +1,149 @@
+# The demo stacks of this repository on Docker, the engine of CI and of the operators (bogd3v/micelio-cms#535): the static and
+# landing stacks (`compose.static.yml`, `compose.landing.yml`) rebuild the site and `site` serves it; the dynamic demo
+# (`compose.demo.yml`) boots and its frontend serves a seeded article. Each job builds the CMS image from the commit and runs
+# `npm run test:demo-stacks` (scripts/demo-stack-check/), the check the factory runs on Podman. Docs: docs/architecture/ci-pipeline.md.
+#
+# It runs on pull requests that touch what those stacks read (a `paths` filter), by hand and once a week on `main`, where the
+# scheduled run takes the released builder and frontend images the compose files name, so a new patch of either that breaks a
+# stack shows with no change here. Because of the filter it never reports on a pull request it skips, so it cannot be a required
+# check (contract.yml has no filter for that reason).
+name: Demo stacks
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - compose.static.yml
+      - compose.landing.yml
+      - compose.demo.yml
+      - demo/**
+      - scripts/demo-secrets.js
+      - scripts/builder-last-run.sh
+      - scripts/demo-stack-check/**
+      - Dockerfile
+      - docker-entrypoint.sh
+      - package.json
+      - package-lock.json
+      - .github/workflows/demo-stacks.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-stacks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMS_IMAGE: micelio-cms:demo-stacks
+
+jobs:
+  static:
+    name: Demo stacks (${{ matrix.file }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - file: compose.static.yml
+            rebuilds: 2
+          - file: compose.landing.yml
+            rebuilds: 1
+    steps:
+      - name: Checkout the CMS
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      # Loaded into the runner's Docker, never pushed: the stacks use a local image as it is.
+      - name: Build the CMS image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: production
+          load: true
+          push: false
+          tags: ${{ env.CMS_IMAGE }}
+          cache-from: type=gha
+
+      # The builder the compose files name by default (MICELIO_BUILDER_IMAGE), pinned to its digest for this run.
+      - name: Resolve the builder
+        id: builder
+        env:
+          BUILDER_TAG: ghcr.io/bogd3v/micelio-builder:0.9
+        run: |
+          digest=$(docker buildx imagetools inspect "$BUILDER_TAG" --format '{{ .Manifest.Digest }}')
+          echo "image=ghcr.io/bogd3v/micelio-builder@${digest}" >> "$GITHUB_OUTPUT"
+          echo "Builder: ${BUILDER_TAG} is ghcr.io/bogd3v/micelio-builder@${digest}"
+          echo "Builder: \`${BUILDER_TAG}\` is \`ghcr.io/bogd3v/micelio-builder@${digest}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+
+      # The script imports only `node:` modules, so no `npm ci`.
+      - name: Run the stack
+        env:
+          FILE: ${{ matrix.file }}
+          REBUILDS: ${{ matrix.rebuilds }}
+          MICELIO_CMS_IMAGE: ${{ env.CMS_IMAGE }}
+          MICELIO_BUILDER_IMAGE: ${{ steps.builder.outputs.image }}
+        run: npm run test:demo-stacks -- --file "$FILE" --rebuilds "$REBUILDS"
+
+  dynamic:
+    name: Demo stack (compose.demo.yml)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the CMS
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      # Loaded into the runner's Docker, never pushed: the stack uses a local image as it is.
+      - name: Build the CMS image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: production
+          load: true
+          push: false
+          tags: ${{ env.CMS_IMAGE }}
+          cache-from: type=gha
+
+      # The frontend the compose file names by default (MICELIO_IMAGE), pinned to its digest for this run.
+      - name: Resolve the frontend
+        id: frontend
+        env:
+          FRONTEND_TAG: ghcr.io/bogd3v/micelio:0.9
+        run: |
+          digest=$(docker buildx imagetools inspect "$FRONTEND_TAG" --format '{{ .Manifest.Digest }}')
+          echo "image=ghcr.io/bogd3v/micelio@${digest}" >> "$GITHUB_OUTPUT"
+          echo "Frontend: ${FRONTEND_TAG} is ghcr.io/bogd3v/micelio@${digest}"
+          echo "Frontend: \`${FRONTEND_TAG}\` is \`ghcr.io/bogd3v/micelio@${digest}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+
+      # The script imports only `node:` modules, so no `npm ci`.
+      - name: Run the stack
+        env:
+          MICELIO_CMS_IMAGE: ${{ env.CMS_IMAGE }}
+          MICELIO_IMAGE: ${{ steps.frontend.outputs.image }}
+        run: npm run test:demo-stacks -- --file compose.demo.yml
