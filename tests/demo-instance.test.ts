@@ -4,6 +4,7 @@ import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import { seedDemoContent } from '../src/migrations/demo-seed'
 import {
+  ensureBuildToken,
   ensureFrontendToken,
   FRONTEND_TOKEN_NAME,
   PREVIEW_FRONTEND_TOKEN_PERMISSIONS,
@@ -21,6 +22,7 @@ const CATEGORY_UID = 'plugin::micelio.category'
 const TAG_UID = 'plugin::micelio.tag'
 const ABOUT_UID = 'api::about.about'
 const TOKEN_UID = 'admin::api-token'
+const REDIRECTS_ACTION = 'plugin::micelio.redirects.find'
 const MARKER = { type: 'core', name: 'migrations', key: 'demo-seed' }
 const ACCESS_KEY = 'demo-frontend-token-0123456789abcdef0123456789'
 const BUILD_KEY = 'demo-build-token-0123456789abcdef0123456789abc'
@@ -184,6 +186,14 @@ describe('Demo instance', () => {
   })
 
   describe('build token', () => {
+    const buildActions = async (): Promise<string[]> => {
+      const token = await strapi.db.query(TOKEN_UID).findOne({
+        where: { name: BUILD_TOKEN_NAME },
+        populate: ['permissions'],
+      })
+      return token.permissions.map(({ action }: { action: string }) => action)
+    }
+
     it('is created read-only from BUILD_API_TOKEN and reads pages', async () => {
       const token = await strapi.db.query(TOKEN_UID).findOne({
         where: { name: BUILD_TOKEN_NAME },
@@ -199,6 +209,26 @@ describe('Demo instance', () => {
       expect(
         (await http().post('/api/pages').set(bearer(BUILD_KEY)).send({ data: {} })).status
       ).toBe(403)
+    })
+
+    // micelio's static build reads the redirects once to write `_redirects` (`modules/static-routes.ts`).
+    it("lets the static build read the site's redirects with BUILD_API_TOKEN", async () => {
+      expect(await buildActions()).toContain(REDIRECTS_ACTION)
+      const res = await http().get('/api/micelio/redirects').set(bearer(BUILD_KEY))
+      expect(res.status).toBe(200)
+    })
+
+    it('adds the redirects action to a build token created without it, then reports unchanged', async () => {
+      const token = await strapi.db.query(TOKEN_UID).findOne({ where: { name: BUILD_TOKEN_NAME } })
+      await strapi.service(TOKEN_UID).update(token.id, {
+        type: 'custom',
+        permissions: BUILD_TOKEN_PERMISSIONS.filter((action) => action !== REDIRECTS_ACTION),
+      })
+      expect(await buildActions()).not.toContain(REDIRECTS_ACTION)
+
+      expect(await ensureBuildToken(strapi)).toBe('updated')
+      expect(await buildActions()).toContain(REDIRECTS_ACTION)
+      expect(await ensureBuildToken(strapi)).toBe('unchanged')
     })
   })
 

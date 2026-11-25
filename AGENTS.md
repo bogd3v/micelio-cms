@@ -37,6 +37,11 @@ Work moves through the gates of the Micelio factory: [`docs/factory.md`](https:/
   `POST /admin/register-admin` and sign in with `POST /admin/login`.
   Each rebuild is `docker compose -f compose.static.yml run --rm build`,
   the admin reads its result at `GET /theme-picker/last-rebuild`, and `down -v` removes the stack.
+  On Podman the `build` service needs a compose override outside the copy: Podman mounts the whole
+  `demo-secrets` volume where `subpath: build.env` names one file, so the builder stops on
+  `NUXT_STRAPI_API_TOKEN (the CMS build token) are required` (mount the volume read-only and source
+  `build.env` from it), and the `demo-site` volume keeps the SELinux label of the first build, so the
+  next `run --rm build` stops on `/out is not writable` (`security_opt: [label=disable]`).
 - `docker compose up --build` always runs the `production` image, which refuses to boot without `FRONTEND_URL` (`FRONTEND_URL is required in production`). To observe the unset case, add a compose override that sets `NODE_ENV: development` and `FRONTEND_URL: ""` on the `strapi` service (an `environment` entry overrides `env_file`, which would otherwise supply the `.env` value; an empty value counts as unset), and bring the stack down with `down -v`.
 
 An `express` or `normal` issue does not run the steps above on the stack (the lane is set by the paths it touches: [Lanes](https://github.com/bogd3v/micelio-engineering/blob/main/docs/factory.md#lanes) of `docs/factory.md` in `micelio-engineering`, and `## Lanes` below); this section describes the run for `full`.
