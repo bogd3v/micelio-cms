@@ -57,6 +57,7 @@ populate: {
       'shared.media': { populate: { file: true, credit: true } },
       'shared.slider': { populate: { items: { populate: { file: true, credit: true } } } },
       'shared.code': true,
+      'shared.table': { populate: '*' },
       'shared.playground': true,
     },
   },
@@ -70,6 +71,8 @@ Each figure has a `caption` and a `credit` (`shared.image-credit`, see the `stra
 Playgrounds (`shared.playground`, micelio's heavy island of ADR 0006) are code the reader can run: `runtime` (`python` | `sql` | `javascript`), `code` (≤ 5,000 characters), and optionally `expectedOutput` (≤ 5,000, shown without running and as the no-JS fallback), `setup` (≤ 20,000, hidden code run before `code`, e.g. SQL tables) and `caption`. They have no nested fields, so `'shared.playground': true` returns them whole. Drafts may lack `runtime` or `code`; publishing requires both. Only the caption goes into `plainText` and search.
 
 Code blocks (`shared.code`, in article `blocks` and page `sections`) are code the server highlights: `code`, `language` (one of the languages of the server's highlighter, or `null`), `filename`, `highlight` (a list of line numbers, or `null`) and `caption`. They have no nested fields, so `'shared.code': true` returns them whole.
+
+Tables (`shared.table`, in article `blocks` and page `sections`) are a table of data: `caption`, `columns` (each a `label` and an `align`, `start` or `center`, or `null`), `rows` (each `cells`, a list of strings, one per column in the order of the columns) and `headerColumn` (`true` when the first column is a header, or `null`). The columns and rows are components, so `'shared.table': { populate: '*' }` returns them.
 
 ## Filtering, sorting, and pagination
 

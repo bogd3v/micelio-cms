@@ -85,7 +85,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | `articles.list` | `GET /api/articles` | public role with `find`, or an API token with `find` | 60 | 4 | server/api/posts/index.get.ts, server/utils/pageSections.ts | The query is the post card populate of `POST_CARD_POPULATE`; an unpopulated call returns the scalar fields only. `readTime` and `snippet` are added by the frontend, not by the CMS. |
-| `articles.detail` | `GET /api/articles?filters[slug]=:slug` | public role with `find`, an API token with `find`, or an editor JWT for drafts | 160 | 17 | server/api/posts/[slug].get.ts, server/api/drafts/[documentId].get.ts | The query is `ARTICLE_POPULATE`. An editor reads a draft the same way (`status=draft`, `GET /api/articles/:documentId`, a single object under `data`). `plainText` and `author.email` are private attributes and never appear. |
+| `articles.detail` | `GET /api/articles?filters[slug]=:slug` | public role with `find`, an API token with `find`, or an editor JWT for drafts | 171 | 20 | server/api/posts/[slug].get.ts, server/api/drafts/[documentId].get.ts | The query is `ARTICLE_POPULATE`. An editor reads a draft the same way (`status=draft`, `GET /api/articles/:documentId`, a single object under `data`). `plainText` and `author.email` are private attributes and never appear. |
 | `articles.feed` | `GET /api/articles?populate[cover][fields][0]=url&populate[category][fields][0]=name` | public role with `find`, or an API token with `find` | 10 | 20 | server/utils/feed.ts | The query is `FEED_POPULATE`: the cover returns `url` and the category `name`, and the feed no longer asks for the author. It reads `title`, `description`, `slug`, `publishedAt`, `locale`, `cover.url` and `category.name`. |
 | `articles.sitemap` | `GET /api/articles?fields[]=slug&fields[]=locale&fields[]=publishedAt&fields[]=updatedAt` | public role with `find`, or an API token with `find` | 11 | 8 | server/routes/sitemap.xml.ts | Strapi adds `id` and `documentId` to every document whatever `fields` says; they cannot be dropped without a custom controller. |
 | `articles.reading-path` | `GET /api/articles?fields[]=documentId&fields[]=slug&fields[]=title` | public role with `find`, or an API token with `find` | 4 | 7 | server/api/reading-path.get.ts | Strapi adds `id` to every document whatever `fields` says. |
@@ -133,6 +133,9 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.blocks[shared.slider].items.credit` | as shared `image-credit` | as shared `image-credit` |
 | `data.blocks[shared.slider].files` | as shared `media-card` | as shared `media-card` |
 | `data.blocks[shared.code]` | `id`, `__component`, `code`, `language`, `filename`, `highlight`, `caption` | `blockId` |
+| `data.blocks[shared.table]` | `id`, `__component`, `caption`, `columns`, `rows`, `headerColumn` | `blockId` |
+| `data.blocks[shared.table].columns` | `id`, `label`, `align` | `itemId` |
+| `data.blocks[shared.table].rows` | `id`, `cells` | `itemId` |
 | `data.blocks[shared.playground]` | `id`, `__component`, `runtime`, `code`, `expectedOutput`, `setup`, `caption` | `blockId` |
 | `meta` | none | `pagination` |
 | `meta.pagination` | as shared `pagination-unread` | as shared `pagination-unread` |
@@ -236,7 +239,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | `about.find` | `GET /api/about` | public role with `find`, or an API token with `find` | 191 | 10 | server/api/about.get.ts (`publicAbout`) | Single type; the query is `ABOUT_POPULATE`. The frontend re-filters the body with its own allow-list, which this shape mirrors. |
-| `pages.find` | `GET /api/pages` | API token with `find`; no role | 172 | 150 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. `pageType`, `visibility`, `templateId` and `templateVersion` are the page settings of `withPageSettings` (#414): surplus until the frontend reads them; `visibility` is a component (`inMenu`, `inSitemap`, `noindex`), returned only when the query populates it, which `PAGE_POPULATE` does not. `templateSamples` and `templateFixed` are private and never returned. |
+| `pages.find` | `GET /api/pages` | API token with `find`; no role | 180 | 156 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. `pageType`, `visibility`, `templateId` and `templateVersion` are the page settings of `withPageSettings` (#414): surplus until the frontend reads them; `visibility` is a component (`inMenu`, `inSitemap`, `noindex`), returned only when the query populates it, which `PAGE_POPULATE` does not. `templateSamples` and `templateFixed` are private and never returned. |
 | `pages.slugs` | `GET /api/pages?fields[]=slug` | API token with `find`; no role | 5 | 5 | modules/static-routes.ts | Token only. Strapi adds `id` and `documentId` whatever `fields` says. |
 
 #### `about.find`
@@ -318,6 +321,9 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.sections[section.rich-text]` | `__component`, `body` | `id`, `blockId`, `tone`, `align` |
 | `data.sections[shared.rich-text]` | `__component`, `body` | `id`, `blockId` |
 | `data.sections[shared.code]` | `__component`, `code`, `language`, `filename`, `highlight`, `caption` | `id`, `blockId` |
+| `data.sections[shared.table]` | `__component`, `caption`, `columns`, `rows`, `headerColumn` | `id`, `blockId` |
+| `data.sections[shared.table].columns` | `label`, `align` | `id`, `itemId` |
+| `data.sections[shared.table].rows` | `cells` | `id`, `itemId` |
 | `data.sections[section.gallery]` | `__component`, `variant`, `title`, `images` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
 | `data.sections[section.gallery].images` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.scene]` | `__component`, `variant`, `model`, `poster`, `alt`, `title`, `text` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |

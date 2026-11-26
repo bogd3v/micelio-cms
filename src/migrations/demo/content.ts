@@ -527,6 +527,21 @@ export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): Show
       caption: t('The command that starts this demo.', 'El comando que arranca esta demostración.'),
     },
     {
+      __component: 'shared.table',
+      caption: t('When to sow, by crop', 'Cuándo sembrar, por cultivo'),
+      columns: [
+        { label: t('Crop', 'Cultivo'), align: 'start' },
+        { label: t('Sow', 'Siembra'), align: 'start' },
+        { label: t('Days to harvest', 'Días hasta la cosecha'), align: 'center' },
+      ],
+      rows: [
+        { cells: [t('Lettuce', 'Lechuga'), t('Spring', 'Primavera'), '60'] },
+        { cells: [t('Tomato', 'Tomate'), t('Late spring', 'Final de primavera'), '80'] },
+        { cells: [t('Garlic', 'Ajo'), t('Autumn', 'Otoño'), '240'] },
+      ],
+      headerColumn: true,
+    },
+    {
       __component: 'section.gallery',
       variant: 'grid',
       title: t('Through the year', 'A lo largo del año'),

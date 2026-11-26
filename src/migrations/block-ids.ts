@@ -25,6 +25,7 @@ const BLOCK_UIDS = [
   'shared.slider',
   'shared.playground',
   'shared.code',
+  'shared.table',
 ]
 
 /** Repeatable items of the blocks that carry an `itemId`. */
@@ -36,6 +37,8 @@ const ITEM_UIDS = [
   'section.faq-item',
   'section.logo',
   'shared.slide',
+  'shared.table-column',
+  'shared.table-row',
 ]
 
 /** What the migration reads of a component row. */

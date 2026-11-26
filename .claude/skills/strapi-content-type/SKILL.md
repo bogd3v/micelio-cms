@@ -98,6 +98,7 @@ Use the shared components in `src/components/shared/`:
 - `shared.rich-text` — rich text block
 - `shared.quote` — quote block
 - `shared.code` — highlighted code block (article `blocks` and page `sections`): `code`, `language` (an enumeration), `filename`, `highlight` (a JSON list of line numbers), `caption`
+- `shared.table` — table of data (article `blocks` and page `sections`): `caption`, `columns` (repeatable `shared.table-column`: `label`, `align` `start` | `center`), `rows` (repeatable `shared.table-row`: `cells`, a JSON list of strings, one per column), `headerColumn` (boolean)
 - `shared.playground` — runnable code block (article `blocks`): `runtime`, `code`, optional `expectedOutput`, `setup` and `caption`
 - `shared.reference` — bibliographic source (article `references`, cited as `[@key]`)
 - `shared.translation-credit` — the fediverse actor (`actorUrl`, `https:` only) of whoever translated a locale (article `translationCredits`, localised, at most 10 per locale; ADR-0025 of micelio)
@@ -115,7 +116,8 @@ Example dynamic zone on a new content type:
     "shared.playground",
     "shared.quote",
     "shared.rich-text",
-    "shared.slider"
+    "shared.slider",
+    "shared.table"
   ]
 }
 ```
@@ -134,7 +136,7 @@ Example dynamic zone on a new content type:
 
 ## Pages and the section catalog
 
-`page` builds landing pages from `section.*` components (`src/components/section/`); `page.sections` also allows `shared.rich-text`, the Markdown block that articles use (stored, not rendered until the `micelio` pull request of #445), and `shared.code`, the code block; the catalog is a contract with every theme (micelio ADR 0005 §11). To add a section or a variant: add the component (semantic fields only; `variant` as an `enumeration` with a `default` and `required`), add it to `page.sections`, and the frontend component, `/_theme` and every installed theme must follow in micelio. Give repeatable item components their own `collectionName` when it would collide with a section's (`components_section_testimonial_items`). Drafts may be incomplete: Strapi applies `required`, `min`/`max` and `regex` on publish.
+`page` builds landing pages from `section.*` components (`src/components/section/`); `page.sections` also allows `shared.rich-text`, the Markdown block that articles use (stored, not rendered until the `micelio` pull request of #445), `shared.code`, the code block, and `shared.table`, the table; the catalog is a contract with every theme (micelio ADR 0005 §11). To add a section or a variant: add the component (semantic fields only; `variant` as an `enumeration` with a `default` and `required`), add it to `page.sections`, and the frontend component, `/_theme` and every installed theme must follow in micelio. Give repeatable item components their own `collectionName` when it would collide with a section's (`components_section_testimonial_items`). Drafts may be incomplete: Strapi applies `required`, `min`/`max` and `regex` on publish.
 
 ## Verification
 

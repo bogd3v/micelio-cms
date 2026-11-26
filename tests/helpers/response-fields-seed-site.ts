@@ -155,6 +155,16 @@ export async function seedSite(
           highlight: [2],
           caption: 'Two lines',
         },
+        {
+          __component: 'shared.table',
+          caption: 'Two plans',
+          columns: [
+            { label: 'Plan', align: 'start' },
+            { label: 'Price', align: 'center' },
+          ],
+          rows: [{ cells: ['Basic', '0'] }, { cells: ['Pro', '10'] }],
+          headerColumn: true,
+        },
         { __component: 'section.gallery', variant: 'masonry', title: 'Gallery', images: [cover] },
         {
           __component: 'section.scene',
