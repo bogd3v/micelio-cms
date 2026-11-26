@@ -81,6 +81,7 @@ export const PAGE_POPULATE = {
       },
       'section.newsletter': { populate: '*' },
       'section.rich-text': { populate: '*' },
+      'shared.rich-text': true,
       'section.gallery': { populate: { images: PAGE_MEDIA } },
       'section.scene': { populate: { model: PAGE_MEDIA, poster: PAGE_MEDIA } },
     },

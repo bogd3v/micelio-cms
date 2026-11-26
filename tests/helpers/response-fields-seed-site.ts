@@ -4,16 +4,19 @@ import {
   documents,
   link,
   seoOf,
+  type Data,
   type SeededImages,
 } from './response-fields-seed-base'
 import type { SeededArticles } from './response-fields-seed-articles'
 import { SITE_UID } from '@micelio/strapi-plugin-core/strapi-server'
 import { defaultSiteRelation } from '../../src/utils/default-site'
+import { plantRetiredRichText } from './retired-rich-text'
 
 const ABOUT_UID = 'api::about.about'
 const GLOBAL_UID = 'api::global.global'
 const PAGE_UID = 'api::page.page'
 const SUBSCRIBER_UID = 'api::subscriber.subscriber'
+const RETIRED_PLACEHOLDER = 'Retired rich text placeholder'
 
 /** Creates a page with every section, the About page, the global type, the site settings and a subscriber. */
 export async function seedSite(
@@ -145,7 +148,8 @@ export async function seedSite(
           text: 'Join',
           buttonLabel: 'Subscribe',
         },
-        { __component: 'section.rich-text', body: 'Rich **text**' },
+        // Stored as `section.rich-text` below, as a release before #445 did: the shape stays listed.
+        { __component: 'shared.rich-text', body: RETIRED_PLACEHOLDER },
         { __component: 'shared.rich-text', body: 'Shared **prose**' },
         {
           __component: 'shared.code',
@@ -185,6 +189,21 @@ export async function seedSite(
     data: { title: 'Página de campos', slug: 'pagina-de-campos' },
   })
   await documents(PAGE_UID).publish({ documentId: page.documentId, locale: 'es' })
+  // The Document Service refuses `section.rich-text` since #445, and the component stays in the zone
+  // (and in `PAGE_SECTIONS`) for one release: store it in the English versions as an old release did.
+  const draft = (await (
+    strapi.documents(PAGE_UID as never) as unknown as {
+      findOne(params: Data): Promise<{ sections: { body?: string }[] }>
+    }
+  ).findOne({ documentId: page.documentId, locale: 'en', populate: { sections: true } })) as {
+    sections: { body?: string }[]
+  }
+  await plantRetiredRichText(
+    page.documentId,
+    draft.sections.findIndex((section) => section.body === RETIRED_PLACEHOLDER),
+    { body: 'Rich **text**' },
+    'en'
+  )
 
   await documents(ABOUT_UID).create({
     data: {

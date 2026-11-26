@@ -1,9 +1,9 @@
 {
   "collectionName": "components_section_rich_texts",
   "info": {
-    "displayName": "Rich text",
+    "displayName": "Rich text (retired: use shared Rich text)",
     "icon": "feather",
-    "description": "Long text in Markdown"
+    "description": "Retired: its content moved to prose, the shared Rich text block. A save that sends it is refused."
   },
   "options": {},
   "attributes": {

@@ -91,13 +91,13 @@ describe('shared.code block', () => {
       data: {
         title: 'Lines',
         slug: 'code-lines',
-        blocks: [block({ highlight: [7, 2, 3] })],
+        blocks: [block({ highlight: [4, 2, 3] })],
       },
     })
     await articles().publish({ documentId: draft.documentId })
 
     const [stored] = await publishedBlocks('code-lines')
-    expect(stored.highlight).toEqual([7, 2, 3])
+    expect(stored.highlight).toEqual([4, 2, 3])
   })
 
   it('leaves every optional field empty and sets no default', async () => {
@@ -151,7 +151,7 @@ describe('shared.code block', () => {
         slug: 'code-page',
         site: await defaultSiteRelation(strapi),
         sections: [
-          { __component: 'section.rich-text', body: 'First' },
+          { __component: 'shared.rich-text', body: 'First' },
           block(),
           { __component: 'shared.rich-text', body: 'Third' },
         ],
@@ -165,7 +165,7 @@ describe('shared.code block', () => {
         populate: { sections: { populate: '*' } },
       })
       expect(page?.sections).toMatchObject([
-        { __component: 'section.rich-text' },
+        { __component: 'shared.rich-text' },
         block(),
         { __component: 'shared.rich-text' },
       ])

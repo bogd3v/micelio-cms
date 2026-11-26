@@ -12,6 +12,7 @@ import { ensureEditorRole } from './migrations/editor-role'
 import { applyAccountSettings } from './migrations/account-settings'
 import { migrateSliderItems } from './migrations/slider-items'
 import { fillBlockIds } from './migrations/block-ids'
+import { migrateRichTextToProse } from './migrations/prose'
 import { reportNewsletterConsent } from './migrations/newsletter-consent'
 import { revokeSiteSettingPermissions, seedSiteSettings } from './migrations/site-settings'
 import { restrictThemeToSuperAdmin } from './migrations/theme-permissions'
@@ -219,6 +220,12 @@ export default {
 
     const sliders = await migrateSliderItems(strapi)
     if (sliders > 0) strapi.log.info(`[sliders] copied files into items for ${sliders} sliders`)
+
+    // Before the block ids: a migrated entry keeps its blockId, and one that had none gets it next.
+    const prose = await migrateRichTextToProse(strapi)
+    if (prose.migrated > 0) {
+      strapi.log.info(`[prose] turned ${prose.migrated} section.rich-text entries into prose`)
+    }
 
     const blockIds = await fillBlockIds(strapi)
     if (blockIds > 0) strapi.log.info(`[blocks] filled ${blockIds} block and item ids`)

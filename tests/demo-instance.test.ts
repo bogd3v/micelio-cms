@@ -134,8 +134,9 @@ describe('Demo instance', () => {
           filters: { slug },
           populate: { sections: { populate: '*' } },
         } as never)) as { sections: { __component: string }[] } | null
+        // `section.rich-text` is retired (#445): it stays in the zone, and the demo no longer writes it.
         expect(page?.sections.map((section) => section.__component).sort()).toEqual(
-          [...catalog].sort()
+          catalog.filter((uid) => uid !== 'section.rich-text').sort()
         )
       }
     })

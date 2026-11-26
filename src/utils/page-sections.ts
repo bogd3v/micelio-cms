@@ -9,6 +9,8 @@ import { errors } from '@strapi/utils'
 
 const FILE_UID = 'plugin::upload.file'
 const MODEL_EXTENSIONS = ['.glb', '.gltf']
+/** The retired Markdown section (#445): it stays in the zone for one release, closed to writes. */
+const RETIRED_RICH_TEXT = 'section.rich-text'
 
 type Section = Record<string, unknown> & { __component?: string }
 
@@ -45,8 +47,10 @@ function mediaId(value: unknown): number | null {
 
 /**
  * Rejects a `post-list` that names both a category and a tag (it lists one or
- * the other, or the latest articles), and a `scene` whose model is not a glTF
- * file (`.glb` or `.gltf`), which the frontend's 3D island could not load.
+ * the other, or the latest articles), a `scene` whose model is not a glTF
+ * file (`.glb` or `.gltf`), which the frontend's 3D island could not load, and
+ * any `section.rich-text`: that component is retired (#445), its content moved
+ * to `shared.rich-text` (`prose`) by the boot migration `src/migrations/prose.ts`.
  */
 export async function assertPageSectionsValid(
   strapi: Core.Strapi,
@@ -56,6 +60,13 @@ export async function assertPageSectionsValid(
   const sections = data.sections as Section[]
 
   for (const [index, section] of sections.entries()) {
+    if (section?.__component === RETIRED_RICH_TEXT) {
+      reject(
+        index,
+        '__component',
+        'section.rich-text is retired: use prose, the Rich text block of the shared category (shared.rich-text)'
+      )
+    }
     if (section?.__component === 'section.post-list') {
       if (isRelationSet(section.category) && isRelationSet(section.tag)) {
         reject(index, 'tag', 'A post list shows a category or a tag, not both')

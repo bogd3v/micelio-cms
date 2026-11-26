@@ -37,8 +37,8 @@
     "test:demo-stacks": "node scripts/demo-stack-check/index.mjs"
   },
   "dependencies": {
-    "@micelio/strapi-plugin-core": "0.5.0",
-    "@micelio/strapi-plugin-fediverse": "0.7.2",
+    "@micelio/strapi-plugin-core": "0.6.1",
+    "@micelio/strapi-plugin-fediverse": "0.7.3",
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.59.0",
     "@strapi/plugin-users-permissions": "^5.59.0",
