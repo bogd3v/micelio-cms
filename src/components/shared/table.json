@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_shared_tables",
+  "info": {
+    "displayName": "Table",
+    "icon": "grid",
+    "description": "A table of data with a caption, header cells and a header column"
+  },
+  "options": {},
+  "attributes": {
+    "blockId": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "text"
+    },
+    "columns": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.table-column"
+    },
+    "rows": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.table-row"
+    },
+    "headerColumn": {
+      "type": "boolean"
+    }
+  }
+}

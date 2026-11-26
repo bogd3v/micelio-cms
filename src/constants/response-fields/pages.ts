@@ -334,6 +334,18 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     id: 'surplus',
     blockId: 'surplus',
   },
+  'shared.table': {
+    __component: 'required',
+    caption: 'required',
+    columns: {
+      use: 'required',
+      of: { label: 'required', align: 'required', id: 'surplus', itemId: 'surplus' },
+    },
+    rows: { use: 'required', of: { cells: 'required', id: 'surplus', itemId: 'surplus' } },
+    headerColumn: 'required',
+    id: 'surplus',
+    blockId: 'surplus',
+  },
   'section.gallery': {
     __component: 'required',
     variant: 'required',

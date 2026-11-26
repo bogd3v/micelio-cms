@@ -71,6 +71,7 @@ const schema = withPageSettings({
         'section.rich-text',
         'shared.rich-text',
         'shared.code',
+        'shared.table',
         'section.gallery',
         'section.scene',
       ],

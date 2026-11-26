@@ -528,6 +528,7 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
         'shared.quote',
         'shared.rich-text',
         'shared.slider',
+        'shared.table',
       ]
     > &
       Schema.Attribute.SetPluginOptions<{
@@ -750,6 +751,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
         'section.rich-text',
         'shared.rich-text',
         'shared.code',
+        'shared.table',
         'section.gallery',
         'section.scene',
       ]

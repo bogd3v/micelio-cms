@@ -67,6 +67,21 @@ export const ARTICLE_ROUTES: readonly ResponseRoute[] = [
                 highlight: 'required',
                 caption: 'required',
               },
+              'shared.table': {
+                id: 'required',
+                blockId: 'surplus',
+                __component: 'required',
+                caption: 'required',
+                columns: {
+                  use: 'required',
+                  of: { id: 'required', itemId: 'surplus', label: 'required', align: 'required' },
+                },
+                rows: {
+                  use: 'required',
+                  of: { id: 'required', itemId: 'surplus', cells: 'required' },
+                },
+                headerColumn: 'required',
+              },
               'shared.playground': {
                 id: 'required',
                 blockId: 'surplus',

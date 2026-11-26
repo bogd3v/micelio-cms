@@ -42,6 +42,12 @@ const CALLS: Record<string, (get: Get) => Promise<unknown[]>> = {
       locale: 'en',
       populate: { blocks: { on: { 'shared.code': true } } },
     }),
+    // The same for `shared.table` (#449): its columns and rows are components.
+    await get('/api/articles', {
+      filters: { slug: { $eq: SEEDED.articleSlug } },
+      locale: 'en',
+      populate: { blocks: { on: { 'shared.table': { populate: '*' } } } },
+    }),
   ],
   'articles.feed': async (get) => [
     await get('/api/articles', {
@@ -149,6 +155,12 @@ describe('Response fields of the article routes (ASVS V15.3.1)', () => {
           status: 'draft',
           locale: 'en',
           populate: { blocks: { on: { 'shared.code': true } } },
+        }),
+        await get('/api/articles', {
+          filters: { slug: { $eq: SEEDED.articleSlug } },
+          status: 'draft',
+          locale: 'en',
+          populate: { blocks: { on: { 'shared.table': { populate: '*' } } } },
         }),
       ]
       assertShape(routeById('articles.detail'), 'editor', bodies)

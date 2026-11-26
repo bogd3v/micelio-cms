@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_shared_table_rows",
+  "info": {
+    "displayName": "Table row",
+    "icon": "grid",
+    "description": "A row of a table: one string per column, in the order of the columns"
+  },
+  "options": {},
+  "attributes": {
+    "itemId": {
+      "type": "string"
+    },
+    "cells": {
+      "type": "json"
+    }
+  }
+}

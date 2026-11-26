@@ -1123,6 +1123,49 @@ export interface SharedSlider extends Struct.ComponentSchema {
   }
 }
 
+export interface SharedTable extends Struct.ComponentSchema {
+  collectionName: 'components_shared_tables'
+  info: {
+    description: 'A table of data with a caption, header cells and a header column'
+    displayName: 'Table'
+    icon: 'grid'
+  }
+  attributes: {
+    blockId: Schema.Attribute.String
+    caption: Schema.Attribute.Text
+    columns: Schema.Attribute.Component<'shared.table-column', true>
+    headerColumn: Schema.Attribute.Boolean
+    rows: Schema.Attribute.Component<'shared.table-row', true>
+  }
+}
+
+export interface SharedTableColumn extends Struct.ComponentSchema {
+  collectionName: 'components_shared_table_columns'
+  info: {
+    description: 'A column of a table: its header label and how its cells align'
+    displayName: 'Table column'
+    icon: 'grid'
+  }
+  attributes: {
+    align: Schema.Attribute.Enumeration<['start', 'center']>
+    itemId: Schema.Attribute.String
+    label: Schema.Attribute.String
+  }
+}
+
+export interface SharedTableRow extends Struct.ComponentSchema {
+  collectionName: 'components_shared_table_rows'
+  info: {
+    description: 'A row of a table: one string per column, in the order of the columns'
+    displayName: 'Table row'
+    icon: 'grid'
+  }
+  attributes: {
+    cells: Schema.Attribute.JSON
+    itemId: Schema.Attribute.String
+  }
+}
+
 export interface SharedTechItem extends Struct.ComponentSchema {
   collectionName: 'components_shared_tech_items'
   info: {
@@ -1325,6 +1368,9 @@ declare module '@strapi/strapi' {
       'shared.seo': SharedSeo
       'shared.slide': SharedSlide
       'shared.slider': SharedSlider
+      'shared.table': SharedTable
+      'shared.table-column': SharedTableColumn
+      'shared.table-row': SharedTableRow
       'shared.tech-item': SharedTechItem
       'shared.translation-credit': SharedTranslationCredit
       'site.accent-override': SiteAccentOverride

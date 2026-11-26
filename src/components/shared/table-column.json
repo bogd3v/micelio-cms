@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_table_columns",
+  "info": {
+    "displayName": "Table column",
+    "icon": "grid",
+    "description": "A column of a table: its header label and how its cells align"
+  },
+  "options": {},
+  "attributes": {
+    "itemId": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "align": {
+      "type": "enumeration",
+      "enum": ["start", "center"]
+    }
+  }
+}

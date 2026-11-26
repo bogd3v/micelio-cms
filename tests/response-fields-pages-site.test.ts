@@ -76,6 +76,15 @@ const CALLS: Record<string, (get: Get) => Promise<unknown[]>> = {
         sections: { on: { 'shared.code': true } },
       },
     }),
+    // The same for `shared.table` (#449): its columns and rows are components.
+    await get('/api/pages', {
+      filters: { slug: { $eq: SEEDED.pageSlug } },
+      locale: 'en',
+      pagination: { limit: 1 },
+      populate: {
+        sections: { on: { 'shared.table': { populate: '*' } } },
+      },
+    }),
   ],
   'pages.slugs': async (get) => [
     await get('/api/pages', {
