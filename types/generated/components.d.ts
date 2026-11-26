@@ -537,6 +537,11 @@ export interface SectionLink extends Struct.ComponentSchema {
     icon: 'link'
   }
   attributes: {
+    download: Schema.Attribute.Boolean
+    external: Schema.Attribute.Boolean
+    icon: Schema.Attribute.String & Schema.Attribute.CustomField<'plugin::micelio.icon'>
+    iconPosition: Schema.Attribute.Enumeration<['start', 'end', 'only']> &
+      Schema.Attribute.DefaultTo<'start'>
     label: Schema.Attribute.String & Schema.Attribute.Required
     url: Schema.Attribute.String & Schema.Attribute.Required
   }
