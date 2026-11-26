@@ -5,7 +5,7 @@
 //
 //   npm run test:upgrade [-- --allow-drop <name>]...
 //
-// UPGRADE_FROM_IMAGE (default ghcr.io/bogd3v/micelio-cms:0.8.0, the last release), UPGRADE_TO_IMAGE (default: a
+// UPGRADE_FROM_IMAGE (default ghcr.io/bogd3v/micelio-cms:0.9.0, the last release), UPGRADE_TO_IMAGE (default: a
 // `docker build` of this working tree), CHECK_KEEP=1 keeps the stack, CHECK_TIMEOUT_SECONDS (300)
 // bounds each wait. Needs Docker; no secret, token or email is printed.
 import { randomBytes } from 'node:crypto';
@@ -21,7 +21,7 @@ import { docker, interrupt, removeRun, runLabel, waitFor } from './docker.mjs';
 const SEEDED = ['abouts', 'articles', 'authors', 'categories', 'pages', 'tags'];
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const DEFAULT_FROM = 'ghcr.io/bogd3v/micelio-cms:0.8.0';
+const DEFAULT_FROM = 'ghcr.io/bogd3v/micelio-cms:0.9.0';
 const POSTGRES_IMAGE = 'postgres:18-alpine';
 const DB_NAME = 'strapi';
 const DB_USER = 'strapi';

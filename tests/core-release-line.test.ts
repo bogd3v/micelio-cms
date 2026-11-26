@@ -2,8 +2,8 @@ import { describe, it, expect } from '@jest/globals'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-// `micelio-cms` 0.9 installs the release of `@micelio/strapi-plugin-core` that declares release
-// line 0.9 (docs/architecture/micelio-plugin.md), so the Status page and `npx micelio doctor`
+// `micelio-cms` 0.10 installs the release of `@micelio/strapi-plugin-core` that declares release
+// line 0.10 (docs/architecture/micelio-plugin.md), so the Status page and `npx micelio doctor`
 // report the line the distribution ships.
 
 const ROOT = path.join(__dirname, '..')
@@ -20,8 +20,8 @@ function readPackage(...segments: string[]): Record<string, unknown> {
 describe('the core plugin the distribution installs', () => {
   const installed = readPackage('node_modules', PLUGIN)
 
-  it('declares release line 0.9', () => {
-    expect(installed.micelio).toBe('0.9')
+  it('declares release line 0.10', () => {
+    expect(installed.micelio).toBe('0.10')
   })
 
   it('is the exact version package.json pins', () => {

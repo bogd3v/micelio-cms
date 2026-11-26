@@ -132,7 +132,7 @@ describe('Pages belong to a site', () => {
         data: {
           title: 'Scoped',
           slug,
-          sections: [{ __component: 'section.rich-text', body: 'Hello' }],
+          sections: [{ __component: 'shared.rich-text', body: 'Hello' }],
           site: await defaultSiteRelation(strapi),
         },
       } as never)
@@ -149,11 +149,9 @@ describe('Pages belong to a site', () => {
           locale: 'en',
           sections: [
             {
-              __component: 'section.rich-text',
+              __component: 'shared.rich-text',
               body: 'Hello',
               blockId: expect.any(String),
-              tone: 'default',
-              align: 'start',
             },
           ],
           seo: null,

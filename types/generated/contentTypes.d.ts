@@ -843,7 +843,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
 export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
   collectionName: 'site_settings'
   info: {
-    description: 'Identity of the site and the modules the frontend turns on'
+    description: 'Retired in 0.7: the site settings live on the default site (Content Manager, Site). Kept for one release so the upgrade can copy them, then removed in 0.8'
     displayName: 'Site settings'
     pluralName: 'site-settings'
     singularName: 'site-setting'
@@ -852,6 +852,12 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
     draftAndPublish: false
   }
   pluginOptions: {
+    'content-manager': {
+      visible: false
+    }
+    'content-type-builder': {
+      visible: false
+    }
     i18n: {
       localized: true
     }
@@ -1245,6 +1251,60 @@ export interface PluginI18NLocale extends Struct.CollectionTypeSchema {
   }
 }
 
+export interface PluginMicelioBlockSetting extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_block_settings'
+  info: {
+    description: 'What one site manages of a block of the catalogue: whether it is enabled, the page types it is allowed in, the options a new block starts with and its label in the palette'
+    displayName: 'Block setting'
+    pluralName: 'block-settings'
+    singularName: 'block-setting'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: false
+    }
+    'content-type-builder': {
+      visible: false
+    }
+    i18n: {
+      localized: false
+    }
+    micelio: {
+      export: 'never'
+      siteScoped: true
+    }
+  }
+  attributes: {
+    allowedPageTypes: Schema.Attribute.JSON
+    block: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64
+      }>
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    defaultOptions: Schema.Attribute.JSON
+    enabled: Schema.Attribute.Boolean & Schema.Attribute.Required & Schema.Attribute.DefaultTo<true>
+    labels: Schema.Attribute.JSON
+    locale: Schema.Attribute.String & Schema.Attribute.Private
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.block-setting'> &
+      Schema.Attribute.Private
+    publishedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+  }
+}
+
 export interface PluginMicelioCategory extends Struct.CollectionTypeSchema {
   collectionName: 'categories'
   info: {
@@ -1330,10 +1390,84 @@ export interface PluginMicelioCategory extends Struct.CollectionTypeSchema {
   }
 }
 
+export interface PluginMicelioPageTemplate extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_page_templates'
+  info: {
+    description: 'A saved sequence of blocks with their options, which a new page copies and never links to. Written through the Save as template dialog, the template import and the Page templates page, never by hand'
+    displayName: 'Page template'
+    pluralName: 'page-templates'
+    singularName: 'page-template'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: false
+    }
+    'content-type-builder': {
+      visible: false
+    }
+    i18n: {
+      localized: false
+    }
+    micelio: {
+      export: 'never'
+      siteScoped: true
+    }
+  }
+  attributes: {
+    blocks: Schema.Attribute.JSON & Schema.Attribute.Required
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    description: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 300
+      }>
+    history: Schema.Attribute.JSON
+    locale: Schema.Attribute.String & Schema.Attribute.Private
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.page-template'> &
+      Schema.Attribute.Private
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80
+      }>
+    origin: Schema.Attribute.Enumeration<['site', 'theme']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'site'>
+    pageTypes: Schema.Attribute.JSON
+    publishedAt: Schema.Attribute.DateTime
+    retired: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>
+    scope: Schema.Attribute.Enumeration<['site', 'cms']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'site'>
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    thumbnail: Schema.Attribute.JSON
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    version: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>
+  }
+}
+
 export interface PluginMicelioPreviewCredential extends Struct.CollectionTypeSchema {
   collectionName: 'micelio_preview_credentials'
   info: {
-    description: 'A preview token, grant or system grant of ADR-0019, stored as the hash of its value and bound to one draft (and, but for a system grant, to one admin user)'
+    description: 'A preview token, grant or system grant of ADR-0019, stored as the hash of its value and bound to one document (and, but for a system grant, to one admin user; a system grant bound to a reference also names a reusable block and its version; a token or grant may carry a theme and accent overrides, stored as given)'
     displayName: 'Preview credential'
     pluralName: 'preview-credentials'
     singularName: 'preview-credential'
@@ -1357,6 +1491,7 @@ export interface PluginMicelioPreviewCredential extends Struct.CollectionTypeSch
     }
   }
   attributes: {
+    accentOverrides: Schema.Attribute.JSON
     adminOrigin: Schema.Attribute.String
     adminUser: Schema.Attribute.Integer
     contentType: Schema.Attribute.String & Schema.Attribute.Required
@@ -1375,6 +1510,8 @@ export interface PluginMicelioPreviewCredential extends Struct.CollectionTypeSch
     localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.preview-credential'> &
       Schema.Attribute.Private
     publishedAt: Schema.Attribute.DateTime
+    reusableBlockDocumentId: Schema.Attribute.String
+    reusableBlockVersion: Schema.Attribute.String
     revokedAt: Schema.Attribute.DateTime
     site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
       Schema.Attribute.Required &
@@ -1384,9 +1521,159 @@ export interface PluginMicelioPreviewCredential extends Struct.CollectionTypeSch
         }
       }>
     siteDocumentId: Schema.Attribute.String & Schema.Attribute.Required
+    theme: Schema.Attribute.JSON
     updatedAt: Schema.Attribute.DateTime
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
     usedAt: Schema.Attribute.DateTime
+  }
+}
+
+export interface PluginMicelioRedirect extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_redirects'
+  info: {
+    description: 'A permanent redirect (301) of a site from the old address of a page to its current one, written when a published slug changes'
+    displayName: 'Redirect'
+    pluralName: 'redirects'
+    singularName: 'redirect'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: true
+    }
+    i18n: {
+      localized: false
+    }
+    micelio: {
+      export: 'never'
+      siteScoped: true
+    }
+  }
+  attributes: {
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    entryLocale: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32
+      }>
+    from: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 512
+      }>
+    locale: Schema.Attribute.String & Schema.Attribute.Private
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.redirect'> &
+      Schema.Attribute.Private
+    publishedAt: Schema.Attribute.DateTime
+    rule: Schema.Attribute.Enumeration<['slug-change']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'slug-change'>
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    to: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 512
+      }>
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+  }
+}
+
+export interface PluginMicelioReusableBlock extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_reusable_blocks'
+  info: {
+    description: 'One block of the catalogue, written once and shown on every page of its site that references it'
+    displayName: 'Reusable block'
+    pluralName: 'reusable-blocks'
+    singularName: 'reusable-block'
+  }
+  options: {
+    draftAndPublish: true
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: true
+    }
+    i18n: {
+      localized: true
+    }
+    micelio: {
+      editorial: true
+      siteScoped: true
+    }
+  }
+  attributes: {
+    blocks: Schema.Attribute.DynamicZone<
+      [
+        'section.hero',
+        'section.feature-grid',
+        'section.media-showcase',
+        'section.stats',
+        'section.logo-cloud',
+        'section.testimonials',
+        'section.pricing',
+        'section.faq',
+        'section.cta',
+        'section.post-list',
+        'section.newsletter',
+        'section.gallery',
+        'section.scene',
+        'shared.rich-text',
+        'shared.code',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 1
+          min: 1
+        },
+        number
+      >
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    editorial: Schema.Attribute.Component<'micelio-editorial.editorial', false> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }>
+    locale: Schema.Attribute.String
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.reusable-block'>
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80
+      }>
+    publishedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
   }
 }
 
@@ -1469,6 +1756,12 @@ export interface PluginMicelioSite extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: false
+        }
+      }>
+    homePage: Schema.Attribute.Relation<'oneToOne', 'api::page.page'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
         }
       }>
     hosts: Schema.Attribute.JSON &
@@ -1637,6 +1930,69 @@ export interface PluginMicelioTag extends Struct.CollectionTypeSchema {
           localized: false
         }
       }>
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+  }
+}
+
+export interface PluginMicelioTransfer extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_transfers'
+  info: {
+    description: "An export job or an import of the Export and import page: what was asked, who asked, the archive's file while it is kept, and the report"
+    displayName: 'Transfer'
+    pluralName: 'transfers'
+    singularName: 'transfer'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: false
+    }
+    'content-type-builder': {
+      visible: false
+    }
+    i18n: {
+      localized: false
+    }
+    micelio: {
+      export: 'never'
+      siteScoped: true
+    }
+  }
+  attributes: {
+    bytes: Schema.Attribute.BigInteger
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    downloadToken: Schema.Attribute.String
+    error: Schema.Attribute.Text
+    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required
+    hasFile: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>
+    kind: Schema.Attribute.Enumeration<['export', 'import']> & Schema.Attribute.Required
+    locale: Schema.Attribute.String & Schema.Attribute.Private
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.transfer'> &
+      Schema.Attribute.Private
+    name: Schema.Attribute.String & Schema.Attribute.Required
+    operator: Schema.Attribute.String
+    operatorId: Schema.Attribute.Integer
+    options: Schema.Attribute.JSON
+    publishedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    siteSlug: Schema.Attribute.String & Schema.Attribute.Required
+    status: Schema.Attribute.Enumeration<
+      ['queued', 'running', 'ready', 'failed', 'staged', 'applied']
+    > &
+      Schema.Attribute.Required
+    summary: Schema.Attribute.JSON
     updatedAt: Schema.Attribute.DateTime
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
   }
@@ -1970,10 +2326,15 @@ declare module '@strapi/strapi' {
       'plugin::content-releases.release': PluginContentReleasesRelease
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction
       'plugin::i18n.locale': PluginI18NLocale
+      'plugin::micelio.block-setting': PluginMicelioBlockSetting
       'plugin::micelio.category': PluginMicelioCategory
+      'plugin::micelio.page-template': PluginMicelioPageTemplate
       'plugin::micelio.preview-credential': PluginMicelioPreviewCredential
+      'plugin::micelio.redirect': PluginMicelioRedirect
+      'plugin::micelio.reusable-block': PluginMicelioReusableBlock
       'plugin::micelio.site': PluginMicelioSite
       'plugin::micelio.tag': PluginMicelioTag
+      'plugin::micelio.transfer': PluginMicelioTransfer
       'plugin::review-workflows.workflow': PluginReviewWorkflowsWorkflow
       'plugin::review-workflows.workflow-stage': PluginReviewWorkflowsWorkflowStage
       'plugin::upload.file': PluginUploadFile

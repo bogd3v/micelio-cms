@@ -59,8 +59,8 @@ describe('the fields of section.testimonial added by #451', () => {
     }
   )
 
-  it('refuses a rating above 5 in a draft too, but keeps a draft rating of 0', async () => {
+  it('refuses a rating above 5 or below 1 in a draft too', async () => {
     await expect(save({ rating: 6 }, 'draft')).rejects.toMatchObject({ name: 'ValidationError' })
-    await expect(save({ rating: 0 }, 'draft')).resolves.toBeTruthy()
+    await expect(save({ rating: 0 }, 'draft')).rejects.toMatchObject({ name: 'ValidationError' })
   })
 })

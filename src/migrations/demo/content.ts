@@ -505,13 +505,6 @@ export function showcaseSections(locale: DemoLocale, media: ShowcaseMedia): Show
       buttonLabel: t('Subscribe', 'Suscribirme'),
     },
     {
-      __component: 'section.rich-text',
-      body: t(
-        '## About this page\n\nEvery section of the catalog appears once, with one of its variants. Change the variants in the admin panel to see the others.',
-        '## Sobre esta página\n\nCada sección del catálogo aparece una vez, con una de sus variantes. Cambia las variantes en el panel de administración para ver las demás.'
-      ),
-    },
-    {
       __component: 'shared.rich-text',
       body: t(
         '## Prose\n\nThe same Markdown block that articles use, placed in a page.',

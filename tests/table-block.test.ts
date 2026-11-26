@@ -124,7 +124,7 @@ describe('shared.table block', () => {
         slug: 'table-page',
         site: await defaultSiteRelation(strapi),
         sections: [
-          { __component: 'section.rich-text', body: 'First' },
+          { __component: 'shared.rich-text', body: 'First' },
           block(),
           { __component: 'shared.rich-text', body: 'Third' },
         ],
@@ -138,7 +138,7 @@ describe('shared.table block', () => {
         populate: { sections: { populate: '*' } },
       })
       expect(page?.sections).toMatchObject([
-        { __component: 'section.rich-text' },
+        { __component: 'shared.rich-text' },
         block(),
         { __component: 'shared.rich-text' },
       ])

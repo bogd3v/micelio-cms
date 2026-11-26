@@ -222,6 +222,16 @@ export interface MicelioEditorialEditorial extends Struct.ComponentSchema {
     icon: 'check'
   }
   attributes: {
+    note: Schema.Attribute.Text &
+      Schema.Attribute.Private &
+      Schema.Attribute.SetPluginOptions<{
+        micelio: {
+          export: 'always'
+        }
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000
+      }>
     publishAt: Schema.Attribute.DateTime
     publishedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>
     reviewedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>
@@ -719,8 +729,8 @@ export interface SectionPricing extends Struct.ComponentSchema {
 export interface SectionRichText extends Struct.ComponentSchema {
   collectionName: 'components_section_rich_texts'
   info: {
-    description: 'Long text in Markdown'
-    displayName: 'Rich text'
+    description: 'Retired: its content moved to prose, the shared Rich text block. A save that sends it is refused.'
+    displayName: 'Rich text (retired: use shared Rich text)'
     icon: 'feather'
   }
   attributes: {
@@ -1078,17 +1088,12 @@ export interface SharedSeo extends Struct.ComponentSchema {
     metaDescription: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
-        maxLength: 160
         minLength: 50
       }>
     metaImage: Schema.Attribute.Media<'images' | 'files' | 'videos'> & Schema.Attribute.Required
     metaRobots: Schema.Attribute.String
     metaSocial: Schema.Attribute.Component<'shared.meta-social', true>
-    metaTitle: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 60
-      }>
+    metaTitle: Schema.Attribute.String & Schema.Attribute.Required
     metaViewport: Schema.Attribute.String
     structuredData: Schema.Attribute.JSON
   }

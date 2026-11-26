@@ -86,12 +86,12 @@ describe('Pages', () => {
   it('stores a page with sections and their default variants', async () => {
     const { documentId } = await createPage([
       { __component: 'section.hero', title: 'Hello', primaryLink: { label: 'Go', url: '/blog' } },
-      { __component: 'section.rich-text', body: 'Some **text**' },
+      { __component: 'shared.rich-text', body: 'Some **text**' },
     ])
     const page = await pages().findOne({ documentId, populate: { sections: { populate: '*' } } })
     const sections = page!.sections as Data[]
     expect(sections[0]).toMatchObject({ __component: 'section.hero', variant: 'centered' })
-    expect(sections[1]).toMatchObject({ __component: 'section.rich-text', body: 'Some **text**' })
+    expect(sections[1]).toMatchObject({ __component: 'shared.rich-text', body: 'Some **text**' })
   })
 
   it.each([
