@@ -39,6 +39,17 @@ describe('contract.yml', () => {
     expect(step).not.toMatch(/previous-ref/)
   })
 
+  it('passes the previous ref under test to the classifier', () => {
+    const step = byName.get('Run the contract suite (previous MINOR)')
+    expect(step).toMatch(/^ {10}FRONTEND_REF: \$\{\{ matrix\.ref \}\}$/m)
+    expect(step).toContain(
+      'node ../cms/scripts/contract/previous-ref.mjs --status "$status" --report "${REPORT}" --ref "${FRONTEND_REF}"'
+    )
+    const withRef = [...byName].filter(([, text]) => /--ref\b/.test(text))
+    expect(withRef.map(([name]) => name)).toEqual(['Run the contract suite (previous MINOR)'])
+    expect(byName.get('Run the contract suite')).not.toMatch(/--ref/)
+  })
+
   it("hands only the previous ref's report to the classifier", () => {
     const step = byName.get('Run the contract suite (previous MINOR)')
     expect(step).toBeDefined()
