@@ -1,10 +1,16 @@
 // Decides the outcome of `Contract Tests (previous)` in `.github/workflows/contract.yml` from the exit status of the frontend's
 // `npm run test:contract` and its Playwright JSON report. A run whose only failure is the frontend's check of stale known
 // differences (`e2e/contract/mock-shape.spec.ts`: entries of `KNOWN_DIFFERENCES` that no longer show) passes and shows them,
-// because the previous MINOR is a released tag that cannot change; any other failure fails. Docs: docs/architecture/ci-pipeline.md,
-// "Contract tests: `contract.yml`". Node built-ins only: the job installs nothing in the CMS checkout.
+// because the previous MINOR is a released tag that cannot change; any other failure fails.
 //
-//   node ../cms/scripts/contract/previous-ref.mjs --status "$status" --report <Playwright JSON report>
+// It also accepts the mock differences of ACCEPTED_DIFFERENCES: entries the same test lists under `unexpected` (the mock
+// answers what the real CMS does not), each tied to one released tag of the frontend and to the decision that accepted it.
+// A released tag cannot be fixed, so the mock's mistake is reported, not failed, on that tag only: the same entry under
+// another ref, or any other entry, still fails. Only `previous` runs this script; `latest` and `override` fail on any failure.
+// Docs: docs/architecture/ci-pipeline.md, "Contract tests: `contract.yml`". Node built-ins only: the job installs nothing in
+// the CMS checkout.
+//
+//   node ../cms/scripts/contract/previous-ref.mjs --status "$status" --report <Playwright JSON report> [--ref <tag>]
 import { appendFileSync, readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
@@ -15,8 +21,29 @@ const MOCK_SHAPE_TEST = 'the mock Strapi answers with the shapes of the real CMS
 /** How the message of the frontend's stale check starts, ANSI codes removed. */
 const STALE_MESSAGE = 'Error: known differences that no longer show'
 
+/** How the message of the frontend's `unexpected` check starts, ANSI codes removed. */
+const UNEXPECTED_MESSAGE = 'Error: what the mock answers that the CMS does not'
+
 /** The heading of the step summary on a tolerated run. */
 const TOLERATED_HEADING = 'Stale known differences of the previous MINOR (reported, not failed)'
+
+/** The heading of the step summary for accepted mock differences. */
+const ACCEPTED_HEADING = 'Accepted mock differences of the previous MINOR (reported, not failed)'
+
+/**
+ * The mock differences accepted on the previous MINOR: what the test lists under `unexpected`, for one released tag of
+ * `bogd3v/micelio` and the decision that accepted it. An entry applies to its `ref` only and is harmless once `previous`
+ * moves past that tag; the next release that touches this list removes it.
+ *
+ * @type {ReadonlyArray<{ ref: string, entry: string, decision: string }>}
+ */
+export const ACCEPTED_DIFFERENCES = [
+  {
+    ref: 'v0.8.1',
+    entry: '/api/pages $.data[].seo.metaSocial: in the mock, not in the CMS',
+    decision: 'D-414-31 and D-414-33, bogd3v/micelio-cms#414',
+  },
+]
 
 // The colour and style codes Playwright puts in an error message (CSI sequences).
 const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g
@@ -28,14 +55,16 @@ const RECEIVED_ENTRY = /^\+\s+("(?:[^"\\]|\\.)*"),?$/
  * Classifies a run of the frontend's contract suite on the previous MINOR.
  *
  * `passed`: status `0`, no global error and no unexpected test. `tolerated`: a non-zero status whose only cause is the
- * mock-shape test failing on its stale check; `stale` lists the entries. `failed`: anything else, a missing or unreadable
+ * mock-shape test failing on its stale check; `stale` lists the entries. `tolerated` also when its only cause is the same test failing on its
+ * `unexpected` check with entries all accepted for `ref` in `ACCEPTED_DIFFERENCES`; `accepted` lists them. `failed`: anything else, a missing or unreadable
  * report included; `reason` says what was found.
  *
- * @param {{ status: number, report: string | null | undefined }} run the exit status of `npm run test:contract`, and the
- *   text of its Playwright JSON report (`null` or `undefined` when there is none or it cannot be read)
- * @returns {{ outcome: 'passed' | 'tolerated' | 'failed', stale: string[], reason: string }} the outcome of the job
+ * @param {{ status: number, report: string | null | undefined, ref?: string }} run the exit status of
+ *   `npm run test:contract`, the text of its Playwright JSON report (`null` or `undefined` when there is none or it cannot
+ *   be read) and the frontend ref under test (without it nothing is accepted)
+ * @returns {{ outcome: 'passed' | 'tolerated' | 'failed', stale: string[], accepted: string[], reason: string }} the outcome of the job
  */
-export function classifyPreviousRun({ status, report }) {
+export function classifyPreviousRun({ status, report, ref }) {
   if (!Number.isInteger(status)) return failed(`the exit status is not a number: ${String(status)}`)
   if (report === null || report === undefined || report === '') {
     return failed(
@@ -63,7 +92,7 @@ export function classifyPreviousRun({ status, report }) {
 
   const unexpected = testsOf(parsed.suites).filter((test) => test.status === 'unexpected')
   if (status === 0) {
-    if (unexpected.length === 0) return { outcome: 'passed', stale: [], reason: '' }
+    if (unexpected.length === 0) return { outcome: 'passed', stale: [], accepted: [], reason: '' }
     return failed(
       `the exit status is 0 but ${unexpected.length} test(s) failed: ${titles(unexpected)}`
     )
@@ -81,6 +110,19 @@ export function classifyPreviousRun({ status, report }) {
     return failed(`the test "${MOCK_SHAPE_TEST}" failed with ${errors.length} errors`)
   }
   const message = stripAnsi(errors[0])
+  if (message.startsWith(UNEXPECTED_MESSAGE)) {
+    const entries = receivedEntries(message)
+    if (entries.length === 0) {
+      return failed(`the unexpected check of "${MOCK_SHAPE_TEST}" failed but lists no entry`)
+    }
+    const refused = entries.filter((entry) => !isAccepted(ref, entry))
+    if (refused.length > 0) {
+      return failed(
+        `the test "${MOCK_SHAPE_TEST}" failed on another check: ${firstLineOf(message)}; not accepted for ${ref || 'no ref'}: ${refused.join('; ')}`
+      )
+    }
+    return { outcome: 'tolerated', stale: [], accepted: entries, reason: '' }
+  }
   if (!message.startsWith(STALE_MESSAGE)) {
     return failed(`the test "${MOCK_SHAPE_TEST}" failed on another check: ${firstLineOf(message)}`)
   }
@@ -88,16 +130,27 @@ export function classifyPreviousRun({ status, report }) {
   if (stale.length === 0) {
     return failed(`the stale check of "${MOCK_SHAPE_TEST}" failed but lists no entry`)
   }
-  return { outcome: 'tolerated', stale, reason: '' }
+  return { outcome: 'tolerated', stale, accepted: [], reason: '' }
 }
 
 /**
  * The step summary of an outcome, in Markdown; empty on `passed`.
  *
- * @param {{ outcome: 'passed' | 'tolerated' | 'failed', stale: string[], reason: string }} result the result of `classifyPreviousRun`
+ * @param {{ outcome: 'passed' | 'tolerated' | 'failed', stale: string[], accepted: string[], reason: string }} result the result of `classifyPreviousRun`
+ * @param {string | undefined} ref the frontend ref under test, which picks the decision shown for each accepted entry
  * @returns {string} the text to append to `$GITHUB_STEP_SUMMARY`
  */
-function stepSummary(result) {
+export function stepSummary(result, ref) {
+  if (result.outcome === 'tolerated' && result.accepted.length > 0) {
+    return [
+      `### ${ACCEPTED_HEADING}`,
+      '',
+      "The frontend's mock answers what a real CMS never returns. The previous MINOR is a released tag and never changes, so each entry is accepted for that one tag, by the decision named. Any other failure of the suite still fails this job.",
+      '',
+      ...result.accepted.map((entry) => `- \`${entry}\` (${decisionOf(ref, entry)})`),
+      '',
+    ].join('\n')
+  }
   if (result.outcome === 'tolerated') {
     return [
       `### ${TOLERATED_HEADING}`,
@@ -126,7 +179,17 @@ function staleWarnings(stale) {
 }
 
 /**
- * Runs the classifier from the command line: reads `--status` and `--report`, writes the step summary when
+ * The `::warning` workflow command of each accepted entry, one per line.
+ *
+ * @param {string[]} accepted the accepted entries of a tolerated run
+ * @returns {string[]} the lines to print
+ */
+function acceptedWarnings(accepted) {
+  return accepted.map((entry) => `::warning title=Accepted mock difference::${escapeData(entry)}`)
+}
+
+/**
+ * Runs the classifier from the command line: reads `--status`, `--report` and `--ref`, writes the step summary when
  * `$GITHUB_STEP_SUMMARY` is set, prints the warnings, and answers the exit code.
  *
  * @param {string[]} args the command-line arguments after the script
@@ -138,7 +201,7 @@ function main(args, environment) {
   try {
     ;({ values } = parseArgs({
       args,
-      options: { status: { type: 'string' }, report: { type: 'string' } },
+      options: { status: { type: 'string' }, report: { type: 'string' }, ref: { type: 'string' } },
       strict: true,
     }))
   } catch (error) {
@@ -147,16 +210,21 @@ function main(args, environment) {
   }
   if (values.status === undefined || values.report === undefined) {
     console.error(
-      'previous-ref: usage: previous-ref.mjs --status <exit status> --report <Playwright JSON report>'
+      'previous-ref: usage: previous-ref.mjs --status <exit status> --report <Playwright JSON report> [--ref <tag>]'
     )
     return 1
   }
   const status = /^\d+$/.test(values.status) ? Number(values.status) : Number.NaN
-  const result = classifyPreviousRun({ status, report: readReport(values.report) })
+  const result = classifyPreviousRun({ status, report: readReport(values.report), ref: values.ref })
 
-  const summary = stepSummary(result)
+  const summary = stepSummary(result, values.ref)
   if (summary && environment.GITHUB_STEP_SUMMARY) {
     appendFileSync(environment.GITHUB_STEP_SUMMARY, summary)
+  }
+  if (result.outcome === 'tolerated' && result.accepted.length > 0) {
+    console.log(`previous-ref: tolerated, ${result.accepted.length} accepted mock difference(s)`)
+    for (const line of acceptedWarnings(result.accepted)) console.log(line)
+    return 0
   }
   if (result.outcome === 'tolerated') {
     console.log(`previous-ref: tolerated, ${result.stale.length} stale known difference(s)`)
@@ -219,7 +287,19 @@ function receivedEntries(message) {
 }
 
 function failed(reason) {
-  return { outcome: 'failed', stale: [], reason }
+  return { outcome: 'failed', stale: [], accepted: [], reason }
+}
+
+// Whether an entry is accepted for this exact ref.
+function isAccepted(ref, entry) {
+  return ACCEPTED_DIFFERENCES.some((item) => item.ref === ref && item.entry === entry)
+}
+
+// The decision that accepted an entry for this exact ref.
+function decisionOf(ref, entry) {
+  return (
+    ACCEPTED_DIFFERENCES.find((item) => item.ref === ref && item.entry === entry)?.decision ?? ''
+  )
 }
 
 function titles(tests) {

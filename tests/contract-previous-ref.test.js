@@ -3,16 +3,29 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { classifyPreviousRun } from '../scripts/contract/previous-ref.mjs'
+import {
+  ACCEPTED_DIFFERENCES,
+  classifyPreviousRun,
+  stepSummary,
+} from '../scripts/contract/previous-ref.mjs'
 
 // Bogd3v/micelio-cms#496: `Contract Tests (previous)` passes a run of the frontend's contract suite whose only failure is
 // stale known differences, and fails on anything else. tests/fixtures/contract/stale-only.json is the Playwright JSON
 // report of a real run of the frontend v0.7.0 against this CMS, trimmed to what the classifier reads; the other reports
 // are edits of it, made below.
+//
+// Bogd3v/micelio-cms#530: a mock difference accepted for one released ref is tolerated on that ref only.
+// tests/fixtures/contract/metasocial-only.json is the same kind of report for the frontend v0.8.1, whose mock answers
+// `seo.metaSocial` that the CMS does not: the Playwright JSON report of a real run of v0.8.1 against an image of this
+// repository (17 passed, 1 failed), trimmed the same way (the suites, the title of each spec, the status of each test
+// and the error messages, and the global errors). The message names its file as `e2e/contract/mock-shape.spec.ts`, relative as in stale-only.json (the run printed the
+// absolute path of its checkout).
 
 const SCRIPT = join(__dirname, '..', 'scripts', 'contract', 'previous-ref.mjs')
 const STALE_ONLY = join(__dirname, 'fixtures', 'contract', 'stale-only.json')
 const MOCK_SHAPE = 'the mock Strapi answers with the shapes of the real CMS'
+const METASOCIAL_ONLY = join(__dirname, 'fixtures', 'contract', 'metasocial-only.json')
+const METASOCIAL = '/api/pages $.data[].seo.metaSocial: in the mock, not in the CMS'
 const REDIRECTS = '/api/micelio/redirects status: the mock answers 200, the CMS 404'
 
 /** The real report, parsed, so a case can edit it. */
@@ -51,6 +64,7 @@ describe('classifyPreviousRun', () => {
     expect(classifyPreviousRun({ status: 0, report: JSON.stringify(passedReport()) })).toEqual({
       outcome: 'passed',
       stale: [],
+      accepted: [],
       reason: '',
     })
   })
@@ -61,8 +75,90 @@ describe('classifyPreviousRun', () => {
     expect(classifyPreviousRun({ status: 1, report })).toEqual({
       outcome: 'tolerated',
       stale: [REDIRECTS],
+      accepted: [],
       reason: '',
     })
+  })
+
+  it('tolerates a run whose only failure is a mock difference accepted for its ref and lists it', () => {
+    const report = readFileSync(METASOCIAL_ONLY, 'utf8')
+    expect(testsOf(JSON.parse(report).suites)).toHaveLength(18)
+    expect(classifyPreviousRun({ status: 1, report, ref: 'v0.8.1' })).toEqual({
+      outcome: 'tolerated',
+      stale: [],
+      accepted: [METASOCIAL],
+      reason: '',
+    })
+  })
+
+  it('fails when a mock difference is not accepted for the ref under test', () => {
+    const report = readFileSync(METASOCIAL_ONLY, 'utf8')
+    for (const ref of ['v0.9.0', undefined]) {
+      const result = classifyPreviousRun({ status: 1, report, ref })
+      expect(result.outcome).toBe('failed')
+      expect(result.accepted).toEqual([])
+      expect(result.reason).toContain(METASOCIAL)
+    }
+
+    const second = '/api/articles $.data[].slug: the mock has number, the CMS has string'
+    const two = JSON.parse(report)
+    const error = testNamed(two, MOCK_SHAPE).results[0].errors[0]
+    error.message = error.message.replace(
+      `\u001b[31m+   \"${METASOCIAL}\",\u001b[39m`,
+      `\u001b[31m+   \"${METASOCIAL}\",\u001b[39m\n\u001b[31m+   \"${second}\",\u001b[39m`
+    )
+    const result = classifyPreviousRun({ status: 1, report: JSON.stringify(two), ref: 'v0.8.1' })
+    expect(result.outcome).toBe('failed')
+    expect(result.reason).toContain(second)
+    expect(result.reason).not.toContain(`: ${METASOCIAL}`)
+
+    // An unexpected check that lists no entry is not one the classifier understands.
+    const empty = JSON.parse(report)
+    const emptyError = testNamed(empty, MOCK_SHAPE).results[0].errors[0]
+    emptyError.message = emptyError.message.replace(`"${METASOCIAL}",`, '')
+    const unlisted = classifyPreviousRun({
+      status: 1,
+      report: JSON.stringify(empty),
+      ref: 'v0.8.1',
+    })
+    expect(unlisted.outcome).toBe('failed')
+    expect(unlisted.reason).toContain('lists no entry')
+  })
+
+  it('every accepted mock difference names a released ref and its decision', () => {
+    expect(ACCEPTED_DIFFERENCES.length).toBeGreaterThan(0)
+    for (const item of ACCEPTED_DIFFERENCES) {
+      expect(item.ref).toMatch(/^v\d+\.\d+\.\d+$/)
+      expect(item.entry.trim()).not.toBe('')
+      expect(item.decision.trim()).not.toBe('')
+    }
+  })
+
+  it('shows the decision of the ref under test when two tags accept the same entry', () => {
+    const other = { ref: 'v0.7.9', entry: METASOCIAL, decision: 'D-other, another decision' }
+    ACCEPTED_DIFFERENCES.unshift(other)
+    try {
+      const result = classifyPreviousRun({
+        status: 1,
+        report: readFileSync(METASOCIAL_ONLY, 'utf8'),
+        ref: 'v0.8.1',
+      })
+      const summary = stepSummary(result, 'v0.8.1')
+      expect(summary).toContain('D-414-31 and D-414-33, bogd3v/micelio-cms#414')
+      expect(summary).not.toContain('D-other')
+    } finally {
+      ACCEPTED_DIFFERENCES.splice(ACCEPTED_DIFFERENCES.indexOf(other), 1)
+    }
+  })
+
+  it('names no ref when the ref is empty', () => {
+    const result = classifyPreviousRun({
+      status: 1,
+      report: readFileSync(METASOCIAL_ONLY, 'utf8'),
+      ref: '',
+    })
+    expect(result.outcome).toBe('failed')
+    expect(result.reason).toContain('not accepted for no ref: ')
   })
 
   it('fails when the mock-shape test fails on another check', () => {
@@ -196,6 +292,35 @@ describe('previous-ref.mjs', () => {
       }
     }
   }
+
+  it('writes the accepted entries to the step summary and as warnings', () => {
+    const accepted = run('accepted', [
+      '--status',
+      '1',
+      '--report',
+      METASOCIAL_ONLY,
+      '--ref',
+      'v0.8.1',
+    ])
+    expect(accepted.status).toBe(0)
+    const summary = readFileSync(accepted.summary, 'utf8')
+    expect(summary).toContain(
+      'Accepted mock differences of the previous MINOR (reported, not failed)'
+    )
+    expect(summary).toContain(`- \`${METASOCIAL}\` (D-414-31 and D-414-33, bogd3v/micelio-cms#414)`)
+    expect(accepted.stdout.split('\n')).toContain(
+      `::warning title=Accepted mock difference::${METASOCIAL}`
+    )
+    expect(accepted.stdout).toContain('previous-ref: tolerated, 1 accepted mock difference(s)')
+
+    const other = run('other', ['--status', '1', '--report', METASOCIAL_ONLY, '--ref', 'v0.9.0'])
+    expect(other.status).toBe(1)
+    expect(other.stdout).not.toContain('::warning')
+    expect(other.stderr).toContain(METASOCIAL)
+
+    const none = run('none', ['--status', '1', '--report', METASOCIAL_ONLY])
+    expect(none.status).toBe(1)
+  })
 
   it('writes the stale entries to the step summary and as warnings', () => {
     const tolerated = run('tolerated', ['--status', '1', '--report', STALE_ONLY])

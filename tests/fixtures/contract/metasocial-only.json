@@ -1,0 +1,258 @@
+{
+  "suites": [
+    {
+      "title": "content.spec.ts",
+      "specs": [
+        {
+          "title": "site settings: the identity, the modules and the social links",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the post list in en: a page of articles with their category and tags",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the post list in es: a page of articles with their category and tags",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "one post: the blocks, the category and its other language",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "a post that does not exist answers 404",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "a page with sections in en",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "a page with sections in es",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "a page that does not exist answers 404",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the about page: blocks with their rendered html",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the reading path of a category the CMS has, whatever its slug",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the blog page of a category the CMS has, and a 404 for one it does not",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "search finds an article by its title",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "categories and tags with their article counts",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the session check without a session answers user null, as its response schema says",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "writes.spec.ts",
+      "specs": [
+        {
+          "title": "a guest comment is stored, shown back and never carries the email",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "the subscriber write: create, find by email, confirm and delete",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "drafts are refused to a caller that is not an editor",
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "mock-shape.spec.ts",
+      "specs": [
+        {
+          "title": "the mock Strapi answers with the shapes of the real CMS",
+          "tests": [
+            {
+              "status": "unexpected",
+              "results": [
+                {
+                  "errors": [
+                    {
+                      "message": "Error: what the mock answers that the CMS does not (fix the mock, or list it in KNOWN_DIFFERENCES with its reason)\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 3\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   \"/api/pages $.data[].seo.metaSocial: in the mock, not in the CMS\",\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  39 |   const unreached = Object.entries(MOCK_ROUTES).filter(([mockRoute, decision]) => decision === 'compared' && !routes.some(route => servedBy(mockRoute, route))).map(([mockRoute]) => mockRoute)\n  40 |\n> 41 |   expect(unexpected, 'what the mock answers that the CMS does not (fix the mock, or list it in KNOWN_DIFFERENCES with its reason)').toEqual([])\n     |                                                                                                                                     ^\n  42 |   expect(stale, 'known differences that no longer show (delete them from KNOWN_DIFFERENCES)').toEqual([])\n  43 |   expect(unreached, 'mock routes marked as compared that no frontend request reached (add one to FRONTEND_REQUESTS)').toEqual([])\n  44 | })\n    at e2e/contract/mock-shape.spec.ts:41:133"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": []
+}
