@@ -132,3 +132,20 @@ describe('post lists can feature, sort and hide the excerpt', () => {
     })
   })
 })
+
+describe('links can carry an icon and say they leave the site or download a file', () => {
+  it('section.link has an optional icon, iconPosition (default start), external and download (#462)', () => {
+    const attrs = attributes('link')
+    expect(attrs.icon).toEqual({ type: 'customField', customField: 'plugin::micelio.icon' })
+    expect(attrs.iconPosition).toEqual({
+      type: 'enumeration',
+      enum: ['start', 'end', 'only'],
+      default: 'start',
+    })
+    expect(attrs.external).toEqual({ type: 'boolean' })
+    expect(attrs.download).toEqual({ type: 'boolean' })
+    // The existing fields stay: an existing link renders as before.
+    expect(attrs.label).toMatchObject({ type: 'string', required: true })
+    expect(attrs.url).toMatchObject({ type: 'string', required: true })
+  })
+})

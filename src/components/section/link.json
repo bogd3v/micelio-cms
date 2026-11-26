@@ -15,6 +15,21 @@
       "type": "string",
       "required": true,
       "regex": "^(https?://\\S+|mailto:\\S+|/\\S*)$"
+    },
+    "icon": {
+      "type": "customField",
+      "customField": "plugin::micelio.icon"
+    },
+    "iconPosition": {
+      "type": "enumeration",
+      "enum": ["start", "end", "only"],
+      "default": "start"
+    },
+    "external": {
+      "type": "boolean"
+    },
+    "download": {
+      "type": "boolean"
     }
   }
 }

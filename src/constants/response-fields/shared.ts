@@ -125,7 +125,16 @@ export const SHARED_SHAPES: Record<string, Shape> = {
   'meta-single': {},
   'pagination-offset': { start: 'surplus', limit: 'surplus', total: 'surplus' },
   'link-about': { id: 'required', label: 'required', url: 'required', variant: 'required' },
-  'link-section': { label: 'required', url: 'required', id: 'surplus' },
+  // `icon`, `iconPosition`, `external` and `download` (#462): surplus until the frontend reads them.
+  'link-section': {
+    label: 'required',
+    url: 'required',
+    icon: 'surplus',
+    iconPosition: 'surplus',
+    external: 'surplus',
+    download: 'surplus',
+    id: 'surplus',
+  },
   'relation-slug': { slug: 'required', id: 'surplus', documentId: 'surplus' },
 }
 
