@@ -392,6 +392,7 @@ export interface SectionCta extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
     text: Schema.Attribute.Text
@@ -416,6 +417,7 @@ export interface SectionFaq extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     items: Schema.Attribute.Component<'section.faq-item', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -459,6 +461,7 @@ export interface SectionFeatureGrid extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     items: Schema.Attribute.Component<'section.feature-item', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -504,6 +507,7 @@ export interface SectionGallery extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     images: Schema.Attribute.Media<'images', true> & Schema.Attribute.Required
     title: Schema.Attribute.String
     tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> &
@@ -511,6 +515,19 @@ export interface SectionGallery extends Struct.ComponentSchema {
     variant: Schema.Attribute.Enumeration<['grid', 'masonry']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'grid'>
+  }
+}
+
+export interface SectionGroup extends Struct.ComponentSchema {
+  collectionName: 'components_section_groups'
+  info: {
+    description: 'The group of a page section: consecutive sections that share a groupId form one band on the surface of its tone (ADR-0022, section 2)'
+    displayName: 'Group'
+    icon: 'layer'
+  }
+  attributes: {
+    groupId: Schema.Attribute.String & Schema.Attribute.Required
+    tone: Schema.Attribute.Enumeration<['default', 'raised', 'accent']> & Schema.Attribute.Required
   }
 }
 
@@ -526,6 +543,7 @@ export interface SectionHero extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     media: Schema.Attribute.Media<'images' | 'videos'>
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
@@ -584,6 +602,7 @@ export interface SectionLogoCloud extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     logos: Schema.Attribute.Component<'section.logo', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -610,6 +629,7 @@ export interface SectionMediaShowcase extends Struct.ComponentSchema {
   attributes: {
     align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     link: Schema.Attribute.Component<'section.link', false>
     media: Schema.Attribute.Media<'images' | 'videos'> & Schema.Attribute.Required
     text: Schema.Attribute.RichText
@@ -636,6 +656,7 @@ export interface SectionNewsletter extends Struct.ComponentSchema {
     buttonLabel: Schema.Attribute.String
     consentText: Schema.Attribute.Text
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     placeholder: Schema.Attribute.String
     successMessage: Schema.Attribute.String
     text: Schema.Attribute.Text
@@ -689,6 +710,7 @@ export interface SectionPostList extends Struct.ComponentSchema {
       > &
       Schema.Attribute.DefaultTo<3>
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     showExcerpt: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>
     sort: Schema.Attribute.Enumeration<['newest', 'oldest', 'alphabetical']> &
       Schema.Attribute.DefaultTo<'newest'>
@@ -714,6 +736,7 @@ export interface SectionPricing extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     plans: Schema.Attribute.Component<'section.plan', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -728,6 +751,20 @@ export interface SectionPricing extends Struct.ComponentSchema {
     variant: Schema.Attribute.Enumeration<['cards', 'table']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'cards'>
+  }
+}
+
+export interface SectionReusable extends Struct.ComponentSchema {
+  collectionName: 'components_section_reusables'
+  info: {
+    description: 'A reference to a reusable block of the site (ADR-0022, section 1)'
+    displayName: 'Reusable'
+    icon: 'link'
+  }
+  attributes: {
+    blockId: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
+    reusableBlock: Schema.Attribute.Relation<'oneToOne', 'plugin::micelio.reusable-block'>
   }
 }
 
@@ -760,6 +797,7 @@ export interface SectionScene extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     model: Schema.Attribute.Media<'files'> & Schema.Attribute.Required
     poster: Schema.Attribute.Media<'images'> & Schema.Attribute.Required
     text: Schema.Attribute.Text
@@ -798,6 +836,7 @@ export interface SectionStats extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     items: Schema.Attribute.Component<'section.stat', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -853,6 +892,7 @@ export interface SectionTestimonials extends Struct.ComponentSchema {
     anchor: Schema.Attribute.String
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
+    group: Schema.Attribute.Component<'section.group', false>
     items: Schema.Attribute.Component<'section.testimonial', true> &
       Schema.Attribute.SetMinMax<
         {
@@ -1352,6 +1392,7 @@ declare module '@strapi/strapi' {
       'section.feature-grid': SectionFeatureGrid
       'section.feature-item': SectionFeatureItem
       'section.gallery': SectionGallery
+      'section.group': SectionGroup
       'section.hero': SectionHero
       'section.link': SectionLink
       'section.logo': SectionLogo
@@ -1361,6 +1402,7 @@ declare module '@strapi/strapi' {
       'section.plan': SectionPlan
       'section.post-list': SectionPostList
       'section.pricing': SectionPricing
+      'section.reusable': SectionReusable
       'section.rich-text': SectionRichText
       'section.scene': SectionScene
       'section.stat': SectionStat

@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_section_reusables",
+  "info": {
+    "displayName": "Reusable",
+    "icon": "link",
+    "description": "A reference to a reusable block of the site (ADR-0022, section 1)"
+  },
+  "options": {},
+  "attributes": {
+    "blockId": {
+      "type": "string"
+    },
+    "reusableBlock": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::micelio.reusable-block"
+    },
+    "group": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.group"
+    }
+  }
+}

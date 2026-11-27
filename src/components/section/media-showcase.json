@@ -42,6 +42,11 @@
       "type": "enumeration",
       "enum": ["start", "center"],
       "default": "start"
+    },
+    "group": {
+      "type": "component",
+      "repeatable": false,
+      "component": "section.group"
     }
   }
 }

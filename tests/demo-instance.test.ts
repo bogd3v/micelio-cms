@@ -135,8 +135,11 @@ describe('Demo instance', () => {
           populate: { sections: { populate: '*' } },
         } as never)) as { sections: { __component: string }[] } | null
         // `section.rich-text` is retired (#445): it stays in the zone, and the demo no longer writes it.
+        // `section.reusable` (#527) needs a `plugin::micelio.reusable-block` to point at, and the
+        // demo writes none.
+        const unwritten = ['section.rich-text', 'section.reusable']
         expect(page?.sections.map((section) => section.__component).sort()).toEqual(
-          catalog.filter((uid) => uid !== 'section.rich-text').sort()
+          catalog.filter((uid) => !unwritten.includes(uid)).sort()
         )
       }
     })

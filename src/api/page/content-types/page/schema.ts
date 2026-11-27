@@ -74,6 +74,7 @@ const schema = withPageSettings({
         'shared.table',
         'section.gallery',
         'section.scene',
+        'section.reusable',
       ],
       pluginOptions: {
         i18n: {

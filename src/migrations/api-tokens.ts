@@ -12,6 +12,13 @@ export interface EnvToken {
   permissions: string[]
 }
 
+/**
+ * The read of the core's reusable blocks, `GET /api/reusable-blocks` (core 0.6.1, ADR-0022 of
+ * micelio, section 1): without it a page's `section.reusable` answers without its `reusableBlock`
+ * relation. The core's `READ_ACTIONS` does not list it, so both read tokens add it here.
+ */
+export const REUSABLE_BLOCK_READ_ACTION = 'plugin::micelio.reusable-block.find'
+
 /** Name of the frontend server's Custom API token. */
 export const FRONTEND_TOKEN_NAME = 'frontend'
 
@@ -22,6 +29,7 @@ export const FRONTEND_TOKEN_NAME = 'frontend'
 export const FRONTEND_TOKEN_PERMISSIONS = [
   'api::article.article.find',
   ...MICELIO_READ_ACTIONS,
+  REUSABLE_BLOCK_READ_ACTION,
   'api::about.about.find',
   'api::site-setting.site-setting.find',
   'api::page.page.find',
@@ -68,6 +76,7 @@ export const BUILD_TOKEN_NAME = 'build'
 export const BUILD_TOKEN_PERMISSIONS = [
   'api::article.article.find',
   ...MICELIO_READ_ACTIONS,
+  REUSABLE_BLOCK_READ_ACTION,
   'api::about.about.find',
   'api::site-setting.site-setting.find',
   'api::page.page.find',

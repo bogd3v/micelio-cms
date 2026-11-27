@@ -309,6 +309,9 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     successMessage: 'surplus',
     placeholder: 'surplus',
     align: 'surplus',
+    // ADR-0022 of micelio, section 2 (#527): `PAGE_POPULATE` asks for `*`, so the group comes back,
+    // `null` when the section has none (`groupId` and `tone` when it has one).
+    group: 'surplus',
   },
   'section.rich-text': {
     __component: 'required',
