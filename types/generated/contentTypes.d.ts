@@ -754,6 +754,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
         'shared.table',
         'section.gallery',
         'section.scene',
+        'section.reusable',
       ]
     > &
       Schema.Attribute.SetPluginOptions<{

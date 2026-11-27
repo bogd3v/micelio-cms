@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals'
 import request from 'supertest'
 import { setupStrapi, cleanupStrapi } from './strapi'
 import {
+  BUILD_TOKEN_PERMISSIONS,
+  ensureBuildToken,
   ensureEnvToken,
   ensureFrontendToken,
   FRONTEND_TOKEN,
@@ -17,7 +19,9 @@ const TOKEN_UID = 'admin::api-token'
 const DRAFT = 'plugin::micelio.preview.draft'
 const EXCHANGE = 'plugin::micelio.preview.exchange'
 const REDIRECTS = 'plugin::micelio.redirects.find'
+const REUSABLE_BLOCKS = 'plugin::micelio.reusable-block.find'
 const ACCESS_KEY = 'preview-frontend-token-0123456789abcdef0123456789'
+const BUILD_ACCESS_KEY = 'preview-build-token-0123456789abcdef0123456789ab'
 
 describe('Frontend token and the preview draft action', () => {
   const saved = { ...process.env }
@@ -83,6 +87,50 @@ describe('Frontend token and the preview draft action', () => {
     expect(await ensureFrontendToken(strapi)).toBe('created')
     expect(await actionsOfToken()).toContain(DRAFT)
     expect(await ensureFrontendToken(strapi)).toBe('unchanged')
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[api-tokens]'))
+  })
+
+  const actionsOfTokenNamed = async (name: string): Promise<string[]> => {
+    const token = await strapi.db.query(TOKEN_UID).findOne({
+      where: { name },
+      populate: ['permissions'],
+    })
+    return token.permissions.map(({ action }: { action: string }) => action).sort()
+  }
+
+  // The read tokens read the core's reusable blocks, so a page's `section.reusable` populates its
+  // `reusableBlock` relation (#527). A migration: each token is created with it, then left unchanged.
+  it('grants plugin::micelio.reusable-block.find to the read tokens', async () => {
+    expect([...strapi.contentAPI.permissions.providers.action.keys()]).toContain(REUSABLE_BLOCKS)
+    expect(FRONTEND_TOKEN_PERMISSIONS).toContain(REUSABLE_BLOCKS)
+    expect(BUILD_TOKEN_PERMISSIONS).toContain(REUSABLE_BLOCKS)
+    expect(PREVIEW_FRONTEND_TOKEN_PERMISSIONS).toContain(REUSABLE_BLOCKS)
+    expect(await actionsOfToken()).toContain(REUSABLE_BLOCKS)
+
+    try {
+      process.env.BUILD_API_TOKEN = BUILD_ACCESS_KEY
+      for (const [name, ensure, key] of [
+        ['frontend', ensureFrontendToken, ACCESS_KEY],
+        ['build', ensureBuildToken, BUILD_ACCESS_KEY],
+      ] as const) {
+        await strapi.db.query(TOKEN_UID).deleteMany({ where: { name } })
+        expect([name, await ensure(strapi)]).toEqual([name, 'created'])
+        expect([name, await actionsOfTokenNamed(name)]).toEqual([
+          name,
+          expect.arrayContaining([REUSABLE_BLOCKS]),
+        ])
+        expect([name, await ensure(strapi)]).toEqual([name, 'unchanged'])
+
+        // The core's read-only route answers the token (403 without the action).
+        const answer = await request(strapi.server.httpServer)
+          .get('/api/reusable-blocks')
+          .set('Authorization', `Bearer ${key}`)
+        expect([name, answer.status]).toEqual([name, 200])
+      }
+    } finally {
+      await strapi.db.query(TOKEN_UID).deleteMany({ where: { name: 'build' } })
+      delete process.env.BUILD_API_TOKEN
+    }
     expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[api-tokens]'))
   })
 

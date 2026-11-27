@@ -1,0 +1,20 @@
+{
+  "collectionName": "components_section_groups",
+  "info": {
+    "displayName": "Group",
+    "icon": "layer",
+    "description": "The group of a page section: consecutive sections that share a groupId form one band on the surface of its tone (ADR-0022, section 2)"
+  },
+  "options": {},
+  "attributes": {
+    "groupId": {
+      "type": "string",
+      "required": true
+    },
+    "tone": {
+      "type": "enumeration",
+      "enum": ["default", "raised", "accent"],
+      "required": true
+    }
+  }
+}

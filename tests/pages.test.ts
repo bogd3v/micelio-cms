@@ -14,6 +14,7 @@ import { defaultSiteRelation } from '../src/utils/default-site'
 const PAGE_UID = 'api::page.page'
 const FRONTEND_KEY = 'pages-frontend-token-0123456789abcdef0123'
 const BUILD_KEY = 'pages-build-token-0123456789abcdef01234567'
+const SUPER_ADMIN = 'strapi-super-admin'
 
 type Data = Record<string, unknown>
 
@@ -225,6 +226,86 @@ describe('Pages', () => {
         populate: { homePage: true },
       } as never)) as Data | null
       expect([locale, (read?.homePage as Data | null)?.title]).toEqual([locale, title])
+    }
+  })
+
+  // ADR-0022 of micelio, section 1 (#527): a section that references a reusable block of the site,
+  // with the group key of section 2. The read tokens hold `plugin::micelio.reusable-block.find`, so
+  // the relation populates; without it the sanitizer drops `reusableBlock` from the answer.
+  it("a page's reusable section populates its reusableBlock relation", async () => {
+    const site = await defaultSiteRelation(strapi)
+    const block = await strapi.documents('plugin::micelio.reusable-block').create({
+      data: {
+        name: 'Shared call to action',
+        blocks: [{ __component: 'section.cta', title: 'Join us' }],
+        site,
+      },
+    } as never)
+    // A reusable block is editorial in the core: it is published through its transitions.
+    const role = await strapi.db.query('admin::role').findOne({ where: { code: SUPER_ADMIN } })
+    const admin = await strapi.service('admin::user').create({
+      email: 'pages-reusable@example.test',
+      firstname: 'Pages',
+      lastname: 'Reusable',
+      isActive: true,
+      roles: [role.id],
+    })
+    for (const to of ['in_review', 'published']) {
+      await strapi
+        .plugin('micelio')
+        .service('transitions')
+        .perform({
+          uid: 'plugin::micelio.reusable-block',
+          documentId: block.documentId,
+          to,
+          actor: { kind: 'user', id: admin.id, roles: [SUPER_ADMIN] },
+        })
+    }
+    const group = { groupId: 'band-1', tone: 'raised' }
+    await pages().create({
+      status: 'published',
+      data: {
+        title: 'Reuses',
+        slug: 'reuses',
+        sections: [
+          { __component: 'section.hero', title: 'Hello', group },
+          { __component: 'section.reusable', reusableBlock: block.documentId, group },
+        ],
+        site,
+      },
+    })
+
+    for (const key of [FRONTEND_KEY, BUILD_KEY]) {
+      const res = await http()
+        .get('/api/pages')
+        .query({
+          filters: { slug: 'reuses' },
+          populate: {
+            sections: {
+              on: {
+                'section.hero': { populate: '*' },
+                'section.reusable': { populate: '*' },
+              },
+            },
+          },
+        })
+        .set(bearer(key))
+      expect(res.status).toBe(200)
+      const [page] = res.body.data as Data[]
+      expect(page.sections).toEqual([
+        expect.objectContaining({
+          __component: 'section.hero',
+          group: expect.objectContaining(group),
+        }),
+        expect.objectContaining({
+          __component: 'section.reusable',
+          group: expect.objectContaining(group),
+          reusableBlock: expect.objectContaining({
+            documentId: block.documentId,
+            name: 'Shared call to action',
+          }),
+        }),
+      ])
     }
   })
 

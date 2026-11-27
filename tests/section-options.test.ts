@@ -69,12 +69,14 @@ describe('section components offer tone and align', () => {
     const zone = (pageSchema.attributes as unknown as Record<string, { components: string[] }>)
       .sections.components
     // `shared.rich-text` is allowed next to `section.rich-text` (#445): the zone is no longer all `section.*`.
+    // `section.reusable` (#527) is a reference to a reusable block, not a section with options.
     expect([...zone].sort()).toEqual(
       [
         ...SECTIONS.map((name) => `section.${name}`),
         'shared.rich-text',
         'shared.code',
         'shared.table',
+        'section.reusable',
       ].sort()
     )
   })
@@ -147,5 +149,93 @@ describe('links can carry an icon and say they leave the site or download a file
     // The existing fields stay: an existing link renders as before.
     expect(attrs.label).toMatchObject({ type: 'string', required: true })
     expect(attrs.url).toMatchObject({ type: 'string', required: true })
+  })
+})
+
+// The group key of ADR-0022 (micelio), section 2, and the `reusable` block of its section 1 (#527),
+// stored as the catalogue of the installed core describes them (`contract/blocks.schema.json`).
+describe('page sections can share a group, and a page can reference a reusable block', () => {
+  interface StrapiShape {
+    type?: string
+    component?: string
+    repeatable?: boolean
+    relation?: string
+    target?: string
+  }
+  interface Property {
+    anyOf?: Property[]
+    enum?: string[]
+    required?: string[]
+    properties?: Record<string, Property>
+    'x-strapi'?: StrapiShape
+  }
+  interface Definition {
+    properties: Record<string, Property>
+    'x-strapi': { component: string }
+  }
+
+  const catalogue = (
+    JSON.parse(
+      fs.readFileSync(require.resolve('@micelio/strapi-plugin-core/blocks.schema.json'), 'utf8')
+    ) as { $defs: Record<string, Definition> }
+  ).$defs
+  // A nullable property of the catalogue is `anyOf: [<shape>, { type: 'null' }]`.
+  const shapeOf = (property: Property): Property => property.anyOf?.[0] ?? property
+  const componentAttributes = (uid: string): Record<string, Attribute & StrapiShape> => {
+    const [category, name] = uid.split('.')
+    const file = path.join(process.cwd(), 'src', 'components', category, `${name}.json`)
+    return JSON.parse(fs.readFileSync(file, 'utf8')).attributes
+  }
+  const GROUP = { type: 'component', repeatable: false, component: 'section.group' }
+  const grouped = Object.values(catalogue)
+    .filter((definition) => 'group' in definition.properties)
+    .map((definition) => definition['x-strapi'].component)
+
+  it('gives the group attribute to the thirteen sections and the reusable block, as the catalogue does', () => {
+    expect([...grouped].sort()).toEqual(
+      [...SECTIONS.filter((name) => name !== 'rich-text'), 'reusable']
+        .map((name) => `section.${name}`)
+        .sort()
+    )
+    for (const uid of grouped) {
+      expect([uid, componentAttributes(uid).group]).toEqual([uid, GROUP])
+    }
+  })
+
+  it('leaves the group off the blocks the catalogue gives none', () => {
+    for (const uid of ['section.rich-text', 'shared.rich-text', 'shared.code', 'shared.table']) {
+      expect([uid, 'group' in componentAttributes(uid)]).toEqual([uid, false])
+    }
+  })
+
+  it('stores section.group with a required groupId and a required tone of the catalogue', () => {
+    const group = shapeOf(catalogue.hero.properties.group)
+    expect(group['x-strapi']).toMatchObject(GROUP)
+    expect(group.required).toEqual(['groupId', 'tone'])
+    expect(componentAttributes('section.group')).toEqual({
+      groupId: { type: 'string', required: true },
+      tone: { type: 'enumeration', enum: group.properties!.tone.enum, required: true },
+    })
+    expect(group.properties!.tone.enum).toEqual(['default', 'raised', 'accent'])
+  })
+
+  it('stores section.reusable with blockId, its reusableBlock relation and group', () => {
+    const { properties } = catalogue.reusable
+    expect(catalogue.reusable['x-strapi'].component).toBe('section.reusable')
+    expect(Object.keys(properties)).toEqual(['blockId', 'reusableBlock', 'group'])
+    expect(shapeOf(properties.reusableBlock)['x-strapi']).toEqual({
+      type: 'relation',
+      relation: 'oneToOne',
+      target: 'plugin::micelio.reusable-block',
+    })
+    expect(componentAttributes('section.reusable')).toEqual({
+      blockId: { type: 'string' },
+      reusableBlock: {
+        type: 'relation',
+        relation: 'oneToOne',
+        target: 'plugin::micelio.reusable-block',
+      },
+      group: GROUP,
+    })
   })
 })
