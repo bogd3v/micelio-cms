@@ -393,6 +393,8 @@ export interface SectionCta extends Struct.ComponentSchema {
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
     group: Schema.Attribute.Component<'section.group', false>
+    iconStyle: Schema.Attribute.Enumeration<['outline', 'filled']> &
+      Schema.Attribute.DefaultTo<'outline'>
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
     text: Schema.Attribute.Text
@@ -544,6 +546,8 @@ export interface SectionHero extends Struct.ComponentSchema {
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
     group: Schema.Attribute.Component<'section.group', false>
+    iconStyle: Schema.Attribute.Enumeration<['outline', 'filled']> &
+      Schema.Attribute.DefaultTo<'outline'>
     media: Schema.Attribute.Media<'images' | 'videos'>
     primaryLink: Schema.Attribute.Component<'section.link', false>
     secondaryLink: Schema.Attribute.Component<'section.link', false>
@@ -630,6 +634,8 @@ export interface SectionMediaShowcase extends Struct.ComponentSchema {
     align: Schema.Attribute.Enumeration<['start', 'center']> & Schema.Attribute.DefaultTo<'start'>
     blockId: Schema.Attribute.String
     group: Schema.Attribute.Component<'section.group', false>
+    iconStyle: Schema.Attribute.Enumeration<['outline', 'filled']> &
+      Schema.Attribute.DefaultTo<'outline'>
     link: Schema.Attribute.Component<'section.link', false>
     media: Schema.Attribute.Media<'images' | 'videos'> & Schema.Attribute.Required
     text: Schema.Attribute.RichText
@@ -737,6 +743,8 @@ export interface SectionPricing extends Struct.ComponentSchema {
     blockId: Schema.Attribute.String
     eyebrow: Schema.Attribute.String
     group: Schema.Attribute.Component<'section.group', false>
+    iconStyle: Schema.Attribute.Enumeration<['outline', 'filled']> &
+      Schema.Attribute.DefaultTo<'outline'>
     plans: Schema.Attribute.Component<'section.plan', true> &
       Schema.Attribute.SetMinMax<
         {

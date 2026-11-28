@@ -1629,6 +1629,7 @@ export interface PluginMicelioReusableBlock extends Struct.CollectionTypeSchema 
         'section.scene',
         'shared.rich-text',
         'shared.code',
+        'shared.table',
       ]
     > &
       Schema.Attribute.Required &
@@ -1925,6 +1926,55 @@ export interface PluginMicelioTag extends Struct.CollectionTypeSchema {
         }
       }>
     slug: Schema.Attribute.UID<'name'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
+    updatedAt: Schema.Attribute.DateTime
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+  }
+}
+
+export interface PluginMicelioThemeActivation extends Struct.CollectionTypeSchema {
+  collectionName: 'micelio_theme_activations'
+  info: {
+    description: "One change of a site's theme pin from the Themes page: an activation or a revert, the pin before and after, who made it and when"
+    displayName: 'Theme activation'
+    pluralName: 'theme-activations'
+    singularName: 'theme-activation'
+  }
+  options: {
+    draftAndPublish: false
+  }
+  pluginOptions: {
+    'content-manager': {
+      visible: false
+    }
+    'content-type-builder': {
+      visible: false
+    }
+    i18n: {
+      localized: false
+    }
+    micelio: {
+      export: 'never'
+      siteScoped: true
+    }
+  }
+  attributes: {
+    action: Schema.Attribute.Enumeration<['activate', 'revert']> & Schema.Attribute.Required
+    adminUserId: Schema.Attribute.Integer
+    createdAt: Schema.Attribute.DateTime
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    locale: Schema.Attribute.String & Schema.Attribute.Private
+    localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::micelio.theme-activation'> &
+      Schema.Attribute.Private
+    pinAfter: Schema.Attribute.JSON & Schema.Attribute.Required
+    pinBefore: Schema.Attribute.JSON & Schema.Attribute.Required
+    publishedAt: Schema.Attribute.DateTime
+    site: Schema.Attribute.Relation<'manyToOne', 'plugin::micelio.site'> &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -2335,6 +2385,7 @@ declare module '@strapi/strapi' {
       'plugin::micelio.reusable-block': PluginMicelioReusableBlock
       'plugin::micelio.site': PluginMicelioSite
       'plugin::micelio.tag': PluginMicelioTag
+      'plugin::micelio.theme-activation': PluginMicelioThemeActivation
       'plugin::micelio.transfer': PluginMicelioTransfer
       'plugin::review-workflows.workflow': PluginReviewWorkflowsWorkflow
       'plugin::review-workflows.workflow-stage': PluginReviewWorkflowsWorkflowStage

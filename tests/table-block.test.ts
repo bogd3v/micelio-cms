@@ -111,7 +111,16 @@ describe('shared.table block', () => {
   it('refuses a column alignment other than start or center', async () => {
     await expect(
       articles().create({
-        data: { title: 'End', blocks: [block({ columns: [{ label: 'A', align: 'end' }] })] },
+        // One cell per row for the one column: the core refuses a row of another length first (#559).
+        data: {
+          title: 'End',
+          blocks: [
+            block({
+              columns: [{ label: 'A', align: 'end' }],
+              rows: [{ cells: ['a'] }, { cells: ['b'] }],
+            }),
+          ],
+        },
       })
     ).rejects.toThrow(/must be one of/)
   })
