@@ -155,6 +155,30 @@ describe('options of the page sections against the installed core (#500)', () =>
     expect(refused).toEqual([])
   })
 
+  // ADR-0021 of micelio, section 1: the blocks with an icon field offer `iconStyle` (#559).
+  it('saves a page with hero, media-showcase, cta and pricing sending iconStyle filled', async () => {
+    const sections = [
+      { __component: 'section.hero', title: 'Hero', iconStyle: 'filled' },
+      { __component: 'section.media-showcase', title: 'Media', iconStyle: 'filled' },
+      { __component: 'section.cta', title: 'Call', iconStyle: 'filled' },
+      { __component: 'section.pricing', title: 'Plans', iconStyle: 'filled' },
+    ]
+    const { documentId } = await save(sections)
+    const page = (await strapi.documents(PAGE_UID).findOne({
+      documentId,
+      populate: { sections: true },
+    })) as unknown as { sections: Data[] }
+    expect(page.sections.map(({ __component, iconStyle }) => [__component, iconStyle])).toEqual(
+      sections.map(({ __component }) => [__component, 'filled'])
+    )
+  })
+
+  it('refuses iconStyle on a section the installed core does not offer it on', async () => {
+    await expect(
+      save([{ __component: 'section.stats', title: 'Stats', iconStyle: 'outline' }])
+    ).rejects.toMatchObject({ details: { code: 'blockOptionInvalid' } })
+  })
+
   it('refuses an option value the catalogue does not offer, naming the block and the option', async () => {
     await expect(save([{ __component: 'section.hero', tone: 'not-a-tone' }])).rejects.toThrow(
       /hero block does not allow that value for tone/

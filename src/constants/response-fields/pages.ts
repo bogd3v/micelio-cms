@@ -123,6 +123,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     anchor: 'surplus',
     tone: 'surplus',
     align: 'surplus',
+    iconStyle: 'surplus',
   },
   'section.feature-grid': {
     __component: 'required',
@@ -157,6 +158,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     blockId: 'surplus',
     tone: 'surplus',
     align: 'surplus',
+    iconStyle: 'surplus',
   },
   'section.stats': {
     __component: 'required',
@@ -242,6 +244,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     anchor: 'surplus',
     tone: 'surplus',
     align: 'surplus',
+    iconStyle: 'surplus',
   },
   'section.faq': {
     __component: 'required',
@@ -277,6 +280,7 @@ const PAGE_SECTIONS: Record<string, Shape> = {
     anchor: 'surplus',
     tone: 'surplus',
     align: 'surplus',
+    iconStyle: 'surplus',
   },
   'section.post-list': {
     __component: 'required',

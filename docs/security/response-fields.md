@@ -239,7 +239,7 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | Route | Method and path | Auth | Required | Surplus | Read by | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | `about.find` | `GET /api/about` | public role with `find`, or an API token with `find` | 191 | 10 | server/api/about.get.ts (`publicAbout`) | Single type; the query is `ABOUT_POPULATE`. The frontend re-filters the body with its own allow-list, which this shape mirrors. |
-| `pages.find` | `GET /api/pages` | API token with `find`; no role | 180 | 181 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. `pageType`, `visibility`, `templateId` and `templateVersion` are the page settings of `withPageSettings` (#414): surplus until the frontend reads them; `visibility` is a component (`inMenu`, `inSitemap`, `noindex`), returned only when the query populates it, which `PAGE_POPULATE` does not. `templateSamples` and `templateFixed` are private and never returned. |
+| `pages.find` | `GET /api/pages` | API token with `find`; no role | 180 | 185 | server/utils/pageSections.ts (`parsePage`) | Token only. The frontend asks for one page by `limit`, so the pagination is offset based. The query is `PAGE_POPULATE`, which names `url`, `alternativeText`, `width`, `height` and `mime` for each media, as `parsePage` reads them. `pageType`, `visibility`, `templateId` and `templateVersion` are the page settings of `withPageSettings` (#414): surplus until the frontend reads them; `visibility` is a component (`inMenu`, `inSitemap`, `noindex`), returned only when the query populates it, which `PAGE_POPULATE` does not. `templateSamples` and `templateFixed` are private and never returned. |
 | `pages.slugs` | `GET /api/pages?fields[]=slug` | API token with `find`; no role | 5 | 5 | modules/static-routes.ts | Token only. Strapi adds `id` and `documentId` whatever `fields` says. |
 
 #### `about.find`
@@ -288,14 +288,14 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `(body)` | `data` | `meta` |
 | `data` | `documentId`, `title`, `slug`, `locale`, `seo`, `sections`, `localizations` | `id`, `createdAt`, `updatedAt`, `publishedAt`, `pageType`, `visibility`, `templateId`, `templateVersion` |
 | `data.seo` | as shared `seo-page` | as shared `seo-page` |
-| `data.sections[section.hero]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink`, `media` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
+| `data.sections[section.hero]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink`, `media` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align`, `iconStyle` |
 | `data.sections[section.hero].primaryLink` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.hero].secondaryLink` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.hero].media` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.feature-grid]` | `__component`, `variant`, `title`, `text`, `items` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
 | `data.sections[section.feature-grid].items` | `icon`, `title`, `text` | `id`, `itemId` |
 | `data.sections[section.feature-grid].items.icon` | as shared `media-page` | as shared `media-page` |
-| `data.sections[section.media-showcase]` | `__component`, `variant`, `title`, `text`, `media`, `link` | `id`, `blockId`, `tone`, `align` |
+| `data.sections[section.media-showcase]` | `__component`, `variant`, `title`, `text`, `media`, `link` | `id`, `blockId`, `tone`, `align`, `iconStyle` |
 | `data.sections[section.media-showcase].media` | as shared `media-page` | as shared `media-page` |
 | `data.sections[section.media-showcase].link` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.stats]` | `__component`, `variant`, `title`, `items` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
@@ -306,12 +306,12 @@ V15.3.1 is met with an accepted risk: the surplus fields below remain, and nothi
 | `data.sections[section.testimonials]` | `__component`, `variant`, `title`, `items` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
 | `data.sections[section.testimonials].items` | `quote`, `author`, `role`, `avatar` | `sourceUrl`, `rating`, `id`, `itemId` |
 | `data.sections[section.testimonials].items.avatar` | as shared `media-page` | as shared `media-page` |
-| `data.sections[section.pricing]` | `__component`, `variant`, `title`, `text`, `plans` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
+| `data.sections[section.pricing]` | `__component`, `variant`, `title`, `text`, `plans` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align`, `iconStyle` |
 | `data.sections[section.pricing].plans` | `name`, `price`, `period`, `features`, `link`, `recommended` | `id`, `itemId` |
 | `data.sections[section.pricing].plans.link` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.faq]` | `__component`, `variant`, `title`, `items` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
 | `data.sections[section.faq].items` | `question`, `answer` | `defaultOpen`, `id`, `itemId` |
-| `data.sections[section.cta]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |
+| `data.sections[section.cta]` | `__component`, `variant`, `title`, `text`, `primaryLink`, `secondaryLink` | `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align`, `iconStyle` |
 | `data.sections[section.cta].primaryLink` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.cta].secondaryLink` | as shared `link-section` | as shared `link-section` |
 | `data.sections[section.post-list]` | `__component`, `variant`, `title`, `count`, `category`, `tag` | `showExcerpt`, `sort`, `id`, `blockId`, `eyebrow`, `anchor`, `tone`, `align` |

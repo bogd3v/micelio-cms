@@ -82,6 +82,33 @@ describe('section components offer tone and align', () => {
   })
 })
 
+// `iconStyle` (ADR-0021 of micelio, section 1): offered by every block whose schema holds an icon
+// field and by no other. The four below hold one through the icon of their `section.link` (#559).
+const WITH_ICON = ['hero', 'media-showcase', 'cta', 'pricing']
+
+describe('sections with an icon field offer iconStyle', () => {
+  it.each(WITH_ICON)('section.%s has iconStyle outline or filled, default outline', (name) => {
+    expect(attributes(name).iconStyle).toEqual({
+      type: 'enumeration',
+      enum: ['outline', 'filled'],
+      default: 'outline',
+    })
+  })
+
+  it('leaves iconStyle off the sections without an icon field', () => {
+    const zone = (pageSchema.attributes as unknown as Record<string, { components: string[] }>)
+      .sections.components
+    const others = zone.filter((uid) => !WITH_ICON.map((name) => `section.${name}`).includes(uid))
+    expect(others).toHaveLength(zone.length - WITH_ICON.length)
+    for (const uid of others) {
+      const [category, name] = uid.split('.')
+      const file = path.join(process.cwd(), 'src', 'components', category, `${name}.json`)
+      const attrs = JSON.parse(fs.readFileSync(file, 'utf8')).attributes
+      expect([uid, 'iconStyle' in attrs]).toEqual([uid, false])
+    }
+  })
+})
+
 describe('sections with a SectionHead offer eyebrow and anchor', () => {
   it.each(SECTION_HEAD)('section.%s has optional string eyebrow and anchor', (name) => {
     const { eyebrow, anchor } = attributes(name)

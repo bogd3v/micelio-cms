@@ -43,6 +43,11 @@
       "enum": ["start", "center"],
       "default": "start"
     },
+    "iconStyle": {
+      "type": "enumeration",
+      "enum": ["outline", "filled"],
+      "default": "outline"
+    },
     "group": {
       "type": "component",
       "repeatable": false,
